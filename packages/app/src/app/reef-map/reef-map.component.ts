@@ -1,8 +1,8 @@
 import { Component, ViewChild } from '@angular/core';
+// NOW remove next
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
-import { ArcgisMapCustomEvent } from '@arcgis/map-components';
-import { ArcgisMap, ComponentLibraryModule } from '@arcgis/map-components-angular';
 import Field from '@arcgis/core/layers/support/Field';
+
 import {
   cloneFeatureLayerAsLocal,
   cloneRendererChangedField,
@@ -23,7 +23,6 @@ import Home from '@arcgis/core/widgets/Home';
 @Component({
   selector: 'app-reef-map',
   imports: [
-    ComponentLibraryModule,
     MatSliderModule,
     MatProgressSpinnerModule,
     CommonModule,
@@ -45,7 +44,8 @@ export class ReefMapComponent {
 
   yearExtent$: Observable<[number, number]>;
 
-  @ViewChild(ArcgisMap) map!: ArcgisMap;
+  // NOW openlayers?
+  map: any;
 
   private cloned = false;
   private reefLayer?: FeatureLayer;
@@ -72,20 +72,10 @@ export class ReefMapComponent {
     }
   }
 
-  arcgisViewReadyChange(event: ArcgisMapCustomEvent<void>) {
-    console.log('ArcGis ready', this.map);
-  }
-
-  arcgisViewLayerviewCreate(event: ArcgisMapCustomEvent<__esri.ViewLayerviewCreateEvent>) {
-    const { layer, layerView } = event.detail;
-    // console.log(`layer "${layer.title}" type=${layer.type}`, layer);
-    // TODO refer by ID, this is brittle
-    if (layer.type === 'feature' && layer.title?.includes('Relative Cover')) {
-      this.cloneReefsLayer(layer as FeatureLayer, layerView);
-    }
-  }
-
-  private async cloneReefsLayer(layer: __esri.FeatureLayer, layerView: __esri.LayerView) {
+  private async cloneReefsLayer(
+    layer: __esri.FeatureLayer,
+    layerView: __esri.LayerView
+  ) {
     // only do this once
     if (this.cloned) {
       return;
@@ -191,27 +181,6 @@ export class ReefMapComponent {
 
     // probably race-condition here when overlaping updates
     this.reefLayer?.when(() => this.timestepLoading$.next(false));
-  }
-
-  async arcgisViewClick(event: ArcgisMapCustomEvent<__esri.ViewClickEvent>) {
-    console.log('arcgis map click', event);
-    const view = this.map.view;
-    const resp = await view.hitTest(event.detail);
-    console.log('resp', resp);
-
-    /*
-    view.hitTest(event).then(function(response) {
-      var results = response.results;
-      if (results.length > 0) {
-        var graphic = results.filter(function(result) {
-          return result.graphic.layer === featureLayer;
-        })[0].graphic;
-
-        console.log("Selected feature:", graphic);
-        // Perform actions with the selected graphic
-      }
-    });
-    */
   }
 
   /**

@@ -12,9 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import esriConfig from '@arcgis/core/config.js';
-import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
-import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
+import Map from 'ol/Map';
 import GroupLayer from '@arcgis/core/layers/GroupLayer';
 import ImageryTileLayer from '@arcgis/core/layers/ImageryTileLayer';
 import TileLayer from '@arcgis/core/layers/TileLayer';
@@ -81,7 +79,8 @@ export class ReefGuideMapService {
   private readonly jobsManager = inject(JobsManagerService);
 
   // map is set shortly after construction
-  private map!: ArcgisMap;
+  // TODO any for now during migration
+  private map!: any; // Map
   private editor?: __esri.Editor;
 
   assessColor: ColorRGBA = [241, 192, 12, 1];
@@ -233,10 +232,11 @@ export class ReefGuideMapService {
     });
   }
 
-  setMap(map: ArcgisMap) {
+  setMap(map: Map) {
     this.map = map;
 
-    map.arcgisViewReadyChange.subscribe(() => this.onMapReady());
+    // TODO OpenLayers equivalent?
+    // map.arcgisViewReadyChange.subscribe(() => this.onMapReady());
   }
 
   goHome() {
