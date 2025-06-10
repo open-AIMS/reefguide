@@ -1,4 +1,4 @@
-import { JSONValue, NormalizedObject } from './types/util';
+import {JSONValue, NormalizedObject} from './types/util';
 import crypto from 'crypto';
 
 /**

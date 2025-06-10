@@ -1,6 +1,6 @@
-import { JobType } from '@prisma/client';
-import { z } from 'zod';
-import { logger } from './logging';
+import {JobType} from '@prisma/client';
+import {z} from 'zod';
+import {logger} from './logging';
 
 /**
  * Helper function to create a number validator that also accepts string inputs
@@ -13,8 +13,8 @@ import { logger } from './logging';
  */
 const createNumberValidator = (
   min: number | null = null,
-  errorMessage: string = 'Value must be a valid number',
-  minErrorMessage: string = `Value must be at least ${min}`,
+  errorMessage = 'Value must be a valid number',
+  minErrorMessage = `Value must be at least ${min}`,
 ) => {
   return z.union([
     min !== null ? z.number().min(min, minErrorMessage) : z.number(),
@@ -162,7 +162,7 @@ function buildJobTypeConfig(
   } catch (e) {
     logger.error(
       `Job type ${jobType} did not have valid environment variables`,
-      { error: e },
+      {error: e},
     );
     throw e;
   }
@@ -184,7 +184,7 @@ export function loadConfig(): Config {
     // Initialize job types configuration object
     const jobTypesConfig: Record<
       string,
-      RawJobTypeConfig & { jobTypes?: JobType[] }
+      RawJobTypeConfig & {jobTypes?: JobType[]}
     > = {};
 
     // Build configuration for each job type
@@ -207,7 +207,7 @@ export function loadConfig(): Config {
     }
 
     // Update with grouped types
-    for (let config of Object.values(jobTypesConfig)) {
+    for (const config of Object.values(jobTypesConfig)) {
       config.jobTypes = arnToTypes.get(config.taskDefinitionArn);
     }
 
@@ -240,7 +240,7 @@ export function loadConfig(): Config {
       });
       throw new Error(`Configuration validation failed:\n${formattedErrors}`);
     }
-    logger.error('Failed to load configuration', { error });
+    logger.error('Failed to load configuration', {error});
     throw new Error(`Failed to load configuration: ${error}`);
   }
 }

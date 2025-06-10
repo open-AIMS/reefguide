@@ -1,9 +1,9 @@
 import express from 'express';
-import { Config, loadConfig } from './config';
-import { TestWorker } from './worker';
-import { z } from 'zod';
-import { AuthApiClient } from './authClient';
-import { getTaskMetadataSafe } from './ecs';
+import {Config, loadConfig} from './config';
+import {TestWorker} from './worker';
+import {z} from 'zod';
+import {AuthApiClient} from './authClient';
+import {getTaskMetadataSafe} from './ecs';
 
 async function main() {
   let config: Config;

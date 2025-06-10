@@ -1,7 +1,7 @@
-import { CfnOutput, RemovalPolicy } from 'aws-cdk-lib';
+import {CfnOutput, RemovalPolicy} from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
-import { Construct } from 'constructs';
+import {Construct} from 'constructs';
 
 export interface DbProps {
   /** The VPC in which to create the DB */
@@ -65,7 +65,7 @@ export class Db extends Construct {
       // security implications - particularly in combination with disabling iam Authentication
       publiclyAccessible: true,
       // Place into public subnet
-      vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
+      vpcSubnets: {subnetType: ec2.SubnetType.PUBLIC},
       // Take a snapshot upon removal
       removalPolicy: RemovalPolicy.SNAPSHOT,
       // Storage encryption - enable

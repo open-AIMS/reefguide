@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import {z} from 'zod';
 
 // Schema for validating environment variables directly
 const EnvVarsSchema = z.object({

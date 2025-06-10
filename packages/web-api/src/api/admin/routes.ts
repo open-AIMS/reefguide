@@ -1,22 +1,22 @@
-import express, { Response } from 'express';
-import { passport } from '../auth/passportConfig';
-import { assertUserIsAdminMiddleware } from '../auth/utils';
-import { z } from 'zod';
-import { processRequest } from 'zod-express-middleware';
+import express, {Response, Router} from 'express';
+import {passport} from '../auth/passportConfig';
+import {assertUserIsAdminMiddleware} from '../auth/utils';
+import {z} from 'zod';
+import {processRequest} from 'zod-express-middleware';
 import {
   DescribeServicesCommand,
   ECSClient,
   UpdateServiceCommand,
 } from '@aws-sdk/client-ecs';
-import { InternalServerError } from '../exceptions';
-import { config } from '../config';
-import { initialiseAdmins } from '../initialise';
+import {InternalServerError} from '../exceptions';
+import {config} from '../config';
+import {initialiseAdmins} from '../initialise';
 
 require('express-async-errors');
-export const router = express.Router();
+export const router: Router = express.Router();
 
 // Initialize ECS client
-const ecsClient = new ECSClient({ region: config.aws.region });
+const ecsClient = new ECSClient({region: config.aws.region});
 
 // Require admin middleware
 
@@ -62,13 +62,13 @@ export type GetClusterCountResponse = z.infer<
  */
 router.post(
   '/scale',
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   assertUserIsAdminMiddleware,
   processRequest({
     body: PostScaleClusterInputSchema,
   }),
   async (req, res) => {
-    const { desiredCount } = req.body;
+    const {desiredCount} = req.body;
     try {
       const command = new UpdateServiceCommand({
         cluster: config.aws.ecs.clusterName,
@@ -92,7 +92,7 @@ router.post(
  */
 router.get(
   '/status',
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   assertUserIsAdminMiddleware,
   async (req, res: Response<GetClusterCountResponse>) => {
     try {
@@ -152,7 +152,7 @@ router.get(
 
 router.post(
   '/redeploy',
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   assertUserIsAdminMiddleware,
   async (req, res) => {
     try {
@@ -186,7 +186,7 @@ router.post(
  */
 router.get(
   '/init',
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   assertUserIsAdminMiddleware,
   async (req, res) => {
     // if the user is admin, allow forceful re-init in case of out of date admin

@@ -1,5 +1,5 @@
-import { JobType } from '@prisma/client';
-import { Annotations, Duration, Stack } from 'aws-cdk-lib';
+import {JobType} from '@prisma/client';
+import {Annotations, Duration, Stack} from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as efs from 'aws-cdk-lib/aws-efs';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
@@ -7,7 +7,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as sm from 'aws-cdk-lib/aws-secretsmanager';
-import { Construct } from 'constructs';
+import {Construct} from 'constructs';
 
 // Define job type configuration
 export interface JobTypeConfig {
@@ -101,10 +101,13 @@ export class JobSystem extends Construct {
   public readonly taskDefinitions: Record<string, ecs.TaskDefinition>;
 
   // The capacity manager service
-  public readonly capacityManagerService: ecs.FargateService;
+  public readonly capacityManagerService: ecs.FargateService | undefined;
 
   constructor(scope: Construct, id: string, props: JobSystemProps) {
     super(scope, id);
+
+    // Create task definitions for each job type
+    this.taskDefinitions = {};
 
     // Ensure there are not duplicate job type configurations
     const allJobs = props.workers
@@ -126,9 +129,6 @@ export class JobSystem extends Construct {
       description: 'Security group for workers',
       allowAllOutbound: true,
     });
-
-    // Create task definitions for each job type
-    this.taskDefinitions = {};
 
     for (const workerConfig of props.workers) {
       const jobId = workerConfig.jobTypes.join('-');
@@ -266,7 +266,7 @@ export class JobSystem extends Construct {
       // Docker command
       command: ['npm', 'run', 'start-manager'],
       image: ecs.ContainerImage.fromAsset('.', {
-        buildArgs: { PORT: '3000' },
+        buildArgs: {PORT: '3000'},
       }),
       logging: ecs.LogDrivers.awsLogs({
         streamPrefix: 'capacity-manager',

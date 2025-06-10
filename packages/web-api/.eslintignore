@@ -1,3 +1,5 @@
-**/generated/**
-out/**
-.cdk.out/**
+build
+scripts
+dist
+node_modules
+cdk.out

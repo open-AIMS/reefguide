@@ -1,5 +1,10 @@
 const crypto = require('crypto');
-const { SecretsManagerClient, GetSecretValueCommand, CreateSecretCommand, UpdateSecretCommand } = require("@aws-sdk/client-secrets-manager");
+const {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+  CreateSecretCommand,
+  UpdateSecretCommand,
+} = require('@aws-sdk/client-secrets-manager');
 
 // Initialize the SecretsManagerClient
 const client = new SecretsManagerClient();
@@ -9,12 +14,12 @@ function generateKeyPair() {
     modulusLength: 2048,
     publicKeyEncoding: {
       type: 'spki',
-      format: 'pem'
+      format: 'pem',
     },
     privateKeyEncoding: {
       type: 'pkcs8',
-      format: 'pem'
-    }
+      format: 'pem',
+    },
   });
 }
 
@@ -23,25 +28,30 @@ async function updateAwsSecret(secretName, keyPair) {
   const newSecretString = JSON.stringify({
     JWT_PRIVATE_KEY: keyPair.privateKey,
     JWT_PUBLIC_KEY: keyPair.publicKey,
-    JWT_KEY_ID: keyId
+    JWT_KEY_ID: keyId,
   });
 
   try {
     // Try to get the existing secret
     const getCommand = new GetSecretValueCommand({ SecretId: secretName });
     const existingSecret = await client.send(getCommand);
-    
+
     // If secret exists, merge new values with existing ones
     if (existingSecret.SecretString) {
       const existingSecretObj = JSON.parse(existingSecret.SecretString);
-      const mergedSecret = { ...existingSecretObj, ...JSON.parse(newSecretString) };
-      
+      const mergedSecret = {
+        ...existingSecretObj,
+        ...JSON.parse(newSecretString),
+      };
+
       const updateCommand = new UpdateSecretCommand({
         SecretId: secretName,
-        SecretString: JSON.stringify(mergedSecret)
+        SecretString: JSON.stringify(mergedSecret),
       });
       const result = await client.send(updateCommand);
-      console.log(`Secret ${secretName} has been updated in AWS Secrets Manager`);
+      console.log(
+        `Secret ${secretName} has been updated in AWS Secrets Manager`,
+      );
       console.log(`Secret ARN: ${result.ARN}`);
       return result.ARN;
     }
@@ -50,10 +60,12 @@ async function updateAwsSecret(secretName, keyPair) {
     if (error.name === 'ResourceNotFoundException') {
       const createCommand = new CreateSecretCommand({
         Name: secretName,
-        SecretString: newSecretString
+        SecretString: newSecretString,
       });
       const result = await client.send(createCommand);
-      console.log(`New secret ${secretName} has been created in AWS Secrets Manager`);
+      console.log(
+        `New secret ${secretName} has been created in AWS Secrets Manager`,
+      );
       console.log(`Secret ARN: ${result.ARN}`);
       return result.ARN;
     } else {

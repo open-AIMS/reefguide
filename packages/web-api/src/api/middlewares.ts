@@ -1,6 +1,6 @@
-import { NextFunction, Request, Response } from 'express';
-import { BaseApiException } from './exceptions';
-import { ErrorResponse } from './types/errors';
+import {NextFunction, Request, Response} from 'express';
+import {BaseApiException} from './exceptions';
+import {ErrorResponse} from './types/errors';
 
 /**
  * Error middleware to handle custom API exceptions.

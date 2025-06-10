@@ -1,6 +1,6 @@
-import { prisma } from './apiSetup';
-import { config } from './config';
-import { registerUser } from './services/auth';
+import {prisma} from './apiSetup';
+import {config} from './config';
+import {registerUser} from './services/auth';
 
 /**
  * Initializes or verifies admin users in the system.
@@ -33,7 +33,7 @@ export const initialiseAdmins = async () => {
     },
   });
 
-  const initialise: { email: string; password: string }[] = [
+  const initialise: {email: string; password: string}[] = [
     {
       email: config.creds.managerUsername,
       password: config.creds.managerPassword,
@@ -51,10 +51,10 @@ export const initialiseAdmins = async () => {
   console.log('Initialising users count:', initialise.length);
   console.log(
     'Users to initialise:',
-    initialise.map(user => ({ email: user.email })),
+    initialise.map(user => ({email: user.email})),
   );
 
-  for (const { email, password } of initialise) {
+  for (const {email, password} of initialise) {
     console.log(`\n=== Processing user: ${email} ===`);
 
     try {
@@ -62,7 +62,7 @@ export const initialiseAdmins = async () => {
       console.log(`Checking if user exists: ${email}`);
       const existingUser = await prisma.user.findUnique({
         // Changed from findUniqueOrThrow
-        where: { email },
+        where: {email},
         select: {
           // Only select the fields we need
           id: true,
@@ -81,7 +81,7 @@ export const initialiseAdmins = async () => {
         if (!existingUser.roles.includes('ADMIN')) {
           console.log(`Updating user ${email} to include ADMIN role`);
           await prisma.user.update({
-            where: { email },
+            where: {email},
             data: {
               roles: [...existingUser.roles, 'ADMIN'],
             },

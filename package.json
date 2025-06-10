@@ -2,20 +2,21 @@
     "name": "reefguide",
     "version": "0.1.0",
     "private": true,
-    "description": "Reefguide monorepo workspace",
+    "description": "ReefGuide mono repo",
     "scripts": {
         "build": "turbo build",
         "dev": "turbo dev",
-        "lint:write": "turbo lint:write",
+        "format": "turbo format",
         "lint": "turbo lint",
         "test": "turbo test",
         "type-check": "turbo type-check",
         "clean": "turbo clean"
     },
     "devDependencies": {
+        "@types/node": "^22.15.31",
+        "gts": "^6.0.2",
         "turbo": "^2.5",
-        "typescript": "^5.8",
-        "@types/node": "^22.15"
+        "typescript": "^5.8"
     },
     "packageManager": "pnpm@10.12.1",
     "engines": {

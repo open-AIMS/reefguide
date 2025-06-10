@@ -5,7 +5,7 @@ export type JSONValue =
   | boolean
   | null
   | JSONValue[]
-  | { [key: string]: JSONValue };
+  | {[key: string]: JSONValue};
 
 // Interface for the normalized object structure
 export interface NormalizedObject {

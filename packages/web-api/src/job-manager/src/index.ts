@@ -1,9 +1,9 @@
 import express from 'express';
-import { z } from 'zod';
-import { Config, loadConfig } from './config';
-import { CapacityManager } from './manager';
-import { AuthApiClient } from './authClient';
-import { logger } from './logging';
+import {z} from 'zod';
+import {Config, loadConfig} from './config';
+import {CapacityManager} from './manager';
+import {AuthApiClient} from './authClient';
+import {logger} from './logging';
 
 /**
  * Main entry point for the Capacity Manager service
@@ -32,9 +32,9 @@ try {
   logger.info('Configuration loaded successfully');
 } catch (error) {
   if (error instanceof z.ZodError) {
-    logger.error('Configuration validation failed:', { errors: error.errors });
+    logger.error('Configuration validation failed:', {errors: error.errors});
   } else {
-    logger.error('Failed to load configuration:', { error });
+    logger.error('Failed to load configuration:', {error});
   }
   // Exit with error code if configuration cannot be loaded
   process.exit(1);
@@ -78,14 +78,14 @@ process.on('SIGINT', () => {
 
 // Additional error handling for uncaught exceptions
 process.on('uncaughtException', error => {
-  logger.error('Uncaught exception, shutting down:', { error });
+  logger.error('Uncaught exception, shutting down:', {error});
   manager.stop();
-  process.exit(1);
+  throw error;
 });
 
 // Additional error handling for unhandled promise rejections
 process.on('unhandledRejection', reason => {
-  logger.error('Unhandled rejection, shutting down:', { reason });
+  logger.error('Unhandled rejection, shutting down:', {reason});
   manager.stop();
-  process.exit(1);
+  throw new Error(reason as string);
 });

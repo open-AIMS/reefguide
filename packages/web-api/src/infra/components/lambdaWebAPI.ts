@@ -11,8 +11,8 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as r53 from 'aws-cdk-lib/aws-route53';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
-import { Construct } from 'constructs';
-import { WebAPIConfig } from '../infraConfig';
+import {Construct} from 'constructs';
+import {WebAPIConfig} from '../infraConfig';
 
 /**
  * Properties for the WebAPI construct

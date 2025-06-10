@@ -1,5 +1,5 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import { jwtDecode } from 'jwt-decode';
+import axios, {AxiosInstance, AxiosRequestConfig} from 'axios';
+import {jwtDecode} from 'jwt-decode';
 
 interface Credentials {
   email: string;

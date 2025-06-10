@@ -1,18 +1,18 @@
-import { randomUUID } from 'crypto';
-import jwt from 'jsonwebtoken';
-import { JwtContents, RefreshTokenContents } from '../types/auth';
-import { prisma } from '../apiSetup';
-import { config } from '../config';
-import { base64encode, encodeRefreshToken } from './utils';
+import {randomUUID} from 'crypto';
+import jwt, {Algorithm} from 'jsonwebtoken';
+import {JwtContents, RefreshTokenContents} from '../types/auth';
+import {prisma} from '../apiSetup';
+import {config} from '../config';
+import {base64encode, encodeRefreshToken} from './utils';
 
 // Key signing and validation parameters
-const PRIVATE_KEY = config.jwt.privateKey;
+const PRIVATE_KEY: jwt.Secret = config.jwt.privateKey;
 export const PUBLIC_KEY = config.jwt.publicKey;
 const KEY_ID = config.jwt.keyId;
 const ISSUER = config.apiDomain;
 // 10 minutes for main token
 const TOKEN_EXPIRY = '10m';
-export const ALGORITHM = 'RS256';
+export const ALGORITHM: Algorithm = 'RS256';
 const KEY_TYPE = 'RSA';
 const KEY_USE = 'sig';
 const KEY_EXPONENT = 'AQAB';
@@ -26,15 +26,14 @@ const REFRESH_DURATION_HOURS = 48;
  */
 export function signJwt(
   payload: JwtContents,
-  options: { expiresIn: string } = { expiresIn: TOKEN_EXPIRY },
+  options: {expiresIn: string} = {expiresIn: TOKEN_EXPIRY},
 ): string {
-  return jwt.sign({ ...payload, iss: ISSUER }, PRIVATE_KEY, {
+  return jwt.sign(payload, PRIVATE_KEY, {
     algorithm: ALGORITHM,
-    expiresIn: options.expiresIn,
-    header: {
-      alg: ALGORITHM,
-      kid: KEY_ID,
-    },
+    issuer: ISSUER,
+    keyid: KEY_ID,
+    header: {alg: ALGORITHM, kid: KEY_ID},
+    expiresIn: parseInt(options.expiresIn),
   });
 }
 

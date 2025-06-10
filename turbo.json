@@ -1,29 +1,59 @@
 {
-  "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["**/.env.*local", "tsconfig.json"],
-  "tasks": {
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**"]
-    },
-    "dev": {
-      "cache": false,
-      "persistent": true
-    },
-    "lint:write": {
-      "dependsOn": ["^build"]
-    },
-    "lint": {
-      "dependsOn": ["^build"]
-    },
-    "test": {
-      "dependsOn": ["^build"]
-    },
-    "type-check": {
-      "dependsOn": ["^build"]
-    },
-    "clean": {
-      "cache": false
+    "$schema": "https://turbo.build/schema.json",
+    "globalDependencies": [
+        "**/.env.*local",
+        "tsconfig.json"
+    ],
+    "tasks": {
+        "build": {
+            "dependsOn": [
+                "^build"
+            ],
+            "outputs": [
+                "dist/**",
+                "build/**"
+            ]
+        },
+        "dev": {
+            "cache": false,
+            "persistent": true
+        },
+        "format": {
+            "inputs": [
+                ".eslintrc.json"
+            ],
+            "dependsOn": [
+                "^build"
+            ]
+        },
+        "lint": {
+            "inputs": [
+                ".eslintrc.json"
+            ],
+            "dependsOn": [
+                "^build"
+            ]
+        },
+        "fix": {
+            "inputs": [
+                ".eslintrc.json"
+            ],
+            "dependsOn": [
+                "^build"
+            ]
+        },
+        "test": {
+            "dependsOn": [
+                "^build"
+            ]
+        },
+        "type-check": {
+            "dependsOn": [
+                "^build"
+            ]
+        },
+        "clean": {
+            "cache": false
+        }
     }
-  }
 }

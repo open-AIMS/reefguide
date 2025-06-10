@@ -1,11 +1,11 @@
-import { StaticWebsite } from '@cloudcomponents/cdk-static-website';
+import {StaticWebsite} from '@cloudcomponents/cdk-static-website';
 import * as cdk from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import { Construct } from 'constructs';
-import { ReefGuideFrontendConfig } from '../infraConfig';
+import {Construct} from 'constructs';
+import {ReefGuideFrontendConfig} from '../infraConfig';
 
 /**
  * Properties for the ReefGuideFrontend construct

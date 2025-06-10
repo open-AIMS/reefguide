@@ -3,8 +3,8 @@ import {
   ListObjectsV2Command,
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { BadRequestException } from '../exceptions';
+import {getSignedUrl} from '@aws-sdk/s3-request-presigner';
+import {BadRequestException} from '../exceptions';
 
 const MAX_FILES = 10;
 
@@ -34,7 +34,7 @@ export class S3StorageService {
    * @param uri Full S3 URI (s3://bucket/path/to/object)
    * @returns Object containing bucket and key
    */
-  private parseS3Uri(uri: string): { bucket: string; prefix: string } {
+  private parseS3Uri(uri: string): {bucket: string; prefix: string} {
     const matches = uri.match(/^s3:\/\/([^\/]+)\/(.+?)\/?$/);
     if (!matches) {
       throw new BadRequestException('Invalid S3 URI format');
@@ -53,9 +53,9 @@ export class S3StorageService {
    */
   async getPresignedUrls(
     locationUri: string,
-    expirySeconds: number = 3600,
+    expirySeconds = 3600,
   ): Promise<Record<string, string>> {
-    const { bucket, prefix } = this.parseS3Uri(locationUri);
+    const {bucket, prefix} = this.parseS3Uri(locationUri);
 
     // List all objects in the location
     const listCommand = new ListObjectsV2Command({

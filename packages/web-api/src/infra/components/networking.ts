@@ -1,8 +1,8 @@
-import { ICertificate } from 'aws-cdk-lib/aws-certificatemanager';
+import {ICertificate} from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import { IVpc, Vpc } from 'aws-cdk-lib/aws-ec2';
+import {IVpc, Vpc} from 'aws-cdk-lib/aws-ec2';
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { Construct } from 'constructs';
+import {Construct} from 'constructs';
 
 /**
  * Properties for the SharedBalancers construct
@@ -51,7 +51,7 @@ export class SharedBalancer extends Construct {
     this.alb = new elb.ApplicationLoadBalancer(this, 'alb', {
       vpc: props.vpc,
       internetFacing: props.isPublic,
-      vpcSubnets: { subnetType: props.subnetType },
+      vpcSubnets: {subnetType: props.subnetType},
     });
 
     // Set up the HTTPS listener

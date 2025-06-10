@@ -5,12 +5,12 @@ import {
   DescribeTasksCommand,
   Task,
 } from '@aws-sdk/client-ecs';
-import { EC2Client, DescribeSubnetsCommand } from '@aws-sdk/client-ec2';
-import { Config, ConfigSchema, JobTypeConfig } from './config';
-import { AuthApiClient } from './authClient';
-import { JobType } from '@prisma/client';
-import { PollJobsResponse } from '../../api/jobs/routes';
-import { logger } from './logging';
+import {EC2Client, DescribeSubnetsCommand} from '@aws-sdk/client-ec2';
+import {Config, ConfigSchema, JobTypeConfig} from './config';
+import {AuthApiClient} from './authClient';
+import {JobType} from '@prisma/client';
+import {PollJobsResponse} from '../../api/jobs/routes';
+import {logger} from './logging';
 
 /**
  * Interface for tracking worker status
@@ -48,7 +48,7 @@ export class CapacityManager {
 
   private client: AuthApiClient;
 
-  private isRunning: boolean = false;
+  private isRunning = false;
 
   private pollTimeout: NodeJS.Timeout | null = null;
 
@@ -62,10 +62,10 @@ export class CapacityManager {
    */
   constructor(config: Config, client: AuthApiClient) {
     this.config = ConfigSchema.parse(config);
-    this.ecsClient = new ECSClient({ region: this.config.region });
-    this.ec2Client = new EC2Client({ region: this.config.region });
+    this.ecsClient = new ECSClient({region: this.config.region});
+    this.ec2Client = new EC2Client({region: this.config.region});
     this.client = client;
-    logger.debug('CapacityManager initialized', { region: this.config.region });
+    logger.debug('CapacityManager initialized', {region: this.config.region});
   }
 
   /**
@@ -83,7 +83,7 @@ export class CapacityManager {
     });
 
     try {
-      logger.info('Poll started', { timestamp: new Date().toISOString() });
+      logger.info('Poll started', {timestamp: new Date().toISOString()});
       logger.debug('Current tracked workers status', {
         count: this.trackedWorkers.length,
       });
@@ -99,9 +99,9 @@ export class CapacityManager {
         jobTypes: response.jobs.map(j => j.type),
       });
 
-      await this.adjustCapacity({ pollResponse: response.jobs });
+      await this.adjustCapacity({pollResponse: response.jobs});
     } catch (error) {
-      logger.error('Error polling job queue', { error });
+      logger.error('Error polling job queue', {error});
     } finally {
       // Only schedule next poll if still running
       if (this.isRunning) {
@@ -224,7 +224,7 @@ export class CapacityManager {
         removed: removedCount,
       });
     } catch (error) {
-      logger.error('Error updating worker statuses', { error });
+      logger.error('Error updating worker statuses', {error});
     }
   }
 
@@ -247,7 +247,7 @@ export class CapacityManager {
 
       const worker = this.trackedWorkers.find(w => w.taskArn === task.taskArn);
       if (!worker) {
-        logger.debug('Task not in tracked workers', { taskArn: task.taskArn });
+        logger.debug('Task not in tracked workers', {taskArn: task.taskArn});
         continue;
       }
 
@@ -375,7 +375,7 @@ export class CapacityManager {
       if (!taskConfig) {
         logger.warn(
           'No configuration found for job with task definition arn needed',
-          { taskDefArn },
+          {taskDefArn},
         );
         continue;
       }
@@ -523,7 +523,7 @@ export class CapacityManager {
   }): number {
     // Handle edge cases
     if (pendingJobs <= 0) {
-      logger.debug('No pending jobs, using minWorkers', { minWorkers });
+      logger.debug('No pending jobs, using minWorkers', {minWorkers});
       return minWorkers;
     }
 
@@ -630,7 +630,7 @@ export class CapacityManager {
         targetWorkers: idealTarget,
         pendingJobs: pending,
       });
-      this.launchTask({ count: diff, config });
+      void this.launchTask({count: diff, config});
     } else if (diff < 0) {
       logger.debug('Capacity reduction not implemented', {
         jobTypes,
@@ -663,12 +663,12 @@ export class CapacityManager {
 
     // Add error handlers for uncaught errors
     process.on('uncaughtException', error => {
-      logger.error('Uncaught exception', { error });
+      logger.error('Uncaught exception', {error});
       this.stop();
     });
 
     process.on('unhandledRejection', error => {
-      logger.error('Unhandled rejection', { error });
+      logger.error('Unhandled rejection', {error});
       this.stop();
     });
   }
@@ -693,7 +693,7 @@ export class CapacityManager {
    */
   private async getRandomPublicSubnet(vpcId: string): Promise<string> {
     try {
-      logger.debug('Fetching public subnets', { vpcId });
+      logger.debug('Fetching public subnets', {vpcId});
       const command = new DescribeSubnetsCommand({
         Filters: [
           {
@@ -711,7 +711,7 @@ export class CapacityManager {
       const publicSubnets = response.Subnets || [];
 
       if (publicSubnets.length === 0) {
-        logger.error('No public subnets found', { vpcId });
+        logger.error('No public subnets found', {vpcId});
         throw new Error(`No public subnets found in VPC ${vpcId}`);
       }
 
@@ -725,7 +725,7 @@ export class CapacityManager {
       });
       return selectedSubnet.SubnetId!;
     } catch (error) {
-      logger.error('Error getting public subnets', { error });
+      logger.error('Error getting public subnets', {error});
       throw error;
     }
   }

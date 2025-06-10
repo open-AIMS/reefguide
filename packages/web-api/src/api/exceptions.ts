@@ -14,8 +14,8 @@ export class BaseApiException extends Error {
   cause?: Error;
 
   constructor(
-    message: string = 'An unexpected error occurred',
-    statusCode: number = 500,
+    message = 'An unexpected error occurred',
+    statusCode = 500,
     cause?: Error,
   ) {
     super(message);
@@ -30,7 +30,7 @@ export class BaseApiException extends Error {
  * Exception for resource not found errors (HTTP 404).
  */
 export class NotFoundException extends BaseApiException {
-  constructor(message: string = 'Resource not found', cause?: Error) {
+  constructor(message = 'Resource not found', cause?: Error) {
     super(message, 404, cause);
   }
 }
@@ -39,7 +39,7 @@ export class NotFoundException extends BaseApiException {
  * Exception for internal server errors (HTTP 500).
  */
 export class InternalServerError extends BaseApiException {
-  constructor(message: string = 'Internal server error', cause?: Error) {
+  constructor(message = 'Internal server error', cause?: Error) {
     super(message, 500, cause);
   }
 }
@@ -48,7 +48,7 @@ export class InternalServerError extends BaseApiException {
  * Exception for bad request errors (HTTP 400).
  */
 export class BadRequestException extends BaseApiException {
-  constructor(message: string = 'Bad request', cause?: Error) {
+  constructor(message = 'Bad request', cause?: Error) {
     super(message, 400, cause);
   }
 }
@@ -57,7 +57,7 @@ export class BadRequestException extends BaseApiException {
  * Exception for unauthorized access errors (HTTP 401).
  */
 export class UnauthorizedException extends BaseApiException {
-  constructor(message: string = 'Unauthorized', cause?: Error) {
+  constructor(message = 'Unauthorized', cause?: Error) {
     super(message, 401, cause);
   }
 }
@@ -66,7 +66,7 @@ export class UnauthorizedException extends BaseApiException {
  * Exception for forbidden access errors (HTTP 403).
  */
 export class ForbiddenException extends BaseApiException {
-  constructor(message: string = 'Forbidden', cause?: Error) {
+  constructor(message = 'Forbidden', cause?: Error) {
     super(message, 403, cause); // Fixed status code from 401 to 403
   }
 }
@@ -75,7 +75,7 @@ export class ForbiddenException extends BaseApiException {
  * Base class for refresh token related exceptions.
  */
 export class RefreshTokenException extends UnauthorizedException {
-  constructor(message: string = 'Invalid refresh token', cause?: Error) {
+  constructor(message = 'Invalid refresh token', cause?: Error) {
     super(message, cause);
   }
 }
@@ -84,7 +84,7 @@ export class RefreshTokenException extends UnauthorizedException {
  * Exception for expired refresh tokens.
  */
 export class ExpiredRefreshTokenException extends RefreshTokenException {
-  constructor(message: string = 'Refresh token has expired', cause?: Error) {
+  constructor(message = 'Refresh token has expired', cause?: Error) {
     super(message, cause);
   }
 }
@@ -93,7 +93,7 @@ export class ExpiredRefreshTokenException extends RefreshTokenException {
  * Exception for invalid (e.g., revoked or malformed) refresh tokens.
  */
 export class InvalidRefreshTokenException extends RefreshTokenException {
-  constructor(message: string = 'Refresh token is invalid', cause?: Error) {
+  constructor(message = 'Refresh token is invalid', cause?: Error) {
     super(message, cause);
   }
 }
@@ -116,7 +116,7 @@ export class InvalidRefreshTokenException extends RefreshTokenException {
  */
 export function handlePrismaError(
   error: unknown,
-  context: string = 'Database operation failed',
+  context = 'Database operation failed',
 ): never {
   // Known Prisma errors with error codes
   if (error instanceof PrismaClientKnownRequestError) {

@@ -1,9 +1,9 @@
-import { Express } from 'express';
+import {Express} from 'express';
 import request from 'supertest';
-import app, { prisma } from '../src/api/apiSetup';
-import { signJwt } from '../src/api/auth/jwtUtils';
-import { decodeRefreshToken, encodeRefreshToken } from '../src/api/auth/utils';
-import { InvalidRefreshTokenException } from '../src/api/exceptions';
+import app, {prisma} from '../src/api/apiSetup';
+import {signJwt} from '../src/api/auth/jwtUtils';
+import {decodeRefreshToken, encodeRefreshToken} from '../src/api/auth/utils';
+import {InvalidRefreshTokenException} from '../src/api/exceptions';
 import {
   adminToken,
   clearDbs,
@@ -12,12 +12,11 @@ import {
   user2Token,
   userSetup,
 } from './utils';
-import { JobStatus, JobType, UserAction } from '@prisma/client';
-import { createJobResponseSchema } from '../src/api/jobs/routes';
-import { JobService } from '../src/api/services/jobs';
-import { randomInt } from 'crypto';
-import { ListUserLogsResponse } from '../src/api/users/routes';
-import { KeyAlgorithm } from 'aws-cdk-lib/aws-certificatemanager';
+import {JobStatus, JobType, UserAction} from '@prisma/client';
+import {createJobResponseSchema} from '../src/api/jobs/routes';
+import {JobService} from '../src/api/services/jobs';
+import {randomInt} from 'crypto';
+import {ListUserLogsResponse} from '../src/api/users/routes';
 
 afterAll(async () => {
   // clear when finished
@@ -73,14 +72,14 @@ describe('API', () => {
 
     // Get user1's ID
     const user1 = await prisma.user.findUnique({
-      where: { email: user1Email },
+      where: {email: user1Email},
     });
     user1Id = user1!.id;
 
     // Create a polygon for user1
     const polygon = await prisma.polygon.create({
       data: {
-        polygon: JSON.stringify({ type: 'Polygon', coordinates: [[]] }),
+        polygon: JSON.stringify({type: 'Polygon', coordinates: [[]]}),
         user_id: user1Id,
       },
     });
@@ -117,7 +116,7 @@ describe('API', () => {
         it('should register a new user', async () => {
           const res = await request(app)
             .post('/api/auth/register')
-            .send({ email: 'newuser@example.com', password: 'password123' })
+            .send({email: 'newuser@example.com', password: 'password123'})
             .expect(200);
 
           expect(res.body).toHaveProperty('userId');
@@ -126,14 +125,14 @@ describe('API', () => {
         it('should return 400 for invalid input', async () => {
           await request(app)
             .post('/api/auth/register')
-            .send({ email: 'invalidemail', password: 'short' })
+            .send({email: 'invalidemail', password: 'short'})
             .expect(400);
         });
 
         it('should return 400 for existing email', async () => {
           await request(app)
             .post('/api/auth/register')
-            .send({ email: user1Email, password: 'password123' })
+            .send({email: user1Email, password: 'password123'})
             .expect(400);
         });
       });
@@ -142,7 +141,7 @@ describe('API', () => {
         it('should login an existing user', async () => {
           const res = await request(app)
             .post('/api/auth/login')
-            .send({ email: user1Email, password: 'password123' })
+            .send({email: user1Email, password: 'password123'})
             .expect(200);
           expect(res.body).toHaveProperty('token');
           expect(res.body).toHaveProperty('refreshToken');
@@ -151,14 +150,14 @@ describe('API', () => {
         it('should return 401 for invalid credentials', async () => {
           await request(app)
             .post('/api/auth/login')
-            .send({ email: user1Email, password: 'wrongpassword' })
+            .send({email: user1Email, password: 'wrongpassword'})
             .expect(401);
         });
 
         it('should return 401 for non-existent user', async () => {
           await request(app)
             .post('/api/auth/login')
-            .send({ email: 'nonexistent@example.com', password: 'password123' })
+            .send({email: 'nonexistent@example.com', password: 'password123'})
             .expect(401);
         });
       });
@@ -167,7 +166,7 @@ describe('API', () => {
         it('should issue a new token with a valid refresh token', async () => {
           // Create a valid refresh token for testing
           const user = await prisma.user.findUniqueOrThrow({
-            where: { email: user1Email },
+            where: {email: user1Email},
           });
 
           const refreshTokenRecord = await prisma.refreshToken.create({
@@ -186,7 +185,7 @@ describe('API', () => {
 
           let res = await request(app)
             .post('/api/auth/token')
-            .send({ refreshToken: validRefreshToken })
+            .send({refreshToken: validRefreshToken})
             .expect(200);
           expect(res.body).toHaveProperty('token');
 
@@ -203,13 +202,13 @@ describe('API', () => {
         it('should return 401 for an invalid refresh token', async () => {
           await request(app)
             .post('/api/auth/token')
-            .send({ refreshToken: 'invalid-refresh-token' })
+            .send({refreshToken: 'invalid-refresh-token'})
             .expect(401);
         });
 
         it('should return 401 for an expired refresh token', async () => {
           const user = await prisma.user.findUnique({
-            where: { email: user1Email },
+            where: {email: user1Email},
           });
           if (user) {
             const expiredToken = await prisma.refreshToken.create({
@@ -227,7 +226,7 @@ describe('API', () => {
 
             await request(app)
               .post('/api/auth/token')
-              .send({ refreshToken: expiredRefreshToken })
+              .send({refreshToken: expiredRefreshToken})
               .expect(401);
           }
         });
@@ -248,12 +247,12 @@ describe('API', () => {
 
         it('should return 401 for expired token', async () => {
           const user = await prisma.user.findUnique({
-            where: { email: user1Email },
+            where: {email: user1Email},
           });
           if (user) {
             const expiredToken = signJwt(
-              { id: user.id, email: user.email, roles: user.roles },
-              { expiresIn: '-1h' }, // Expired 1 hour ago
+              {id: user.id, email: user.email, roles: user.roles},
+              {expiresIn: '-1h'}, // Expired 1 hour ago
             );
             await request(app)
               .get('/api/auth/profile')
@@ -279,7 +278,7 @@ describe('API', () => {
           let password = 'jsklfdjklsjdjsklfjdkls';
           res = await request(app)
             .post('/api/auth/register')
-            .send({ email, password })
+            .send({email, password})
             .expect(200);
           expect(res.body).toHaveProperty('userId');
           const userId: number = res.body.userId;
@@ -287,7 +286,7 @@ describe('API', () => {
           // Now login
           res = await request(app)
             .post('/api/auth/login')
-            .send({ email, password })
+            .send({email, password})
             .expect(200);
 
           // Check the log looks good
@@ -303,7 +302,7 @@ describe('API', () => {
           password = 'updateljkldsfdjskl';
           res = await authRequest(app, 'admin')
             .put(`/api/users/${userId}/password`)
-            .send({ password })
+            .send({password})
             .expect(200);
 
           // Check the log looks good
@@ -324,7 +323,7 @@ describe('API', () => {
           // Now login again
           res = await request(app)
             .post('/api/auth/login')
-            .send({ email, password })
+            .send({email, password})
             .expect(200);
 
           // Check the log looks good
@@ -343,7 +342,7 @@ describe('API', () => {
 
     describe('Refresh Token Utilities', () => {
       it('should correctly encode and decode refresh tokens', () => {
-        const originalToken = { id: 1, token: 'test-token' };
+        const originalToken = {id: 1, token: 'test-token'};
         const decodedToken = decodeRefreshToken(
           encodeRefreshToken(originalToken),
         );
@@ -443,7 +442,7 @@ describe('API', () => {
         it('should return 400 for invalid GeoJSON', async () => {
           await authRequest(app, 'user1')
             .post('/api/polygons')
-            .send({ polygon: 'invalid' })
+            .send({polygon: 'invalid'})
             .expect(400);
         });
       });
@@ -621,7 +620,7 @@ describe('API', () => {
         it('should return 400 for invalid input', async () => {
           await authRequest(app, 'user1')
             .post('/api/notes')
-            .send({ polygonId: polygonId })
+            .send({polygonId: polygonId})
             .expect(400);
         });
 
@@ -640,7 +639,7 @@ describe('API', () => {
         it('should update an existing note', async () => {
           const res = await authRequest(app, 'user1')
             .put(`/api/notes/${noteId}`)
-            .send({ content: 'Updated test note' })
+            .send({content: 'Updated test note'})
             .expect(200);
 
           expect(res.body.note).toHaveProperty('id', noteId);
@@ -650,14 +649,14 @@ describe('API', () => {
         it('should return 401 if user is not the owner', async () => {
           await authRequest(app, 'user2')
             .put(`/api/notes/${noteId}`)
-            .send({ content: 'Unauthorized update' })
+            .send({content: 'Unauthorized update'})
             .expect(401);
         });
 
         it('should return 404 for non-existent note', async () => {
           await authRequest(app, 'user1')
             .put('/api/notes/9999')
-            .send({ content: 'Non-existent note' })
+            .send({content: 'Non-existent note'})
             .expect(404);
         });
       });
@@ -670,7 +669,7 @@ describe('API', () => {
 
           // Verify the note is deleted
           const notes = await prisma.polygonNote.findMany({
-            where: { id: noteId },
+            where: {id: noteId},
           });
           expect(notes.length).toBe(0);
         });
@@ -696,7 +695,7 @@ describe('API', () => {
       beforeEach(async () => {
         // Get user1's ID
         const user1 = await prisma.user.findUnique({
-          where: { email: user1Email },
+          where: {email: user1Email},
         });
         user1Id = user1!.id;
 
@@ -814,7 +813,7 @@ describe('API', () => {
 
             const res = await authRequest(app, 'user1')
               .get('/api/jobs/poll')
-              .query({ jobType: JobType.TEST })
+              .query({jobType: JobType.TEST})
               .expect(200);
 
             expect(res.body.jobs).toBeInstanceOf(Array);
@@ -826,8 +825,8 @@ describe('API', () => {
           it('should not return jobs with valid assignments', async () => {
             // Update job status to IN_PROGRESS
             await prisma.job.update({
-              where: { id: jobId },
-              data: { status: JobStatus.IN_PROGRESS },
+              where: {id: jobId},
+              data: {status: JobStatus.IN_PROGRESS},
             });
 
             const res = await authRequest(app, 'user1')
@@ -869,7 +868,7 @@ describe('API', () => {
 
             // Verify job status was updated
             const job = await prisma.job.findUnique({
-              where: { id: newJob.body.jobId },
+              where: {id: newJob.body.jobId},
             });
             expect(job?.status).toBe(JobStatus.IN_PROGRESS);
           });
@@ -887,8 +886,8 @@ describe('API', () => {
 
           it('should return 400 for already assigned job', async () => {
             await prisma.job.update({
-              where: { id: jobId },
-              data: { status: JobStatus.IN_PROGRESS },
+              where: {id: jobId},
+              data: {status: JobStatus.IN_PROGRESS},
             });
 
             await authRequest(app, 'user1')
@@ -914,10 +913,10 @@ describe('API', () => {
 
             // Verify job was updated
             const job = await prisma.job.findUnique({
-              where: { id: jobId },
+              where: {id: jobId},
               include: {
                 assignments: {
-                  include: { result: true },
+                  include: {result: true},
                 },
               },
             });
@@ -934,7 +933,7 @@ describe('API', () => {
               })
               .expect(200);
 
-            const job = await prisma.job.findUnique({ where: { id: jobId } });
+            const job = await prisma.job.findUnique({where: {id: jobId}});
             expect(job?.status).toBe(JobStatus.FAILED);
           });
 
@@ -1016,8 +1015,8 @@ describe('API', () => {
 
           it('should return 400 if job is already completed', async () => {
             await prisma.job.update({
-              where: { id: jobId },
-              data: { status: JobStatus.SUCCEEDED },
+              where: {id: jobId},
+              data: {status: JobStatus.SUCCEEDED},
             });
 
             await authRequest(app, 'user1')

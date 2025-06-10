@@ -1,6 +1,6 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import { jwtDecode } from 'jwt-decode';
-import { logger } from './logging';
+import axios, {AxiosInstance, AxiosRequestConfig} from 'axios';
+import {jwtDecode} from 'jwt-decode';
+import {logger} from './logging';
 
 /**
  * Interface for authentication credentials
@@ -84,7 +84,7 @@ export class AuthApiClient {
       },
     });
 
-    logger.debug('AuthApiClient initialized', { baseURL });
+    logger.debug('AuthApiClient initialized', {baseURL});
 
     // Add request interceptor to handle token management
     this.axiosInstance.interceptors.request.use(
@@ -146,7 +146,7 @@ export class AuthApiClient {
       this.tokens = response.data;
       logger.debug('Login successful, token received');
     } catch (error) {
-      logger.error('Failed to login', { error });
+      logger.error('Failed to login', {error});
       throw new Error('Failed to login');
     }
   }
@@ -205,7 +205,7 @@ export class AuthApiClient {
    * @returns Response data
    */
   public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    logger.debug('GET request', { url });
+    logger.debug('GET request', {url});
     const response = await this.axiosInstance.get<T>(url, config);
     return response.data;
   }
@@ -222,7 +222,7 @@ export class AuthApiClient {
     data?: any,
     config?: AxiosRequestConfig,
   ): Promise<T> {
-    logger.debug('POST request', { url });
+    logger.debug('POST request', {url});
     const response = await this.axiosInstance.post<T>(url, data, config);
     return response.data;
   }
@@ -239,7 +239,7 @@ export class AuthApiClient {
     data?: any,
     config?: AxiosRequestConfig,
   ): Promise<T> {
-    logger.debug('PUT request', { url });
+    logger.debug('PUT request', {url});
     const response = await this.axiosInstance.put<T>(url, data, config);
     return response.data;
   }
@@ -256,7 +256,7 @@ export class AuthApiClient {
     data?: any,
     config?: AxiosRequestConfig,
   ): Promise<T> {
-    logger.debug('PATCH request', { url });
+    logger.debug('PATCH request', {url});
     const response = await this.axiosInstance.patch<T>(url, data, config);
     return response.data;
   }
@@ -268,7 +268,7 @@ export class AuthApiClient {
    * @returns Response data
    */
   public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    logger.debug('DELETE request', { url });
+    logger.debug('DELETE request', {url});
     const response = await this.axiosInstance.delete<T>(url, config);
     return response.data;
   }

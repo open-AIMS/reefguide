@@ -1,14 +1,14 @@
-import express from 'express';
-import { z } from 'zod';
-import { processRequest } from 'zod-express-middleware';
-import { prisma } from '../apiSetup';
-import { passport } from '../auth/passportConfig';
-import { userIsAdmin } from '../auth/utils';
-import { NotFoundException, UnauthorizedException } from '../exceptions';
-import { GeoJSONPolygonSchema } from '../types/geoJson';
+import express, {Router} from 'express';
+import {z} from 'zod';
+import {processRequest} from 'zod-express-middleware';
+import {prisma} from '../apiSetup';
+import {passport} from '../auth/passportConfig';
+import {userIsAdmin} from '../auth/utils';
+import {NotFoundException, UnauthorizedException} from '../exceptions';
+import {GeoJSONPolygonSchema} from '../types/geoJson';
 require('express-async-errors');
 
-export const router = express.Router();
+export const router: Router = express.Router();
 
 // Input validation schemas
 const createPolygonSchema = z.object({
@@ -22,8 +22,8 @@ const updatePolygonSchema = z.object({
 /** Get a specific polygon by ID */
 router.get(
   '/:id',
-  processRequest({ params: z.object({ id: z.string() }) }),
-  passport.authenticate('jwt', { session: false }),
+  processRequest({params: z.object({id: z.string()})}),
+  passport.authenticate('jwt', {session: false}),
   async (req, res) => {
     if (!req.user) {
       throw new UnauthorizedException();
@@ -32,7 +32,7 @@ router.get(
     const polygonId = req.params.id;
 
     const polygon = await prisma.polygon.findUnique({
-      where: { id: parseInt(polygonId) },
+      where: {id: parseInt(polygonId)},
     });
 
     if (!polygon) {
@@ -43,27 +43,27 @@ router.get(
       throw new UnauthorizedException();
     }
 
-    res.json({ polygon });
+    res.json({polygon});
   },
 );
 
 /** Get all polygons for user, or all if admin */
 router.get(
   '/',
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   async (req, res) => {
     if (!req.user) {
       throw new UnauthorizedException();
     }
     if (userIsAdmin(req.user)) {
       // Admin gets all
-      res.json({ polygons: await prisma.polygon.findMany() });
+      res.json({polygons: await prisma.polygon.findMany()});
       return;
     }
     // Normal users get only their own polygons
     res.json({
       polygons: await prisma.polygon.findMany({
-        where: { user_id: req.user.id },
+        where: {user_id: req.user.id},
       }),
     });
   },
@@ -75,7 +75,7 @@ router.post(
   processRequest({
     body: createPolygonSchema,
   }),
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   async (req, res) => {
     if (!req.user) {
       throw new UnauthorizedException();
@@ -97,19 +97,19 @@ router.post(
 router.put(
   '/:id',
   processRequest({
-    params: z.object({ id: z.string() }),
+    params: z.object({id: z.string()}),
     body: updatePolygonSchema,
   }),
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   async (req, res) => {
     if (!req.user) {
       throw new UnauthorizedException();
     }
     const polygonId = parseInt(req.params.id);
-    const { polygon } = req.body;
+    const {polygon} = req.body;
 
     const existingPolygon = await prisma.polygon.findUnique({
-      where: { id: polygonId },
+      where: {id: polygonId},
     });
 
     if (!existingPolygon) {
@@ -121,21 +121,21 @@ router.put(
     }
 
     const updatedPolygon = await prisma.polygon.update({
-      where: { id: polygonId },
+      where: {id: polygonId},
       data: {
         polygon: polygon,
       },
     });
 
-    res.json({ polygon: updatedPolygon });
+    res.json({polygon: updatedPolygon});
   },
 );
 
 /** Delete a Polygon */
 router.delete(
   '/:id',
-  processRequest({ params: z.object({ id: z.string() }) }),
-  passport.authenticate('jwt', { session: false }),
+  processRequest({params: z.object({id: z.string()})}),
+  passport.authenticate('jwt', {session: false}),
   async (req, res) => {
     if (!req.user) {
       throw new UnauthorizedException();
@@ -143,7 +143,7 @@ router.delete(
     const polygonId = parseInt(req.params.id);
 
     const existingPolygon = await prisma.polygon.findUnique({
-      where: { id: polygonId },
+      where: {id: polygonId},
     });
 
     if (!existingPolygon) {
@@ -155,7 +155,7 @@ router.delete(
     }
 
     await prisma.polygon.delete({
-      where: { id: polygonId },
+      where: {id: polygonId},
     });
 
     res.status(204).send();

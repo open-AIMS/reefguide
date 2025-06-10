@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import {z} from 'zod';
 
 // Define a schema for a single coordinate pair
 export const GeoJSONCoordinatePairSchema = z

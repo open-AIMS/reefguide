@@ -1,6 +1,6 @@
 import bcryptjs from 'bcryptjs';
-import { prisma } from '../src/api/apiSetup';
-import { signJwt } from '../src/api/auth/jwtUtils';
+import {prisma} from '../src/api/apiSetup';
+import {signJwt} from '../src/api/auth/jwtUtils';
 
 export const user1Email = 'user1@example.com';
 export const user2Email = 'user2@example.com';
@@ -75,18 +75,18 @@ export const clearDbs = async () => {
   }
   // Delete all data from db
   const tablenames = await prisma.$queryRaw<
-  Array<{ tablename: string }>
+    Array<{tablename: string}>
   >`SELECT tablename FROM pg_tables WHERE schemaname='public'`;
 
   const tables = tablenames
-    .map(({ tablename }) => tablename)
-    .filter((name) => name !== '_prisma_migrations')
-    .map((name) => `"public"."${name}"`)
+    .map(({tablename}) => tablename)
+    .filter(name => name !== '_prisma_migrations')
+    .map(name => `"public"."${name}"`)
     .join(', ');
 
   try {
     await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${tables} CASCADE;`);
   } catch (error) {
-    console.log({ error });
+    console.log({error});
   }
 };

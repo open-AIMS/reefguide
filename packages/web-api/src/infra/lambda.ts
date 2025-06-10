@@ -8,7 +8,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 import axios from 'axios';
-import { ApiSecretConfig, ApiSecretConfigSchema } from './infraConfig';
+import {ApiSecretConfig, ApiSecretConfigSchema} from './infraConfig';
 const serverlessExpress = require('@codegenie/serverless-express');
 
 // persist this between invocations so we aren't repeatedly spinning up express
@@ -38,7 +38,7 @@ async function getSecret(secretId: string): Promise<string> {
 
   try {
     console.log('Making HTTP request to Secrets Manager...');
-    const response = await axios.get(secretsExtensionEndpoint, { headers });
+    const response = await axios.get(secretsExtensionEndpoint, {headers});
     console.log('Raw response received:', {
       status: response.status,
       statusText: response.statusText,
@@ -229,10 +229,10 @@ exports.handler = async (event: any, context: any) => {
       });
 
       console.log('Importing API setup...');
-      const { default: app } = await import('../api/apiSetup');
+      const {default: app} = await import('../api/apiSetup');
 
       console.log('Creating serverless express handler...');
-      handler = serverlessExpress({ app });
+      handler = serverlessExpress({app});
 
       console.log('=== Lambda Handler END ===');
       return handler(event, context);

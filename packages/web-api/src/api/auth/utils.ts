@@ -1,16 +1,13 @@
-import { RefreshToken } from '@prisma/client';
-import { z } from 'zod';
-import {
-  RefreshTokenContents,
-  RefreshTokenContentsSchema,
-} from '../types/auth';
-import { prisma } from '../apiSetup';
+import {RefreshToken} from '@prisma/client';
+import {z} from 'zod';
+import {RefreshTokenContents, RefreshTokenContentsSchema} from '../types/auth';
+import {prisma} from '../apiSetup';
 import {
   ExpiredRefreshTokenException,
   InvalidRefreshTokenException,
 } from '../exceptions';
-import { NextFunction } from 'express';
-import { UnauthorizedException } from '../exceptions';
+import {NextFunction} from 'express';
+import {UnauthorizedException} from '../exceptions';
 
 /**
  * is the user an admin?
@@ -85,8 +82,8 @@ export const decodeRefreshToken = (input: string): RefreshTokenContents => {
 export const getRefreshTokenObject = async (token: RefreshTokenContents) => {
   try {
     return await prisma.refreshToken.findUniqueOrThrow({
-      where: { id: token.id, token: token.token },
-      include: { user: true },
+      where: {id: token.id, token: token.token},
+      include: {user: true},
     });
   } catch {
     throw new InvalidRefreshTokenException();

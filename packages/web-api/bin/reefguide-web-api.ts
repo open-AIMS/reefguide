@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import 'source-map-support/register';
-import { getConfigFromFile } from '../src/infra/infraConfig';
-import { ReefguideWebApiStack } from '../src/infra/infra';
+import {getConfigFromFile} from '../src/infra/infraConfig';
+import {ReefguideWebApiStack} from '../src/infra/infra';
 
 // Read the config file name from the environment variable
 const configFileName = process.env.CONFIG_FILE_NAME;
@@ -18,6 +18,6 @@ const config = getConfigFromFile(`configs/${configFileName}`);
 
 const app = new cdk.App();
 new ReefguideWebApiStack(app, config.stackName, {
-  env: { region: config.aws.region, account: config.aws.account },
+  env: {region: config.aws.region, account: config.aws.account},
   config: config,
 });

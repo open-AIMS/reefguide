@@ -2,17 +2,17 @@ import * as cdk from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import { Construct } from 'constructs';
-import { ReefGuideNetworking } from './components/networking';
-import { ReefGuideAPI } from './components/reefGuideAPI';
-import { LambdaWebAPI } from './components/lambdaWebAPI';
-import { DeploymentConfig } from './infraConfig';
-import { ReefGuideFrontend } from './components/reefGuideFrontend';
-import { JobSystem } from './components/jobs';
+import {Construct} from 'constructs';
+import {ReefGuideNetworking} from './components/networking';
+import {ReefGuideAPI} from './components/reefGuideAPI';
+import {LambdaWebAPI} from './components/lambdaWebAPI';
+import {DeploymentConfig} from './infraConfig';
+import {ReefGuideFrontend} from './components/reefGuideFrontend';
+import {JobSystem} from './components/jobs';
 import * as sm from 'aws-cdk-lib/aws-secretsmanager';
-import { Db } from './components/db';
-import { JobType } from '@prisma/client';
-import { ECSWebAPI } from './components/ecsWebAPI';
+import {Db} from './components/db';
+import {JobType} from '@prisma/client';
+import {ECSWebAPI} from './components/ecsWebAPI';
 
 export interface ReefguideWebApiProps extends cdk.StackProps {
   config: DeploymentConfig;
@@ -203,8 +203,7 @@ export class ReefguideWebApiStack extends cdk.Stack {
     // ========
     // FRONTEND
     // ========
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const reefGuideFrontend = new ReefGuideFrontend(this, 'frontend', {
+    const _reefGuideFrontend = new ReefGuideFrontend(this, 'frontend', {
       usEastCertificate: cfnCert,
       config: config.frontend,
       domainName: domains.frontend,
@@ -273,7 +272,7 @@ export class ReefguideWebApiStack extends cdk.Stack {
                   fileSystemId: reefGuideApi.efs.fileSystemId,
                   rootDirectory: '/data/reefguide',
                   transitEncryption: 'ENABLED',
-                  authorizationConfig: { iam: 'ENABLED' },
+                  authorizationConfig: {iam: 'ENABLED'},
                 },
               },
             ],

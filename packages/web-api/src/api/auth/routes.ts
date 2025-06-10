@@ -1,6 +1,6 @@
 import bcryptjs from 'bcryptjs';
-import express, { Request, Response } from 'express';
-import { processRequest } from 'zod-express-middleware';
+import express, {Request, Response, Router} from 'express';
+import {processRequest} from 'zod-express-middleware';
 import {
   LoginInputSchema,
   LoginResponse,
@@ -10,30 +10,30 @@ import {
   TokenInputSchema,
   TokenResponse,
 } from '../types/auth';
-import { prisma } from '../apiSetup';
+import {prisma} from '../apiSetup';
 import * as Exceptions from '../exceptions';
-import { generateRefreshToken, signJwt } from './jwtUtils';
-import { passport } from './passportConfig';
+import {generateRefreshToken, signJwt} from './jwtUtils';
+import {passport} from './passportConfig';
 import {
   decodeRefreshToken,
   getRefreshTokenObject,
   isRefreshTokenValid as validateRefreshToken,
 } from './utils';
-import { registerUser } from '../services/auth';
+import {registerUser} from '../services/auth';
 
 require('express-async-errors');
-export const router = express.Router();
+export const router: Router = express.Router();
 
 /**
  * Register a new user
  */
 router.post(
   '/register',
-  processRequest({ body: RegisterInputSchema }),
+  processRequest({body: RegisterInputSchema}),
   async (req: Request, res: Response<RegisterResponse>) => {
-    const { password, email } = req.body;
-    const newUserId = await registerUser({ email, password, roles: [] });
-    res.status(200).json({ userId: newUserId });
+    const {password, email} = req.body;
+    const newUserId = await registerUser({email, password, roles: []});
+    res.status(200).json({userId: newUserId});
   },
 );
 
@@ -42,13 +42,13 @@ router.post(
  */
 router.post(
   '/login',
-  processRequest({ body: LoginInputSchema }),
+  processRequest({body: LoginInputSchema}),
   async (req: Request, res: Response<LoginResponse>) => {
-    const { email, password: submittedPassword } = req.body;
+    const {email, password: submittedPassword} = req.body;
 
     // Find user by email
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: {email},
       select: {
         // Adjust fields here
         id: true,
@@ -85,11 +85,11 @@ router.post(
 
     // and add login to log
     await prisma.userLog.create({
-      data: { action: 'LOGIN', userId: user.id },
+      data: {action: 'LOGIN', userId: user.id},
     });
 
     // Return token and refresh token
-    res.json({ token, refreshToken });
+    res.json({token, refreshToken});
   },
 );
 
@@ -98,10 +98,10 @@ router.post(
  */
 router.post(
   '/token',
-  processRequest({ body: TokenInputSchema }),
+  processRequest({body: TokenInputSchema}),
   async (req, res: Response<TokenResponse>) => {
     // Pull out body contents
-    const { refreshToken } = req.body;
+    const {refreshToken} = req.body;
 
     // Try to decode the token
     const decodedToken = decodeRefreshToken(refreshToken);
@@ -120,7 +120,7 @@ router.post(
     });
 
     // Return token and refresh token
-    res.json({ token: jwt });
+    res.json({token: jwt});
   },
 );
 
@@ -129,7 +129,7 @@ router.post(
  */
 router.get(
   '/profile',
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   (req: Request, res: Response<ProfileResponse>) => {
     if (!req.user) {
       throw new Exceptions.InternalServerError(
@@ -137,6 +137,6 @@ router.get(
       );
     }
     // The user is attached to the request by Passport
-    res.json({ user: req.user });
+    res.json({user: req.user});
   },
 );

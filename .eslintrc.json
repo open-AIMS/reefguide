@@ -1,0 +1,24 @@
+{
+    "extends": [
+        "./node_modules/gts/"
+    ],
+    "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-floating-promises": "off",
+        "@typescript-eslint/no-unused-vars": [
+            "warn",
+            {
+                "argsIgnorePattern": "^_",
+                "varsIgnorePattern": "^_",
+                "caughtErrorsIgnorePattern": "^_"
+            }
+        ],
+        "@typescript-eslint/ban-ts-comment": "off",
+        "n/no-process-exit": "off",
+        "n/no-unpublished-require": "off",
+        "n/no-unsupported-features/node-builtins": "off",
+        "n/no-unsupported-features/es-syntax": "off",
+        "no-case-declarations": "off",
+        "no-useless-escape": "off"
+    }
+}

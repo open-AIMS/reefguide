@@ -7,15 +7,15 @@ import {
   StorageScheme,
 } from '@prisma/client';
 import crypto from 'crypto';
-import { z } from 'zod';
-import { prisma } from '../apiSetup';
-import { config } from '../config';
+import {z} from 'zod';
+import {prisma} from '../apiSetup';
+import {config} from '../config';
 import {
   BadRequestException,
   NotFoundException,
   UnauthorizedException,
 } from '../exceptions';
-import { hashObject } from '../util';
+import {hashObject} from '../util';
 
 /**
  * Type definition mapping job types to their input/output schemas
@@ -204,9 +204,9 @@ export class JobService {
     jobType: JobType,
   ): Promise<Job | undefined> {
     // Calculate job hash
-    const hash = await this.generateJobHash({ jobType, payload: jobPaylod });
+    const hash = await this.generateJobHash({jobType, payload: jobPaylod});
     // Find jobs with a matching hash
-    const existingJobs = await prisma.job.findMany({ where: { hash } });
+    const existingJobs = await prisma.job.findMany({where: {hash}});
 
     // What jobs are we interested in - those that are incomplete, or
     // successful. Choose the latest edition.
@@ -326,7 +326,7 @@ export class JobService {
         },
       });
 
-      return { job, jobRequest, cached: cacheHit };
+      return {job, jobRequest, cached: cacheHit};
     });
 
     return result;
@@ -342,20 +342,20 @@ export class JobService {
     return prisma.job.findMany({
       where: {
         status: JobStatus.PENDING,
-        ...(jobType && { type: jobType }),
+        ...(jobType && {type: jobType}),
         assignments: {
           // Only jobs with NO assignment which is incomplete and valid should
           // be considered
           none: {
             // If either not complete, or not expired, we can't reassign this
-            OR: [{ completed_at: null }, { expires_at: { gt: now } }],
+            OR: [{completed_at: null}, {expires_at: {gt: now}}],
           },
         },
       },
       // Max of 10
       take: 10,
       // Oldest first
-      orderBy: { created_at: 'asc' },
+      orderBy: {created_at: 'asc'},
     });
   }
 
@@ -370,8 +370,8 @@ export class JobService {
    */
   async assignJob(jobId: number, ecsTaskArn: string, ecsClusterArn: string) {
     const job = await prisma.job.findUnique({
-      where: { id: jobId },
-      include: { assignments: true },
+      where: {id: jobId},
+      include: {assignments: true},
     });
 
     if (!job) throw new NotFoundException('Job not found');
@@ -398,8 +398,8 @@ export class JobService {
         },
       }),
       prisma.job.update({
-        where: { id: jobId },
-        data: { status: JobStatus.IN_PROGRESS },
+        where: {id: jobId},
+        data: {status: JobStatus.IN_PROGRESS},
       }),
     ]);
 
@@ -420,8 +420,8 @@ export class JobService {
     resultPayload?: any,
   ) {
     const assignment = await prisma.jobAssignment.findUnique({
-      where: { id: assignmentId },
-      include: { job: true },
+      where: {id: assignmentId},
+      include: {job: true},
     });
 
     if (!assignment) throw new NotFoundException('Assignment not found');
@@ -444,12 +444,12 @@ export class JobService {
         },
       }),
       prisma.jobAssignment.update({
-        where: { id: assignmentId },
-        data: { completed_at: new Date() },
+        where: {id: assignmentId},
+        data: {completed_at: new Date()},
       }),
       prisma.job.update({
-        where: { id: assignment.job_id },
-        data: { status },
+        where: {id: assignment.job_id},
+        data: {status},
       }),
     ]);
   }
@@ -463,7 +463,7 @@ export class JobService {
    */
   async getJobDetails(jobId: number) {
     const job = await prisma.job.findUnique({
-      where: { id: jobId },
+      where: {id: jobId},
       include: {
         assignments: {
           include: {
@@ -489,7 +489,7 @@ export class JobService {
    */
   async cancelJob(jobId: number, userId: number, isAdmin: boolean) {
     const job = await prisma.job.findUnique({
-      where: { id: jobId },
+      where: {id: jobId},
     });
 
     if (!job) throw new NotFoundException('Job not found');
@@ -504,8 +504,8 @@ export class JobService {
     }
 
     return prisma.job.update({
-      where: { id: jobId },
-      data: { status: JobStatus.CANCELLED },
+      where: {id: jobId},
+      data: {status: JobStatus.CANCELLED},
     });
   }
 
@@ -520,11 +520,11 @@ export class JobService {
   async listJobs(params: {
     userId?: number;
     status?: JobStatus;
-  }): Promise<{ jobs: Job[]; total: number }> {
+  }): Promise<{jobs: Job[]; total: number}> {
     // Build where clause based on parameters
     const where = {
-      ...(params.userId && { user_id: params.userId }),
-      ...(params.status && { status: params.status }),
+      ...(params.userId && {user_id: params.userId}),
+      ...(params.status && {status: params.status}),
     };
 
     // Execute both queries in parallel for efficiency
@@ -538,11 +538,11 @@ export class JobService {
             },
           },
         },
-        orderBy: [{ status: 'asc' }, { updated_at: 'desc' }],
+        orderBy: [{status: 'asc'}, {updated_at: 'desc'}],
         // Reasonable page size for initial implementation
         take: 50,
       }),
-      prisma.job.count({ where }),
+      prisma.job.count({where}),
     ]);
 
     return {
@@ -561,23 +561,23 @@ export class JobService {
    */
   async listRequests(params: {
     userId?: number;
-  }): Promise<{ jobs: JobRequest[]; total: number }> {
+  }): Promise<{jobs: JobRequest[]; total: number}> {
     // Build where clause based on parameters
     const where = {
-      ...(params.userId && { user_id: params.userId }),
+      ...(params.userId && {user_id: params.userId}),
     };
 
     const [requests, total] = await Promise.all([
       prisma.jobRequest.findMany({
         where,
         include: {
-          job: { include: { assignments: true, results: true } },
+          job: {include: {assignments: true, results: true}},
         },
-        orderBy: [{ created_at: 'desc' }],
+        orderBy: [{created_at: 'desc'}],
         // Reasonable page size for initial implementation
         take: 50,
       }),
-      prisma.jobRequest.count({ where }),
+      prisma.jobRequest.count({where}),
     ]);
 
     return {

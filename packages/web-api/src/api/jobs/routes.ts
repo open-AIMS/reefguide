@@ -1,13 +1,13 @@
-import express, { Response } from 'express';
-import { z } from 'zod';
-import { processRequest } from 'zod-express-middleware';
-import { JobType, JobStatus, StorageScheme } from '@prisma/client';
-import { passport } from '../auth/passportConfig';
-import { JobService } from '../services/jobs';
-import { userIsAdmin } from '../auth/utils';
-import { BadRequestException, UnauthorizedException } from '../exceptions';
-import { config } from '../config';
-import { S3StorageService } from '../services/s3Storage';
+import express, {Response, Router} from 'express';
+import {z} from 'zod';
+import {processRequest} from 'zod-express-middleware';
+import {JobType, JobStatus, StorageScheme} from '@prisma/client';
+import {passport} from '../auth/passportConfig';
+import {JobService} from '../services/jobs';
+import {userIsAdmin} from '../auth/utils';
+import {BadRequestException, UnauthorizedException} from '../exceptions';
+import {config} from '../config';
+import {S3StorageService} from '../services/s3Storage';
 require('express-async-errors');
 
 // API interfaces
@@ -64,7 +64,7 @@ export const listJobsResponseSchema = z.object({
   total: z.number(),
 });
 
-export const router = express.Router();
+export const router: Router = express.Router();
 const jobService = new JobService();
 
 // Input/Output validation schemas
@@ -126,11 +126,11 @@ router.post(
   processRequest({
     body: createJobSchema,
   }),
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   async (req, res: Response<z.infer<typeof createJobResponseSchema>>) => {
     if (!req.user) throw new UnauthorizedException();
 
-    const { job, jobRequest, cached } = await jobService.createJobRequest(
+    const {job, jobRequest, cached} = await jobService.createJobRequest(
       req.user.id,
       req.body.type,
       req.body.inputPayload,
@@ -149,7 +149,7 @@ router.get(
   processRequest({
     query: listJobsSchema,
   }),
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   async (req, res: Response<ListJobsResponse>) => {
     if (!req.user) throw new UnauthorizedException();
 
@@ -157,12 +157,12 @@ router.get(
     const userId = isAdmin ? undefined : req.user.id;
     const status = req.query.status as JobStatus | undefined;
 
-    const { jobs, total } = await jobService.listJobs({
+    const {jobs, total} = await jobService.listJobs({
       userId,
       status,
     });
 
-    res.json({ jobs, total });
+    res.json({jobs, total});
   },
 );
 
@@ -171,10 +171,10 @@ router.get(
   processRequest({
     query: pollJobsSchema,
   }),
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   async (req, res: Response<PollJobsResponse>) => {
     const jobs = await jobService.pollJobs(req.query.jobType as JobType);
-    res.json({ jobs });
+    res.json({jobs});
   },
 );
 
@@ -183,21 +183,21 @@ router.post(
   processRequest({
     body: assignJobSchema,
   }),
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   async (req, res: Response<AssignJobResponse>) => {
     const assignment = await jobService.assignJob(
       req.body.jobId,
       req.body.ecsTaskArn,
       req.body.ecsClusterArn,
     );
-    res.json({ assignment });
+    res.json({assignment});
   },
 );
 
 router.get(
   '/requests',
   processRequest({}),
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   async (req, res) => {
     if (!req.user) throw new UnauthorizedException();
 
@@ -215,10 +215,10 @@ router.get(
 router.post(
   '/assignments/:id/result',
   processRequest({
-    params: z.object({ id: z.string() }),
+    params: z.object({id: z.string()}),
     body: submitResultSchema,
   }),
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   async (req, res: Response<void>) => {
     const assignmentId = parseInt(req.params.id);
     await jobService.submitResult(
@@ -233,23 +233,23 @@ router.post(
 router.get(
   '/:id',
   processRequest({
-    params: z.object({ id: z.string() }),
+    params: z.object({id: z.string()}),
   }),
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   async (req, res: Response<JobDetailsResponse>) => {
     if (!req.user) throw new UnauthorizedException();
     const jobId = parseInt(req.params.id);
     const job = await jobService.getJobDetails(jobId);
-    res.json({ job });
+    res.json({job});
   },
 );
 
 router.post(
   '/:id/cancel',
   processRequest({
-    params: z.object({ id: z.string() }),
+    params: z.object({id: z.string()}),
   }),
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   async (req, res: Response<JobDetailsResponse>) => {
     if (!req.user) throw new UnauthorizedException();
     const jobId = parseInt(req.params.id);
@@ -258,19 +258,19 @@ router.post(
       req.user.id,
       userIsAdmin(req.user),
     );
-    res.json({ job });
+    res.json({job});
   },
 );
 
 router.get(
   '/:id/download',
   processRequest({
-    params: z.object({ id: z.string() }),
+    params: z.object({id: z.string()}),
     query: z.object({
       expirySeconds: z.string().optional(),
     }),
   }),
-  passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', {session: false}),
   async (req, res) => {
     if (!req.user) throw new UnauthorizedException();
 

@@ -1,7 +1,7 @@
 import bcryptjs from 'bcryptjs';
-import { prisma } from '../apiSetup';
-import { UserRole } from '@prisma/client';
-import { BadRequestException } from '../exceptions';
+import {prisma} from '../apiSetup';
+import {UserRole} from '@prisma/client';
+import {BadRequestException} from '../exceptions';
 
 /**
  * Hashes a password
@@ -31,7 +31,7 @@ export async function registerUser({
 }): Promise<number> {
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({
-    where: { email },
+    where: {email},
   });
 
   if (existingUser) {
@@ -72,8 +72,8 @@ export async function changePassword({
   // Update user password
   try {
     await prisma.user.update({
-      where: { id },
-      data: { password: hashedPassword },
+      where: {id},
+      data: {password: hashedPassword},
     });
   } catch (error) {
     throw new BadRequestException(

@@ -1,4 +1,4 @@
-import { CfnOutput, Duration, RemovalPolicy } from 'aws-cdk-lib';
+import {CfnOutput, Duration, RemovalPolicy} from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as actions from 'aws-cdk-lib/aws-cloudwatch-actions';
@@ -13,9 +13,9 @@ import * as r53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
-import { Construct } from 'constructs';
-import { ReefGuideAPIConfig } from '../infraConfig';
-import { SharedBalancer } from './networking';
+import {Construct} from 'constructs';
+import {ReefGuideAPIConfig} from '../infraConfig';
+import {SharedBalancer} from './networking';
 
 /**
  * Properties for the ReefGuideAPI construct
@@ -124,12 +124,11 @@ export class ReefGuideAPI extends Construct {
         // This adds the -o tls,iam flag which is needed for EFS to mount -
         // silliness just plain silliness! (Why is this not done
         // automatically??)
-        authorizationConfig: { iam: 'ENABLED' },
+        authorizationConfig: {iam: 'ENABLED'},
       },
     });
 
     // Add container to the task definition
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const reefGuideContainerDfn = reefGuideTaskDfn.addContainer(
       'reefguide-container-dfn',
       {
@@ -201,7 +200,7 @@ export class ReefGuideAPI extends Construct {
     // ========
 
     // Do we want memory alerting?
-    if (!!props.config.memoryAlerting) {
+    if (props.config.memoryAlerting) {
       const alertConfig = props.config.memoryAlerting;
 
       // Create SNS topic for alerts
@@ -436,7 +435,7 @@ export class ReefGuideAPI extends Construct {
         vpc: props.vpc,
         instanceType: instanceType,
         allowAllOutbound: true,
-        vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
+        vpcSubnets: {subnetType: ec2.SubnetType.PUBLIC},
         machineImage: machineImage,
         userData: userData,
         role: efsManagementRole,

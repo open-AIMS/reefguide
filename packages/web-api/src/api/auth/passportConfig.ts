@@ -4,8 +4,8 @@ import {
   Strategy as JwtStrategy,
   StrategyOptions,
 } from 'passport-jwt';
-import { prisma } from '../apiSetup';
-import { ALGORITHM as KEY_ALGORITHM, PUBLIC_KEY } from './jwtUtils';
+import {prisma} from '../apiSetup';
+import {ALGORITHM as KEY_ALGORITHM, PUBLIC_KEY} from './jwtUtils';
 
 /**
  * Options for configuring the JWT strategy
@@ -38,10 +38,10 @@ passport.use(
     try {
       // Attempt to find a user that matches the ID in the JWT payload
       const user = await prisma.user.findUnique({
-        where: { id: jwtPayload.id },
+        where: {id: jwtPayload.id},
         // Modify fields to include in the express returned user object here -
         // these will be available in req.user object through middleware
-        select: { password: false, id: true, email: true, roles: true },
+        select: {password: false, id: true, email: true, roles: true},
       });
 
       if (user) {
@@ -59,4 +59,4 @@ passport.use(
 );
 
 // Export the configured Passport instance
-export { passport };
+export {passport};

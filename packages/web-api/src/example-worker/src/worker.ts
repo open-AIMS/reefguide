@@ -1,6 +1,6 @@
-import { Config } from './config';
-import { AuthApiClient } from './authClient';
-import { TaskIdentifiers } from './ecs';
+import {Config} from './config';
+import {AuthApiClient} from './authClient';
+import {TaskIdentifiers} from './ecs';
 
 interface Job {
   id: number;
@@ -120,8 +120,8 @@ export class TestWorker {
   private async pollForJobs() {
     try {
       // Get available jobs
-      const response = await this.client.get<{ jobs: Job[] }>('/jobs/poll', {
-        params: { jobType: this.config.jobTypes[0] },
+      const response = await this.client.get<{jobs: Job[]}>('/jobs/poll', {
+        params: {jobType: this.config.jobTypes[0]},
       });
 
       const jobs: Job[] = response.jobs;

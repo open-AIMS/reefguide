@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import {z} from 'zod';
 
 // Zod schema for the error response
 export const ErrorResponseSchema = z.object({
