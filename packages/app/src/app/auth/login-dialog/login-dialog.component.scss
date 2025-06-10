@@ -1,0 +1,10 @@
+form {
+  display: flex;
+  flex-direction: column;
+  // space for floating label
+  padding-top: 1ex;
+}
+
+.error-message {
+  text-align: center;
+}

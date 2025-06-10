@@ -31,8 +31,8 @@ jobs:
         if: steps.node-cache.outputs.cache-hit != 'true'
         run: npm i
 
-      - name: Check formatting
-        run: npm run format:check
+      - name: Check formatting and lint 
+        run: npm run format
 
       - name: Comment on PR if formatting issues found
         if: failure()

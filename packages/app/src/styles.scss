@@ -1,0 +1,57 @@
+@use '@angular/material' as mat;
+$theme: mat.define-theme();
+
+@import '@esri/calcite-components/dist/calcite/calcite.css';
+
+// ArcGis Theme
+// Alternatively, could load stylesheet index.html
+// <link rel="stylesheet" href="https://js.arcgis.com/4.30/esri/themes/dark/main.css" />
+// However, this has nicer legend heading size.
+@import '@arcgis/core/assets/esri/themes/light/main.css';
+
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+}
+
+.info-table {
+  th {
+    text-align: right;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  td {
+    padding-left: 0.5em;
+  }
+}
+
+.row {
+  display: flex;
+}
+
+.error-message {
+  color: mat.get-theme-color($theme, error);
+  font-weight: 500;
+}
+
+mat-tab-group.fixed-height {
+  .mat-mdc-tab-body-wrapper {
+    height: 100%;
+  }
+}
+
+.reef-guide {
+  // move top-left ESRI buttons under ReefGuide's
+  .esri-ui-top-left {
+    top: 148px;
+  }
+
+  .esri-ui-top-right {
+    // move beneath profile button
+    top: 48px;
+  }
+}

@@ -1,0 +1,58 @@
+@let isAdmin = authService.isAdmin() | async;
+<h2 mat-dialog-title>Configuration {{ isAdmin }}</h2>
+<mat-dialog-content>
+  <mat-tab-group dynamicHeight>
+    <mat-tab label="Map">
+      <h3 class="mat-headline-small">Map</h3>
+
+      <mat-form-field style="min-width: 16em">
+        <mat-label>Map</mat-label>
+        <mat-select [formControl]="arcgisMap">
+          @for (map of mapChoices; track map.arcgisItemId) {
+            <mat-option [value]="map.id">{{ map.name }}</mat-option>
+          }
+          <mat-option value="CUSTOM">Custom</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      @if (arcgisMap.value === 'CUSTOM') {
+        <mat-form-field>
+          <mat-label>ArcGIS Map Item ID</mat-label>
+          <input matInput [formControl]="mapItemId" />
+        </mat-form-field>
+      }
+
+      @if (arcgisItemUrl | async; as url) {
+        <a mat-icon-button [href]="url" target="_blank" matTooltip="Open item on ArcGIS">
+          <mat-icon>map</mat-icon>
+        </a>
+      }
+
+      <h3 class="mat-headline-small">Regions</h3>
+
+      <mat-selection-list [formControl]="regions">
+        @for (region of regionChoices; track region) {
+          <mat-list-option [value]="region">{{ region }}</mat-list-option>
+        }
+      </mat-selection-list>
+    </mat-tab>
+    <mat-tab label="Developer">
+      <mat-checkbox
+        [formControl]="parallelRegionRequests"
+        matTooltip="Request region layers simultaneously"
+      >
+        Parallel COG requests
+      </mat-checkbox>
+      <mat-checkbox
+        [formControl]="enableCOGBlob"
+        matTooltip="Improve COG layer performance by copying entire file in memory"
+      >
+        Enable local COG copy
+      </mat-checkbox>
+    </mat-tab>
+  </mat-tab-group>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button (click)="dialogRef.close()">Cancel</button>
+  <button mat-flat-button (click)="save()">Save</button>
+</mat-dialog-actions>

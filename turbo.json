@@ -18,10 +18,12 @@
             "cache": false,
             "persistent": true
         },
-        "format": {
-            "inputs": [
-                ".eslintrc.json"
-            ],
+        "format:check": {
+            "dependsOn": [
+                "^build"
+            ]
+        },
+        "format:write": {
             "dependsOn": [
                 "^build"
             ]
