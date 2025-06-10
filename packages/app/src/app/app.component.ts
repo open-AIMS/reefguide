@@ -2,9 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
-//@ts-ignore
 import { defineCustomElements as defineArcgisMapElements } from '@arcgis/map-components/dist/loader';
-//@ts-ignore
 import { defineCustomElements as defineCalciteElements } from '@esri/calcite-components/dist/loader';
 
 @Component({

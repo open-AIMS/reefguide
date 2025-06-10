@@ -11,7 +11,6 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltip } from '@angular/material/tooltip';
-// @ts-ignore
 import { ArcgisMapCustomEvent } from '@arcgis/map-components';
 import { ArcgisMap, ComponentLibraryModule } from '@arcgis/map-components-angular';
 import { combineLatest, filter, map, Observable } from 'rxjs';

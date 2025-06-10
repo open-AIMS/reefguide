@@ -1,6 +1,5 @@
 import { Component, ViewChild } from '@angular/core';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
-// @ts-ignore
 import { ArcgisMapCustomEvent } from '@arcgis/map-components';
 import { ArcgisMap, ComponentLibraryModule } from '@arcgis/map-components-angular';
 import Field from '@arcgis/core/layers/support/Field';

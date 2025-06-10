@@ -59,9 +59,15 @@ importers:
       '@arcgis/core':
         specifier: ^4.30.3
         version: 4.32.10
+      '@arcgis/map-components':
+        specifier: ^4.32.14
+        version: 4.32.14(@arcgis/core@4.32.10)(@esri/calcite-components@3.2.1)
       '@arcgis/map-components-angular':
         specifier: ^4.30.2
         version: 4.30.7(@angular/common@19.2.14(@angular/core@19.2.14(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.14(rxjs@7.8.2)(zone.js@0.15.1))(@arcgis/core@4.32.10)(@esri/calcite-components@3.2.1)
+      '@esri/calcite-components':
+        specifier: ^3.2.1
+        version: 3.2.1
       '@esri/calcite-components-angular':
         specifier: ^2.11.1
         version: 2.13.2(@angular/common@19.2.14(@angular/core@19.2.14(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.14(rxjs@7.8.2)(zone.js@0.15.1))(@floating-ui/utils@0.2.9)
@@ -477,14 +483,28 @@ packages:
       '@arcgis/core-adapter':
         optional: true
 
+  '@arcgis/components-controllers@4.32.14':
+    resolution: {integrity: sha512-mJMXIKKVhKXAnrBhxakP5IMPddbWic7Nj5f5Wwc1NLW1TSH6DYx26l7DP302wp99IIz0UqlCUEJl9pRy3rPdtw==}
+
   '@arcgis/components-utils@4.30.7':
     resolution: {integrity: sha512-VfrXLgCGZMFguItXzfXDpREsMHFtQPzmMQegs2mb7aIui9YJG1j0YJgpZe7a2W4mj0ZGhIr1p59NQ0I/AL49vQ==}
+
+  '@arcgis/components-utils@4.32.14':
+    resolution: {integrity: sha512-7uvJRrS4GMiBVJsqr4SOpmYWLOB++Wf+DkgHi1j/d379vdF72p725vy+u5US9JrG9haolE92ZO3gfQ5gLBqSpw==}
 
   '@arcgis/components-utils@4.33.0-next.156':
     resolution: {integrity: sha512-jFiKA4K6WDxQhbuBrj3nt4FFiwAIys7f+HIDQmrNNno95vLMeD9+plYCRnyGxnZ9eajhcWb6GIqw5XhHkKQK5w==}
 
+  '@arcgis/core-adapter@4.32.14':
+    resolution: {integrity: sha512-CNv9QJjnDti74ycER9Saiwk4wVduY0VUInqaDhH8x4f2mcuuZ5sFd08T0IBaW+L0d3R59tHUPeMp8gJt1t/FWg==}
+    peerDependencies:
+      '@arcgis/core': ~4.32.0
+
   '@arcgis/core@4.32.10':
     resolution: {integrity: sha512-dcYbISxjsrBUBmrIx1dlTV4ynrl1CrvqLcd2fYtFgc0WNTqx3V7lFNmpBbT9wu15wqaTUA8kVXmN9HCoUppA4w==}
+
+  '@arcgis/lumina@4.32.14':
+    resolution: {integrity: sha512-PzLfQ2sKigEFhLNILuAU3mUouUFGdJbr9k5/+bwa8yy3dyS22e3lKsoIm5sJpE1Lj22KT2cX9WKc2V0Gs8IMsQ==}
 
   '@arcgis/lumina@4.33.0-next.156':
     resolution: {integrity: sha512-dAwVBPWYAnFOKGyBXR2/31Mw90yn9W4BIwvbt35clO+CXuPKLl6AwC7pgw+CMKjuL7qF/HE4ZhxiOKm93KaVBA==}
@@ -502,6 +522,12 @@ packages:
     peerDependencies:
       '@arcgis/core': ~4.30.9
       '@esri/calcite-components': ^2.8.0
+
+  '@arcgis/map-components@4.32.14':
+    resolution: {integrity: sha512-/q83xoW6r5gMrggrpVpsBH//CpjPn03F5t2ZbGJcghW/KV43wO04vaqXa0m0/8bmFTtDtjB0N3kep7+pxXK3yw==}
+    peerDependencies:
+      '@arcgis/core': ~4.32.0
+      '@esri/calcite-components': ^3.0.3
 
   '@aws-cdk/asset-awscli-v1@2.2.240':
     resolution: {integrity: sha512-Ry5yvGVf8s7j1Gf1aBFs0mBnWzRkkRtgSVpRGkDWXvZoPbRODAH33S1mAxkETNb+dNnTPGE2Gvws0XbhpJ6RzA==}
@@ -7453,10 +7479,24 @@ snapshots:
     optionalDependencies:
       '@arcgis/core': 4.32.10
 
+  '@arcgis/components-controllers@4.32.14':
+    dependencies:
+      '@arcgis/components-utils': 4.32.14
+      tslib: 2.8.1
+
   '@arcgis/components-utils@4.30.7': {}
+
+  '@arcgis/components-utils@4.32.14':
+    dependencies:
+      tslib: 2.8.1
 
   '@arcgis/components-utils@4.33.0-next.156':
     dependencies:
+      tslib: 2.8.1
+
+  '@arcgis/core-adapter@4.32.14(@arcgis/core@4.32.10)':
+    dependencies:
+      '@arcgis/core': 4.32.10
       tslib: 2.8.1
 
   '@arcgis/core@4.32.10':
@@ -7467,6 +7507,17 @@ snapshots:
       '@zip.js/zip.js': 2.7.62
       luxon: 3.5.0
       marked: 15.0.12
+
+  '@arcgis/lumina@4.32.14':
+    dependencies:
+      '@arcgis/components-controllers': 4.32.14
+      '@arcgis/components-utils': 4.32.14
+      '@lit-labs/ssr': 3.3.1
+      '@lit-labs/ssr-client': 1.1.7
+      '@lit/context': 1.1.5
+      csstype: 3.1.3
+      lit: 3.3.0
+      tslib: 2.8.1
 
   '@arcgis/lumina@4.33.0-next.156':
     dependencies:
@@ -7498,6 +7549,16 @@ snapshots:
       '@stencil/core': 4.17.1
     transitivePeerDependencies:
       - '@arcgis/core-adapter'
+
+  '@arcgis/map-components@4.32.14(@arcgis/core@4.32.10)(@esri/calcite-components@3.2.1)':
+    dependencies:
+      '@arcgis/components-controllers': 4.32.14
+      '@arcgis/components-utils': 4.32.14
+      '@arcgis/core': 4.32.10
+      '@arcgis/core-adapter': 4.32.14(@arcgis/core@4.32.10)
+      '@arcgis/lumina': 4.32.14
+      '@esri/calcite-components': 3.2.1
+      tslib: 2.8.1
 
   '@aws-cdk/asset-awscli-v1@2.2.240': {}
 
