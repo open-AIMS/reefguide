@@ -1,0 +1,25 @@
+{
+    "name": "reefguide",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Reefguide monorepo workspace",
+    "scripts": {
+        "build": "turbo build",
+        "dev": "turbo dev",
+        "lint:write": "turbo lint:write",
+        "lint": "turbo lint",
+        "test": "turbo test",
+        "type-check": "turbo type-check",
+        "clean": "turbo clean"
+    },
+    "devDependencies": {
+        "turbo": "^2.5",
+        "typescript": "^5.8",
+        "@types/node": "^22.15"
+    },
+    "packageManager": "pnpm@10.12.1",
+    "engines": {
+        "node": ">=18.0.0",
+        "pnpm": ">=10.0.0"
+    }
+}

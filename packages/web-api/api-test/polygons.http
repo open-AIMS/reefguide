@@ -1,0 +1,72 @@
+@baseUrl = {{$dotenv API_BASE_URL}}
+@contentType = application/json
+
+### Login with the registered user
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "testuser@example.com",
+    "password": "securepassword123"
+}
+
+### Store the JWT token from the login response
+@authToken = {{login.response.body.token}}
+@refreshToken = {{login.response.body.refreshToken}}
+
+### Use refresh to get new token
+# @name refresh
+POST {{baseUrl}}/auth/token
+Content-Type: {{contentType}}
+
+{
+    "refreshToken" : "{{refreshToken}}"
+}
+
+### POLYGONS
+
+### Create a new polygon
+# @name createPolygon
+POST {{baseUrl}}/polygons
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "geoJson": "{\"type\":\"Polygon\",\"coordinates\":[[[0,0],[0,1],[1,1],[1,0],[0,0]]]}"
+}
+
+### Get all polygons for the user
+GET {{baseUrl}}/polygons
+Authorization: Bearer {{authToken}}
+
+### Get a specific polygon
+@polygonId = {{createPolygon.response.body.polygon.id}}
+GET {{baseUrl}}/polygons/{{polygonId}}
+Authorization: Bearer {{authToken}}
+
+### Update a polygon
+PUT {{baseUrl}}/polygons/{{polygonId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "geoJson": "{\"type\":\"Polygon\",\"coordinates\":[[[0,0],[0,2],[2,2],[2,0],[0,0]]]}"
+}
+
+### Try to update a non-existent polygon (should fail)
+PUT {{baseUrl}}/polygons/999999
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "geoJson": "{\"type\":\"Polygon\",\"coordinates\":[[[0,0],[0,1],[1,1],[1,0],[0,0]]]}"
+}
+
+### Delete a polygon
+DELETE {{baseUrl}}/polygons/{{polygonId}}
+Authorization: Bearer {{authToken}}
+
+### Try to delete a non-existent polygon (should fail)
+DELETE {{baseUrl}}/polygons/999999
+Authorization: Bearer {{authToken}}

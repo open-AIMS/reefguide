@@ -1,0 +1,144 @@
+@baseUrl = {{$dotenv API_BASE_URL}}
+@contentType = application/json
+
+### Load environment variables
+# @name loadEnv
+GET {{baseUrl}}
+Content-Type: {{contentType}}
+
+### Register a new user
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+    "email": "testuser@example.com",
+    "password": "securepassword123"
+}
+
+### Login with the registered user
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "testuser@example.com",
+    "password": "securepassword123"
+}
+
+### Store the JWT token from the login response
+@authToken = {{login.response.body.token}}
+@refreshToken = {{login.response.body.refreshToken}}
+
+### Use refresh to get new token
+# @name refresh
+POST {{baseUrl}}/auth/token
+Content-Type: {{contentType}}
+
+{
+    "refreshToken" : "{{refreshToken}}"
+}
+
+### Get user profile (protected route)
+GET {{baseUrl}}/auth/profile
+Authorization: Bearer {{authToken}}
+
+### Try to access profile without token (should fail)
+GET {{baseUrl}}/auth/profile
+
+### Register with existing username (should fail)
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+    "email": "testuser@example.com",
+    "password": "anotherpassword123"
+}
+
+### Login with wrong password (should fail)
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "testuser@example.com",
+    "password": "securepassword1234"
+}
+
+
+### USER MANAGEMENT
+# Note: These endpoints require admin privileges
+
+### Get all users
+GET {{baseUrl}}/users
+Authorization: Bearer {{authToken}}
+
+### Create a new user (as admin)
+# @name createUser
+POST {{baseUrl}}/users
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "email": "newuser@example.com",
+    "password": "securepassword123",
+    "roles": ["ADMIN"]
+}
+
+### Store the created user ID
+@userId = {{createUser.response.body.id}}
+
+### Get specific user by ID
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{authToken}}
+
+### Update user roles
+PUT {{baseUrl}}/users/{{userId}}/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "roles": []
+}
+
+### Update user password
+PUT {{baseUrl}}/users/{{userId}}/password
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "password": "newSecurePassword123"
+}
+
+### Delete user
+DELETE {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{authToken}}
+
+### Verify user was deleted (should return 404)
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{authToken}}
+
+### Create multiple users for listing
+POST {{baseUrl}}/users
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "email": "user1@example.com",
+    "password": "securepassword123",
+    "roles": []
+}
+
+###
+POST {{baseUrl}}/users
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "email": "user2@example.com",
+    "password": "securepassword123",
+    "roles": ["ADMIN"]
+}
+
+### Get updated user list
+GET {{baseUrl}}/users
+Authorization: Bearer {{authToken}}

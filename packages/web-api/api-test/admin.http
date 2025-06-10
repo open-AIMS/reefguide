@@ -1,0 +1,29 @@
+@baseUrl = {{$dotenv API_BASE_URL}}
+@contentType = application/json
+
+### Login with the registered user
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "testuser@example.com",
+    "password": "securepassword123"
+}
+
+### Store the JWT token from the login response
+@authToken = {{login.response.body.token}}
+@refreshToken = {{login.response.body.refreshToken}}
+
+### Use refresh to get new token
+# @name refresh
+POST {{baseUrl}}/auth/token
+Content-Type: {{contentType}}
+
+{
+    "refreshToken" : "{{refreshToken}}"
+}
+
+### Reinit the DB service accounts
+GET {{baseUrl}}/admin/init
+Authorization: Bearer {{authToken}}

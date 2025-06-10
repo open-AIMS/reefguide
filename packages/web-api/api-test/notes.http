@@ -1,0 +1,131 @@
+@baseUrl = {{$dotenv API_BASE_URL}}
+@contentType = application/json
+
+### Load environment variables
+# @name loadEnv
+GET {{baseUrl}}
+Content-Type: {{contentType}}
+
+### Login with the registered user
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "testuser@example.com",
+    "password": "securepassword123"
+}
+
+### Store the JWT token from the login response
+@authToken = {{login.response.body.token}}
+@refreshToken = {{login.response.body.refreshToken}}
+
+### Use refresh to get new token
+# @name refresh
+POST {{baseUrl}}/auth/token
+Content-Type: {{contentType}}
+
+{
+    "refreshToken" : "{{refreshToken}}"
+}
+
+
+### Create a new polygon
+# @name createPolygon
+POST {{baseUrl}}/polygons
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "geoJson": "{\"type\":\"Polygon\",\"coordinates\":[[[0,0],[0,1],[1,1],[1,0],[0,0]]]}"
+}
+
+###
+@polygonId = {{createPolygon.response.body.polygon.id}}
+
+### NOTES
+
+### Create a new note
+# @name createNote
+POST {{baseUrl}}/notes
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "content": "This is a test note",
+    "polygonId": {{polygonId}}
+}
+
+### Get all notes for the user
+GET {{baseUrl}}/notes
+Authorization: Bearer {{authToken}}
+
+### Get all notes for a specific polygon
+GET {{baseUrl}}/notes/{{polygonId}}
+Authorization: Bearer {{authToken}}
+
+### Update a note
+@noteId = {{createNote.response.body.note.id}}
+PUT {{baseUrl}}/notes/{{noteId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "content": "This is an updated test note"
+}
+
+### Try to update a non-existent note (should fail)
+PUT {{baseUrl}}/notes/999999
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "content": "This update should fail"
+}
+
+### ERROR CONDITIONS
+
+### Try to create a polygon without authentication (should fail)
+POST {{baseUrl}}/polygons
+Content-Type: {{contentType}}
+
+{
+    "geoJson": "{\"type\":\"Polygon\",\"coordinates\":[[[0,0],[0,1],[1,1],[1,0],[0,0]]]}"
+}
+
+### Try to create a note for a non-existent polygon (should fail)
+POST {{baseUrl}}/notes
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "content": "This note creation should fail",
+    "polygonId": 999999
+}
+
+### Try to get notes for a non-existent polygon (should fail)
+GET {{baseUrl}}/notes/999999
+Authorization: Bearer {{authToken}}
+
+### Try to update a polygon with invalid GeoJSON (should fail)
+PUT {{baseUrl}}/polygons/{{polygonId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "geoJson": "This is not valid GeoJSON"
+}
+
+### Try to create a note without content (should fail)
+POST {{baseUrl}}/notes
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "polygonId": {{polygonId}}
+}
+
+### Try to access a polygon belonging to another user (should fail)
+# Note: This assumes the existence of another user's polygon. You may need to adjust the ID.
+GET {{baseUrl}}/polygons/1
+Authorization: Bearer {{authToken}}

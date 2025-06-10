@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: npm i
+
+    - name: Prisma generate
+      run: npm run prisma-generate
+
+    - name: Run typecheck
+      run: npm run typecheck
+
+    - name: Run linter
+      run: npm run lint
+
+    - name: Start Docker services (PostgreSQL DB)
+      run: docker compose up -d
+
+    - name: Wait for PostgreSQL to be ready
+      run: |
+        # Use pg_isready to check if PostgreSQL is accepting connections
+        timeout=60
+        counter=0
+        until docker exec local-web-api-psql pg_isready -U admin -d database || [ $counter -eq $timeout ]; do
+          echo "Waiting for PostgreSQL to be ready... ($counter/$timeout)"
+          counter=$((counter+1))
+          sleep 1
+        done
+        
+        if [ $counter -eq $timeout ]; then
+          echo "Timed out waiting for PostgreSQL to be ready"
+          exit 1
+        fi
+        
+        echo "PostgreSQL is ready!"
+
+    - name: Copy environment file and set test mode
+      run: cp .env.example .env && echo -en "\nTEST_MODE=true" >> .env
+
+    - name: Generate local keys
+      run: npm run local-keys
+
+    - name: Reset database
+      run: npm run db-reset
+
+    - name: Run tests
+      run: npm run test
+
+    - name: Stop Docker services
+      run: docker compose down

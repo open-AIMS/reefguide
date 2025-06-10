@@ -1,0 +1,105 @@
+@baseUrl = {{$dotenv API_BASE_URL}}
+@contentType = application/json
+
+### Login with the registered user
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "testuser@example.com",
+    "password": "securepassword123"
+}
+
+### Store the JWT token from the login response
+@authToken = {{login.response.body.token}}
+@refreshToken = {{login.response.body.refreshToken}}
+
+### Use refresh to get new token
+# @name refresh
+POST {{baseUrl}}/auth/token
+Content-Type: {{contentType}}
+
+{
+    "refreshToken" : "{{refreshToken}}"
+}
+
+### CLUSTER MANAGEMENT
+# Note: These endpoints require admin privileges
+
+### Get current cluster status
+GET {{baseUrl}}/admin/status
+Authorization: Bearer {{authToken}}
+
+### Scale cluster to specific size
+POST {{baseUrl}}/admin/scale
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "desiredCount": 1
+}
+
+### Try to scale cluster without auth (should fail)
+POST {{baseUrl}}/admin/scale
+Content-Type: {{contentType}}
+
+{
+    "desiredCount": 1
+}
+
+### Try to scale cluster with invalid count (below min) (should fail)
+POST {{baseUrl}}/admin/scale
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "desiredCount": -1
+}
+
+### Try to scale cluster with invalid count (above max) (should fail)
+POST {{baseUrl}}/admin/scale
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "desiredCount": 11
+}
+
+### Try to scale cluster with non-numeric value (should fail)
+POST {{baseUrl}}/admin/scale
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "desiredCount": "three"
+}
+
+### Try to scale cluster with missing desiredCount (should fail)
+POST {{baseUrl}}/admin/scale
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+}
+
+### Scale cluster down to minimum size
+POST {{baseUrl}}/admin/scale
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "desiredCount": 0
+}
+
+### Get cluster status after scaling (to verify)
+GET {{baseUrl}}/admin/status
+Authorization: Bearer {{authToken}}
+
+### Force redeploy of service
+POST {{baseUrl}}/admin/redeploy
+Authorization: Bearer {{authToken}}
+
+### Get status after redeployment initiation
+GET {{baseUrl}}/admin/status
+Authorization: Bearer {{authToken}}

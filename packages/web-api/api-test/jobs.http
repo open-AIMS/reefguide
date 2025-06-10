@@ -1,0 +1,303 @@
+@baseUrl = {{$dotenv API_BASE_URL}}
+@contentType = application/json
+
+### Load environment variables
+# @name loadEnv
+GET {{baseUrl}}
+Content-Type: {{contentType}}
+
+### Register a new user
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+    "email": "testuser@example.com",
+    "password": "securepassword123"
+}
+
+### Login with the registered user
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "testuser@example.com",
+    "password": "securepassword123"
+}
+
+### Store the JWT token from the login response
+@authToken = {{login.response.body.token}}
+@refreshToken = {{login.response.body.refreshToken}}
+
+### Use refresh to get new token
+# @name refresh
+POST {{baseUrl}}/auth/token
+Content-Type: {{contentType}}
+
+{
+    "refreshToken" : "{{refreshToken}}"
+}
+
+### JOB SYSTEM TESTS
+
+### Create a new test job
+# @name createJob
+POST {{baseUrl}}/jobs
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "type": "TEST",
+    "inputPayload": {
+        "id" : 1111111
+    }
+}
+
+### Create a new regional assessment job (with full params)
+# @name createRegionalAssessmentJob
+POST {{baseUrl}}/jobs
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "type": "REGIONAL_ASSESSMENT",
+    "inputPayload": {
+        "region": "Mackay-Capricorn",
+        "reef_type": "slopes",
+        "depth_min": -10.1,
+        "depth_max": -2.1,
+        "slope_min": 0.1,
+        "slope_max": 30.0,
+        "rugosity_min": 0.0,
+        "rugosity_max": 6.0,
+        "waves_period_min": 1.94303,
+        "waves_period_max": 9.32689,
+        "waves_height_min": 0.237052,
+        "waves_height_max": 2.53194
+    }
+}
+
+### Create a new regional assessment job (with minimal params)
+# @name createRegionalAssessmentJob
+POST {{baseUrl}}/jobs
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "type": "REGIONAL_ASSESSMENT",
+    "inputPayload": {
+        "region": "Mackay-Capricorn",
+        "reef_type": "slopes"
+    }
+}
+
+### Create a new suitability assessment job (with full params)
+# @name createSuitabilityJob
+POST {{baseUrl}}/jobs
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "type": "SUITABILITY_ASSESSMENT",
+    "inputPayload": {
+        "region": "Mackay-Capricorn",
+        "reef_type": "slopes",
+        "depth_min": -10.1,
+        "depth_max": -2.1,
+        "slope_min": 0.1,
+        "slope_max": 30.0,
+        "rugosity_min": 0.0,
+        "rugosity_max": 6.0,
+        "waves_period_min": 1.94303,
+        "waves_period_max": 9.32689,
+        "waves_height_min": 0.237052,
+        "waves_height_max": 2.53194,
+        "x_dist": 451,
+        "y_dist": 27,
+        "threshold": 95
+    }
+}
+
+### Create a new suitability assessment job (with minimal params)
+# @name createSuitabilityJob
+POST {{baseUrl}}/jobs
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "type": "SUITABILITY_ASSESSMENT",
+    "inputPayload": {
+        "region": "Mackay-Capricorn",
+        "reef_type": "slopes",
+        "x_dist": 451,
+        "y_dist": 27
+    }
+}
+
+
+### Store the job IDs for further operations
+@jobId = {{createJob.response.body.jobId}}
+@jobId = {{createSuitabilityJob.response.body.jobId}}
+
+### Poll for available jobs (worker endpoint)
+# @name pollJobs
+GET {{baseUrl}}/jobs/poll
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+### Poll for specific job type
+GET {{baseUrl}}/jobs/poll?jobType=TEST
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+### Assign job to worker
+# @name assignJob
+POST {{baseUrl}}/jobs/assign
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "jobId": {{jobId}},
+    "ecsTaskArn": "arn:aws:ecs:region:account:task/cluster/task-id",
+    "ecsClusterArn": "arn:aws:ecs:region:account:cluster/cluster-name"
+}
+
+### Store the assignment ID
+@assignmentId = {{assignJob.response.body.assignment.id}}
+
+### Submit successful job result
+POST {{baseUrl}}/jobs/assignments/{{assignmentId}}/result
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+    "status": "SUCCEEDED",
+    "resultPayload": {
+    }
+}
+
+### Submit failed job result
+POST {{baseUrl}}/jobs/assignments/{{assignmentId}}/result
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+    "status": "FAILED",
+    "resultPayload": {
+    }
+}
+
+### Get job details (as owner)
+GET {{baseUrl}}/jobs/{{jobId}}
+Authorization: Bearer {{authToken}}
+
+### Cancel a job
+POST {{baseUrl}}/jobs/{{jobId}}/cancel
+Authorization: Bearer {{authToken}}
+
+### Download job results
+GET {{baseUrl}}/jobs/{{jobId}}/download
+Authorization: Bearer {{authToken}}
+
+### Download job results with custom expiry
+GET {{baseUrl}}/jobs/{{jobId}}/download?expirySeconds=7200
+Authorization: Bearer {{authToken}}
+
+### ERROR CASES
+
+### Try to create job without authentication
+POST {{baseUrl}}/jobs
+Content-Type: {{contentType}}
+
+{
+    "type": "TEST",
+    "inputPayload": {
+        "id" : 1
+    }
+}
+
+### Try to create job with invalid type
+POST {{baseUrl}}/jobs
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "type": "INVALID_TYPE",
+    "inputPayload": {
+        "id" : 1
+    }
+}
+
+### Try to create job with invalid payload schema
+POST {{baseUrl}}/jobs
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "type": "TEST",
+    "inputPayload": {
+        "invalidField": true
+    }
+}
+
+### Try to assign already assigned job
+POST {{baseUrl}}/jobs/assign
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "jobId": {{jobId}},
+    "ecsTaskArn": "arn:aws:ecs:region:account:task/cluster/another-task",
+    "ecsClusterArn": "arn:aws:ecs:region:account:cluster/another-cluster"
+}
+
+### Try to submit result for non-existent assignment
+POST {{baseUrl}}/jobs/assignments/999999/result
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "status": "SUCCEEDED",
+    "resultPayload": {}
+}
+
+### Try to submit result with invalid status
+POST {{baseUrl}}/jobs/assignments/{{assignmentId}}/result
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "status": "INVALID_STATUS",
+    "resultPayload": {}
+}
+
+### Try to cancel completed job
+POST {{baseUrl}}/jobs/{{jobId}}/cancel
+Authorization: Bearer {{authToken}}
+
+### Try to access job details of another user's job
+# Note: This assumes job ID 999999 belongs to another user
+GET {{baseUrl}}/jobs/999999
+Authorization: Bearer {{authToken}}
+
+### Try to download results of incomplete job
+# Create new job for this test
+# @name createJob2
+POST {{baseUrl}}/jobs
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "type": "TEST",
+    "inputPayload": {
+        "id" : 1000
+    }
+}
+
+### Store the job ID for further operations
+@jobId = {{createJob2.response.body.jobId}}
+
+### Try download (should fail as job is not complete)
+GET {{baseUrl}}/jobs/{{jobId}}/download
+Authorization: Bearer {{authToken}}

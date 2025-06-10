@@ -1,0 +1,842 @@
+digraph "Diagram" {
+  splines = "ortho";
+  pad = "1.0";
+  nodesep = "0.60";
+  ranksep = "0.75";
+  fontname = "Sans-Serif";
+  fontsize = "15";
+  dpi = "200";
+  rankdir = "BT";
+  compound = "true";
+  fontcolor = "#222222";
+  edge [
+    color = "#D5871488",
+    penwidth = 2,
+    arrowhead = "dot",
+    arrowtail = "dot",
+  ];
+  node [
+    shape = "box",
+    style = "rounded",
+    fixedsize = true,
+    width = 1.7,
+    height = 1.7,
+    labelloc = "c",
+    imagescale = true,
+    fontname = "Sans-Serif",
+    fontsize = 8,
+    margin = 8,
+  ];
+  subgraph "reefguide" {
+    subgraph "cluster-SubGraph.reefguide" {
+      graph [
+        label = "reefguide",
+        labelloc = "b",
+        labeljust = "l",
+        margin = "10",
+        fontsize = "16",
+        penwidth = "2",
+        pencolor = "#888888",
+        style = "filled,rounded",
+        fillcolor = "#e4e4e4",
+      ];
+      "reefguide/manager-userpass" [
+        label = " manager-userpass",
+        fontsize = 12,
+        image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Security-Identity-Compliance/64/Arch_AWS-Secrets-Manager_64@5x.png",
+        imagescale = "true",
+        imagepos = "tc",
+        penwidth = "0",
+        shape = "node",
+        fixedsize = "true",
+        labelloc = "b",
+        width = 1.2,
+        height = 1.466,
+      ];
+      "reefguide/admin-userpass" [
+        label = " admin-userpass",
+        fontsize = 12,
+        image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Security-Identity-Compliance/64/Arch_AWS-Secrets-Manager_64@5x.png",
+        imagescale = "true",
+        imagepos = "tc",
+        penwidth = "0",
+        shape = "node",
+        fixedsize = "true",
+        labelloc = "b",
+        width = 1.2,
+        height = 1.466,
+      ];
+      "reefguide/worker-userpass" [
+        label = " worker-userpass",
+        fontsize = 12,
+        image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Security-Identity-Compliance/64/Arch_AWS-Secrets-Manager_64@5x.png",
+        imagescale = "true",
+        imagepos = "tc",
+        penwidth = "0",
+        shape = "node",
+        fixedsize = "true",
+        labelloc = "b",
+        width = 1.2,
+        height = 1.466,
+      ];
+      "reefguide/Custom__CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C" [
+        label = " Custom \nCDKBucketDeployment86",
+        fontsize = 12,
+        image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Compute/64/Arch_AWS-Lambda_64@5x.png",
+        imagescale = "true",
+        imagepos = "tc",
+        penwidth = "0",
+        shape = "node",
+        fixedsize = "true",
+        labelloc = "b",
+        width = 2,
+        height = 2.4819999999999998,
+      ];
+      subgraph "cluster-SubGraph.networking" {
+        graph [
+          label = "networking",
+          labelloc = "b",
+          labeljust = "l",
+          margin = "10",
+          fontsize = "16",
+          penwidth = "2",
+          pencolor = "#888888",
+          style = "filled,rounded",
+          fillcolor = "#d6d6d6",
+        ];
+        "reefguide/networking/vpc" [
+          label = " vpc",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Networking-Content/64/Arch_Amazon-Virtual-Private-Cloud_64@5x.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+        subgraph "cluster-SubGraph.shared-balancer" {
+          graph [
+            label = "shared-balancer",
+            labelloc = "b",
+            labeljust = "l",
+            margin = "10",
+            fontsize = "16",
+            penwidth = "2",
+            pencolor = "#888888",
+            style = "filled,rounded",
+            fillcolor = "#c7c7c7",
+          ];
+          "reefguide/networking/shared-balancer/alb" [
+            label = " alb",
+            fontsize = 12,
+            image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Networking-Content/64/Arch_Elastic-Load-Balancing_64@5x.png",
+            imagescale = "true",
+            imagepos = "tc",
+            penwidth = "0",
+            shape = "node",
+            fixedsize = "true",
+            labelloc = "b",
+            width = 2,
+            height = 2.266,
+          ];
+          "reefguide/networking/shared-balancer/https-listener" [
+            label = " https-listener",
+            fontsize = 12,
+            image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Resource/Res_Networking-and-Content-Delivery/Res_48_Dark/Res_Elastic-Load-Balancing_Application-Load-Balancer_48_Dark_gen.png",
+            imagescale = "true",
+            imagepos = "tc",
+            penwidth = "0",
+            shape = "node",
+            fixedsize = "true",
+            labelloc = "b",
+            width = 1.2,
+            height = 1.466,
+          ];
+          "reefguide/networking/shared-balancer/http-listener" [
+            label = " http-listener",
+            fontsize = 12,
+            image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Resource/Res_Networking-and-Content-Delivery/Res_48_Dark/Res_Elastic-Load-Balancing_Application-Load-Balancer_48_Dark_gen.png",
+            imagescale = "true",
+            imagepos = "tc",
+            penwidth = "0",
+            shape = "node",
+            fixedsize = "true",
+            labelloc = "b",
+            width = 1.2,
+            height = 1.466,
+          ];
+        }
+      }
+      subgraph "cluster-SubGraph.db" {
+        graph [
+          label = "db",
+          labelloc = "b",
+          labeljust = "l",
+          margin = "10",
+          fontsize = "16",
+          penwidth = "2",
+          pencolor = "#888888",
+          style = "filled,rounded",
+          fillcolor = "#d6d6d6",
+        ];
+        "reefguide/db/db-sg" [
+          label = " db-sg",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/security_group.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+        "reefguide/db/instance" [
+          label = " instance",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Resource/Res_Compute/Res_48_Dark/Res_Amazon-EC2_Instance_48_Dark_gen.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+      }
+      subgraph "cluster-SubGraph.reef-guide-api" {
+        graph [
+          label = "reef-guide-api",
+          labelloc = "b",
+          labeljust = "l",
+          margin = "10",
+          fontsize = "16",
+          penwidth = "2",
+          pencolor = "#888888",
+          style = "filled,rounded",
+          fillcolor = "#d6d6d6",
+        ];
+        "reefguide/reef-guide-api/bucket" [
+          label = " bucket",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Storage/64/Arch_Amazon-S3-Standard_64@5x.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+        "reefguide/reef-guide-api/efs" [
+          label = " efs",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Storage/64/Arch_Amazon-Elastic-File-System_64@5x.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 1.2,
+          height = 1.466,
+        ];
+        "reefguide/reef-guide-api/reefguide-task-dfn" [
+          label = " reefguide-task-dfn",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Resource/Res_Containers/Res_48_Dark/Res_Amazon-Elastic-Container-Service_Task_48_Dark_gen.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+        "reefguide/reef-guide-api/reef-guide-cluster" [
+          label = " reef-guide-cluster",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Compute/64/Arch_Amazon-Elastic-Container-Service_64@5x.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+        "reefguide/reef-guide-api/reef-guide-sg" [
+          label = " reef-guide-sg",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/security_group.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+        "reefguide/reef-guide-api/MemoryAlertTopic" [
+          label = " MemoryAlertTopic",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_App-Integration/Arch_64/Arch_AWS-Simple-Notification-Service_64@5x.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+        "reefguide/reef-guide-api/AvgMemoryUtilizationAlarm" [
+          label = "\nAvgMemoryUtilizationA",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Management-Governance/64/Arch_Amazon-CloudWatch_64@5x.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 1.2,
+          height = 1.682,
+        ];
+        "reefguide/reef-guide-api/MaxMemoryUtilizationAlarm" [
+          label = "\nMaxMemoryUtilizationA",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Management-Governance/64/Arch_Amazon-CloudWatch_64@5x.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 1.2,
+          height = 1.682,
+        ];
+        "reefguide/reef-guide-api/reef-guide-tg" [
+          label = " reef-guide-tg",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Resource/Res_Networking-and-Content-Delivery/Res_48_Dark/Res_Elastic-Load-Balancing_Application-Load-Balancer_48_Dark_gen.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 1.2,
+          height = 1.466,
+        ];
+        "reefguide/reef-guide-api/reef-guide-api-route" [
+          label = " reef-guide-api-route",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Resource/Res_Networking-and-Content-Delivery/Res_48_Dark/Res_Amazon-Route-53-Hosted-Zone_48_Dark_gen.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 1.2,
+          height = 1.466,
+        ];
+        "reefguide/reef-guide-api/EFSManagementRole" [
+          label = " EFSManagementRole",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Security-Identity-Compliance/64/Arch_AWS-Identity-and-Access-Management_64@5x.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 1.2,
+          height = 1.466,
+        ];
+        "reefguide/reef-guide-api/EFSManagementInstance" [
+          label = "\nEFSManagementInstance",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Resource/Res_Compute/Res_48_Dark/Res_Amazon-EC2_T3-Instance_48_Dark.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.4819999999999998,
+        ];
+        "reefguide/reef-guide-api/reefguide-service/Service" [
+          label = " ECS Service Service",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Resource/Res_Containers/Res_48_Dark/Res_Amazon-Elastic-Container-Service_Service_48_Dark_gen.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+      }
+      subgraph "cluster-SubGraph.web-api" {
+        graph [
+          label = "web-api",
+          labelloc = "b",
+          labeljust = "l",
+          margin = "10",
+          fontsize = "16",
+          penwidth = "2",
+          pencolor = "#888888",
+          style = "filled,rounded",
+          fillcolor = "#d6d6d6",
+        ];
+        "reefguide/web-api/api" [
+          label = " api",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Compute/64/Arch_AWS-Lambda_64@5x.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+        "reefguide/web-api/apigw" [
+          label = " apigw",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Networking-Content/64/Arch_Amazon-API-Gateway_64@5x.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 1.2,
+          height = 1.466,
+        ];
+        "reefguide/web-api/route" [
+          label = " route",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Resource/Res_Networking-and-Content-Delivery/Res_48_Dark/Res_Amazon-Route-53-Hosted-Zone_48_Dark_gen.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 1.2,
+          height = 1.466,
+        ];
+      }
+      subgraph "cluster-SubGraph.job-system" {
+        graph [
+          label = "job-system",
+          labelloc = "b",
+          labeljust = "l",
+          margin = "10",
+          fontsize = "16",
+          penwidth = "2",
+          pencolor = "#888888",
+          style = "filled,rounded",
+          fillcolor = "#d6d6d6",
+        ];
+        "reefguide/job-system/job-storage" [
+          label = " job-storage",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Storage/64/Arch_Amazon-S3-Standard_64@5x.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+        "reefguide/job-system/worker-sg" [
+          label = " worker-sg",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/security_group.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+        "reefguide/job-system/SUITABILITY_ASSESSMENT-REGIONAL_ASSESSMENT-TEST-task-def" [
+          label = " SUITABILITY\nASSESSMENT REGIONAL\nASSESSMENT TEST task\ndef",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Resource/Res_Containers/Res_48_Dark/Res_Amazon-Elastic-Container-Service_Task_48_Dark_gen.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.9139999999999997,
+        ];
+        "reefguide/job-system/capacity-manager-task" [
+          label = "\ncapacity-manager-task",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Resource/Res_Containers/Res_48_Dark/Res_Amazon-Elastic-Container-Service_Task_48_Dark_gen.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.4819999999999998,
+        ];
+        "reefguide/job-system/capacity-manager-sg" [
+          label = " capacity-manager-sg",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/security_group.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+        "reefguide/job-system/capacity-manager/Service" [
+          label = " ECS Service Service",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Resource/Res_Containers/Res_48_Dark/Res_Amazon-Elastic-Container-Service_Service_48_Dark_gen.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+      }
+      subgraph "cluster-SubGraph.website" {
+        graph [
+          label = "website",
+          labelloc = "b",
+          labeljust = "l",
+          margin = "10",
+          fontsize = "16",
+          penwidth = "2",
+          pencolor = "#888888",
+          style = "filled,rounded",
+          fillcolor = "#c7c7c7",
+        ];
+        "reefguide/frontend/website/Bucket" [
+          label = " Bucket",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Storage/64/Arch_Amazon-S3-Standard_64@5x.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+        "reefguide/frontend/website/ResponseHeadersPolicy" [
+          label = "\nResponseHeadersPolicy",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Networking-Content/64/Arch_Amazon-CloudFront_64@5x.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 1.2,
+          height = 1.682,
+        ];
+        "reefguide/frontend/website/Distribution" [
+          label = " Distribution",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Networking-Content/64/Arch_Amazon-CloudFront_64@5x.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 2,
+          height = 2.266,
+        ];
+        "reefguide/frontend/website/WebsiteAliasRecord90b05b" [
+          label = "\nWebsiteAliasRecord90b",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Resource/Res_Networking-and-Content-Delivery/Res_48_Dark/Res_Amazon-Route-53-Hosted-Zone_48_Dark_gen.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 1.2,
+          height = 1.682,
+        ];
+        "reefguide/frontend/website/WebsiteIPv6AliasRecord90b05b" [
+          label = "\nWebsiteIPv6AliasRecor",
+          fontsize = 12,
+          image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Resource/Res_Networking-and-Content-Delivery/Res_48_Dark/Res_Amazon-Route-53-Hosted-Zone_48_Dark_gen.png",
+          imagescale = "true",
+          imagepos = "tc",
+          penwidth = "0",
+          shape = "node",
+          fixedsize = "true",
+          labelloc = "b",
+          width = 1.2,
+          height = 1.682,
+        ];
+        subgraph "cluster-SubGraph.Deployment" {
+          graph [
+            label = "Deployment",
+            labelloc = "b",
+            labeljust = "l",
+            margin = "10",
+            fontsize = "16",
+            penwidth = "2",
+            pencolor = "#888888",
+            style = "filled,rounded",
+            fillcolor = "#b9b9b9",
+          ];
+          "reefguide/frontend/website/Deployment/AwsCliLayer" [
+            label = " AwsCliLayer",
+            fontsize = 12,
+            image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Compute/64/Arch_AWS-Lambda_64@5x.png",
+            imagescale = "true",
+            imagepos = "tc",
+            penwidth = "0",
+            shape = "node",
+            fixedsize = "true",
+            labelloc = "b",
+            width = 2,
+            height = 2.266,
+          ];
+          "reefguide/frontend/website/Deployment/CustomResource" [
+            label = " CloudFormation\nCustomResource\nCustomResource",
+            fontsize = 12,
+            image = "/home/peter/repos/open-AIMS/reefguide-web-api/node_modules/cdk-dia/icons/aws/Service/Arch_Management-Governance/64/Arch_AWS-CloudFormation_64@5x.png",
+            imagescale = "true",
+            imagepos = "tc",
+            penwidth = "0",
+            shape = "node",
+            fixedsize = "true",
+            labelloc = "b",
+            width = 1.2,
+            height = 1.898,
+          ];
+        }
+      }
+    }
+  }
+  "reefguide/networking/shared-balancer/alb" -> "reefguide/networking/vpc" [
+    dir = "both",
+  ];
+  "reefguide/networking/shared-balancer/alb" -> "reefguide/reef-guide-api/reef-guide-sg" [
+    dir = "both",
+  ];
+  "reefguide/networking/shared-balancer/https-listener" -> "reefguide/networking/shared-balancer/alb" [
+    dir = "both",
+  ];
+  "reefguide/networking/shared-balancer/https-listener" -> "reefguide/reef-guide-api/reef-guide-tg" [
+    dir = "both",
+  ];
+  "reefguide/networking/shared-balancer/http-listener" -> "reefguide/networking/shared-balancer/alb" [
+    dir = "both",
+  ];
+  "reefguide/db/db-sg" -> "reefguide/networking/vpc" [
+    dir = "both",
+  ];
+  "reefguide/db/instance" -> "reefguide/networking/vpc" [
+    dir = "both",
+  ];
+  "reefguide/db/instance" -> "reefguide/db/db-sg" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/efs" -> "reefguide/networking/vpc" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/efs" -> "reefguide/reef-guide-api/reef-guide-sg" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/efs" -> "reefguide/reef-guide-api/EFSManagementInstance" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/efs" -> "reefguide/job-system/worker-sg" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/reefguide-task-dfn" -> "reefguide/reef-guide-api/efs" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/reef-guide-sg" -> "reefguide/networking/vpc" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/reef-guide-sg" -> "reefguide/networking/shared-balancer/alb" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/AvgMemoryUtilizationAlarm" -> "reefguide/reef-guide-api/reefguide-service/Service" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/AvgMemoryUtilizationAlarm" -> "reefguide/reef-guide-api/reef-guide-cluster" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/AvgMemoryUtilizationAlarm" -> "reefguide/reef-guide-api/MemoryAlertTopic" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/MaxMemoryUtilizationAlarm" -> "reefguide/reef-guide-api/reefguide-service/Service" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/MaxMemoryUtilizationAlarm" -> "reefguide/reef-guide-api/reef-guide-cluster" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/MaxMemoryUtilizationAlarm" -> "reefguide/reef-guide-api/MemoryAlertTopic" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/reef-guide-tg" -> "reefguide/networking/vpc" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/reef-guide-api-route" -> "reefguide/networking/shared-balancer/alb" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/EFSManagementRole" -> "reefguide/reef-guide-api/bucket" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/EFSManagementRole" -> "reefguide/reef-guide-api/efs" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/EFSManagementInstance" -> "reefguide/networking/vpc" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/EFSManagementInstance" -> "reefguide/reef-guide-api/EFSManagementRole" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/EFSManagementInstance" -> "reefguide/reef-guide-api/efs" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/reefguide-service/Service" -> "reefguide/networking/vpc" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/reefguide-service/Service" -> "reefguide/reef-guide-api/reefguide-task-dfn" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/reefguide-service/Service" -> "reefguide/reef-guide-api/reef-guide-cluster" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/reefguide-service/Service" -> "reefguide/reef-guide-api/reef-guide-sg" [
+    dir = "both",
+  ];
+  "reefguide/reef-guide-api/reefguide-service/Service" -> "reefguide/reef-guide-api/reef-guide-tg" [
+    dir = "both",
+  ];
+  "reefguide/web-api/api" -> "reefguide/reef-guide-api/reefguide-service/Service" [
+    dir = "both",
+  ];
+  "reefguide/web-api/api" -> "reefguide/manager-userpass" [
+    dir = "both",
+  ];
+  "reefguide/web-api/api" -> "reefguide/admin-userpass" [
+    dir = "both",
+  ];
+  "reefguide/web-api/api" -> "reefguide/worker-userpass" [
+    dir = "both",
+  ];
+  "reefguide/web-api/api" -> "reefguide/reef-guide-api/reef-guide-cluster" [
+    dir = "both",
+  ];
+  "reefguide/web-api/api" -> "reefguide/job-system/job-storage" [
+    dir = "both",
+  ];
+  "reefguide/web-api/apigw" -> "reefguide/web-api/api" [
+    dir = "both",
+  ];
+  "reefguide/web-api/route" -> "reefguide/web-api/apigw" [
+    dir = "both",
+  ];
+  "reefguide/Custom__CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C" -> "reefguide/frontend/website/Bucket" [
+    dir = "both",
+  ];
+  "reefguide/Custom__CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C" -> "reefguide/frontend/website/Deployment/AwsCliLayer" [
+    dir = "both",
+  ];
+  "reefguide/job-system/worker-sg" -> "reefguide/networking/vpc" [
+    dir = "both",
+  ];
+  "reefguide/job-system/SUITABILITY_ASSESSMENT-REGIONAL_ASSESSMENT-TEST-task-def" -> "reefguide/reef-guide-api/efs" [
+    dir = "both",
+  ];
+  "reefguide/job-system/SUITABILITY_ASSESSMENT-REGIONAL_ASSESSMENT-TEST-task-def" -> "reefguide/job-system/job-storage" [
+    dir = "both",
+  ];
+  "reefguide/job-system/SUITABILITY_ASSESSMENT-REGIONAL_ASSESSMENT-TEST-task-def" -> "reefguide/worker-userpass" [
+    dir = "both",
+  ];
+  "reefguide/job-system/capacity-manager-task" -> "reefguide/job-system/SUITABILITY_ASSESSMENT-REGIONAL_ASSESSMENT-TEST-task-def" [
+    dir = "both",
+  ];
+  "reefguide/job-system/capacity-manager-task" -> "reefguide/manager-userpass" [
+    dir = "both",
+  ];
+  "reefguide/job-system/capacity-manager-task" -> "reefguide/networking/vpc" [
+    dir = "both",
+  ];
+  "reefguide/job-system/capacity-manager-task" -> "reefguide/reef-guide-api/reef-guide-cluster" [
+    dir = "both",
+  ];
+  "reefguide/job-system/capacity-manager-task" -> "reefguide/job-system/worker-sg" [
+    dir = "both",
+  ];
+  "reefguide/job-system/capacity-manager-sg" -> "reefguide/networking/vpc" [
+    dir = "both",
+  ];
+  "reefguide/job-system/capacity-manager/Service" -> "reefguide/networking/vpc" [
+    dir = "both",
+  ];
+  "reefguide/job-system/capacity-manager/Service" -> "reefguide/reef-guide-api/reef-guide-cluster" [
+    dir = "both",
+  ];
+  "reefguide/job-system/capacity-manager/Service" -> "reefguide/job-system/capacity-manager-task" [
+    dir = "both",
+  ];
+  "reefguide/job-system/capacity-manager/Service" -> "reefguide/job-system/capacity-manager-sg" [
+    dir = "both",
+  ];
+  "reefguide/frontend/website/Bucket" -> "reefguide/frontend/website/Distribution" [
+    dir = "both",
+  ];
+  "reefguide/frontend/website/Distribution" -> "reefguide/frontend/website/Bucket" [
+    dir = "both",
+  ];
+  "reefguide/frontend/website/Distribution" -> "reefguide/frontend/website/ResponseHeadersPolicy" [
+    dir = "both",
+  ];
+  "reefguide/frontend/website/WebsiteAliasRecord90b05b" -> "reefguide/frontend/website/Distribution" [
+    dir = "both",
+  ];
+  "reefguide/frontend/website/WebsiteIPv6AliasRecord90b05b" -> "reefguide/frontend/website/Distribution" [
+    dir = "both",
+  ];
+}

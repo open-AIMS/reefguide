@@ -1,0 +1,208 @@
+generator client {
+    provider      = "prisma-client-js"
+    binaryTargets = ["native", "rhel-openssl-1.0.x"]
+}
+
+datasource db {
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+    ADMIN
+    // If we want, we could add a role such as REEFGUIDE_USER which the API can
+    // validate to ensure a user can run API operations
+}
+
+// User - linked to passport js
+model User {
+    id            Int            @id @default(autoincrement())
+    email         String         @unique
+    password      String
+    // What roles does the user have?
+    roles         UserRole[]     @default([])
+    polygons      Polygon[]
+    notes         PolygonNote[]
+    refreshTokens RefreshToken[]
+    jobs          Job[]
+    jobRequests   JobRequest[]
+    log           UserLog[]
+}
+
+enum UserAction {
+    LOGIN
+    LOGOUT
+    CHANGE_PASSWORD
+    UPDATED
+}
+
+model UserLog {
+    // ID for the action
+    id Int @id @default(autoincrement())
+
+    // When did this occur
+    time DateTime @default(now())
+
+    // Action type
+    action UserAction
+
+    // Optional metadata field to hold any data associated with this action
+    metadata Json?
+
+    // Which user was this for?
+    user   User @relation(fields: [userId], references: [id])
+    userId Int
+}
+
+// User submitted polygon - has notes
+model Polygon {
+    id         Int           @id @default(autoincrement())
+    created_at DateTime      @default(now())
+    // Each polygon is linked to a user
+    user       User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    user_id    Int
+    // Using Json type for GeoJSON
+    polygon    Json
+    // Polygon has PolygonNote
+    notes      PolygonNote[]
+}
+
+model PolygonNote {
+    id         Int      @id @default(autoincrement())
+    created_at DateTime @default(now())
+    content    String
+    user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    user_id    Int
+    polygon    Polygon  @relation(fields: [polygon_id], references: [id], onDelete: Cascade)
+    polygon_id Int
+}
+
+model RefreshToken {
+    id          Int      @id @default(autoincrement())
+    // The token value - this should be globally unique
+    token       String
+    created_at  DateTime @default(now())
+    // users have refresh token(s)
+    user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    user_id     Int
+    // Expires at (timestamp seconds)
+    expiry_time Int
+    // Is this token valid? We can invalidate
+    valid       Boolean  @default(true)
+}
+
+// Job system
+enum StorageScheme {
+    S3
+    // Could add other storage schemes here
+}
+
+enum JobType {
+    TEST
+    SUITABILITY_ASSESSMENT
+    REGIONAL_ASSESSMENT
+}
+
+enum JobStatus {
+    // The job has not yet been consumed by worker
+    PENDING
+
+    // The job is in progress
+    IN_PROGRESS
+
+    // The job is finished - see job result
+    SUCCEEDED
+
+    // The job failed
+    FAILED
+
+    // The job was cancelled by the user
+    CANCELLED
+
+    // The job timed out
+    TIMED_OUT
+}
+
+// Tracks when a user requests to create a job
+model JobRequest {
+    id            Int      @id @default(autoincrement())
+    created_at    DateTime @default(now())
+    // Who made the request
+    user          User     @relation(fields: [user_id], references: [id])
+    user_id       Int
+    // What type of job was requested
+    type          JobType
+    // The input parameters requested
+    input_payload Json
+    // Did this request hit an existing cache entry?
+    cache_hit     Boolean
+    // If cache hit, what was the existing job?
+    // If cache miss, what new job was created?
+    job           Job      @relation(fields: [job_id], references: [id])
+    job_id        Int
+}
+
+model Job {
+    id            Int             @id @default(autoincrement())
+    created_at    DateTime        @default(now())
+    updated_at    DateTime        @updatedAt
+    type          JobType
+    status        JobStatus       @default(PENDING)
+    // What is the unique cache hash for this job?
+    hash          String
+    // Who created this job
+    user          User            @relation(fields: [user_id], references: [id])
+    user_id       Int
+    // Input parameters for the job - untyped JSON - application code manages
+    // zod IO schemas
+    input_payload Json
+    // Related entities
+    assignments   JobAssignment[]
+    results       JobResult[]
+
+    // Link to the original request that created this job
+    requests JobRequest[]
+}
+
+// JobAssignment tracks attempts to process a job
+model JobAssignment {
+    id              Int           @id @default(autoincrement())
+    created_at      DateTime      @default(now())
+    updated_at      DateTime      @updatedAt
+    // Link to the job
+    job             Job           @relation(fields: [job_id], references: [id])
+    job_id          Int
+    // ECS task info
+    ecs_task_arn    String
+    ecs_cluster_arn String
+    // When this assignment expires
+    expires_at      DateTime
+    // Where the worker should write results
+    storage_scheme  StorageScheme
+    storage_uri     String
+    // Assignment status tracking
+    heartbeat_at    DateTime?
+    completed_at    DateTime?
+    // Results from this assignment
+    result          JobResult?
+}
+
+// JobResult stores the output of a successful job execution
+model JobResult {
+    id             Int           @id @default(autoincrement())
+    created_at     DateTime      @default(now())
+    // Links to parent entities
+    job            Job           @relation(fields: [job_id], references: [id])
+    job_id         Int
+    // Which assignment produced this result?
+    assignment     JobAssignment @relation(fields: [assignment_id], references: [id])
+    assignment_id  Int           @unique
+    // Result data - optional
+    result_payload Json?
+    // Where results were stored
+    storage_scheme StorageScheme
+    storage_uri    String
+    // Optional metadata about the results
+    metadata       Json?
+}
