@@ -4,5 +4,5 @@ cdk.out
 cdk.context.json
 env.json
 .env.*
-!.env.example
+!.env.dist
 
