@@ -16,8 +16,8 @@
         "@types/node": "^22.15.31",
         "gts": "^6.0.2",
         "prettier": "^3.5.3",
-        "turbo": "^2.5",
-        "typescript": "^5.8"
+        "turbo": "^2.5.4",
+        "typescript": "^5.8.3"
     },
     "packageManager": "pnpm@10.12.1",
     "engines": {
