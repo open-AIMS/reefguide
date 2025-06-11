@@ -412,7 +412,7 @@ start_dev_server() {
     
     # Use turbo if available, otherwise use pnpm
     if command_exists turbo; then
-        turbo dev --filter=@reefguide/web-api
+        turbo dev --filter=@reefguide/web-api --filter=@reefguide/app
     elif npx turbo --version >/dev/null 2>&1; then
         npx turbo dev --filter=@reefguide/web-api
     else
