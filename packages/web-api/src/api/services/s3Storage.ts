@@ -23,6 +23,9 @@ export class S3StorageService {
     }
     if (this.minio) {
       this.s3Client = new S3Client({
+        region: 'ap-southeast-2',
+        forcePathStyle: true,
+        tls: false,
         endpoint: this.minio.endpoint,
         credentials: { accessKeyId: this.minio.username, secretAccessKey: this.minio.password }
       });
@@ -70,6 +73,8 @@ export class S3StorageService {
     expirySeconds = 3600
   ): Promise<Record<string, string>> {
     const { bucket, prefix } = this.parseS3Uri(locationUri);
+
+    console.log('Bucket prefix', bucket, prefix);
 
     // List all objects in the location
     const listCommand = new ListObjectsV2Command({

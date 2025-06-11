@@ -24,6 +24,10 @@ MINIO_ENDPOINT="http://localhost:9000"
 MINIO_ROOT_USER="minioadmin"
 MINIO_ROOT_PASSWORD="minioadmin"
 
+# Cache configuration
+CACHE_DIR="$HOME/.cache/reefguide"
+MC_CACHED="$CACHE_DIR/mc"
+
 # Logging functions
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -223,18 +227,44 @@ wait_for_minio() {
 setup_minio_bucket() {
     log_info "Setting up MinIO bucket: $S3_BUCKET_NAME"
     
-    # Install mc (MinIO Client) if not available
-    if ! command_exists mc; then
-        log_info "Installing MinIO client (mc)..."
-        if command_exists curl; then
-            curl -o /tmp/mc https://dl.min.io/client/mc/release/linux-amd64/mc
-            chmod +x /tmp/mc
-            MC_CMD="/tmp/mc"
-        else
-            error_exit "curl is required to install MinIO client. Please install curl."
-        fi
-    else
+    # Determine which mc command to use
+    if command_exists mc; then
         MC_CMD="mc"
+        log_info "Using system-installed MinIO client"
+    elif [ -x "$MC_CACHED" ]; then
+        MC_CMD="$MC_CACHED"
+        log_info "Using cached MinIO client"
+    else
+        log_info "Downloading and caching MinIO client..."
+        
+        # Create cache directory
+        mkdir -p "$CACHE_DIR"
+        
+        # Detect architecture and OS
+        local os_type="linux"
+        local arch_type="amd64"
+        
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            os_type="darwin"
+        fi
+        
+        if [[ "$(uname -m)" == "arm64" ]] || [[ "$(uname -m)" == "aarch64" ]]; then
+            arch_type="arm64"
+        fi
+        
+        local download_url="https://dl.min.io/client/mc/release/${os_type}-${arch_type}/mc"
+        
+        if command_exists curl; then
+            curl -f -o "$MC_CACHED" "$download_url" || error_exit "Failed to download MinIO client"
+        elif command_exists wget; then
+            wget -O "$MC_CACHED" "$download_url" || error_exit "Failed to download MinIO client"
+        else
+            error_exit "curl or wget is required to download MinIO client. Please install one of them."
+        fi
+        
+        chmod +x "$MC_CACHED"
+        MC_CMD="$MC_CACHED"
+        log_success "MinIO client downloaded and cached at $MC_CACHED"
     fi
     
     # Configure MinIO alias
@@ -253,11 +283,6 @@ setup_minio_bucket() {
     # Set public read policy for development (optional)
     log_info "Setting bucket policy for development..."
     $MC_CMD anonymous set public "local-minio/$S3_BUCKET_NAME" >/dev/null 2>&1 || log_warning "Could not set public policy on bucket (this is optional)"
-    
-    # Clean up temporary mc if we downloaded it
-    if [ "$MC_CMD" = "/tmp/mc" ]; then
-        rm -f /tmp/mc
-    fi
 }
 
 # Setup API configuration
@@ -441,6 +466,8 @@ main() {
     log_info "  - MinIO Console: http://localhost:9001"
     log_info "  - S3 Bucket: $S3_BUCKET_NAME"
     echo
+    log_info "MinIO client cached at: $MC_CACHED"
+    echo
     log_info "Starting development server..."
     start_dev_server
 }
@@ -472,6 +499,7 @@ usage() {
     echo "  - Console: http://localhost:9001"
     echo "  - Bucket: $S3_BUCKET_NAME"
     echo "  - Credentials: $MINIO_ROOT_USER / $MINIO_ROOT_PASSWORD"
+    echo "  - Client Cache: $CACHE_DIR/mc"
     echo
 }
 
