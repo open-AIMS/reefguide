@@ -4,14 +4,32 @@ import { BadRequestException } from '../exceptions';
 
 const MAX_FILES = 10;
 
+export interface MinioConfig {
+  endpoint: string;
+  username: string;
+  password: string;
+}
+
 export class S3StorageService {
   private s3Client: S3Client;
 
-  private bucket: string;
+  private bucketName: string;
+  private minio: MinioConfig | undefined;
 
-  constructor(bucket: string) {
-    this.s3Client = new S3Client({});
-    this.bucket = bucket;
+  constructor(bucketName: string, options?: { minio?: MinioConfig }) {
+    this.minio = options?.minio;
+    if (this.minio) {
+      console.log(`Using a locally mocked S3 endpoint - provided with URL: ${this.minio.endpoint}`);
+    }
+    if (this.minio) {
+      this.s3Client = new S3Client({
+        endpoint: this.minio.endpoint,
+        credentials: { accessKeyId: this.minio.username, secretAccessKey: this.minio.password }
+      });
+    } else {
+      this.s3Client = new S3Client({});
+    }
+    this.bucketName = bucketName;
   }
 
   /**
@@ -22,7 +40,7 @@ export class S3StorageService {
    */
   generateStorageLocation(jobType: string, jobId: number): string {
     const timestamp = new Date().toISOString().split('T')[0];
-    return `s3://${this.bucket}/jobs/${jobType.toLowerCase()}/${jobId}/${timestamp}`;
+    return `s3://${this.bucketName}/jobs/${jobType.toLowerCase()}/${jobId}/${timestamp}`;
   }
 
   /**
@@ -87,4 +105,27 @@ export class S3StorageService {
 
     return urlMap;
   }
+}
+
+// Singleton instance
+let S3_SERVICE: S3StorageService | null = null;
+
+export function getS3Service(): S3StorageService {
+  if (!S3_SERVICE) {
+    throw new Error('S3 service not initialized. Call initializeS3Service() first.');
+  }
+  return S3_SERVICE;
+}
+
+export function initializeS3Service(
+  bucketName: string,
+  options?: { minio?: MinioConfig }
+): S3StorageService {
+  if (S3_SERVICE) {
+    console.warn('S3 service already initialized, returning existing instance');
+    return S3_SERVICE;
+  }
+
+  S3_SERVICE = new S3StorageService(bucketName, options);
+  return S3_SERVICE;
 }

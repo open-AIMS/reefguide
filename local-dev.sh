@@ -300,19 +300,19 @@ setup_api_config() {
         log_success "Added S3_BUCKET_NAME=$S3_BUCKET_NAME to .env"
     fi
     
-    # Replace S3_ENDPOINT
-    if grep -q "S3_ENDPOINT=" .env; then
+    # Replace MINIO_ENDPOINT
+    if grep -q "MINIO_ENDPOINT=" .env; then
         if [[ "$OSTYPE" == "darwin"* ]]; then
             # macOS
-            sed -i '' "s|S3_ENDPOINT=.*|S3_ENDPOINT=$MINIO_ENDPOINT|" .env
+            sed -i '' "s|MINIO_ENDPOINT=.*|MINIO_ENDPOINT=$MINIO_ENDPOINT|" .env
         else
             # Linux
-            sed -i "s|S3_ENDPOINT=.*|S3_ENDPOINT=$MINIO_ENDPOINT|" .env
+            sed -i "s|MINIO_ENDPOINT=.*|MINIO_ENDPOINT=$MINIO_ENDPOINT|" .env
         fi
-        log_success "Updated S3_ENDPOINT to $MINIO_ENDPOINT"
+        log_success "Updated MINIO_ENDPOINT to $MINIO_ENDPOINT"
     else
-        echo "S3_ENDPOINT=$MINIO_ENDPOINT" >> .env
-        log_success "Added S3_ENDPOINT=$MINIO_ENDPOINT to .env"
+        echo "MINIO_ENDPOINT=$MINIO_ENDPOINT" >> .env
+        log_success "Added MINIO_ENDPOINT=$MINIO_ENDPOINT to .env"
     fi
     
     # Add AWS credentials for MinIO if not present

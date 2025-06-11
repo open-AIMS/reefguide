@@ -7,7 +7,7 @@ import { JobService } from '../services/jobs';
 import { userIsAdmin } from '../auth/utils';
 import { BadRequestException, UnauthorizedException } from '../exceptions';
 import { config } from '../config';
-import { S3StorageService } from '../services/s3Storage';
+import { getS3Service, S3StorageService } from '../services/s3Storage';
 require('express-async-errors');
 
 // API interfaces
@@ -286,7 +286,7 @@ router.get(
     }
 
     // Get presigned URLs for all files in the result location
-    const s3Service = new S3StorageService(config.s3.bucketName);
+    const s3Service = getS3Service();
     const urlMap = await s3Service.getPresignedUrls(
       successfulAssignment.storage_uri,
       expirySeconds
