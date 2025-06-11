@@ -22,14 +22,14 @@ Using the installed turbo
 npx turbo ...
 ```
 
-Or global install 
+Or global install (using npm)
 
 ```
 npm turbo -g
 turbo ...
 ```
 
-## Build 
+## Build
 
 ```
 turbo build

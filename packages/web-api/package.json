@@ -10,6 +10,7 @@
         "start": "env-cmd ts-node --files src/api/index.ts",
         "watch": "tsc -w",
         "dev": "env-cmd ts-node-dev --files src/api/index.ts",
+        "prebuild": "prisma generate",
         "build": "tsc",
         "lint": "gts lint",
         "test": "jest --detectOpenHandles",
