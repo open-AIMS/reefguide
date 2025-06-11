@@ -1,7 +1,7 @@
 import {
   PrismaClientKnownRequestError,
   PrismaClientUnknownRequestError,
-  PrismaClientValidationError,
+  PrismaClientValidationError
 } from '@prisma/client/runtime/library';
 
 /**
@@ -13,11 +13,7 @@ export class BaseApiException extends Error {
 
   cause?: Error;
 
-  constructor(
-    message = 'An unexpected error occurred',
-    statusCode = 500,
-    cause?: Error,
-  ) {
+  constructor(message = 'An unexpected error occurred', statusCode = 500, cause?: Error) {
     super(message);
     this.statusCode = statusCode;
     this.name = this.constructor.name;
@@ -114,10 +110,7 @@ export class InvalidRefreshTokenException extends RefreshTokenException {
  * @throws {BadRequestException} For client-side errors (invalid input, not found)
  * @throws {InternalServerError} For server-side errors (DB issues)
  */
-export function handlePrismaError(
-  error: unknown,
-  context = 'Database operation failed',
-): never {
+export function handlePrismaError(error: unknown, context = 'Database operation failed'): never {
   // Known Prisma errors with error codes
   if (error instanceof PrismaClientKnownRequestError) {
     switch (error.code) {
@@ -128,10 +121,7 @@ export function handlePrismaError(
 
       // Constraint violations
       case 'P2002': // Unique constraint violation
-        throw new BadRequestException(
-          `Resource already exists: ${context}`,
-          error,
-        );
+        throw new BadRequestException(`Resource already exists: ${context}`, error);
 
       // Other known errors - treated as server errors
       default:
@@ -146,10 +136,7 @@ export function handlePrismaError(
 
   // Unknown Prisma errors
   if (error instanceof PrismaClientUnknownRequestError) {
-    throw new InternalServerError(
-      `Unexpected database error: ${context}`,
-      error,
-    );
+    throw new InternalServerError(`Unexpected database error: ${context}`, error);
   }
 
   // Unexpected errors (non-Prisma)

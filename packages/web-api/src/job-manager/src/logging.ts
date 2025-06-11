@@ -34,13 +34,13 @@ export const logger = winston.createLogger({
     winston.format.timestamp(),
 
     // Custom formatter to include metadata as JSON
-    winston.format.printf(({level, message, timestamp, ...metadata}) => {
+    winston.format.printf(({ level, message, timestamp, ...metadata }) => {
       return `[${timestamp}] [${level.toUpperCase()}] ${message} ${
         Object.keys(metadata).length ? JSON.stringify(metadata) : ''
       }`;
-    }),
+    })
   ),
 
   // Define where logs are sent - console for basic setup
-  transports: [new winston.transports.Console()],
+  transports: [new winston.transports.Console()]
 });

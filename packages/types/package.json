@@ -1,0 +1,34 @@
+{
+    "name": "@reefguide/types",
+    "version": "0.1.0",
+    "description": "Shared types and schemas for ReefGuide",
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.js"
+        }
+    },
+    "scripts": {
+        "build": "tsup src/index.ts --format cjs,esm --dts",
+        "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+        "clean": "rm -rf dist",
+        "type-check": "tsc --noEmit",
+        "format:write": "prettier --write \"src/**/*.{ts,tsx}\"",
+        "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
+        "lint": "gts lint",
+        "fix": "gts fix"
+    },
+    "dependencies": {
+        "zod": "^3.22.4"
+    },
+    "devDependencies": {
+        "@types/node": "^22.15.31",
+        "eslint": "^8.57.0",
+        "prettier": "^3.5.3",
+        "tsup": "^8.0.2",
+        "typescript": "^5.8"
+    }
+}

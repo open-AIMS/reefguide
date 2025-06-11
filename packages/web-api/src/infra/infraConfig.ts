@@ -7,11 +7,9 @@ export const ReefGuideFrontendConfigSchema = z.object({
   /** The index document of the website */
   indexDocument: z.string().default('index.html'),
   /** The error document of the website */
-  errorDocument: z.string().default('error.html'),
+  errorDocument: z.string().default('error.html')
 });
-export type ReefGuideFrontendConfig = z.infer<
-  typeof ReefGuideFrontendConfigSchema
->;
+export type ReefGuideFrontendConfig = z.infer<typeof ReefGuideFrontendConfigSchema>;
 
 export const ReefGuideAPIConfigSchema = z.object({
   /** ReefGuideAPI.jl docker image */
@@ -39,15 +37,13 @@ export const ReefGuideAPIConfigSchema = z.object({
     /** The cooldown period (in seconds) before allowing another scale in action */
     scaleInCooldown: z.number().int().nonnegative().default(300),
     /** The cooldown period (in seconds) before allowing another scale out action */
-    scaleOutCooldown: z.number().int().nonnegative().default(150),
+    scaleOutCooldown: z.number().int().nonnegative().default(150)
   }),
   // Optional memory alerting - include configuration if desired
   memoryAlerting: z
     .object({
       /** Email address to send notifications to */
-      emailAddress: z
-        .string()
-        .email('Must provide a valid email address as email alert target.'),
+      emailAddress: z.string().email('Must provide a valid email address as email alert target.'),
       /** Memory threshold percentage (0-100) */
       averageThreshold: z.number().min(0).max(100).default(85),
       /** Memory threshold percentage (0-100) */
@@ -56,9 +52,9 @@ export const ReefGuideAPIConfigSchema = z.object({
        * threshold before alerting */
       evaluationPeriods: z.number().positive().default(2),
       /** Period in seconds over which to calculate the average */
-      metricPeriod: z.number().positive().default(60),
+      metricPeriod: z.number().positive().default(60)
     })
-    .optional(),
+    .optional()
 });
 export type ReefGuideAPIConfig = z.infer<typeof ReefGuideAPIConfigSchema>;
 
@@ -72,7 +68,7 @@ export const ApiSecretConfigSchema = z.object({
   // JWT configuration
   JWT_PRIVATE_KEY: z.string(),
   JWT_PUBLIC_KEY: z.string(),
-  JWT_KEY_ID: z.string(),
+  JWT_KEY_ID: z.string()
 });
 export type ApiSecretConfig = z.infer<typeof ApiSecretConfigSchema>;
 
@@ -107,12 +103,12 @@ export const WebAPIConfigSchema = z.object({
           /** The cooldown period (in seconds) before allowing another scale in action */
           scaleInCooldown: z.number().int().nonnegative().default(300),
           /** The cooldown period (in seconds) before allowing another scale out action */
-          scaleOutCooldown: z.number().int().nonnegative().default(150),
-        }),
+          scaleOutCooldown: z.number().int().nonnegative().default(150)
+        })
       })
       .optional(),
-    lambda: z.object({}).optional(),
-  }),
+    lambda: z.object({}).optional()
+  })
 });
 export type WebAPIConfig = z.infer<typeof WebAPIConfigSchema>;
 
@@ -124,14 +120,14 @@ const DomainsConfigSchema = z.object({
   /** The subdomain prefix for the Web REST API in this repo */
   webAPI: z.string().default('web-api'),
   /** The subdomain prefix for the frontend app */
-  frontend: z.string().default('app'),
+  frontend: z.string().default('app')
 });
 
 const DatabaseConfigSchema = z.object({
   /** How large is the instance? */
   instanceSize: z.nativeEnum(ec2.InstanceSize).default(ec2.InstanceSize.SMALL),
   /** How many GB allocated? */
-  storageGb: z.number().min(20),
+  storageGb: z.number().min(20)
 });
 
 // Define the configuration schema using Zod
@@ -142,13 +138,13 @@ export const DeploymentConfigSchema = z.object({
   /** Attributes of the hosted zone to use */
   hostedZone: z.object({
     id: z.string(),
-    name: z.string(),
+    name: z.string()
   }),
   certificates: z.object({
     /** ARN of the primary SSL/TLS certificate */
     primary: z.string(),
     /** ARN of the CloudFront SSL/TLS certificate */
-    cloudfront: z.string(),
+    cloudfront: z.string()
   }),
   // where to deploy - routes
   domains: DomainsConfigSchema,
@@ -156,7 +152,7 @@ export const DeploymentConfigSchema = z.object({
     // AWS Account ID
     account: z.string(),
     // AWS Region
-    region: z.string().default('ap-southeast-2'),
+    region: z.string().default('ap-southeast-2')
   }),
 
   // Configuration for the web API deployment (this repo)
@@ -171,7 +167,7 @@ export const DeploymentConfigSchema = z.object({
 
   // Database configuration - if none provided you will need to supply your own
   // DB connection strings
-  db: DatabaseConfigSchema.optional(),
+  db: DatabaseConfigSchema.optional()
 });
 export type DeploymentConfig = z.infer<typeof DeploymentConfigSchema>;
 

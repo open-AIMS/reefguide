@@ -62,11 +62,11 @@ export async function getTaskMetadata(): Promise<TaskIdentifiers> {
       clusterArn: taskMetadata.Cluster,
       taskFamily: taskMetadata.Family,
       taskRevision: taskMetadata.Revision,
-      availabilityZone: taskMetadata.AvailabilityZone,
+      availabilityZone: taskMetadata.AvailabilityZone
     };
   } catch (error) {
     throw new Error(
-      `Failed to retrieve ECS task metadata: ${error instanceof Error ? error.message : 'unknown error'}`,
+      `Failed to retrieve ECS task metadata: ${error instanceof Error ? error.message : 'unknown error'}`
     );
   }
 }

@@ -1,6 +1,6 @@
-import axios, {AxiosInstance, AxiosRequestConfig} from 'axios';
-import {jwtDecode} from 'jwt-decode';
-import {logger} from './logging';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { jwtDecode } from 'jwt-decode';
+import { logger } from './logging';
 
 /**
  * Interface for authentication credentials
@@ -50,7 +50,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public statusCode: number,
-    public response?: any,
+    public response?: any
   ) {
     super(message);
     this.name = 'ApiError';
@@ -80,11 +80,11 @@ export class AuthApiClient {
     this.axiosInstance = axios.create({
       baseURL,
       headers: {
-        'Content-Type': 'application/json',
-      },
+        'Content-Type': 'application/json'
+      }
     });
 
-    logger.debug('AuthApiClient initialized', {baseURL});
+    logger.debug('AuthApiClient initialized', { baseURL });
 
     // Add request interceptor to handle token management
     this.axiosInstance.interceptors.request.use(
@@ -104,7 +104,7 @@ export class AuthApiClient {
         }
         return config;
       },
-      error => Promise.reject(error),
+      error => Promise.reject(error)
     );
   }
 
@@ -139,14 +139,11 @@ export class AuthApiClient {
   private async login(): Promise<void> {
     try {
       logger.info('Logging in to API');
-      const response = await this.axiosInstance.post<AuthTokens>(
-        '/auth/login',
-        this.credentials,
-      );
+      const response = await this.axiosInstance.post<AuthTokens>('/auth/login', this.credentials);
       this.tokens = response.data;
       logger.debug('Login successful, token received');
     } catch (error) {
-      logger.error('Failed to login', {error});
+      logger.error('Failed to login', { error });
       throw new Error('Failed to login');
     }
   }
@@ -165,30 +162,25 @@ export class AuthApiClient {
         return;
       }
 
-      const response = await this.axiosInstance.post<AuthTokens>(
-        '/auth/token',
-        {
-          refreshToken: this.tokens.refreshToken,
-        },
-      );
+      const response = await this.axiosInstance.post<AuthTokens>('/auth/token', {
+        refreshToken: this.tokens.refreshToken
+      });
 
       if (response.status !== 200) {
         logger.warn('Non 200 response from refresh token endpoint', {
-          status: response.status,
+          status: response.status
         });
-        throw new Error(
-          `Non 200 response from refresh token. Code: ${response.status}.`,
-        );
+        throw new Error(`Non 200 response from refresh token. Code: ${response.status}.`);
       }
 
       this.tokens = {
         ...this.tokens,
-        token: response.data.token,
+        token: response.data.token
       };
       logger.debug('Token refreshed successfully');
     } catch (error) {
       logger.error('Error during token refresh, falling back to login', {
-        error,
+        error
       });
       // If refresh fails, try logging in again
       this.tokens = null;
@@ -205,7 +197,7 @@ export class AuthApiClient {
    * @returns Response data
    */
   public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    logger.debug('GET request', {url});
+    logger.debug('GET request', { url });
     const response = await this.axiosInstance.get<T>(url, config);
     return response.data;
   }
@@ -217,12 +209,8 @@ export class AuthApiClient {
    * @param config - Optional Axios request configuration
    * @returns Response data
    */
-  public async post<T>(
-    url: string,
-    data?: any,
-    config?: AxiosRequestConfig,
-  ): Promise<T> {
-    logger.debug('POST request', {url});
+  public async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    logger.debug('POST request', { url });
     const response = await this.axiosInstance.post<T>(url, data, config);
     return response.data;
   }
@@ -234,12 +222,8 @@ export class AuthApiClient {
    * @param config - Optional Axios request configuration
    * @returns Response data
    */
-  public async put<T>(
-    url: string,
-    data?: any,
-    config?: AxiosRequestConfig,
-  ): Promise<T> {
-    logger.debug('PUT request', {url});
+  public async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    logger.debug('PUT request', { url });
     const response = await this.axiosInstance.put<T>(url, data, config);
     return response.data;
   }
@@ -251,12 +235,8 @@ export class AuthApiClient {
    * @param config - Optional Axios request configuration
    * @returns Response data
    */
-  public async patch<T>(
-    url: string,
-    data?: any,
-    config?: AxiosRequestConfig,
-  ): Promise<T> {
-    logger.debug('PATCH request', {url});
+  public async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    logger.debug('PATCH request', { url });
     const response = await this.axiosInstance.patch<T>(url, data, config);
     return response.data;
   }
@@ -268,7 +248,7 @@ export class AuthApiClient {
    * @returns Response data
    */
   public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    logger.debug('DELETE request', {url});
+    logger.debug('DELETE request', { url });
     const response = await this.axiosInstance.delete<T>(url, config);
     return response.data;
   }

@@ -1,4 +1,4 @@
-import {z} from 'zod';
+import { z } from 'zod';
 
 /**
  * Environment variable schema definition using Zod
@@ -9,9 +9,7 @@ const envSchema = z.object({
   JWT_PUBLIC_KEY: z.string(),
   JWT_KEY_ID: z.string(),
   API_DOMAIN: z.string().url(),
-  NODE_ENV: z
-    .enum(['development', 'test', 'production'])
-    .default('development'),
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   DATABASE_URL: z.string().url(),
   DIRECT_URL: z.string().url(),
   AWS_REGION: z.string(),
@@ -25,7 +23,7 @@ const envSchema = z.object({
   WORKER_USERNAME: z.string(),
   WORKER_PASSWORD: z.string(),
   ADMIN_USERNAME: z.string(),
-  ADMIN_PASSWORD: z.string(),
+  ADMIN_PASSWORD: z.string()
 });
 
 /**
@@ -85,25 +83,25 @@ export function getConfig(): Config {
     jwt: {
       privateKey,
       publicKey,
-      keyId: env.JWT_KEY_ID,
+      keyId: env.JWT_KEY_ID
     },
     apiDomain: env.API_DOMAIN,
     isDevelopment: env.NODE_ENV !== 'production',
     database: {
       url: env.DATABASE_URL,
-      directUrl: env.DIRECT_URL,
+      directUrl: env.DIRECT_URL
     },
     aws: {
       region: env.AWS_REGION,
       ecs: {
         clusterName: env.ECS_CLUSTER_NAME,
-        serviceName: env.ECS_SERVICE_NAME,
-      },
+        serviceName: env.ECS_SERVICE_NAME
+      }
     },
     s3: {
       bucketName: env.S3_BUCKET_NAME,
       maxFiles: env.S3_MAX_FILES,
-      urlExpirySeconds: env.S3_URL_EXPIRY_SECONDS,
+      urlExpirySeconds: env.S3_URL_EXPIRY_SECONDS
     },
     creds: {
       workerPassword: env.WORKER_PASSWORD,
@@ -111,8 +109,8 @@ export function getConfig(): Config {
       managerPassword: env.MANAGER_PASSWORD,
       managerUsername: env.MANAGER_USERNAME,
       adminUsername: env.ADMIN_USERNAME,
-      adminPassword: env.ADMIN_PASSWORD,
-    },
+      adminPassword: env.ADMIN_PASSWORD
+    }
   };
 
   // Log configuration in non-production environments

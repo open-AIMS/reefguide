@@ -5,6 +5,7 @@
     "rules": {
         "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/no-floating-promises": "off",
+        "@typescript-eslint/prefer-type-literal": "off",
         "@typescript-eslint/no-unused-vars": [
             "warn",
             {

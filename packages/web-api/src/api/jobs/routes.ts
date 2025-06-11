@@ -1,13 +1,13 @@
-import express, {Response, Router} from 'express';
-import {z} from 'zod';
-import {processRequest} from 'zod-express-middleware';
-import {JobType, JobStatus, StorageScheme} from '@prisma/client';
-import {passport} from '../auth/passportConfig';
-import {JobService} from '../services/jobs';
-import {userIsAdmin} from '../auth/utils';
-import {BadRequestException, UnauthorizedException} from '../exceptions';
-import {config} from '../config';
-import {S3StorageService} from '../services/s3Storage';
+import express, { Response, Router } from 'express';
+import { z } from 'zod';
+import { processRequest } from 'zod-express-middleware';
+import { JobType, JobStatus, StorageScheme } from '@prisma/client';
+import { passport } from '../auth/passportConfig';
+import { JobService } from '../services/jobs';
+import { userIsAdmin } from '../auth/utils';
+import { BadRequestException, UnauthorizedException } from '../exceptions';
+import { config } from '../config';
+import { S3StorageService } from '../services/s3Storage';
 require('express-async-errors');
 
 // API interfaces
@@ -22,7 +22,7 @@ export const jobAssignmentSchema = z.object({
   storage_scheme: z.nativeEnum(StorageScheme),
   storage_uri: z.string(),
   heartbeat_at: z.date().nullable(),
-  completed_at: z.date().nullable(),
+  completed_at: z.date().nullable()
 });
 
 export const jobRequestSchema = z.object({
@@ -32,7 +32,7 @@ export const jobRequestSchema = z.object({
   type: z.nativeEnum(JobType),
   input_payload: z.any(),
   cache_hit: z.boolean(),
-  job_id: z.number(),
+  job_id: z.number()
 });
 
 export const jobResultSchema = z.object({
@@ -43,7 +43,7 @@ export const jobResultSchema = z.object({
   result_payload: z.any().nullable(),
   storage_scheme: z.nativeEnum(StorageScheme),
   storage_uri: z.string(),
-  metadata: z.any().nullable(),
+  metadata: z.any().nullable()
 });
 
 export const jobDetailsSchema = z.object({
@@ -53,15 +53,15 @@ export const jobDetailsSchema = z.object({
   type: z.nativeEnum(JobType),
   status: z.nativeEnum(JobStatus),
   user_id: z.number(),
-  input_payload: z.any(),
+  input_payload: z.any()
 });
 
 export const listJobsSchema = z.object({
-  status: z.nativeEnum(JobStatus).optional(),
+  status: z.nativeEnum(JobStatus).optional()
 });
 export const listJobsResponseSchema = z.object({
   jobs: z.array(jobDetailsSchema),
-  total: z.number(),
+  total: z.number()
 });
 
 export const router: Router = express.Router();
@@ -70,46 +70,46 @@ const jobService = new JobService();
 // Input/Output validation schemas
 export const createJobSchema = z.object({
   type: z.nativeEnum(JobType),
-  inputPayload: z.any(),
+  inputPayload: z.any()
 });
 export const createJobResponseSchema = z.object({
   jobId: z.number(),
   cached: z.boolean(),
-  requestId: z.number(),
+  requestId: z.number()
 });
 
 export const pollJobsSchema = z.object({
-  jobType: z.nativeEnum(JobType).optional(),
+  jobType: z.nativeEnum(JobType).optional()
 });
 export const pollJobsResponseSchema = z.object({
-  jobs: z.array(jobDetailsSchema),
+  jobs: z.array(jobDetailsSchema)
 });
 
 export const assignJobSchema = z.object({
   jobId: z.number(),
   ecsTaskArn: z.string(),
-  ecsClusterArn: z.string(),
+  ecsClusterArn: z.string()
 });
 export const assignJobResponseSchema = z.object({
-  assignment: jobAssignmentSchema,
+  assignment: jobAssignmentSchema
 });
 
 export const submitResultSchema = z.object({
   status: z.nativeEnum(JobStatus),
-  resultPayload: z.any().optional(),
+  resultPayload: z.any().optional()
 });
 
 export const jobDetailsResponseSchema = z.object({
-  job: jobDetailsSchema,
+  job: jobDetailsSchema
 });
 
 const downloadResponseSchema = z.object({
   job: z.object({
     id: z.number(),
     type: z.nativeEnum(JobType),
-    status: z.nativeEnum(JobStatus),
+    status: z.nativeEnum(JobStatus)
   }),
-  files: z.record(z.string(), z.string()),
+  files: z.record(z.string(), z.string())
 });
 
 // Type inferencing from schemas
@@ -124,32 +124,32 @@ export type ListJobsResponse = z.infer<typeof listJobsResponseSchema>;
 router.post(
   '/',
   processRequest({
-    body: createJobSchema,
+    body: createJobSchema
   }),
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   async (req, res: Response<z.infer<typeof createJobResponseSchema>>) => {
     if (!req.user) throw new UnauthorizedException();
 
-    const {job, jobRequest, cached} = await jobService.createJobRequest(
+    const { job, jobRequest, cached } = await jobService.createJobRequest(
       req.user.id,
       req.body.type,
-      req.body.inputPayload,
+      req.body.inputPayload
     );
 
     res.status(200).json({
       jobId: job.id,
       cached,
-      requestId: jobRequest.id,
+      requestId: jobRequest.id
     });
-  },
+  }
 );
 
 router.get(
   '/',
   processRequest({
-    query: listJobsSchema,
+    query: listJobsSchema
   }),
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   async (req, res: Response<ListJobsResponse>) => {
     if (!req.user) throw new UnauthorizedException();
 
@@ -157,47 +157,47 @@ router.get(
     const userId = isAdmin ? undefined : req.user.id;
     const status = req.query.status as JobStatus | undefined;
 
-    const {jobs, total} = await jobService.listJobs({
+    const { jobs, total } = await jobService.listJobs({
       userId,
-      status,
+      status
     });
 
-    res.json({jobs, total});
-  },
+    res.json({ jobs, total });
+  }
 );
 
 router.get(
   '/poll',
   processRequest({
-    query: pollJobsSchema,
+    query: pollJobsSchema
   }),
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   async (req, res: Response<PollJobsResponse>) => {
     const jobs = await jobService.pollJobs(req.query.jobType as JobType);
-    res.json({jobs});
-  },
+    res.json({ jobs });
+  }
 );
 
 router.post(
   '/assign',
   processRequest({
-    body: assignJobSchema,
+    body: assignJobSchema
   }),
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   async (req, res: Response<AssignJobResponse>) => {
     const assignment = await jobService.assignJob(
       req.body.jobId,
       req.body.ecsTaskArn,
-      req.body.ecsClusterArn,
+      req.body.ecsClusterArn
     );
-    res.json({assignment});
-  },
+    res.json({ assignment });
+  }
 );
 
 router.get(
   '/requests',
   processRequest({}),
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     if (!req.user) throw new UnauthorizedException();
 
@@ -206,71 +206,63 @@ router.get(
     res.json({
       jobRequests: jobService.listRequests({
         // Only filter by user if not admin
-        userId: !isAdmin ? req.user.id : undefined,
-      }),
+        userId: !isAdmin ? req.user.id : undefined
+      })
     });
-  },
+  }
 );
 
 router.post(
   '/assignments/:id/result',
   processRequest({
-    params: z.object({id: z.string()}),
-    body: submitResultSchema,
+    params: z.object({ id: z.string() }),
+    body: submitResultSchema
   }),
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   async (req, res: Response<void>) => {
     const assignmentId = parseInt(req.params.id);
-    await jobService.submitResult(
-      assignmentId,
-      req.body.status,
-      req.body.resultPayload,
-    );
+    await jobService.submitResult(assignmentId, req.body.status, req.body.resultPayload);
     res.status(200).send();
-  },
+  }
 );
 
 router.get(
   '/:id',
   processRequest({
-    params: z.object({id: z.string()}),
+    params: z.object({ id: z.string() })
   }),
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   async (req, res: Response<JobDetailsResponse>) => {
     if (!req.user) throw new UnauthorizedException();
     const jobId = parseInt(req.params.id);
     const job = await jobService.getJobDetails(jobId);
-    res.json({job});
-  },
+    res.json({ job });
+  }
 );
 
 router.post(
   '/:id/cancel',
   processRequest({
-    params: z.object({id: z.string()}),
+    params: z.object({ id: z.string() })
   }),
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   async (req, res: Response<JobDetailsResponse>) => {
     if (!req.user) throw new UnauthorizedException();
     const jobId = parseInt(req.params.id);
-    const job = await jobService.cancelJob(
-      jobId,
-      req.user.id,
-      userIsAdmin(req.user),
-    );
-    res.json({job});
-  },
+    const job = await jobService.cancelJob(jobId, req.user.id, userIsAdmin(req.user));
+    res.json({ job });
+  }
 );
 
 router.get(
   '/:id/download',
   processRequest({
-    params: z.object({id: z.string()}),
+    params: z.object({ id: z.string() }),
     query: z.object({
-      expirySeconds: z.string().optional(),
-    }),
+      expirySeconds: z.string().optional()
+    })
   }),
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     if (!req.user) throw new UnauthorizedException();
 
@@ -283,10 +275,7 @@ router.get(
     const job = await jobService.getJobDetails(jobId);
 
     // Check if job has any results
-    if (
-      job.status !== JobStatus.SUCCEEDED ||
-      !job.assignments.some(a => a.result)
-    ) {
+    if (job.status !== JobStatus.SUCCEEDED || !job.assignments.some(a => a.result)) {
       throw new BadRequestException('Job has no results to download');
     }
 
@@ -300,16 +289,16 @@ router.get(
     const s3Service = new S3StorageService(config.s3.bucketName);
     const urlMap = await s3Service.getPresignedUrls(
       successfulAssignment.storage_uri,
-      expirySeconds,
+      expirySeconds
     );
 
     res.json({
       job: {
         id: job.id,
         type: job.type,
-        status: job.status,
+        status: job.status
       },
-      files: urlMap,
+      files: urlMap
     });
-  },
+  }
 );

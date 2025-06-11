@@ -2,7 +2,10 @@
     "$schema": "https://turbo.build/schema.json",
     "globalDependencies": [
         "**/.env.*local",
-        "tsconfig.json"
+        ".eslintrc.json",
+        ".prettierrc.json",
+        "tsconfig.json",
+        "**/tsconfig.json"
     ],
     "tasks": {
         "build": {
@@ -19,18 +22,30 @@
             "persistent": true
         },
         "format:check": {
+            "inputs": [
+                ".eslintrc.json",
+                ".prettierrc.json",
+                "tsconfig.json"
+            ],
             "dependsOn": [
                 "^build"
             ]
         },
         "format:write": {
+            "inputs": [
+                ".eslintrc.json",
+                ".prettierrc.json",
+                "tsconfig.json"
+            ],
             "dependsOn": [
                 "^build"
             ]
         },
         "lint": {
             "inputs": [
-                ".eslintrc.json"
+                ".eslintrc.json",
+                ".prettierrc.json",
+                "tsconfig.json"
             ],
             "dependsOn": [
                 "^build"
@@ -38,7 +53,9 @@
         },
         "fix": {
             "inputs": [
-                ".eslintrc.json"
+                ".eslintrc.json",
+                ".prettierrc.json",
+                "tsconfig.json"
             ],
             "dependsOn": [
                 "^build"

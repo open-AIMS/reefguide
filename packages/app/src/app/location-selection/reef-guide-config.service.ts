@@ -164,7 +164,7 @@ export class ReefGuideConfigService {
       return dflt ?? undefined;
     } else {
       const getFn = configVarGetters[key];
-      // TODO fix this 
+      // TODO fix this
       // @ts-ignore
       return getFn !== undefined ? getFn(val) : val;
     }

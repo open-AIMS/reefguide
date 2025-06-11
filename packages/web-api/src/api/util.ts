@@ -1,4 +1,4 @@
-import {JSONValue, NormalizedObject} from './types/util';
+import { JSONValue, NormalizedObject } from './types/util';
 import crypto from 'crypto';
 
 /**
@@ -31,9 +31,7 @@ export function normalizeObject(value: any): JSONValue {
     case 'object':
       // Handle arrays - preserve order
       if (Array.isArray(value)) {
-        return value
-          .map(item => normalizeObject(item))
-          .filter(item => item !== undefined);
+        return value.map(item => normalizeObject(item)).filter(item => item !== undefined);
       }
 
       // Handle regular objects - sort keys
@@ -74,7 +72,7 @@ export function hashObject(obj: any): string {
     return crypto.createHash('sha256').update(stringified).digest('hex');
   } catch (error) {
     throw new Error(
-      `Failed to hash object: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      `Failed to hash object: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
 }

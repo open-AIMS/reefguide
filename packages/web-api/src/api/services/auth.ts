@@ -1,7 +1,7 @@
 import bcryptjs from 'bcryptjs';
-import {prisma} from '../apiSetup';
-import {UserRole} from '@prisma/client';
-import {BadRequestException} from '../exceptions';
+import { prisma } from '../apiSetup';
+import { UserRole } from '@prisma/client';
+import { BadRequestException } from '../exceptions';
 
 /**
  * Hashes a password
@@ -23,7 +23,7 @@ export async function hashPassword(password: string): Promise<string> {
 export async function registerUser({
   email,
   password,
-  roles,
+  roles
 }: {
   email: string;
   password: string;
@@ -31,7 +31,7 @@ export async function registerUser({
 }): Promise<number> {
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({
-    where: {email},
+    where: { email }
   });
 
   if (existingUser) {
@@ -48,8 +48,8 @@ export async function registerUser({
         email,
         password: hashedPassword,
         // No roles by default
-        roles,
-      },
+        roles
+      }
     })
   ).id;
 }
@@ -59,26 +59,20 @@ export async function registerUser({
  * @param email The user email
  * @param password The password (plain text)
  */
-export async function changePassword({
-  id,
-  password,
-}: {
-  id: number;
-  password: string;
-}) {
+export async function changePassword({ id, password }: { id: number; password: string }) {
   // Hash the password
   const hashedPassword = await hashPassword(password);
 
   // Update user password
   try {
     await prisma.user.update({
-      where: {id},
-      data: {password: hashedPassword},
+      where: { id },
+      data: { password: hashedPassword }
     });
   } catch (error) {
     throw new BadRequestException(
       `Failed to change password of user with id ${id}.`,
-      error as Error,
+      error as Error
     );
   }
 }

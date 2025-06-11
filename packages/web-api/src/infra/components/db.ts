@@ -1,7 +1,7 @@
-import {CfnOutput, RemovalPolicy} from 'aws-cdk-lib';
+import { CfnOutput, RemovalPolicy } from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
-import {Construct} from 'constructs';
+import { Construct } from 'constructs';
 
 export interface DbProps {
   /** The VPC in which to create the DB */
@@ -28,18 +28,18 @@ export class Db extends Construct {
     const sg = new ec2.SecurityGroup(this, 'db-sg', {
       vpc: props.vpc,
       allowAllOutbound: true,
-      description: 'Provides port 5432 access for DB',
+      description: 'Provides port 5432 access for DB'
     });
     sg.addIngressRule(
       ec2.Peer.anyIpv4(),
       ec2.Port.tcp(5432),
-      'Allows 5432 inbound access for psql',
+      'Allows 5432 inbound access for psql'
     );
 
     // Create the RDS instance
     const instance = new rds.DatabaseInstance(this, 'instance', {
       engine: rds.DatabaseInstanceEngine.postgres({
-        version: rds.PostgresEngineVersion.VER_16_4,
+        version: rds.PostgresEngineVersion.VER_16_4
       }),
       vpc: props.vpc,
       securityGroups: [sg],
@@ -59,17 +59,17 @@ export class Db extends Construct {
       // T4G small by default
       instanceType: ec2.InstanceType.of(
         ec2.InstanceClass.T4G,
-        props.instanceSize ?? ec2.InstanceSize.SMALL,
+        props.instanceSize ?? ec2.InstanceSize.SMALL
       ),
       // This makes managing the DB through Prisma etc much easier but has
       // security implications - particularly in combination with disabling iam Authentication
       publiclyAccessible: true,
       // Place into public subnet
-      vpcSubnets: {subnetType: ec2.SubnetType.PUBLIC},
+      vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
       // Take a snapshot upon removal
       removalPolicy: RemovalPolicy.SNAPSHOT,
       // Storage encryption - enable
-      storageEncrypted: true,
+      storageEncrypted: true
     });
 
     // Outputs
@@ -83,8 +83,8 @@ export class Db extends Construct {
         creds: instance.secret?.secretArn ?? 'unknown',
         arn: instance.instanceArn,
         endpoint: instance.instanceEndpoint,
-        id: instance.instanceIdentifier,
-      }),
+        id: instance.instanceIdentifier
+      })
     });
   }
 }

@@ -1,38 +1,38 @@
-import {UserAction, UserRole} from '@prisma/client';
-import express, {Response, Router} from 'express';
-import {z} from 'zod';
-import {processRequest} from 'zod-express-middleware';
-import {passport} from '../auth/passportConfig';
-import {assertUserIsAdminMiddleware} from '../auth/utils';
-import {handlePrismaError, NotFoundException} from '../exceptions';
+import { UserAction, UserRole } from '@prisma/client';
+import express, { Response, Router } from 'express';
+import { z } from 'zod';
+import { processRequest } from 'zod-express-middleware';
+import { passport } from '../auth/passportConfig';
+import { assertUserIsAdminMiddleware } from '../auth/utils';
+import { handlePrismaError, NotFoundException } from '../exceptions';
 
 require('express-async-errors');
 export const router: Router = express.Router();
 
-import {prisma} from '../apiSetup';
-import {changePassword, registerUser} from '../services/auth';
-import {UserDetailsSchema} from '../types/auth';
+import { prisma } from '../apiSetup';
+import { changePassword, registerUser } from '../services/auth';
+import { UserDetailsSchema } from '../types/auth';
 
 const UpdateUserRolesSchema = z.object({
-  roles: z.array(z.nativeEnum(UserRole)),
+  roles: z.array(z.nativeEnum(UserRole))
 });
 
 // Response Types
 const UserResponseSchema = z.object({
-  id: z.number(),
+  id: z.number()
 });
 
 type UserResponse = z.infer<typeof UserResponseSchema>;
 
 const UpdateUserPasswordSchema = z.object({
-  password: z.string().min(8),
+  password: z.string().min(8)
 });
 
 // Schema Definitions
 const CreateUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
-  roles: z.array(z.nativeEnum(UserRole)).optional(),
+  roles: z.array(z.nativeEnum(UserRole)).optional()
 });
 
 export const ListUserLogsResponseSchema = z.object({
@@ -43,15 +43,15 @@ export const ListUserLogsResponseSchema = z.object({
       time: z.date(),
       action: z.nativeEnum(UserAction),
       metadata: z.any().optional(),
-      user: UserDetailsSchema,
-    }),
+      user: UserDetailsSchema
+    })
   ),
   pagination: z.object({
     page: z.number(),
     limit: z.number(),
     total: z.number(),
-    pages: z.number(),
-  }),
+    pages: z.number()
+  })
 });
 export type ListUserLogsResponse = z.infer<typeof ListUserLogsResponseSchema>;
 
@@ -60,7 +60,7 @@ export type ListUserLogsResponse = z.infer<typeof ListUserLogsResponseSchema>;
  */
 router.get(
   '/',
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
   async (req, res: Response<UserResponse[]>) => {
     try {
@@ -68,14 +68,14 @@ router.get(
         select: {
           id: true,
           email: true,
-          roles: true,
-        },
+          roles: true
+        }
       });
       res.json(users);
     } catch (error) {
       handlePrismaError(error, 'Failed to fetch users.');
     }
-  },
+  }
 );
 
 /**
@@ -83,20 +83,20 @@ router.get(
  */
 router.get(
   '/:id',
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
-  processRequest({params: z.object({id: z.string()})}),
+  processRequest({ params: z.object({ id: z.string() }) }),
   async (req, res: Response<UserResponse>) => {
     const userId = parseInt(req.params.id);
 
     try {
       const user = await prisma.user.findUnique({
-        where: {id: userId},
+        where: { id: userId },
         select: {
           id: true,
           email: true,
-          roles: true,
-        },
+          roles: true
+        }
       });
 
       if (!user) {
@@ -108,7 +108,7 @@ router.get(
       if (error instanceof NotFoundException) throw error;
       handlePrismaError(error, 'Failed to fetch users.');
     }
-  },
+  }
 );
 
 /**
@@ -116,17 +116,17 @@ router.get(
  */
 router.post(
   '/',
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
   processRequest({
-    body: CreateUserSchema,
+    body: CreateUserSchema
   }),
   async (req, res: Response<UserResponse>) => {
-    const {email, password, roles = []} = req.body;
+    const { email, password, roles = [] } = req.body;
     // Create the user
-    const newUserId = await registerUser({email, password, roles});
-    res.status(200).json({id: newUserId});
-  },
+    const newUserId = await registerUser({ email, password, roles });
+    res.status(200).json({ id: newUserId });
+  }
 );
 
 /**
@@ -134,37 +134,37 @@ router.post(
  */
 router.put(
   '/:id/roles',
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
   processRequest({
     body: UpdateUserRolesSchema,
-    params: z.object({id: z.string()}),
+    params: z.object({ id: z.string() })
   }),
   async (req, res: Response<UserResponse>) => {
     const userId = parseInt(req.params.id);
-    const {roles} = req.body;
+    const { roles } = req.body;
 
     try {
       const user = await prisma.user.update({
-        where: {id: userId},
-        data: {roles},
+        where: { id: userId },
+        data: { roles },
         select: {
           id: true,
           email: true,
-          roles: true,
-        },
+          roles: true
+        }
       });
 
       // and add update to log
       await prisma.userLog.create({
-        data: {action: 'UPDATED', userId: user.id},
+        data: { action: 'UPDATED', userId: user.id }
       });
 
       res.json(user);
     } catch (error) {
       handlePrismaError(error, 'Failed to update user roles.');
     }
-  },
+  }
 );
 
 /**
@@ -172,24 +172,24 @@ router.put(
  */
 router.put(
   '/:id/password',
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
   processRequest({
-    body: UpdateUserPasswordSchema,
+    body: UpdateUserPasswordSchema
   }),
   async (req, res: Response<UserResponse>) => {
     const userId = parseInt(req.params.id);
-    const {password} = req.body;
+    const { password } = req.body;
 
-    await changePassword({id: userId, password});
+    await changePassword({ id: userId, password });
 
     // and add password update to log
     await prisma.userLog.create({
-      data: {action: 'CHANGE_PASSWORD', userId: userId},
+      data: { action: 'CHANGE_PASSWORD', userId: userId }
     });
 
     res.status(200).send();
-  },
+  }
 );
 
 /**
@@ -197,21 +197,21 @@ router.put(
  */
 router.delete(
   '/:id',
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
   async (req, res) => {
     const userId = parseInt(req.params.id);
 
     try {
       await prisma.user.delete({
-        where: {id: userId},
+        where: { id: userId }
       });
 
       res.status(204).send();
     } catch (error) {
       handlePrismaError(error, 'Failed to delete user.');
     }
-  },
+  }
 );
 
 /**
@@ -222,14 +222,14 @@ router.delete(
  */
 router.get(
   '/utils/log',
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
   processRequest({
     query: z.object({
       userId: z.string().optional(),
       page: z.string().default('1'),
-      limit: z.string().default('50'),
-    }),
+      limit: z.string().default('50')
+    })
   }),
   async (req, res: Response<ListUserLogsResponse>) => {
     // Process request seems to think these are optional - which is not correct
@@ -238,18 +238,18 @@ router.get(
     const skip = (page - 1) * limit;
 
     const where = {
-      ...(req.query.userId ? {userId: parseInt(req.query.userId)} : {}),
+      ...(req.query.userId ? { userId: parseInt(req.query.userId) } : {})
     };
 
     const [logs, total] = await Promise.all([
       prisma.userLog.findMany({
         where,
-        include: {user: {select: {roles: true, id: true, email: true}}},
-        orderBy: {time: 'desc'},
+        include: { user: { select: { roles: true, id: true, email: true } } },
+        orderBy: { time: 'desc' },
         skip,
-        take: limit,
+        take: limit
       }),
-      prisma.userLog.count({where}),
+      prisma.userLog.count({ where })
     ]);
 
     res.json({
@@ -258,8 +258,8 @@ router.get(
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit),
-      },
+        pages: Math.ceil(total / limit)
+      }
     });
-  },
+  }
 );

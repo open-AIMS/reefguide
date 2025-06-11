@@ -1,17 +1,12 @@
-import {NextFunction, Request, Response} from 'express';
-import {BaseApiException} from './exceptions';
-import {ErrorResponse} from './types/errors';
+import { NextFunction, Request, Response } from 'express';
+import { BaseApiException } from './exceptions';
+import { ErrorResponse } from './types/errors';
 
 /**
  * Error middleware to handle custom API exceptions.
  * Extracts status code and message from the exception and returns a JSON error response.
  */
-export function errorMiddleware(
-  err: Error,
-  _req: Request,
-  res: Response,
-  _next: NextFunction,
-) {
+export function errorMiddleware(err: Error, _req: Request, res: Response, _next: NextFunction) {
   if (process.env.TEST_MODE !== 'true') {
     console.error('Error details:');
 
@@ -40,7 +35,7 @@ export function errorMiddleware(
 
   const errorResponse: ErrorResponse = {
     status: statusCode,
-    message: message,
+    message: message
   };
 
   res.status(statusCode).json(errorResponse);

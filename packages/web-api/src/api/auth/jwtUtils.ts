@@ -1,9 +1,9 @@
-import {randomUUID} from 'crypto';
-import jwt, {Algorithm} from 'jsonwebtoken';
-import {JwtContents, RefreshTokenContents} from '../types/auth';
-import {prisma} from '../apiSetup';
-import {config} from '../config';
-import {base64encode, encodeRefreshToken} from './utils';
+import { randomUUID } from 'crypto';
+import jwt, { Algorithm } from 'jsonwebtoken';
+import { JwtContents, RefreshTokenContents } from '../types/auth';
+import { prisma } from '../apiSetup';
+import { config } from '../config';
+import { base64encode, encodeRefreshToken } from './utils';
 
 // Key signing and validation parameters
 const PRIVATE_KEY: jwt.Secret = config.jwt.privateKey;
@@ -26,14 +26,14 @@ const REFRESH_DURATION_HOURS = 48;
  */
 export function signJwt(
   payload: JwtContents,
-  options: {expiresIn: string} = {expiresIn: TOKEN_EXPIRY},
+  options: { expiresIn: string } = { expiresIn: TOKEN_EXPIRY }
 ): string {
   return jwt.sign(payload, PRIVATE_KEY, {
     algorithm: ALGORITHM,
     issuer: ISSUER,
     keyid: KEY_ID,
-    header: {alg: ALGORITHM, kid: KEY_ID},
-    expiresIn: parseInt(options.expiresIn),
+    header: { alg: ALGORITHM, kid: KEY_ID },
+    expiresIn: parseInt(options.expiresIn)
   });
 }
 
@@ -46,7 +46,7 @@ export function signJwt(
 export function verifyJwt(token: string): jwt.JwtPayload {
   return jwt.verify(token, PUBLIC_KEY, {
     algorithms: [ALGORITHM],
-    issuer: ISSUER,
+    issuer: ISSUER
   }) as jwt.JwtPayload;
 }
 
@@ -63,9 +63,9 @@ export function getJwks() {
         alg: ALGORITHM, // Algorithm: RSA with SHA-256
         kid: KEY_ID, // Key ID
         n: base64encode(PUBLIC_KEY), // Modulus (base64 encoded)
-        e: KEY_EXPONENT, // Exponent (65537 in base64)
-      },
-    ],
+        e: KEY_EXPONENT // Exponent (65537 in base64)
+      }
+    ]
   };
 }
 
@@ -79,28 +79,25 @@ export function getJwks() {
  * @param {number} user_id - The DB id of the user to create refresh token for.
  * @returns {string} Base64 encoded JSON object.
  */
-export const generateRefreshToken = async (
-  user_id: number,
-): Promise<string> => {
+export const generateRefreshToken = async (user_id: number): Promise<string> => {
   // Generate a random UUID
   const randString = randomUUID();
 
-  const expiryTimestampSeconds =
-    Math.floor(Date.now() / 1000) + REFRESH_DURATION_HOURS * 60 * 60;
+  const expiryTimestampSeconds = Math.floor(Date.now() / 1000) + REFRESH_DURATION_HOURS * 60 * 60;
 
   // Create a new RefreshToken in the database
   const refreshToken = await prisma.refreshToken.create({
     data: {
       token: randString,
       user_id: user_id,
-      expiry_time: expiryTimestampSeconds,
-    },
+      expiry_time: expiryTimestampSeconds
+    }
   });
 
   // Create the payload object
   const payload = {
     id: refreshToken.id,
-    token: refreshToken.token,
+    token: refreshToken.token
   } as RefreshTokenContents;
 
   // Encode the payload as a base64 string

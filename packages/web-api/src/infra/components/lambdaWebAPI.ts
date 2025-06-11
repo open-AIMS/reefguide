@@ -4,15 +4,15 @@ import {
   aws_lambda as lambda,
   aws_lambda_nodejs as nodejs,
   aws_secretsmanager as sm,
-  aws_iam as iam,
+  aws_iam as iam
 } from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as r53 from 'aws-cdk-lib/aws-route53';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
-import {Construct} from 'constructs';
-import {WebAPIConfig} from '../infraConfig';
+import { Construct } from 'constructs';
+import { WebAPIConfig } from '../infraConfig';
 
 /**
  * Properties for the WebAPI construct
@@ -60,10 +60,10 @@ export class LambdaWebAPI extends Construct {
 
     if (lambdaConfig === undefined) {
       cdk.Annotations.of(this).addError(
-        'You cannot deploy a lambda web API without providing the lambda mode configuration',
+        'You cannot deploy a lambda web API without providing the lambda mode configuration'
       );
       throw new Error(
-        'You cannot deploy a lambda web API without providing the lambda mode configuration',
+        'You cannot deploy a lambda web API without providing the lambda mode configuration'
       );
     }
 
@@ -78,11 +78,7 @@ export class LambdaWebAPI extends Construct {
     // Web API deployment
     // ==================
 
-    const apiSecrets = sm.Secret.fromSecretCompleteArn(
-      this,
-      'db-creds',
-      config.apiSecretsArn,
-    );
+    const apiSecrets = sm.Secret.fromSecretCompleteArn(this, 'db-creds', config.apiSecretsArn);
 
     // ===========
     // Lambda mode
@@ -92,8 +88,8 @@ export class LambdaWebAPI extends Construct {
       lambda.ParamsAndSecretsVersions.V1_0_103,
       {
         cacheSize: 500,
-        logLevel: lambda.ParamsAndSecretsLogLevel.DEBUG,
-      },
+        logLevel: lambda.ParamsAndSecretsLogLevel.DEBUG
+      }
     );
 
     // Use the Node JS L3 stack to help esbuild/bundle the Node function see
@@ -113,7 +109,7 @@ export class LambdaWebAPI extends Construct {
         // Fully qualified domain for API domain - this defines the JWT iss
         API_DOMAIN: this.endpoint,
         ECS_CLUSTER_NAME: props.ecsClusterName,
-        ECS_SERVICE_NAME: props.ecsServiceName,
+        ECS_SERVICE_NAME: props.ecsServiceName
       },
       timeout: cdk.Duration.seconds(30),
       bundling: {
@@ -123,10 +119,10 @@ export class LambdaWebAPI extends Construct {
           '--loader:.prisma': 'file',
           '--loader:.so.node': 'file',
           // Include assets as their exact name - then prisma can pick it up
-          '--asset-names': '[name]',
-        },
+          '--asset-names': '[name]'
+        }
       },
-      paramsAndSecrets,
+      paramsAndSecrets
     });
 
     // Create an API Gateway REST API
@@ -135,13 +131,13 @@ export class LambdaWebAPI extends Construct {
       description: 'This service serves the Reefguide Web API.',
       defaultCorsPreflightOptions: {
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
-        allowMethods: apigateway.Cors.ALL_METHODS,
+        allowMethods: apigateway.Cors.ALL_METHODS
       },
       // Include certs
       domainName: {
         domainName: props.domainName,
-        certificate: props.certificate,
-      },
+        certificate: props.certificate
+      }
     });
 
     // Create an API Gateway Lambda Integration
@@ -151,7 +147,7 @@ export class LambdaWebAPI extends Construct {
     const rootResource = restApi.root.addResource('{proxy+}');
     rootResource.addMethod('ANY', lambdaIntegration, {
       // no auth - app handles this
-      authorizationType: apigateway.AuthorizationType.NONE,
+      authorizationType: apigateway.AuthorizationType.NONE
     });
 
     // allow read of db secrets
@@ -166,13 +162,13 @@ export class LambdaWebAPI extends Construct {
     new route53.ARecord(this, 'route', {
       zone: props.hz,
       target: route53.RecordTarget.fromAlias(new targets.ApiGateway(restApi)),
-      recordName: props.domainName,
+      recordName: props.domainName
     });
 
     // Output the URL of the API
     new cdk.CfnOutput(this, 'web-api-url', {
       value: this.endpoint,
-      description: 'Web REST API endpoint',
+      description: 'Web REST API endpoint'
     });
   }
 
@@ -190,10 +186,10 @@ export class LambdaWebAPI extends Construct {
         'ecs:DescribeServices',
         'ecs:ListServices',
         // Permissions to modify service
-        'ecs:UpdateService',
+        'ecs:UpdateService'
       ],
       // Scope the permissions to just this specific service and its cluster
-      resources: [service.serviceArn, service.cluster.clusterArn],
+      resources: [service.serviceArn, service.cluster.clusterArn]
     });
 
     // Add the policy to the Lambda's role

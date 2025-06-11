@@ -1,6 +1,6 @@
-import {prisma} from './apiSetup';
-import {config} from './config';
-import {registerUser} from './services/auth';
+import { prisma } from './apiSetup';
+import { config } from './config';
+import { registerUser } from './services/auth';
 
 /**
  * Initializes or verifies admin users in the system.
@@ -21,40 +21,40 @@ export const initialiseAdmins = async () => {
     hasCreds: !!config?.creds,
     managerCreds: {
       hasUsername: !!config?.creds?.managerUsername,
-      hasPassword: !!config?.creds?.managerPassword,
+      hasPassword: !!config?.creds?.managerPassword
     },
     workerCreds: {
       hasUsername: !!config?.creds?.workerUsername,
-      hasPassword: !!config?.creds?.workerPassword,
+      hasPassword: !!config?.creds?.workerPassword
     },
     adminCreds: {
       hasUsername: !!config?.creds?.adminUsername,
-      hasPassword: !!config?.creds?.adminPassword,
-    },
+      hasPassword: !!config?.creds?.adminPassword
+    }
   });
 
-  const initialise: {email: string; password: string}[] = [
+  const initialise: { email: string; password: string }[] = [
     {
       email: config.creds.managerUsername,
-      password: config.creds.managerPassword,
+      password: config.creds.managerPassword
     },
     {
       email: config.creds.workerUsername,
-      password: config.creds.workerPassword,
+      password: config.creds.workerPassword
     },
     {
       email: config.creds.adminUsername,
-      password: config.creds.adminPassword,
-    },
+      password: config.creds.adminPassword
+    }
   ];
 
   console.log('Initialising users count:', initialise.length);
   console.log(
     'Users to initialise:',
-    initialise.map(user => ({email: user.email})),
+    initialise.map(user => ({ email: user.email }))
   );
 
-  for (const {email, password} of initialise) {
+  for (const { email, password } of initialise) {
     console.log(`\n=== Processing user: ${email} ===`);
 
     try {
@@ -62,29 +62,29 @@ export const initialiseAdmins = async () => {
       console.log(`Checking if user exists: ${email}`);
       const existingUser = await prisma.user.findUnique({
         // Changed from findUniqueOrThrow
-        where: {email},
+        where: { email },
         select: {
           // Only select the fields we need
           id: true,
           email: true,
-          roles: true,
-        },
+          roles: true
+        }
       });
 
       if (existingUser) {
         console.log(`User ${email} already exists:`, {
           id: existingUser.id,
-          roles: existingUser.roles,
+          roles: existingUser.roles
         });
 
         // Optionally, verify and update roles if needed
         if (!existingUser.roles.includes('ADMIN')) {
           console.log(`Updating user ${email} to include ADMIN role`);
           await prisma.user.update({
-            where: {email},
+            where: { email },
             data: {
-              roles: [...existingUser.roles, 'ADMIN'],
-            },
+              roles: [...existingUser.roles, 'ADMIN']
+            }
           });
           console.log(`Successfully added ADMIN role to ${email}`);
         }
@@ -93,11 +93,11 @@ export const initialiseAdmins = async () => {
         const newUser = await registerUser({
           email,
           password,
-          roles: ['ADMIN'],
+          roles: ['ADMIN']
         });
         console.log(`Successfully created new admin user: ${email}`, {
           success: !!newUser,
-          roles: ['ADMIN'],
+          roles: ['ADMIN']
         });
       }
     } catch (e: any) {
@@ -121,13 +121,13 @@ export const initialiseAdmins = async () => {
     const adminUsers = await prisma.user.findMany({
       where: {
         roles: {
-          has: 'ADMIN',
-        },
+          has: 'ADMIN'
+        }
       },
       select: {
         email: true,
-        roles: true,
-      },
+        roles: true
+      }
     });
 
     console.log('\n=== Final Admin Users Status ===');
@@ -136,20 +136,18 @@ export const initialiseAdmins = async () => {
       'Admin users:',
       adminUsers.map(user => ({
         email: user.email,
-        roles: user.roles,
-      })),
+        roles: user.roles
+      }))
     );
 
     // Verify all required admins are present
     const allEmails = adminUsers.map(u => u.email);
-    const missingAdmins = initialise
-      .map(u => u.email)
-      .filter(email => !allEmails.includes(email));
+    const missingAdmins = initialise.map(u => u.email).filter(email => !allEmails.includes(email));
 
     if (missingAdmins.length > 0) {
       console.error('Warning: Some admin users are missing:', missingAdmins);
       throw new Error(
-        `Failed to initialize all required admin users. Missing: ${missingAdmins.join(', ')}`,
+        `Failed to initialize all required admin users. Missing: ${missingAdmins.join(', ')}`
       );
     }
 

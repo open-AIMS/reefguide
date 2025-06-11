@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import {Duration, aws_iam as iam, aws_secretsmanager as sm} from 'aws-cdk-lib';
+import { Duration, aws_iam as iam, aws_secretsmanager as sm } from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
@@ -8,9 +8,9 @@ import * as logs from 'aws-cdk-lib/aws-logs';
 import * as r53 from 'aws-cdk-lib/aws-route53';
 import * as r53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import {Construct} from 'constructs';
-import {WebAPIConfig} from '../infraConfig';
-import {SharedBalancer} from './networking';
+import { Construct } from 'constructs';
+import { WebAPIConfig } from '../infraConfig';
+import { SharedBalancer } from './networking';
 
 /**
  * Properties for the WebAPI construct
@@ -68,10 +68,10 @@ export class ECSWebAPI extends Construct {
 
     if (ecsConfig === undefined) {
       cdk.Annotations.of(this).addError(
-        'You cannot deploy an ECS web API without providing the ECS mode configuration',
+        'You cannot deploy an ECS web API without providing the ECS mode configuration'
       );
       throw new Error(
-        'You cannot deploy an ECS web API without providing the ECS mode configuration',
+        'You cannot deploy an ECS web API without providing the ECS mode configuration'
       );
     }
 
@@ -88,30 +88,22 @@ export class ECSWebAPI extends Construct {
     // Image asset
     const image = ecs.ContainerImage.fromAsset('.', {
       buildArgs: {
-        PORT: String(this.internalPort),
-      },
+        PORT: String(this.internalPort)
+      }
     });
 
     // Task definition
-    this.taskDefinition = new ecs.FargateTaskDefinition(
-      this,
-      'web-api-task-dfn',
-      {
-        ephemeralStorageGiB: 21, // 21GB ephemeral storage (minimum)
-        cpu: ecsConfig.cpu,
-        memoryLimitMiB: ecsConfig.memory,
-      },
-    );
+    this.taskDefinition = new ecs.FargateTaskDefinition(this, 'web-api-task-dfn', {
+      ephemeralStorageGiB: 21, // 21GB ephemeral storage (minimum)
+      cpu: ecsConfig.cpu,
+      memoryLimitMiB: ecsConfig.memory
+    });
 
     // R/W S3 bucket
     props.storageBucket.grantReadWrite(this.taskDefinition.taskRole);
 
     // DB secrets and JWT key info
-    const apiSecrets = sm.Secret.fromSecretCompleteArn(
-      this,
-      'db-creds',
-      config.apiSecretsArn,
-    );
+    const apiSecrets = sm.Secret.fromSecretCompleteArn(this, 'db-creds', config.apiSecretsArn);
 
     // Attach container to task definition
     this.taskDefinition.addContainer('web-api-container-dfn', {
@@ -120,8 +112,8 @@ export class ECSWebAPI extends Construct {
         {
           containerPort: this.internalPort,
           appProtocol: ecs.AppProtocol.http,
-          name: 'web-api-port',
-        },
+          name: 'web-api-port'
+        }
       ],
       command: ['npm', 'run', 'start-web-api-docker'],
       // Non secrets
@@ -138,53 +130,29 @@ export class ECSWebAPI extends Construct {
         ECS_SERVICE_NAME: props.reefguideApiServiceName,
 
         // Storage bucket name
-        S3_BUCKET_NAME: props.storageBucket.bucketName,
+        S3_BUCKET_NAME: props.storageBucket.bucketName
       },
       secrets: {
         // API Secret
         DATABASE_URL: ecs.Secret.fromSecretsManager(apiSecrets, 'DATABASE_URL'),
         DIRECT_URL: ecs.Secret.fromSecretsManager(apiSecrets, 'DIRECT_URL'),
-        JWT_PRIVATE_KEY: ecs.Secret.fromSecretsManager(
-          apiSecrets,
-          'JWT_PRIVATE_KEY',
-        ),
-        JWT_PUBLIC_KEY: ecs.Secret.fromSecretsManager(
-          apiSecrets,
-          'JWT_PUBLIC_KEY',
-        ),
+        JWT_PRIVATE_KEY: ecs.Secret.fromSecretsManager(apiSecrets, 'JWT_PRIVATE_KEY'),
+        JWT_PUBLIC_KEY: ecs.Secret.fromSecretsManager(apiSecrets, 'JWT_PUBLIC_KEY'),
         JWT_KEY_ID: ecs.Secret.fromSecretsManager(apiSecrets, 'JWT_KEY_ID'),
 
         // Worker creds
-        MANAGER_USERNAME: ecs.Secret.fromSecretsManager(
-          props.managerCreds,
-          'username',
-        ),
-        MANAGER_PASSWORD: ecs.Secret.fromSecretsManager(
-          props.managerCreds,
-          'password',
-        ),
+        MANAGER_USERNAME: ecs.Secret.fromSecretsManager(props.managerCreds, 'username'),
+        MANAGER_PASSWORD: ecs.Secret.fromSecretsManager(props.managerCreds, 'password'),
 
-        WORKER_USERNAME: ecs.Secret.fromSecretsManager(
-          props.workerCreds,
-          'username',
-        ),
-        WORKER_PASSWORD: ecs.Secret.fromSecretsManager(
-          props.workerCreds,
-          'password',
-        ),
-        ADMIN_USERNAME: ecs.Secret.fromSecretsManager(
-          props.adminCreds,
-          'username',
-        ),
-        ADMIN_PASSWORD: ecs.Secret.fromSecretsManager(
-          props.adminCreds,
-          'password',
-        ),
+        WORKER_USERNAME: ecs.Secret.fromSecretsManager(props.workerCreds, 'username'),
+        WORKER_PASSWORD: ecs.Secret.fromSecretsManager(props.workerCreds, 'password'),
+        ADMIN_USERNAME: ecs.Secret.fromSecretsManager(props.adminCreds, 'username'),
+        ADMIN_PASSWORD: ecs.Secret.fromSecretsManager(props.adminCreds, 'password')
       },
       logging: ecs.LogDriver.awsLogs({
         streamPrefix: 'webapi',
-        logRetention: logs.RetentionDays.ONE_MONTH,
-      }),
+        logRetention: logs.RetentionDays.ONE_MONTH
+      })
     });
 
     // CLUSTER AND SERVICE SETUP
@@ -194,7 +162,7 @@ export class ECSWebAPI extends Construct {
     const serviceSecurityGroup = new ec2.SecurityGroup(this, 'web-api-sg', {
       vpc: props.vpc,
       allowAllOutbound: true,
-      description: 'Security group for reef guide web-api Fargate service',
+      description: 'Security group for reef guide web-api Fargate service'
     });
 
     // Create Fargate Service
@@ -204,7 +172,7 @@ export class ECSWebAPI extends Construct {
       desiredCount: 1,
       securityGroups: [serviceSecurityGroup],
       assignPublicIp: true,
-      healthCheckGracePeriod: Duration.minutes(3),
+      healthCheckGracePeriod: Duration.minutes(3)
     });
 
     // LOAD BALANCING SETUP
@@ -224,9 +192,9 @@ export class ECSWebAPI extends Construct {
         interval: Duration.seconds(30),
         timeout: Duration.seconds(15),
         port: this.internalPort.toString(),
-        path: '/api',
+        path: '/api'
       },
-      vpc: props.vpc,
+      vpc: props.vpc
     });
 
     // Add the Fargate service to target group
@@ -238,7 +206,7 @@ export class ECSWebAPI extends Construct {
       tg,
       [elb.ListenerCondition.hostHeaders([props.domainName])],
       110,
-      110,
+      110
     );
 
     // AUTO SCALING SETUP
@@ -248,29 +216,21 @@ export class ECSWebAPI extends Construct {
       // ECS Auto Scaling
       const scaling = this.fargateService.autoScaleTaskCount({
         minCapacity: ecsConfig.autoScaling.minCapacity,
-        maxCapacity: ecsConfig.autoScaling.maxCapacity,
+        maxCapacity: ecsConfig.autoScaling.maxCapacity
       });
 
       // Configure CPU utilization based auto scaling
       scaling.scaleOnCpuUtilization('CpuScaling', {
         targetUtilizationPercent: ecsConfig.autoScaling.targetCpuUtilization,
-        scaleInCooldown: Duration.seconds(
-          ecsConfig.autoScaling.scaleInCooldown,
-        ),
-        scaleOutCooldown: Duration.seconds(
-          ecsConfig.autoScaling.scaleOutCooldown,
-        ),
+        scaleInCooldown: Duration.seconds(ecsConfig.autoScaling.scaleInCooldown),
+        scaleOutCooldown: Duration.seconds(ecsConfig.autoScaling.scaleOutCooldown)
       });
 
       // Configure memory utilization based auto scaling
       scaling.scaleOnMemoryUtilization('MemoryScaling', {
         targetUtilizationPercent: ecsConfig.autoScaling.targetMemoryUtilization,
-        scaleInCooldown: Duration.seconds(
-          ecsConfig.autoScaling.scaleInCooldown,
-        ),
-        scaleOutCooldown: Duration.seconds(
-          ecsConfig.autoScaling.scaleOutCooldown,
-        ),
+        scaleInCooldown: Duration.seconds(ecsConfig.autoScaling.scaleInCooldown),
+        scaleOutCooldown: Duration.seconds(ecsConfig.autoScaling.scaleOutCooldown)
       });
     }
 
@@ -284,8 +244,8 @@ export class ECSWebAPI extends Construct {
       comment: `Route from ${props.domainName} to web-api ECS service through ALB`,
       ttl: Duration.minutes(30),
       target: r53.RecordTarget.fromAlias(
-        new r53Targets.LoadBalancerTarget(props.sharedBalancer.alb),
-      ),
+        new r53Targets.LoadBalancerTarget(props.sharedBalancer.alb)
+      )
     });
 
     // NETWORK SECURITY
@@ -295,13 +255,13 @@ export class ECSWebAPI extends Construct {
     serviceSecurityGroup.connections.allowFrom(
       props.sharedBalancer.alb,
       ec2.Port.tcp(this.internalPort),
-      'Allow traffic from ALB to web-api Fargate Service',
+      'Allow traffic from ALB to web-api Fargate Service'
     );
 
     // Output the URL of the API
     new cdk.CfnOutput(this, 'web-api-url', {
       value: this.endpoint,
-      description: 'Web REST API endpoint',
+      description: 'Web REST API endpoint'
     });
   }
 
@@ -319,10 +279,10 @@ export class ECSWebAPI extends Construct {
         'ecs:DescribeServices',
         'ecs:ListServices',
         // Permissions to modify service
-        'ecs:UpdateService',
+        'ecs:UpdateService'
       ],
       // Scope the permissions to just this specific service and its cluster
-      resources: [service.serviceArn, service.cluster.clusterArn],
+      resources: [service.serviceArn, service.cluster.clusterArn]
     });
 
     // Add the policy to the service's role

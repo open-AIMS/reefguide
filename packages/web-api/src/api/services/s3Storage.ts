@@ -1,10 +1,6 @@
-import {
-  S3Client,
-  ListObjectsV2Command,
-  GetObjectCommand,
-} from '@aws-sdk/client-s3';
-import {getSignedUrl} from '@aws-sdk/s3-request-presigner';
-import {BadRequestException} from '../exceptions';
+import { S3Client, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { BadRequestException } from '../exceptions';
 
 const MAX_FILES = 10;
 
@@ -34,14 +30,14 @@ export class S3StorageService {
    * @param uri Full S3 URI (s3://bucket/path/to/object)
    * @returns Object containing bucket and key
    */
-  private parseS3Uri(uri: string): {bucket: string; prefix: string} {
+  private parseS3Uri(uri: string): { bucket: string; prefix: string } {
     const matches = uri.match(/^s3:\/\/([^\/]+)\/(.+?)\/?$/);
     if (!matches) {
       throw new BadRequestException('Invalid S3 URI format');
     }
     return {
       bucket: matches[1],
-      prefix: matches[2],
+      prefix: matches[2]
     };
   }
 
@@ -53,23 +49,21 @@ export class S3StorageService {
    */
   async getPresignedUrls(
     locationUri: string,
-    expirySeconds = 3600,
+    expirySeconds = 3600
   ): Promise<Record<string, string>> {
-    const {bucket, prefix} = this.parseS3Uri(locationUri);
+    const { bucket, prefix } = this.parseS3Uri(locationUri);
 
     // List all objects in the location
     const listCommand = new ListObjectsV2Command({
       Bucket: bucket,
-      Prefix: prefix,
+      Prefix: prefix
     });
     const response = await this.s3Client.send(listCommand);
     const files = response.Contents || [];
 
     // Validate file count
     if (files.length > MAX_FILES) {
-      throw new BadRequestException(
-        `Location contains more than ${MAX_FILES} files`,
-      );
+      throw new BadRequestException(`Location contains more than ${MAX_FILES} files`);
     }
 
     // Generate presigned URLs for each file with relative paths
@@ -82,10 +76,10 @@ export class S3StorageService {
 
       const getCommand = new GetObjectCommand({
         Bucket: bucket,
-        Key: file.Key,
+        Key: file.Key
       });
       const presignedUrl = await getSignedUrl(this.s3Client, getCommand, {
-        expiresIn: expirySeconds,
+        expiresIn: expirySeconds
       });
 
       urlMap[relativePath] = presignedUrl;

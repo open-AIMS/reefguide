@@ -1,6 +1,6 @@
-import {Config} from './config';
-import {AuthApiClient} from './authClient';
-import {TaskIdentifiers} from './ecs';
+import { Config } from './config';
+import { AuthApiClient } from './authClient';
+import { TaskIdentifiers } from './ecs';
 
 interface Job {
   id: number;
@@ -29,11 +29,7 @@ export class TestWorker {
 
   private lastActivityTimestamp: number = Date.now();
 
-  constructor(
-    config: Config,
-    client: AuthApiClient,
-    metadata: Partial<TaskIdentifiers>,
-  ) {
+  constructor(config: Config, client: AuthApiClient, metadata: Partial<TaskIdentifiers>) {
     this.metadata = metadata;
     this.config = config;
     this.activeJobs = new Map();
@@ -46,7 +42,7 @@ export class TestWorker {
       jobTypes: this.config.jobTypes,
       maxConcurrentJobs: this.config.maxConcurrentJobs,
       pollInterval: this.config.pollIntervalMs,
-      idleTimeout: this.config.idleTimeoutMs,
+      idleTimeout: this.config.idleTimeoutMs
     });
 
     this.isPolling = true;
@@ -83,10 +79,7 @@ export class TestWorker {
     if (this.config.idleTimeoutMs) {
       this.idleTimeout = setTimeout(() => {
         const idleTime = Date.now() - this.lastActivityTimestamp;
-        if (
-          idleTime >= this.config.idleTimeoutMs &&
-          this.activeJobs.size === 0
-        ) {
+        if (idleTime >= this.config.idleTimeoutMs && this.activeJobs.size === 0) {
           console.log(`Worker idle for ${idleTime}ms, shutting down...`);
           this.stop();
         }
@@ -120,8 +113,8 @@ export class TestWorker {
   private async pollForJobs() {
     try {
       // Get available jobs
-      const response = await this.client.get<{jobs: Job[]}>('/jobs/poll', {
-        params: {jobType: this.config.jobTypes[0]},
+      const response = await this.client.get<{ jobs: Job[] }>('/jobs/poll', {
+        params: { jobType: this.config.jobTypes[0] }
       });
 
       const jobs: Job[] = response.jobs;
@@ -148,10 +141,8 @@ export class TestWorker {
         assignment: JobAssignment;
       }>('/jobs/assign', {
         jobId: job.id,
-        ecsTaskArn:
-          this.metadata.taskArn ?? 'Unknown - metadata lookup failure',
-        ecsClusterArn:
-          this.metadata.clusterArn ?? 'Unknown - metadata lookup failure',
+        ecsTaskArn: this.metadata.taskArn ?? 'Unknown - metadata lookup failure',
+        ecsClusterArn: this.metadata.clusterArn ?? 'Unknown - metadata lookup failure'
       });
 
       const assignment = assignmentResponse.assignment;
@@ -164,7 +155,7 @@ export class TestWorker {
       // Simulate processing by setting a timeout
       const timeout = setTimeout(
         () => this.completeJob(assignment.id, job),
-        this.getRandomProcessingTime(),
+        this.getRandomProcessingTime()
       );
 
       this.activeJobs.set(job.id, timeout);
@@ -182,12 +173,10 @@ export class TestWorker {
 
       await this.client.post<any>(`/jobs/assignments/${assignmentId}/result`, {
         status: success ? 'SUCCEEDED' : 'FAILED',
-        resultPayload: success ? {} : null,
+        resultPayload: success ? {} : null
       });
 
-      console.log(
-        `Job ${job.id} completed with status: ${success ? 'SUCCESS' : 'FAILURE'}`,
-      );
+      console.log(`Job ${job.id} completed with status: ${success ? 'SUCCESS' : 'FAILURE'}`);
 
       // Update activity timestamp when we complete a job
       this.updateLastActivity();

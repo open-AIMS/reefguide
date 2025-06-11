@@ -1,8 +1,8 @@
-import {ICertificate} from 'aws-cdk-lib/aws-certificatemanager';
+import { ICertificate } from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import {IVpc, Vpc} from 'aws-cdk-lib/aws-ec2';
+import { IVpc, Vpc } from 'aws-cdk-lib/aws-ec2';
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import {Construct} from 'constructs';
+import { Construct } from 'constructs';
 
 /**
  * Properties for the SharedBalancers construct
@@ -51,7 +51,7 @@ export class SharedBalancer extends Construct {
     this.alb = new elb.ApplicationLoadBalancer(this, 'alb', {
       vpc: props.vpc,
       internetFacing: props.isPublic,
-      vpcSubnets: {subnetType: props.subnetType},
+      vpcSubnets: { subnetType: props.subnetType }
     });
 
     // Set up the HTTPS listener
@@ -61,9 +61,9 @@ export class SharedBalancer extends Construct {
       defaultAction: elb.ListenerAction.fixedResponse(404, {
         contentType: 'text/plain',
         messageBody:
-          'Service does not exist. Contact administrator if you believe this is an error.',
+          'Service does not exist. Contact administrator if you believe this is an error.'
       }),
-      port: this.httpsPort,
+      port: this.httpsPort
     });
 
     // Set up the HTTP listener
@@ -72,9 +72,9 @@ export class SharedBalancer extends Construct {
       defaultAction: elb.ListenerAction.fixedResponse(404, {
         contentType: 'text/plain',
         messageBody:
-          'Service does not exist. Contact administrator if you believe this is an error.',
+          'Service does not exist. Contact administrator if you believe this is an error.'
       }),
-      port: this.httpPort,
+      port: this.httpPort
     });
   }
 
@@ -83,10 +83,7 @@ export class SharedBalancer extends Construct {
    * @param id Unique identifier for this operation
    * @param certificates List of certificates to add
    */
-  addHttpsCertificates(
-    id: string,
-    certificates: elb.ListenerCertificate[],
-  ): void {
+  addHttpsCertificates(id: string, certificates: elb.ListenerCertificate[]): void {
     this.httpsListener.addCertificates(id, certificates);
   }
 
@@ -103,13 +100,13 @@ export class SharedBalancer extends Construct {
     targetGroup: elb.ApplicationTargetGroup,
     conditions: elb.ListenerCondition[],
     priority: number,
-    httpRedirectPriority: number,
+    httpRedirectPriority: number
   ): void {
     // Add the listener action on HTTPS listener
     this.httpsListener.addAction(actionId, {
       action: elb.ListenerAction.forward([targetGroup]),
       conditions,
-      priority,
+      priority
     });
 
     // Add HTTP redirect
@@ -117,10 +114,10 @@ export class SharedBalancer extends Construct {
       action: elb.ListenerAction.redirect({
         permanent: true,
         port: this.httpsPort.toString(),
-        protocol: elb.Protocol.HTTPS,
+        protocol: elb.Protocol.HTTPS
       }),
       conditions,
-      priority: httpRedirectPriority,
+      priority: httpRedirectPriority
     });
   }
 
@@ -135,12 +132,12 @@ export class SharedBalancer extends Construct {
     id: string,
     targetGroup: elb.ApplicationTargetGroup,
     conditions: elb.ListenerCondition[],
-    priority: number,
+    priority: number
   ): void {
     this.httpListener.addAction(id, {
       action: elb.ListenerAction.forward([targetGroup]),
       conditions,
-      priority,
+      priority
     });
   }
 }
@@ -177,7 +174,7 @@ export class ReefGuideNetworking extends Construct {
       // At least 2 needed for LB
       maxAzs: 2,
       // No need for nat gateways right now since no private subnet outbound traffic
-      natGateways: 0,
+      natGateways: 0
     });
 
     // Create the shared ALB - public facing
@@ -185,7 +182,7 @@ export class ReefGuideNetworking extends Construct {
       vpc: this.vpc,
       certificates: [props.certificate],
       isPublic: true,
-      subnetType: ec2.SubnetType.PUBLIC,
+      subnetType: ec2.SubnetType.PUBLIC
     });
   }
 }

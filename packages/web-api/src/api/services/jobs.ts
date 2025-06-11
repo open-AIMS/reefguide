@@ -1,21 +1,11 @@
 // jobs.ts
-import {
-  Job,
-  JobRequest,
-  JobStatus,
-  JobType,
-  StorageScheme,
-} from '@prisma/client';
+import { Job, JobRequest, JobStatus, JobType, StorageScheme } from '@prisma/client';
 import crypto from 'crypto';
-import {z} from 'zod';
-import {prisma} from '../apiSetup';
-import {config} from '../config';
-import {
-  BadRequestException,
-  NotFoundException,
-  UnauthorizedException,
-} from '../exceptions';
-import {hashObject} from '../util';
+import { z } from 'zod';
+import { prisma } from '../apiSetup';
+import { config } from '../config';
+import { BadRequestException, NotFoundException, UnauthorizedException } from '../exceptions';
+import { hashObject } from '../util';
 
 /**
  * Type definition mapping job types to their input/output schemas
@@ -40,10 +30,7 @@ const sharedCriteriaSchema = z.object({
   reef_type: z.string().describe('The type of reef, slopes or flats'),
 
   // Criteria - all optional to match the Union{Float64,Nothing} in worker
-  depth_min: z
-    .number()
-    .optional()
-    .describe('The depth minimum (the deeper more negative value)'),
+  depth_min: z.number().optional().describe('The depth minimum (the deeper more negative value)'),
   depth_max: z
     .number()
     .optional()
@@ -52,22 +39,10 @@ const sharedCriteriaSchema = z.object({
   slope_max: z.number().optional().describe('The slope range (max)'),
   rugosity_min: z.number().optional().describe('The rugosity range (min)'),
   rugosity_max: z.number().optional().describe('The rugosity range (max)'),
-  waves_period_min: z
-    .number()
-    .optional()
-    .describe('The wave period range (min)'),
-  waves_period_max: z
-    .number()
-    .optional()
-    .describe('The wave period range (max)'),
-  waves_height_min: z
-    .number()
-    .optional()
-    .describe('The wave height range (min)'),
-  waves_height_max: z
-    .number()
-    .optional()
-    .describe('The wave height range (max)'),
+  waves_period_min: z.number().optional().describe('The wave period range (min)'),
+  waves_period_max: z.number().optional().describe('The wave period range (max)'),
+  waves_height_min: z.number().optional().describe('The wave height range (min)'),
+  waves_height_max: z.number().optional().describe('The wave height range (max)')
 });
 
 /**
@@ -79,10 +54,10 @@ export const jobTypeSchemas: JobSchemaMap = {
     input: z
       .object({
         // This is just to break up the hash
-        id: z.number(),
+        id: z.number()
       })
       .strict(),
-    result: z.object({}).strict().optional(),
+    result: z.object({}).strict().optional()
   },
   // The suitability assessment job takes in regional parameters and returns the location of the file relative to the job storage location.
   SUITABILITY_ASSESSMENT: {
@@ -91,10 +66,7 @@ export const jobTypeSchemas: JobSchemaMap = {
       .extend({
         x_dist: z.number().describe('Length (m) of the target polygon'),
         y_dist: z.number().describe('Width (m) of the target polygon'),
-        threshold: z
-          .number()
-          .optional()
-          .describe('Suitability threshold integer (min)'),
+        threshold: z.number().optional().describe('Suitability threshold integer (min)')
       })
       .strict(),
     result: z
@@ -102,35 +74,31 @@ export const jobTypeSchemas: JobSchemaMap = {
         geojson_path: z
           .string()
           .describe(
-            'Relative path in job storage location to the GeoJSON file containing assessment results',
-          ),
+            'Relative path in job storage location to the GeoJSON file containing assessment results'
+          )
       })
-      .strict(),
+      .strict()
   },
   REGIONAL_ASSESSMENT: {
     // Just base criteria
     input: sharedCriteriaSchema.strict(),
     result: z
       .object({
-        cog_path: z
-          .string()
-          .describe(
-            'Relative location of the COG file in the output directory',
-          ),
+        cog_path: z.string().describe('Relative location of the COG file in the output directory')
       })
-      .strict(),
-  },
+      .strict()
+  }
 };
 
 export const jobExpiryMap: JobExpiryMap = {
   TEST: {
     // expires in one hour
-    expiryMinutes: 60,
+    expiryMinutes: 60
   },
   SUITABILITY_ASSESSMENT: {
     // expires in one hour
-    expiryMinutes: 60,
-  },
+    expiryMinutes: 60
+  }
 };
 
 /**
@@ -146,7 +114,7 @@ export class JobService {
    */
   private generateStorageLocation(
     jobType: JobType,
-    jobId: number,
+    jobId: number
   ): {
     scheme: StorageScheme;
     uri: string;
@@ -155,7 +123,7 @@ export class JobService {
     const bucketPrefix = 'results';
     return {
       scheme: StorageScheme.S3,
-      uri: `s3://${bucketName}/${bucketPrefix}/${jobType.toLowerCase()}/${jobId}/${Date.now()}`,
+      uri: `s3://${bucketName}/${bucketPrefix}/${jobType.toLowerCase()}/${jobId}/${Date.now()}`
     };
   }
 
@@ -174,10 +142,7 @@ export class JobService {
       return schema.parse(payload);
     } catch (e) {
       const cause = e instanceof Error ? e : undefined;
-      throw new BadRequestException(
-        `Invalid payload for job type ${jobType}`,
-        cause,
-      );
+      throw new BadRequestException(`Invalid payload for job type ${jobType}`, cause);
     }
   }
 
@@ -193,20 +158,15 @@ export class JobService {
     try {
       return schema.parse(payload);
     } catch (e) {
-      throw new BadRequestException(
-        `Invalid result payload for job type ${jobType}`,
-      );
+      throw new BadRequestException(`Invalid result payload for job type ${jobType}`);
     }
   }
 
-  public async checkJobCache(
-    jobPaylod: any,
-    jobType: JobType,
-  ): Promise<Job | undefined> {
+  public async checkJobCache(jobPaylod: any, jobType: JobType): Promise<Job | undefined> {
     // Calculate job hash
-    const hash = await this.generateJobHash({jobType, payload: jobPaylod});
+    const hash = await this.generateJobHash({ jobType, payload: jobPaylod });
     // Find jobs with a matching hash
-    const existingJobs = await prisma.job.findMany({where: {hash}});
+    const existingJobs = await prisma.job.findMany({ where: { hash } });
 
     // What jobs are we interested in - those that are incomplete, or
     // successful. Choose the latest edition.
@@ -239,10 +199,7 @@ export class JobService {
         }
 
         // Is it also a pending/in progress?
-        if (
-          bestCandidate.status === 'PENDING' ||
-          bestCandidate.status === 'IN_PROGRESS'
-        ) {
+        if (bestCandidate.status === 'PENDING' || bestCandidate.status === 'IN_PROGRESS') {
           // This is a 'tie' - choose newer
           if (job.created_at > bestCandidate.created_at) {
             // this one is newer - so let's keep it
@@ -309,9 +266,9 @@ export class JobService {
             status: JobStatus.PENDING,
             hash: await this.generateJobHash({
               payload: inputPayload,
-              jobType: jobType,
-            }),
-          },
+              jobType: jobType
+            })
+          }
         });
       }
 
@@ -322,11 +279,11 @@ export class JobService {
           type: jobType,
           input_payload: inputPayload,
           cache_hit: cacheHit,
-          job_id: job.id,
-        },
+          job_id: job.id
+        }
       });
 
-      return {job, jobRequest, cached: cacheHit};
+      return { job, jobRequest, cached: cacheHit };
     });
 
     return result;
@@ -342,20 +299,20 @@ export class JobService {
     return prisma.job.findMany({
       where: {
         status: JobStatus.PENDING,
-        ...(jobType && {type: jobType}),
+        ...(jobType && { type: jobType }),
         assignments: {
           // Only jobs with NO assignment which is incomplete and valid should
           // be considered
           none: {
             // If either not complete, or not expired, we can't reassign this
-            OR: [{completed_at: null}, {expires_at: {gt: now}}],
-          },
-        },
+            OR: [{ completed_at: null }, { expires_at: { gt: now } }]
+          }
+        }
       },
       // Max of 10
       take: 10,
       // Oldest first
-      orderBy: {created_at: 'asc'},
+      orderBy: { created_at: 'asc' }
     });
   }
 
@@ -370,8 +327,8 @@ export class JobService {
    */
   async assignJob(jobId: number, ecsTaskArn: string, ecsClusterArn: string) {
     const job = await prisma.job.findUnique({
-      where: {id: jobId},
-      include: {assignments: true},
+      where: { id: jobId },
+      include: { assignments: true }
     });
 
     if (!job) throw new NotFoundException('Job not found');
@@ -394,13 +351,13 @@ export class JobService {
           ecs_cluster_arn: ecsClusterArn,
           expires_at: expiryTime,
           storage_scheme: storage.scheme,
-          storage_uri: storage.uri,
-        },
+          storage_uri: storage.uri
+        }
       }),
       prisma.job.update({
-        where: {id: jobId},
-        data: {status: JobStatus.IN_PROGRESS},
-      }),
+        where: { id: jobId },
+        data: { status: JobStatus.IN_PROGRESS }
+      })
     ]);
 
     return assignment;
@@ -414,14 +371,10 @@ export class JobService {
    * @throws NotFoundException if assignment doesn't exist
    * @throws BadRequestException if assignment already completed
    */
-  async submitResult(
-    assignmentId: number,
-    status: JobStatus,
-    resultPayload?: any,
-  ) {
+  async submitResult(assignmentId: number, status: JobStatus, resultPayload?: any) {
     const assignment = await prisma.jobAssignment.findUnique({
-      where: {id: assignmentId},
-      include: {job: true},
+      where: { id: assignmentId },
+      include: { job: true }
     });
 
     if (!assignment) throw new NotFoundException('Assignment not found');
@@ -440,17 +393,17 @@ export class JobService {
           job_id: assignment.job_id,
           result_payload: resultPayload,
           storage_scheme: assignment.storage_scheme,
-          storage_uri: assignment.storage_uri,
-        },
+          storage_uri: assignment.storage_uri
+        }
       }),
       prisma.jobAssignment.update({
-        where: {id: assignmentId},
-        data: {completed_at: new Date()},
+        where: { id: assignmentId },
+        data: { completed_at: new Date() }
       }),
       prisma.job.update({
-        where: {id: assignment.job_id},
-        data: {status},
-      }),
+        where: { id: assignment.job_id },
+        data: { status }
+      })
     ]);
   }
 
@@ -463,14 +416,14 @@ export class JobService {
    */
   async getJobDetails(jobId: number) {
     const job = await prisma.job.findUnique({
-      where: {id: jobId},
+      where: { id: jobId },
       include: {
         assignments: {
           include: {
-            result: true,
-          },
-        },
-      },
+            result: true
+          }
+        }
+      }
     });
 
     if (!job) throw new NotFoundException('Job not found');
@@ -489,7 +442,7 @@ export class JobService {
    */
   async cancelJob(jobId: number, userId: number, isAdmin: boolean) {
     const job = await prisma.job.findUnique({
-      where: {id: jobId},
+      where: { id: jobId }
     });
 
     if (!job) throw new NotFoundException('Job not found');
@@ -498,14 +451,12 @@ export class JobService {
     }
 
     if (!(job.status === 'PENDING')) {
-      throw new BadRequestException(
-        'Cannot cancel jobs in a non PENDING state',
-      );
+      throw new BadRequestException('Cannot cancel jobs in a non PENDING state');
     }
 
     return prisma.job.update({
-      where: {id: jobId},
-      data: {status: JobStatus.CANCELLED},
+      where: { id: jobId },
+      data: { status: JobStatus.CANCELLED }
     });
   }
 
@@ -520,11 +471,11 @@ export class JobService {
   async listJobs(params: {
     userId?: number;
     status?: JobStatus;
-  }): Promise<{jobs: Job[]; total: number}> {
+  }): Promise<{ jobs: Job[]; total: number }> {
     // Build where clause based on parameters
     const where = {
-      ...(params.userId && {user_id: params.userId}),
-      ...(params.status && {status: params.status}),
+      ...(params.userId && { user_id: params.userId }),
+      ...(params.status && { status: params.status })
     };
 
     // Execute both queries in parallel for efficiency
@@ -534,20 +485,20 @@ export class JobService {
         include: {
           assignments: {
             include: {
-              result: true,
-            },
-          },
+              result: true
+            }
+          }
         },
-        orderBy: [{status: 'asc'}, {updated_at: 'desc'}],
+        orderBy: [{ status: 'asc' }, { updated_at: 'desc' }],
         // Reasonable page size for initial implementation
-        take: 50,
+        take: 50
       }),
-      prisma.job.count({where}),
+      prisma.job.count({ where })
     ]);
 
     return {
       jobs,
-      total,
+      total
     };
   }
 
@@ -559,30 +510,28 @@ export class JobService {
    * @param params.status - Optional status to filter by
    * @returns Object containing jobs array and total count
    */
-  async listRequests(params: {
-    userId?: number;
-  }): Promise<{jobs: JobRequest[]; total: number}> {
+  async listRequests(params: { userId?: number }): Promise<{ jobs: JobRequest[]; total: number }> {
     // Build where clause based on parameters
     const where = {
-      ...(params.userId && {user_id: params.userId}),
+      ...(params.userId && { user_id: params.userId })
     };
 
     const [requests, total] = await Promise.all([
       prisma.jobRequest.findMany({
         where,
         include: {
-          job: {include: {assignments: true, results: true}},
+          job: { include: { assignments: true, results: true } }
         },
-        orderBy: [{created_at: 'desc'}],
+        orderBy: [{ created_at: 'desc' }],
         // Reasonable page size for initial implementation
-        take: 50,
+        take: 50
       }),
-      prisma.jobRequest.count({where}),
+      prisma.jobRequest.count({ where })
     ]);
 
     return {
       jobs: requests,
-      total,
+      total
     };
   }
 
@@ -592,18 +541,8 @@ export class JobService {
    * @param payload The payload contents to hash
    * @param jobType The jobType to hash
    */
-  public async generateJobHash({
-    payload,
-    jobType,
-  }: {
-    payload: any;
-    jobType: JobType;
-  }) {
+  public async generateJobHash({ payload, jobType }: { payload: any; jobType: JobType }) {
     const payloadHash = hashObject(payload);
-    return crypto
-      .createHash('sha256')
-      .update(payloadHash)
-      .update(jobType)
-      .digest('hex');
+    return crypto.createHash('sha256').update(payloadHash).update(jobType).digest('hex');
   }
 }

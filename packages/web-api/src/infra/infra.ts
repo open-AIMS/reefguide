@@ -2,27 +2,24 @@ import * as cdk from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import {Construct} from 'constructs';
-import {ReefGuideNetworking} from './components/networking';
-import {ReefGuideAPI} from './components/reefGuideAPI';
-import {LambdaWebAPI} from './components/lambdaWebAPI';
-import {DeploymentConfig} from './infraConfig';
-import {ReefGuideFrontend} from './components/reefGuideFrontend';
-import {JobSystem} from './components/jobs';
+import { Construct } from 'constructs';
+import { ReefGuideNetworking } from './components/networking';
+import { ReefGuideAPI } from './components/reefGuideAPI';
+import { LambdaWebAPI } from './components/lambdaWebAPI';
+import { DeploymentConfig } from './infraConfig';
+import { ReefGuideFrontend } from './components/reefGuideFrontend';
+import { JobSystem } from './components/jobs';
 import * as sm from 'aws-cdk-lib/aws-secretsmanager';
-import {Db} from './components/db';
-import {JobType} from '@prisma/client';
-import {ECSWebAPI} from './components/ecsWebAPI';
+import { Db } from './components/db';
+import { JobType } from '@prisma/client';
+import { ECSWebAPI } from './components/ecsWebAPI';
 
 export interface ReefguideWebApiProps extends cdk.StackProps {
   config: DeploymentConfig;
 }
 
 // All of these endpoints need to be added to CSP for front-end
-const ARC_GIS_ENDPOINTS = [
-  'https://*.arcgis.com',
-  'https://*.arcgisonline.com',
-];
+const ARC_GIS_ENDPOINTS = ['https://*.arcgis.com', 'https://*.arcgisonline.com'];
 
 export class ReefguideWebApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ReefguideWebApiProps) {
@@ -44,13 +41,13 @@ export class ReefguideWebApiStack extends cdk.Stack {
         generateSecretString: {
           passwordLength: 16,
           secretStringTemplate: JSON.stringify({
-            username: email,
+            username: email
           }),
           excludePunctuation: true,
           includeSpace: false,
-          generateStringKey: 'password',
+          generateStringKey: 'password'
         },
-        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        removalPolicy: cdk.RemovalPolicy.DESTROY
       });
     };
 
@@ -65,14 +62,14 @@ export class ReefguideWebApiStack extends cdk.Stack {
     // Setup the hosted zone for domain definitions
     const hz = route53.HostedZone.fromHostedZoneAttributes(this, 'hz', {
       hostedZoneId: config.hostedZone.id,
-      zoneName: config.hostedZone.name,
+      zoneName: config.hostedZone.name
     });
 
     // Domain configurations
     const domains = {
       reefGuideAPI: `${config.domains.reefGuideAPI}.${config.domains.baseDomain}`,
       webAPI: `${config.domains.webAPI}.${config.domains.baseDomain}`,
-      frontend: `${config.domains.frontend}.${config.domains.baseDomain}`,
+      frontend: `${config.domains.frontend}.${config.domains.baseDomain}`
     };
 
     // CERTIFICATES
@@ -82,14 +79,14 @@ export class ReefguideWebApiStack extends cdk.Stack {
     const primaryCert = acm.Certificate.fromCertificateArn(
       this,
       'primary-cert',
-      config.certificates.primary,
+      config.certificates.primary
     );
 
     // CloudFront certificate
     const cfnCert = acm.Certificate.fromCertificateArn(
       this,
       'cfn-cert',
-      config.certificates.cloudfront,
+      config.certificates.cloudfront
     );
 
     // NETWORKING
@@ -97,7 +94,7 @@ export class ReefguideWebApiStack extends cdk.Stack {
 
     // Setup networking infrastructure
     const networking = new ReefGuideNetworking(this, 'networking', {
-      certificate: primaryCert,
+      certificate: primaryCert
     });
 
     // Setup RDS if desired TODO it would be nice to automatically provide these
@@ -108,7 +105,7 @@ export class ReefguideWebApiStack extends cdk.Stack {
       new Db(this, 'db', {
         vpc: networking.vpc,
         instanceSize: config.db.instanceSize,
-        storageGb: config.db.storageGb,
+        storageGb: config.db.storageGb
       });
     }
 
@@ -122,7 +119,7 @@ export class ReefguideWebApiStack extends cdk.Stack {
       domainName: domains.reefGuideAPI,
       hz: hz,
       sharedBalancer: networking.sharedBalancer,
-      config: config.reefGuideAPI,
+      config: config.reefGuideAPI
     });
     const cluster = reefGuideApi.fargateService.cluster;
 
@@ -136,8 +133,8 @@ export class ReefguideWebApiStack extends cdk.Stack {
       lifecycleRules: [
         {
           // Clean up after 30 days
-          expiration: cdk.Duration.days(30),
-        },
+          expiration: cdk.Duration.days(30)
+        }
       ],
       cors: [
         {
@@ -147,9 +144,9 @@ export class ReefguideWebApiStack extends cdk.Stack {
           allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT],
           // TODO tighten this for security - okay for now as only presigned
           // URLs exposed and want them to be easy to use from anywhere
-          allowedOrigins: ['*'],
-        },
-      ],
+          allowedOrigins: ['*']
+        }
+      ]
     });
 
     // ========
@@ -173,7 +170,7 @@ export class ReefguideWebApiStack extends cdk.Stack {
         reefguideApiServiceName: reefGuideApi.fargateService.serviceName,
         cluster: cluster,
         sharedBalancer: networking.sharedBalancer,
-        vpc: networking.vpc,
+        vpc: networking.vpc
       });
     } else {
       // Lambda mode
@@ -188,7 +185,7 @@ export class ReefguideWebApiStack extends cdk.Stack {
 
         // Expose the cluster information to web API so that it can control it
         ecsClusterName: cluster.clusterName,
-        ecsServiceName: reefGuideApi.fargateService.serviceName,
+        ecsServiceName: reefGuideApi.fargateService.serviceName
       });
 
       // let the webAPI read write the data storage bucket and tell it about
@@ -215,8 +212,8 @@ export class ReefguideWebApiStack extends cdk.Stack {
         `https://*.s3.${cdk.Stack.of(this).region}.amazonaws.com`,
         reefGuideApi.endpoint,
         webAPI.endpoint,
-        'blob:',
-      ].concat(ARC_GIS_ENDPOINTS),
+        'blob:'
+      ].concat(ARC_GIS_ENDPOINTS)
     });
 
     new JobSystem(this, 'job-system', {
@@ -228,16 +225,12 @@ export class ReefguideWebApiStack extends cdk.Stack {
         // Measly! But seems to work well
         cpu: 512,
         memoryLimitMiB: 1024,
-        pollIntervalMs: 3000,
+        pollIntervalMs: 3000
       },
       workers: [
         {
           // This worker handles both tests and suitability assessments
-          jobTypes: [
-            JobType.SUITABILITY_ASSESSMENT,
-            JobType.REGIONAL_ASSESSMENT,
-            JobType.TEST,
-          ],
+          jobTypes: [JobType.SUITABILITY_ASSESSMENT, JobType.REGIONAL_ASSESSMENT, JobType.TEST],
           // This specifies the image to be used - should be in the full format
           // i.e. "ghcr.io/open-aims/reefguideapi.jl/reefguide-src:latest"
           workerImage: 'ghcr.io/open-aims/reefguideapi.jl/reefguide-src:latest',
@@ -259,7 +252,7 @@ export class ReefguideWebApiStack extends cdk.Stack {
           // worker task
           env: {
             CONFIG_PATH: '/data/reefguide/config.toml',
-            JULIA_DEBUG: 'ReefGuideAPI',
+            JULIA_DEBUG: 'ReefGuideAPI'
           },
 
           // Mount up the reefguide API shared storage
@@ -272,22 +265,22 @@ export class ReefguideWebApiStack extends cdk.Stack {
                   fileSystemId: reefGuideApi.efs.fileSystemId,
                   rootDirectory: '/data/reefguide',
                   transitEncryption: 'ENABLED',
-                  authorizationConfig: {iam: 'ENABLED'},
-                },
-              },
+                  authorizationConfig: { iam: 'ENABLED' }
+                }
+              }
             ],
             mountPoints: [
               {
                 sourceVolume: 'efs-volume',
                 containerPath: '/data/reefguide',
-                readOnly: false,
-              },
-            ],
-          },
-        },
+                readOnly: false
+              }
+            ]
+          }
+        }
       ],
       workerCreds,
-      managerCreds,
+      managerCreds
     });
   }
 }

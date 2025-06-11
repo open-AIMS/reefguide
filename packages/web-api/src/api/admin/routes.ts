@@ -1,28 +1,24 @@
-import express, {Response, Router} from 'express';
-import {passport} from '../auth/passportConfig';
-import {assertUserIsAdminMiddleware} from '../auth/utils';
-import {z} from 'zod';
-import {processRequest} from 'zod-express-middleware';
-import {
-  DescribeServicesCommand,
-  ECSClient,
-  UpdateServiceCommand,
-} from '@aws-sdk/client-ecs';
-import {InternalServerError} from '../exceptions';
-import {config} from '../config';
-import {initialiseAdmins} from '../initialise';
+import express, { Response, Router } from 'express';
+import { passport } from '../auth/passportConfig';
+import { assertUserIsAdminMiddleware } from '../auth/utils';
+import { z } from 'zod';
+import { processRequest } from 'zod-express-middleware';
+import { DescribeServicesCommand, ECSClient, UpdateServiceCommand } from '@aws-sdk/client-ecs';
+import { InternalServerError } from '../exceptions';
+import { config } from '../config';
+import { initialiseAdmins } from '../initialise';
 
 require('express-async-errors');
 export const router: Router = express.Router();
 
 // Initialize ECS client
-const ecsClient = new ECSClient({region: config.aws.region});
+const ecsClient = new ECSClient({ region: config.aws.region });
 
 // Require admin middleware
 
 // To scale the cluster
 export const PostScaleClusterInputSchema = z.object({
-  desiredCount: z.number().min(0).max(10),
+  desiredCount: z.number().min(0).max(10)
 });
 export type PostScaleClusterInput = z.infer<typeof PostScaleClusterInputSchema>;
 
@@ -40,50 +36,45 @@ export const GetClusterCountResponseSchema = z.object({
       runningCount: z.number().optional(),
       failedTasks: z.number().optional(),
       rolloutState: z.string().optional(),
-      rolloutStateReason: z.string().optional(),
-    }),
+      rolloutStateReason: z.string().optional()
+    })
   ),
   events: z
     .array(
       z.object({
         createdAt: z.date(),
-        message: z.string(),
-      }),
+        message: z.string()
+      })
     )
     .max(5), // Limiting to last 5 events
-  serviceStatus: z.string().optional(),
+  serviceStatus: z.string().optional()
 });
-export type GetClusterCountResponse = z.infer<
-  typeof GetClusterCountResponseSchema
->;
+export type GetClusterCountResponse = z.infer<typeof GetClusterCountResponseSchema>;
 
 /**
  * Configure the compute cluster to scale to the specified count.
  */
 router.post(
   '/scale',
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
   processRequest({
-    body: PostScaleClusterInputSchema,
+    body: PostScaleClusterInputSchema
   }),
   async (req, res) => {
-    const {desiredCount} = req.body;
+    const { desiredCount } = req.body;
     try {
       const command = new UpdateServiceCommand({
         cluster: config.aws.ecs.clusterName,
         service: config.aws.ecs.serviceName,
-        desiredCount,
+        desiredCount
       });
       await ecsClient.send(command);
       res.status(200).send();
     } catch (error) {
-      throw new InternalServerError(
-        'Failed to scale ECS service. Error: ' + error,
-        error as Error,
-      );
+      throw new InternalServerError('Failed to scale ECS service. Error: ' + error, error as Error);
     }
-  },
+  }
 );
 
 /**
@@ -92,13 +83,13 @@ router.post(
  */
 router.get(
   '/status',
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
   async (req, res: Response<GetClusterCountResponse>) => {
     try {
       const command = new DescribeServicesCommand({
         cluster: config.aws.ecs.clusterName,
-        services: [config.aws.ecs.serviceName],
+        services: [config.aws.ecs.serviceName]
       });
 
       const response = await ecsClient.send(command);
@@ -119,14 +110,14 @@ router.get(
           runningCount: deployment.runningCount,
           failedTasks: deployment.failedTasks,
           rolloutState: deployment.rolloutState,
-          rolloutStateReason: deployment.rolloutStateReason,
+          rolloutStateReason: deployment.rolloutStateReason
         })) || [];
 
       // Transform events data
       const events =
         service.events?.slice(0, 5).map(event => ({
           createdAt: event.createdAt || new Date(),
-          message: event.message || '',
+          message: event.message || ''
         })) || [];
 
       res.json({
@@ -139,20 +130,20 @@ router.get(
         // Recent events
         events,
         // Overall service status
-        serviceStatus: service.status,
+        serviceStatus: service.status
       });
     } catch (error) {
       throw new InternalServerError(
         'Failed to describe ECS service. Error: ' + error,
-        error as Error,
+        error as Error
       );
     }
-  },
+  }
 );
 
 router.post(
   '/redeploy',
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
   async (req, res) => {
     try {
@@ -166,8 +157,8 @@ router.post(
           // Allows rolling updates
           minimumHealthyPercent: 50,
           // Allows new tasks to start before old ones stop
-          maximumPercent: 200,
-        },
+          maximumPercent: 200
+        }
       });
 
       await ecsClient.send(command);
@@ -175,10 +166,10 @@ router.post(
     } catch (error) {
       throw new InternalServerError(
         'Failed to initiate redeployment. Error ' + error,
-        error as Error,
+        error as Error
       );
     }
-  },
+  }
 );
 
 /**
@@ -186,7 +177,7 @@ router.post(
  */
 router.get(
   '/init',
-  passport.authenticate('jwt', {session: false}),
+  passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
   async (req, res) => {
     // if the user is admin, allow forceful re-init in case of out of date admin
@@ -194,5 +185,5 @@ router.get(
     await initialiseAdmins();
     res.status(200).send();
     return;
-  },
+  }
 );

@@ -1,11 +1,7 @@
 import passport from 'passport';
-import {
-  ExtractJwt,
-  Strategy as JwtStrategy,
-  StrategyOptions,
-} from 'passport-jwt';
-import {prisma} from '../apiSetup';
-import {ALGORITHM as KEY_ALGORITHM, PUBLIC_KEY} from './jwtUtils';
+import { ExtractJwt, Strategy as JwtStrategy, StrategyOptions } from 'passport-jwt';
+import { prisma } from '../apiSetup';
+import { ALGORITHM as KEY_ALGORITHM, PUBLIC_KEY } from './jwtUtils';
 
 /**
  * Options for configuring the JWT strategy
@@ -26,7 +22,7 @@ const options: StrategyOptions = {
 
   // Indicate we are using RS256 which is the algorithm for the asymmetric key
   // pair
-  algorithms: [KEY_ALGORITHM],
+  algorithms: [KEY_ALGORITHM]
 };
 
 /**
@@ -38,10 +34,10 @@ passport.use(
     try {
       // Attempt to find a user that matches the ID in the JWT payload
       const user = await prisma.user.findUnique({
-        where: {id: jwtPayload.id},
+        where: { id: jwtPayload.id },
         // Modify fields to include in the express returned user object here -
         // these will be available in req.user object through middleware
-        select: {password: false, id: true, email: true, roles: true},
+        select: { password: false, id: true, email: true, roles: true }
       });
 
       if (user) {
@@ -55,8 +51,8 @@ passport.use(
       // If an error occurred, pass it to the `done` callback
       return done(error, false);
     }
-  }),
+  })
 );
 
 // Export the configured Passport instance
-export {passport};
+export { passport };

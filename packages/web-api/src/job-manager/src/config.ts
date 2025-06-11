@@ -1,6 +1,6 @@
-import {JobType} from '@prisma/client';
-import {z} from 'zod';
-import {logger} from './logging';
+import { JobType } from '@prisma/client';
+import { z } from 'zod';
+import { logger } from './logging';
 
 /**
  * Helper function to create a number validator that also accepts string inputs
@@ -14,7 +14,7 @@ import {logger} from './logging';
 const createNumberValidator = (
   min: number | null = null,
   errorMessage = 'Value must be a valid number',
-  minErrorMessage = `Value must be at least ${min}`,
+  minErrorMessage = `Value must be at least ${min}`
 ) => {
   return z.union([
     min !== null ? z.number().min(min, minErrorMessage) : z.number(),
@@ -23,19 +23,19 @@ const createNumberValidator = (
       if (isNaN(parsed)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: errorMessage,
+          message: errorMessage
         });
         return z.NEVER;
       }
       if (min !== null && parsed < min) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: minErrorMessage,
+          message: minErrorMessage
         });
         return z.NEVER;
       }
       return parsed;
-    }),
+    })
   ]);
 };
 
@@ -47,28 +47,28 @@ export const ScalingConfiguration = z.object({
   min: createNumberValidator(
     0,
     'Minimum capacity must be a valid number',
-    'Minimum capacity must be non-negative',
+    'Minimum capacity must be non-negative'
   ),
   max: createNumberValidator(
     0,
     'Maximum capacity must be a valid number',
-    'Maximum capacity must be non-negative',
+    'Maximum capacity must be non-negative'
   ),
   sensitivity: createNumberValidator(
     0,
     'Sensitivity must be a valid number',
-    'Logarithmic sensitivity must be non-negative',
+    'Logarithmic sensitivity must be non-negative'
   ),
   factor: createNumberValidator(
     1,
     'Factor must be a valid number',
-    'Division factor for jobs - this allows you to consider different job count scales. Must be > 1.',
+    'Division factor for jobs - this allows you to consider different job count scales. Must be > 1.'
   ),
   cooldownSeconds: createNumberValidator(
     0,
     'Cooldown seconds must be a valid number',
-    'Cooldown seconds must be non-negative',
-  ),
+    'Cooldown seconds must be non-negative'
+  )
 });
 
 /**
@@ -80,7 +80,7 @@ export const RawJobTypeConfigSchema = z.object({
   clusterArn: z.string().min(1, 'Cluster ARN is required'),
   scaling: ScalingConfiguration,
   // Security group ARN for this task
-  securityGroup: z.string().min(1, 'Security group ARN is required'),
+  securityGroup: z.string().min(1, 'Security group ARN is required')
 });
 
 export type RawJobTypeConfig = z.infer<typeof RawJobTypeConfigSchema>;
@@ -93,17 +93,17 @@ export const BaseEnvConfigSchema = z.object({
   POLL_INTERVAL_MS: createNumberValidator(
     500,
     'Poll interval expects valid number',
-    'Minimum poll interval is 500(ms)',
+    'Minimum poll interval is 500(ms)'
   ),
   API_ENDPOINT: z.string().url('API endpoint must be a valid URL'),
   AWS_REGION: z.string().min(1, 'AWS region is required'),
   API_USERNAME: z.string().min(1, 'API username is required'),
   API_PASSWORD: z.string().min(1, 'API password is required'),
-  VPC_ID: z.string().min(1, 'VPC ID is required'),
+  VPC_ID: z.string().min(1, 'VPC ID is required')
 });
 
 export const JobTypeConfigSchema = RawJobTypeConfigSchema.extend({
-  jobTypes: z.array(z.nativeEnum(JobType)),
+  jobTypes: z.array(z.nativeEnum(JobType))
 });
 export type JobTypeConfig = z.infer<typeof JobTypeConfigSchema>;
 /**
@@ -114,16 +114,16 @@ export const ConfigSchema = z.object({
   pollIntervalMs: createNumberValidator(
     500,
     'Poll interval expects valid number',
-    'Minimum poll interval is 500(ms)',
+    'Minimum poll interval is 500(ms)'
   ),
   apiEndpoint: z.string().url('API endpoint must be a valid URL'),
   region: z.string().min(1, 'AWS region is required'),
   jobTypes: z.record(z.nativeEnum(JobType), JobTypeConfigSchema),
   auth: z.object({
     email: z.string().min(1, 'Email is required'),
-    password: z.string().min(1, 'Password is required'),
+    password: z.string().min(1, 'Password is required')
   }),
-  vpcId: z.string().min(1, 'VPC ID is required'),
+  vpcId: z.string().min(1, 'VPC ID is required')
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -138,7 +138,7 @@ export type Config = z.infer<typeof ConfigSchema>;
  */
 function buildJobTypeConfig(
   env: Record<string, string | number>,
-  jobType: string,
+  jobType: string
 ): RawJobTypeConfig {
   logger.debug(`Building config for job type: ${jobType}`);
 
@@ -150,9 +150,9 @@ function buildJobTypeConfig(
       max: env[`${jobType}_MAX_CAPACITY`] as number,
       cooldownSeconds: env[`${jobType}_COOLDOWN`] as number,
       sensitivity: env[`${jobType}_SENSITIVITY`] as number,
-      factor: env[`${jobType}_FACTOR`] as number,
+      factor: env[`${jobType}_FACTOR`] as number
     },
-    securityGroup: env[`${jobType}_SECURITY_GROUP`] as string,
+    securityGroup: env[`${jobType}_SECURITY_GROUP`] as string
   } satisfies RawJobTypeConfig;
 
   try {
@@ -160,10 +160,7 @@ function buildJobTypeConfig(
     logger.debug(`Validated config for job type: ${jobType}`);
     return validatedConfig;
   } catch (e) {
-    logger.error(
-      `Job type ${jobType} did not have valid environment variables`,
-      {error: e},
-    );
+    logger.error(`Job type ${jobType} did not have valid environment variables`, { error: e });
     throw e;
   }
 }
@@ -182,10 +179,7 @@ export function loadConfig(): Config {
     // Force types here as we zod process everything!
     const env = process.env as Record<string, string | number>;
     // Initialize job types configuration object
-    const jobTypesConfig: Record<
-      string,
-      RawJobTypeConfig & {jobTypes?: JobType[]}
-    > = {};
+    const jobTypesConfig: Record<string, RawJobTypeConfig & { jobTypes?: JobType[] }> = {};
 
     // Build configuration for each job type
     Object.values(JobType).forEach(jobType => {
@@ -200,9 +194,7 @@ export function loadConfig(): Config {
     for (const [jobType, config] of Object.entries(jobTypesConfig)) {
       arnToTypes.set(
         config.taskDefinitionArn,
-        (arnToTypes.get(config.taskDefinitionArn) ?? []).concat([
-          jobType as JobType,
-        ]),
+        (arnToTypes.get(config.taskDefinitionArn) ?? []).concat([jobType as JobType])
       );
     }
 
@@ -219,9 +211,9 @@ export function loadConfig(): Config {
       jobTypes: jobTypesConfig,
       auth: {
         email: env.API_USERNAME as string,
-        password: env.API_PASSWORD as string,
+        password: env.API_PASSWORD as string
       },
-      vpcId: env.VPC_ID as string,
+      vpcId: env.VPC_ID as string
     };
 
     // Validate the entire config object
@@ -236,11 +228,11 @@ export function loadConfig(): Config {
         .map(err => `${err.path.join('.')}: ${err.message}`)
         .join('\n');
       logger.error('Configuration validation failed', {
-        errors: formattedErrors,
+        errors: formattedErrors
       });
       throw new Error(`Configuration validation failed:\n${formattedErrors}`);
     }
-    logger.error('Failed to load configuration', {error});
+    logger.error('Failed to load configuration', { error });
     throw new Error(`Failed to load configuration: ${error}`);
   }
 }

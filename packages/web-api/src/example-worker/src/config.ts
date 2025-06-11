@@ -1,4 +1,4 @@
-import {z} from 'zod';
+import { z } from 'zod';
 
 // Schema for validating environment variables directly
 const EnvVarsSchema = z.object({
@@ -23,7 +23,7 @@ const EnvVarsSchema = z.object({
     .transform(val => parseInt(val))
     .pipe(z.number().positive()),
   WORKER_USERNAME: z.string().min(1, 'Username for the web API is required'),
-  WORKER_PASSWORD: z.string().min(1, 'Password for the web API is required'),
+  WORKER_PASSWORD: z.string().min(1, 'Password for the web API is required')
 });
 
 // Main configuration schema
@@ -46,7 +46,7 @@ export const ConfigSchema = z.object({
 
   // Auth settings
   username: z.string().min(1),
-  password: z.string().min(1),
+  password: z.string().min(1)
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -64,7 +64,7 @@ export function loadConfig(): Config {
     maxConcurrentJobs: env.MAX_CONCURRENT_JOBS,
     port: env.PORT,
     username: env.WORKER_USERNAME,
-    password: env.WORKER_PASSWORD,
+    password: env.WORKER_PASSWORD
   };
 
   // Validate the complete configuration

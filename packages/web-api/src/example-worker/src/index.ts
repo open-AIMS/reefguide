@@ -1,9 +1,9 @@
 import express from 'express';
-import {Config, loadConfig} from './config';
-import {TestWorker} from './worker';
-import {z} from 'zod';
-import {AuthApiClient} from './authClient';
-import {getTaskMetadataSafe} from './ecs';
+import { Config, loadConfig } from './config';
+import { TestWorker } from './worker';
+import { z } from 'zod';
+import { AuthApiClient } from './authClient';
+import { getTaskMetadataSafe } from './ecs';
 
 async function main() {
   let config: Config;
@@ -30,7 +30,7 @@ async function main() {
   // Setup the api client
   const client = new AuthApiClient(config.apiEndpoint + '/api', {
     email: config.username,
-    password: config.password,
+    password: config.password
   });
 
   // Create express app for health checks
@@ -45,7 +45,7 @@ async function main() {
     res.json({
       status: 'healthy',
       activeJobs,
-      maxJobs: config.maxConcurrentJobs,
+      maxJobs: config.maxConcurrentJobs
     });
   });
 
