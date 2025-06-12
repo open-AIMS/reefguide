@@ -57,9 +57,9 @@ jobs:
 
           echo "PostgreSQL is ready!"
       - name: Copy environment file and set test mode
-        run: cp .env.example .env && echo -en "\nTEST_MODE=true" >> .env
+        run: cd packages/web-api && cp .env.dist .env && echo -en "\nTEST_MODE=true" >> .env
       - name: Generate local keys
-        run: pnpm run local-keys
+        run: cd packages/web-api && pnpm run local-keys
       - name: Reset database
         run: cd packages/db && cp .env.dist .env && pnpm run db-reset
       - name: Run tests
