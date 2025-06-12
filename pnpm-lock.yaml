@@ -11,6 +11,9 @@ importers:
       '@types/node':
         specifier: ^22.15.31
         version: 22.15.31
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.1
       gts:
         specifier: ^6.0.2
         version: 6.0.2(@types/eslint@9.6.1)(typescript@5.8.3)
@@ -282,9 +285,6 @@ importers:
       '@types/node':
         specifier: ^22.15.31
         version: 22.15.31
-      eslint:
-        specifier: ^8.57.0
-        version: 8.57.1
       prettier:
         specifier: ^3.5.3
         version: 3.5.3
