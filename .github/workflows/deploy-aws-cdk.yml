@@ -12,11 +12,9 @@ on:
         options:
           - deploy
           - diff
-
 permissions:
   id-token: write
   contents: read
-
 jobs:
   cdk-deploy:
     # This means the workflow can only run from dev protected branches e.g. main
@@ -25,7 +23,6 @@ jobs:
     steps:
       - name: Checkout main code
         uses: actions/checkout@v4
-
       - name: Checkout config code
         uses: actions/checkout@v4
         with:
@@ -55,30 +52,33 @@ jobs:
           aws-region: ${{ steps.cdk-config-setup.outputs.aws-region }}
       - id: install-aws-cli
         uses: unfor19/install-aws-cli-action@v1
-
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-
-      - name: Setup node cache
-        id: node-cache
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      - name: Setup pnpm cache
         uses: actions/cache@v3
         with:
-          path: '**/node_modules'
-          key: npm-${{ hashFiles('package-lock.json') }}-${{ hashFiles('package.json') }}
-          restore-keys: npm-
-
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
       - name: Install dependencies
-        if: steps.node-cache.outputs.cache-hit != 'true'
-        run: npm i
-
+        run: pnpm install
       - name: Install dependencies and run CDK deploy
+        working-directory: packages/infra
         run: |
           export CONFIG_FILE_NAME=${{ vars.CDK_DEPLOY_ENVIRONMENT }}.json
           if [ "${{ github.event.inputs.action }}" = "deploy" ]; then
-            npx cdk deploy --require-approval never
+            pnpm exec cdk deploy --require-approval never
           else
-            npx cdk diff
+            pnpm exec cdk diff
           fi
