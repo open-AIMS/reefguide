@@ -22,6 +22,7 @@
         "fix": "gts fix"
     },
     "dependencies": {
+        "@reefguide/db": "workspace:*",
         "zod": "^3.22.4"
     },
     "devDependencies": {

@@ -4,13 +4,16 @@
     "private": true,
     "description": "ReefGuide mono repo",
     "scripts": {
+        "prebuild": "pnpm run generate",
+        "predev": "pnpm run generate",
         "build": "turbo build",
         "dev": "turbo dev",
         "format": "turbo format",
         "lint": "turbo lint",
         "test": "turbo test",
         "type-check": "turbo type-check",
-        "clean": "turbo clean"
+        "clean": "turbo clean",
+        "generate": "pnpm --filter @reefguide/db run generate "
     },
     "devDependencies": {
         "@types/node": "^22.15.31",

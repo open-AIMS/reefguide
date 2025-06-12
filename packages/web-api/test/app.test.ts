@@ -1,15 +1,15 @@
+import { JobStatus, JobType, prisma, UserAction } from '@reefguide/db';
+import { createJobResponseSchema } from '@reefguide/types';
+import { randomInt } from 'crypto';
 import { Express } from 'express';
 import request from 'supertest';
-import app, { prisma } from '../src/api/apiSetup';
-import { signJwt } from '../src/api/auth/jwtUtils';
-import { decodeRefreshToken, encodeRefreshToken } from '../src/api/auth/utils';
-import { InvalidRefreshTokenException } from '../src/api/exceptions';
+import app from '../src/apiSetup';
+import { signJwt } from '../src/auth/jwtUtils';
+import { decodeRefreshToken, encodeRefreshToken } from '../src/auth/utils';
+import { InvalidRefreshTokenException } from '../src/exceptions';
+import { JobService } from '../src/services/jobs';
+import { ListUserLogsResponse } from '../src/users/routes';
 import { adminToken, clearDbs, user1Email, user1Token, user2Token, userSetup } from './utils';
-import { JobStatus, JobType, UserAction } from '@prisma/client';
-import { createJobResponseSchema } from '../src/api/jobs/routes';
-import { JobService } from '../src/api/services/jobs';
-import { randomInt } from 'crypto';
-import { ListUserLogsResponse } from '../src/api/users/routes';
 
 afterAll(async () => {
   // clear when finished
@@ -239,7 +239,7 @@ describe('API', () => {
           if (user) {
             const expiredToken = signJwt(
               { id: user.id, email: user.email, roles: user.roles },
-              { expiresIn: '-1h' } // Expired 1 hour ago
+              { expiresIn: -60 } // Expired 1 minute ago
             );
             await request(app)
               .get('/api/auth/profile')
