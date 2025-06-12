@@ -1023,7 +1023,7 @@ sequenceDiagram
 
 ### Job cache
 
-Jobs are cached in the following way. When you request to create a job, the payload and type are cached. Job(s) in the system may exist with this hash - these are retrieved. If no matching hashes, then the job is created and cached is false in the response. If there are matches, we first disregard failed jobs (so we aren't hitting stale fails in the job system), then sort by status (succeeded is priority), then by time (newest first). The 'best' cached result is returned, by letting the user instead know about the existing ID, rather than a new item.
+Jobs are cached in the following way. When you request to create a job, the payload and type are hashed. Job(s) in the system may exist with this hash - these are retrieved. If no matching hashes, then the new job is created and cached is false in the response. If there are matches, we first disregard failed jobs (so we aren't hitting stale fails in the job system), then sort by status (succeeded is priority), then by time (newest first). The 'best' cached result is returned, by letting the user instead know about the existing ID, rather than a new item.
 
 This request is still logged as a JobRequest, however no new Job is created.
 
