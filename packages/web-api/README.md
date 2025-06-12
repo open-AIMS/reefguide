@@ -1021,6 +1021,14 @@ sequenceDiagram
     end
 ```
 
+### Job cache
+
+Jobs are cached in the following way. When you request to create a job, the payload and type are cached. Job(s) in the system may exist with this hash - these are retrieved. If no matching hashes, then the job is created and cached is false in the response. If there are matches, we first disregard failed jobs (so we aren't hitting stale fails in the job system), then sort by status (succeeded is priority), then by time (newest first). The 'best' cached result is returned, by letting the user instead know about the existing ID, rather than a new item.
+
+This request is still logged as a JobRequest, however no new Job is created.
+
+The interface can then blindly accept the job ID and poll it as usual, finding in this case that there may be a successful result already.
+
 ### API Routes
 
 #### Job Management
@@ -1048,14 +1056,14 @@ Example job type configuration:
 const jobTypeSchemas = {
   SUITABILITY_ASSESSMENT: {
     input: z.object({
-      fieldsHere: z.string(),
+      fieldsHere: z.string()
     }),
     result: z
       .object({
-        fieldsHere: z.string(),
+        fieldsHere: z.string()
       })
-      .optional(),
-  },
+      .optional()
+  }
 };
 ```
 
