@@ -36,7 +36,7 @@ jobs:
       - name: Run typecheck
         run: pnpm run type-check
       - name: Run linter
-        run: pnpm run lint
+        run: pnpm run lint -- --verbose --output-logs=full
       - name: Start Docker services (PostgreSQL DB)
         run: docker compose up -d
       - name: Wait for PostgreSQL to be ready

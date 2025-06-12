@@ -30,7 +30,9 @@ jobs:
             ${{ runner.os }}-pnpm-store-
       - name: Install dependencies
         run: pnpm install
-      - name: Check formatting and lint 
+      - name: Prisma generate
+        run: pnpm run generate
+      - name: Check formatting and lint
         run: pnpm run format:check
       - name: Comment on PR if formatting issues found
         if: failure()
