@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Check formatting and lint 
-        run: pnpm run format
+        run: pnpm run format:check
       - name: Comment on PR if formatting issues found
         if: failure()
         uses: actions/github-script@v7
