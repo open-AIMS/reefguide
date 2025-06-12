@@ -245,10 +245,14 @@ export class JobSystem extends Construct {
 
     // Add capacity manager container
     capacityManagerTask.addContainer('capacity-manager', {
-      // Docker command
-      command: ['npm', 'run', 'start-manager'],
-      image: ecs.ContainerImage.fromAsset('.', {
-        buildArgs: { PORT: '3000' }
+      // Docker command - node entrypoint
+      command: ['packages/infra/build/src/job-manager/src/index.js'],
+      image: ecs.ContainerImage.fromAsset('../..', {
+        buildArgs: {
+          PORT: String(3000),
+          APP_NAME: '@reefguide/infra'
+        },
+        exclude: ['packages/infra/cdk.out', '.*node_modules.*']
       }),
       logging: ecs.LogDrivers.awsLogs({
         streamPrefix: 'capacity-manager',

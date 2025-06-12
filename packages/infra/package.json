@@ -6,6 +6,7 @@
         "lint": "gts lint",
         "type-check": "tsc --noEmit",
         "clean": "gts clean",
+        "build": "tsc",
         "fix": "gts fix",
         "format:write": "prettier --write \"src/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
         "format:check": "prettier --check \"src/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",

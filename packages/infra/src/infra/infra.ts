@@ -5,7 +5,6 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import { ReefGuideNetworking } from './components/networking';
 import { ReefGuideAPI } from './components/reefGuideAPI';
-import { LambdaWebAPI } from './components/lambdaWebAPI';
 import { DeploymentConfig } from './infraConfig';
 import { ReefGuideFrontend } from './components/reefGuideFrontend';
 import { JobSystem } from './components/jobs';
@@ -153,7 +152,7 @@ export class ReefguideStack extends cdk.Stack {
     // Web API
     // ========
 
-    let webAPI: LambdaWebAPI | ECSWebAPI;
+    let webAPI: ECSWebAPI;
 
     // ECS mode
     if (config.webAPI.mode.ecs !== undefined) {
@@ -174,24 +173,11 @@ export class ReefguideStack extends cdk.Stack {
       });
     } else {
       // Lambda mode
-      webAPI = new LambdaWebAPI(this, 'web-api', {
-        certificate: primaryCert,
-        config: config.webAPI,
-        domainName: domains.webAPI,
-        hz: hz,
-        managerCreds: managerCreds,
-        workerCreds: workerCreds,
-        adminCreds: adminCreds,
-
-        // Expose the cluster information to web API so that it can control it
-        ecsClusterName: cluster.clusterName,
-        ecsServiceName: reefGuideApi.fargateService.serviceName
-      });
-
-      // let the webAPI read write the data storage bucket and tell it about
-      // storage bucket
-      webAPI.addEnv('S3_BUCKET_NAME', storageBucket.bucketName);
-      storageBucket.grantReadWrite(webAPI.lambda);
+      cdk.Annotations.of(this).addDeprecation('LambdaWebAPI', 'Lambda deployment depcreated');
+      cdk.Annotations.of(this).addError(
+        'Deployment failed - no lambda deployment target. See historic open-AIMS/reefguide-web-api'
+      );
+      throw Error('Deployment failed.');
     }
 
     // Let the Web API interact with the Julia cluster

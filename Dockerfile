@@ -1,5 +1,8 @@
 FROM node:24-alpine AS base
 
+# Install curl for health checks
+RUN apk add --no-cache curl
+
 # Install pnpm
 RUN npm install -g pnpm turbo
 
@@ -27,9 +30,15 @@ COPY tsconfig.json ./tsconfig.json
 # Build the project
 COPY --from=pruner /app/out/full/ .
 COPY turbo.json turbo.json
+
+# Generate client before build
+RUN pnpm run generate
+
+# Build target
 RUN turbo build --filter=${APP_NAME}
 
 ARG PORT=3000
+ENV PORT=$PORT
 EXPOSE ${PORT}
 
 # TODO reinstate the below runner stage which does a better job of only getting

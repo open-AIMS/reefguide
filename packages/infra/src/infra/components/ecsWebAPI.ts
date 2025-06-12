@@ -85,11 +85,14 @@ export class ECSWebAPI extends Construct {
 
     // CONTAINER SETUP
 
-    // Image asset
-    const image = ecs.ContainerImage.fromAsset('.', {
+    // Image asset - build from repo root TODO optimise files included in build
+    // cache here - going to rebuild a lot
+    const image = ecs.ContainerImage.fromAsset('../..', {
       buildArgs: {
-        PORT: String(this.internalPort)
-      }
+        PORT: String(this.internalPort),
+        APP_NAME: '@reefguide/web-api'
+      },
+      exclude: ['packages/infra', '.*node_modules.*']
     });
 
     // Task definition
@@ -115,7 +118,8 @@ export class ECSWebAPI extends Construct {
           name: 'web-api-port'
         }
       ],
-      command: ['npm', 'run', 'start-web-api-docker'],
+      // entrypoint is node - so specify target file
+      command: ['packages/web-api/build/src/index.js'],
       // Non secrets
       environment: {
         NODE_ENV: config.nodeEnv,

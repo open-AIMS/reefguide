@@ -15,3 +15,5 @@
 
 # We just need src
 !src/
+
+cdk.out
