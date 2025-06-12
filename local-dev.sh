@@ -28,6 +28,16 @@ MINIO_ROOT_PASSWORD="minioadmin"
 CACHE_DIR="$HOME/.cache/reefguide"
 MC_CACHED="$CACHE_DIR/mc"
 
+# Node manager variables
+NODE_MANAGER=""
+NODE_MANAGER_CMD=""
+
+# Script flags
+CLEAR_DB=false
+CLEANUP_ON_EXIT=false
+SKIP_DOCKER=false
+SKIP_DEPS=false
+
 # Logging functions
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -61,34 +71,160 @@ version_ge() {
     printf '%s\n%s\n' "$2" "$1" | sort -V -C
 }
 
-# Check and setup NVM
-setup_nvm() {
-    log_info "Checking NVM installation..."
+# Detect available Node.js version manager
+detect_node_manager() {
+    log_info "Detecting Node.js version manager..."
     
-    # Check if nvm is available
-    if ! command_exists nvm && [ ! -s "$HOME/.nvm/nvm.sh" ]; then
-        log_error "NVM is not installed. Please install NVM first:"
-        echo "  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash"
-        echo "  Then restart your terminal and run this script again."
-        exit 1
+    # Check for fnm first (it's faster and more modern)
+    if command_exists fnm; then
+        NODE_MANAGER="fnm"
+        NODE_MANAGER_CMD="fnm"
+        log_info "Found fnm: $(fnm --version)"
+        return 0
     fi
     
-    # Source nvm if it exists but isn't loaded
-    if [ -s "$HOME/.nvm/nvm.sh" ] && ! command_exists nvm; then
-        log_info "Loading NVM..."
-        source "$HOME/.nvm/nvm.sh"
+    # Check for fnm in common locations if not in PATH
+    for fnm_path in "$HOME/.fnm/fnm" "$HOME/.local/bin/fnm" "/usr/local/bin/fnm"; do
+        if [ -x "$fnm_path" ]; then
+            NODE_MANAGER="fnm"
+            NODE_MANAGER_CMD="$fnm_path"
+            log_info "Found fnm at: $fnm_path"
+            return 0
+        fi
+    done
+    
+    # Check for nvm
+    if command_exists nvm; then
+        NODE_MANAGER="nvm"
+        NODE_MANAGER_CMD="nvm"
+        log_info "Found nvm (already loaded)"
+        return 0
     fi
     
-    # Install and use Node.js version
-    log_info "Setting up Node.js ${NODE_VERSION}..."
-    nvm install "$NODE_VERSION" || error_exit "Failed to install Node.js ${NODE_VERSION}"
-    nvm use "$NODE_VERSION" || error_exit "Failed to use Node.js ${NODE_VERSION}"
+    # Check for nvm script
+    if [ -s "$HOME/.nvm/nvm.sh" ]; then
+        NODE_MANAGER="nvm"
+        NODE_MANAGER_CMD="nvm"
+        log_info "Found nvm script at: $HOME/.nvm/nvm.sh"
+        return 0
+    fi
+    
+    # Check for nvm in other common locations
+    for nvm_path in "$HOME/.config/nvm/nvm.sh" "/usr/local/nvm/nvm.sh"; do
+        if [ -s "$nvm_path" ]; then
+            NODE_MANAGER="nvm"
+            NODE_MANAGER_CMD="nvm"
+            log_info "Found nvm script at: $nvm_path"
+            return 0
+        fi
+    done
+    
+    # No Node.js version manager found
+    NODE_MANAGER=""
+    NODE_MANAGER_CMD=""
+    return 1
+}
+
+# Setup Node.js using fnm
+setup_fnm() {
+    log_info "Setting up Node.js ${NODE_VERSION} using fnm..."
+    
+    # Initialize fnm environment if needed
+    if ! command_exists node || ! command_exists npm; then
+        log_info "Initializing fnm environment..."
+        eval "$($NODE_MANAGER_CMD env --use-on-cd)"
+    fi
+    
+    # Install Node.js version
+    log_info "Installing Node.js ${NODE_VERSION}..."
+    $NODE_MANAGER_CMD install "$NODE_VERSION" || error_exit "Failed to install Node.js ${NODE_VERSION}"
+    
+    # Use the installed version
+    log_info "Using Node.js ${NODE_VERSION}..."
+    $NODE_MANAGER_CMD use "$NODE_VERSION" || error_exit "Failed to use Node.js ${NODE_VERSION}"
+    
+    # Verify installation
+    if ! command_exists node; then
+        log_info "Re-initializing fnm environment..."
+        eval "$($NODE_MANAGER_CMD env --use-on-cd)"
+    fi
     
     log_success "Node.js $(node --version) is now active"
 }
 
+# Setup Node.js using nvm
+setup_nvm() {
+    log_info "Setting up Node.js ${NODE_VERSION} using nvm..."
+    
+    # Source nvm if it exists but isn't loaded
+    if [ -s "$HOME/.nvm/nvm.sh" ] && ! command_exists nvm; then
+        log_info "Loading nvm..."
+        source "$HOME/.nvm/nvm.sh"
+        NODE_MANAGER_CMD="nvm"
+    elif [ -s "$HOME/.config/nvm/nvm.sh" ] && ! command_exists nvm; then
+        log_info "Loading nvm from config directory..."
+        source "$HOME/.config/nvm/nvm.sh"
+        NODE_MANAGER_CMD="nvm"
+    elif [ -s "/usr/local/nvm/nvm.sh" ] && ! command_exists nvm; then
+        log_info "Loading nvm from /usr/local..."
+        source "/usr/local/nvm/nvm.sh"
+        NODE_MANAGER_CMD="nvm"
+    fi
+    
+    # Install and use Node.js version
+    log_info "Installing Node.js ${NODE_VERSION}..."
+    $NODE_MANAGER_CMD install "$NODE_VERSION" || error_exit "Failed to install Node.js ${NODE_VERSION}"
+    
+    log_info "Using Node.js ${NODE_VERSION}..."
+    $NODE_MANAGER_CMD use "$NODE_VERSION" || error_exit "Failed to use Node.js ${NODE_VERSION}"
+    
+    log_success "Node.js $(node --version) is now active"
+}
+
+# Check and setup Node.js version manager
+setup_node_manager() {
+    if ! detect_node_manager; then
+        log_error "No Node.js version manager found!"
+        echo
+        log_error "Please install either fnm or nvm:"
+        echo
+        echo "  For fnm (recommended - faster and more modern):"
+        echo "    curl -fsSL https://fnm.vercel.app/install | bash"
+        echo "    # or"
+        echo "    cargo install fnm"
+        echo "    # or"
+        echo "    brew install fnm"
+        echo
+        echo "  For nvm:"
+        echo "    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash"
+        echo
+        echo "  Then restart your terminal and run this script again."
+        exit 1
+    fi
+    
+    log_success "Using $NODE_MANAGER for Node.js version management"
+    
+    # Setup Node.js using the detected manager
+    case "$NODE_MANAGER" in
+        "fnm")
+            setup_fnm
+            ;;
+        "nvm")
+            setup_nvm
+            ;;
+        *)
+            error_exit "Unknown Node.js version manager: $NODE_MANAGER"
+            ;;
+    esac
+}
+
 # Check Docker and Docker Compose
 check_docker() {
+    if [ "$SKIP_DOCKER" = true ]; then
+        log_info "Skipping Docker checks (--skip-docker flag)"
+        return 0
+    fi
+    
     log_info "Checking Docker installation..."
     
     if ! command_exists docker; then
@@ -119,6 +255,11 @@ check_docker() {
 
 # Install global dependencies
 install_global_deps() {
+    if [ "$SKIP_DEPS" = true ]; then
+        log_info "Skipping global dependencies installation (--skip-deps flag)"
+        return 0
+    fi
+    
     log_info "Installing global dependencies..."
     
     # Check if pnpm is already installed
@@ -139,6 +280,11 @@ install_global_deps() {
 
 # Install project dependencies
 install_project_deps() {
+    if [ "$SKIP_DEPS" = true ]; then
+        log_info "Skipping project dependencies installation (--skip-deps flag)"
+        return 0
+    fi
+    
     log_info "Installing project dependencies..."
     
     if [ ! -f "package.json" ]; then
@@ -151,6 +297,12 @@ install_project_deps() {
 
 # Start Docker services
 start_docker_services() {
+    if [ "$SKIP_DOCKER" = true ]; then
+        log_info "Skipping Docker services startup (--skip-docker flag)"
+        log_warning "Assuming PostgreSQL and MinIO services are already running"
+        return 0
+    fi
+    
     log_info "Starting Docker services..."
     
     if [ ! -f "docker-compose.yml" ] && [ ! -f "docker-compose.yaml" ]; then
@@ -163,6 +315,12 @@ start_docker_services() {
 
 # Wait for PostgreSQL to be ready
 wait_for_postgres() {
+    if [ "$SKIP_DOCKER" = true ]; then
+        log_info "Skipping PostgreSQL readiness check (--skip-docker flag)"
+        log_info "Assuming PostgreSQL is already running and ready"
+        return 0
+    fi
+    
     log_info "Waiting for PostgreSQL to be ready..."
     
     local timeout=$DB_READY_TIMEOUT
@@ -194,6 +352,12 @@ wait_for_postgres() {
 
 # Wait for MinIO to be ready
 wait_for_minio() {
+    if [ "$SKIP_DOCKER" = true ]; then
+        log_info "Skipping MinIO readiness check (--skip-docker flag)"
+        log_info "Assuming MinIO is already running and ready"
+        return 0
+    fi
+    
     log_info "Waiting for MinIO to be ready..."
     
     local timeout=$MINIO_READY_TIMEOUT
@@ -384,6 +548,67 @@ check_database_config() {
     fi
 }
 
+# Check if database needs migration
+check_database_status() {
+    log_info "Checking database status..."
+    
+    # Try to check migration status
+    if npx prisma migrate status >/dev/null 2>&1; then
+        # Check if there are pending migrations
+        local status_output
+        status_output=$(npx prisma migrate status 2>&1)
+        
+        if echo "$status_output" | grep -q "Database schema is up to date"; then
+            log_success "Database schema is up to date"
+            return 0
+        elif echo "$status_output" | grep -q "have not yet been applied"; then
+            log_info "Database has pending migrations"
+            return 1
+        else
+            log_warning "Could not determine database migration status"
+            return 2
+        fi
+    else
+        log_warning "Unable to check database migration status"
+        return 2
+    fi
+}
+
+# Try to migrate database
+migrate_database() {
+    log_info "Attempting to migrate database..."
+    
+    if npx prisma migrate deploy >/dev/null 2>&1; then
+        log_success "Database migrated successfully"
+        return 0
+    else
+        log_error "Database migration failed"
+        return 1
+    fi
+}
+
+# Ask user for confirmation
+ask_user_confirmation() {
+    local prompt="$1"
+    local response
+    
+    while true; do
+        echo -n "$prompt (y/n): "
+        read -r response
+        case "$response" in
+            [Yy]|[Yy][Ee][Ss])
+                return 0
+                ;;
+            [Nn]|[Nn][Oo])
+                return 1
+                ;;
+            *)
+                echo "Please answer yes (y) or no (n)."
+                ;;
+        esac
+    done
+}
+
 # Generate local keys and setup database
 setup_database() {
     log_info "Setting up database and keys..."
@@ -398,9 +623,69 @@ setup_database() {
     log_info "Generating Prisma client..."
     pnpm run prisma-generate || error_exit "Failed to generate Prisma client"
     
-    # Reset database (already verified to be localhost)
-    log_info "Resetting database..."
-    pnpm run db-reset || error_exit "Failed to reset database"
+    # Handle database setup based on --clear-db flag
+    if [ "$CLEAR_DB" = true ]; then
+        log_info "Clearing and resetting database (--clear-db flag provided)..."
+        pnpm run db-reset || error_exit "Failed to reset database"
+    else
+        # Check database status first
+        local db_status
+        check_database_status
+        db_status=$?
+        
+        case $db_status in
+            0)
+                # Database is up to date, nothing to do
+                log_success "Database is already up to date"
+                ;;
+            1)
+                # Has pending migrations, try to migrate
+                log_info "Database has pending migrations, attempting to migrate..."
+                if migrate_database; then
+                    log_success "Database migrated successfully"
+                else
+                    log_warning "Migration failed. Database may need to be reset."
+                    if ask_user_confirmation "Do you want to reset the database? This will delete all data"; then
+                        log_info "Resetting database..."
+                        pnpm run db-reset || error_exit "Failed to reset database"
+                    else
+                        log_error "Database setup cancelled by user"
+                        exit 1
+                    fi
+                fi
+                ;;
+            2)
+                # Could not determine status, ask user what to do
+                log_warning "Could not determine database status."
+                echo "You can either:"
+                echo "  1. Try to migrate (safe, preserves data)"
+                echo "  2. Reset database (destructive, deletes all data)"
+                echo
+                if ask_user_confirmation "Do you want to try migrating first"; then
+                    if migrate_database; then
+                        log_success "Database migrated successfully"
+                    else
+                        log_warning "Migration failed."
+                        if ask_user_confirmation "Do you want to reset the database? This will delete all data"; then
+                            log_info "Resetting database..."
+                            pnpm run db-reset || error_exit "Failed to reset database"
+                        else
+                            log_error "Database setup cancelled by user"
+                            exit 1
+                        fi
+                    fi
+                else
+                    if ask_user_confirmation "Do you want to reset the database? This will delete all data"; then
+                        log_info "Resetting database..."
+                        pnpm run db-reset || error_exit "Failed to reset database"
+                    else
+                        log_error "Database setup cancelled by user"
+                        exit 1
+                    fi
+                fi
+                ;;
+        esac
+    fi
     
     cd - >/dev/null
     log_success "Database setup completed"
@@ -424,9 +709,13 @@ start_dev_server() {
 
 # Cleanup function for graceful shutdown
 cleanup() {
-    log_info "Cleaning up..."
-    if [ -n "$COMPOSE_CMD" ]; then
-        $COMPOSE_CMD down >/dev/null 2>&1 || true
+    if [ "$CLEANUP_ON_EXIT" = true ]; then
+        log_info "Cleaning up Docker services..."
+        if [ -n "$COMPOSE_CMD" ]; then
+            $COMPOSE_CMD down >/dev/null 2>&1 || true
+        fi
+    else
+        log_info "Leaving Docker services running (use --cleanup to stop on exit)"
     fi
 }
 
@@ -446,7 +735,7 @@ main() {
     fi
     
     # Execute setup steps
-    setup_nvm
+    setup_node_manager
     check_docker
     install_global_deps
     install_project_deps
@@ -468,6 +757,8 @@ main() {
     echo
     log_info "MinIO client cached at: $MC_CACHED"
     echo
+    log_info "Node.js version manager: $NODE_MANAGER"
+    echo
     log_info "Starting development server..."
     start_dev_server
 }
@@ -477,22 +768,44 @@ usage() {
     echo "Usage: $0 [options]"
     echo
     echo "Options:"
-    echo "  -h, --help     Show this help message"
-    echo "  --skip-docker  Skip Docker setup (assumes services are already running)"
-    echo "  --skip-deps    Skip dependency installation"
+    echo "  -h, --help      Show this help message"
+    echo "  --clear-db      Force database reset (destructive, deletes all data)"
+    echo "  --cleanup       Enable Docker cleanup on script exit (default: disabled)"
+    echo "  --skip-docker   Skip Docker setup and checks (assumes services are running)"
+    echo "  --skip-deps     Skip global and project dependency installation"
+    echo
+    echo "Database Management:"
+    echo "  By default, the script will:"
+    echo "    1. Check if database schema is up to date"
+    echo "    2. If not, attempt to migrate safely"
+    echo "    3. If migration fails, ask user whether to reset"
+    echo
+    echo "  With --clear-db flag:"
+    echo "    - Always resets the database (destructive operation)"
+    echo "    - Use this for a clean development environment"
+    echo
+    echo "Docker Cleanup:"
+    echo "  By default, Docker services are left running when script exits"
+    echo "  Use --cleanup to stop services on exit"
+    echo "  This allows you to keep services running between script runs"
     echo
     echo "This script sets up the complete ReefGuide development environment."
     echo "It will:"
-    echo "  1. Install and configure Node.js $NODE_VERSION using NVM"
-    echo "  2. Install global dependencies (pnpm)"
-    echo "  3. Install project dependencies"
-    echo "  4. Start Docker services (PostgreSQL + MinIO)"
-    echo "  5. Wait for PostgreSQL to be ready"
-    echo "  6. Wait for MinIO to be ready"
-    echo "  7. Create S3 bucket: $S3_BUCKET_NAME"
-    echo "  8. Setup API configuration with S3 settings"
-    echo "  9. Generate keys and reset database"
-    echo "  10. Start the development server"
+    echo "  1. Detect and use fnm or nvm for Node.js $NODE_VERSION management"
+    echo "  2. Install and configure Node.js $NODE_VERSION"
+    echo "  3. Install global dependencies (pnpm)"
+    echo "  4. Install project dependencies"
+    echo "  5. Start Docker services (PostgreSQL + MinIO)"
+    echo "  6. Wait for PostgreSQL to be ready"
+    echo "  7. Wait for MinIO to be ready"
+    echo "  8. Create S3 bucket: $S3_BUCKET_NAME"
+    echo "  9. Setup API configuration with S3 settings"
+    echo "  10. Generate keys and setup database (migrate or reset)"
+    echo "  11. Start the development server"
+    echo
+    echo "Node.js Version Managers (in order of preference):"
+    echo "  - fnm (Fast Node Manager) - recommended"
+    echo "  - nvm (Node Version Manager)"
     echo
     echo "MinIO Configuration:"
     echo "  - API Endpoint: $MINIO_ENDPOINT"
@@ -501,15 +814,49 @@ usage() {
     echo "  - Credentials: $MINIO_ROOT_USER / $MINIO_ROOT_PASSWORD"
     echo "  - Client Cache: $CACHE_DIR/mc"
     echo
+    echo "Skip Options:"
+    echo "  --skip-docker: Skips all Docker-related operations"
+    echo "    - Docker installation/version checks"
+    echo "    - Starting Docker Compose services"
+    echo "    - Waiting for PostgreSQL/MinIO readiness"
+    echo "    - Assumes services are already running externally"
+    echo
+    echo "  --skip-deps: Skips all dependency installation"
+    echo "    - Global dependencies (pnpm installation)"
+    echo "    - Project dependencies (pnpm install)"
+    echo "    - Useful when dependencies are already installed"
+    echo
 }
 
 # Handle command line arguments
-case "${1:-}" in
-    -h|--help)
-        usage
-        exit 0
-        ;;
-    *)
-        main "$@"
-        ;;
-esac
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        --clear-db)
+            CLEAR_DB=true
+            shift
+            ;;
+        --cleanup)
+            CLEANUP_ON_EXIT=true
+            shift
+            ;;
+        --skip-docker)
+            SKIP_DOCKER=true
+            shift
+            ;;
+        --skip-deps)
+            SKIP_DEPS=true
+            shift
+            ;;
+        *)
+            log_error "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+main
