@@ -82,7 +82,7 @@ export function getConfig(): Config {
   const privateKey = env.JWT_PRIVATE_KEY.replace(/\\n/g, '\n');
   const publicKey = env.JWT_PUBLIC_KEY.replace(/\\n/g, '\n');
 
-  let minio : MinioConfig | undefined = undefined;
+  let minio: MinioConfig | undefined = undefined;
   if (env.MINIO_ENDPOINT) {
     if (!env.MINIO_USERNAME || !env.MINIO_PASSWORD) {
       throw new Error(
