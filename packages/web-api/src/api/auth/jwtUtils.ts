@@ -11,7 +11,7 @@ export const PUBLIC_KEY = config.jwt.publicKey;
 const KEY_ID = config.jwt.keyId;
 const ISSUER = config.apiDomain;
 // 10 minutes for main token
-const TOKEN_EXPIRY = '10m';
+const TOKEN_EXPIRY = 10 * 60;
 export const ALGORITHM: Algorithm = 'RS256';
 const KEY_TYPE = 'RSA';
 const KEY_USE = 'sig';
@@ -26,14 +26,14 @@ const REFRESH_DURATION_HOURS = 48;
  */
 export function signJwt(
   payload: JwtContents,
-  options: { expiresIn: string } = { expiresIn: TOKEN_EXPIRY }
+  options: { expiresIn: number } = { expiresIn: TOKEN_EXPIRY }
 ): string {
   return jwt.sign(payload, PRIVATE_KEY, {
     algorithm: ALGORITHM,
     issuer: ISSUER,
     keyid: KEY_ID,
     header: { alg: ALGORITHM, kid: KEY_ID },
-    expiresIn: parseInt(options.expiresIn)
+    expiresIn: options.expiresIn
   });
 }
 

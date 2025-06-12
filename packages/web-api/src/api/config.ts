@@ -1,4 +1,6 @@
+import passport from 'passport';
 import { z } from 'zod';
+import { MinioConfig } from './services/s3Storage';
 
 /**
  * Environment variable schema definition using Zod
@@ -18,6 +20,9 @@ const envSchema = z.object({
   S3_BUCKET_NAME: z.string(),
   S3_URL_EXPIRY_SECONDS: z.number().default(3600),
   S3_MAX_FILES: z.number().default(10),
+  MINIO_ENDPOINT: z.string().url().optional(),
+  MINIO_USERNAME: z.string().optional(),
+  MINIO_PASSWORD: z.string().optional(),
   MANAGER_USERNAME: z.string(),
   MANAGER_PASSWORD: z.string(),
   WORKER_USERNAME: z.string(),
@@ -50,6 +55,7 @@ export interface Config {
     };
   };
   s3: {
+    minio?: MinioConfig;
     bucketName: string;
     urlExpirySeconds: number;
     maxFiles: number;
@@ -77,6 +83,20 @@ export function getConfig(): Config {
   const privateKey = env.JWT_PRIVATE_KEY.replace(/\\n/g, '\n');
   const publicKey = env.JWT_PUBLIC_KEY.replace(/\\n/g, '\n');
 
+  let minio : MinioConfig | undefined = undefined;
+  if (env.MINIO_ENDPOINT) {
+    if (!env.MINIO_USERNAME || !env.MINIO_PASSWORD) {
+      throw new Error(
+        'Must provide minio username/password if using minio endpoint (instead of s3)'
+      );
+    }
+    minio = {
+      endpoint: env.MINIO_ENDPOINT,
+      username: env.MINIO_USERNAME,
+      password: env.MINIO_PASSWORD
+    };
+  }
+
   // Construct the configuration object
   const config: Config = {
     port: env.PORT,
@@ -99,6 +119,7 @@ export function getConfig(): Config {
       }
     },
     s3: {
+      minio,
       bucketName: env.S3_BUCKET_NAME,
       maxFiles: env.S3_MAX_FILES,
       urlExpirySeconds: env.S3_URL_EXPIRY_SECONDS

@@ -22,8 +22,8 @@ POST {{baseUrl}}/auth/login
 Content-Type: {{contentType}}
 
 {
-    "email": "testuser@example.com",
-    "password": "securepassword123"
+    "email": "worker@email.com",
+    "password": "password"
 }
 
 ### Store the JWT token from the login response
@@ -65,8 +65,8 @@ Authorization: Bearer {{authToken}}
     "inputPayload": {
         "region": "Mackay-Capricorn",
         "reef_type": "slopes",
-        "depth_min": -10.1,
-        "depth_max": -2.1,
+        "depth_min": -4.1,
+        "depth_max": -3.1,
         "slope_min": 0.1,
         "slope_max": 30.0,
         "rugosity_min": 0.0,
@@ -103,8 +103,8 @@ Authorization: Bearer {{authToken}}
     "inputPayload": {
         "region": "Mackay-Capricorn",
         "reef_type": "slopes",
-        "depth_min": -10.1,
-        "depth_max": -2.1,
+        "depth_min": -10.11,
+        "depth_max": -4.1,
         "slope_min": 0.1,
         "slope_max": 30.0,
         "rugosity_min": 0.0,
