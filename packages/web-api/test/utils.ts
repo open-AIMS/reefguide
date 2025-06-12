@@ -1,6 +1,6 @@
+import { prisma } from '@reefguide/db';
 import bcryptjs from 'bcryptjs';
-import { prisma } from '../src/api/apiSetup';
-import { signJwt } from '../src/api/auth/jwtUtils';
+import { signJwt } from '../src/auth/jwtUtils';
 
 export const user1Email = 'user1@example.com';
 export const user2Email = 'user2@example.com';

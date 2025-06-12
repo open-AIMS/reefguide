@@ -4,7 +4,7 @@
 # This script sets up the complete development environment for ReefGuide
 # including Node.js, dependencies, database, MinIO, and services
 
-set -e  # Exit on any error
+set -e # Exit on any error
 
 # Color codes for output
 RED='\033[0;31m'
@@ -74,7 +74,7 @@ version_ge() {
 # Detect available Node.js version manager
 detect_node_manager() {
     log_info "Detecting Node.js version manager..."
-    
+
     # Check for fnm first (it's faster and more modern)
     if command_exists fnm; then
         NODE_MANAGER="fnm"
@@ -82,7 +82,7 @@ detect_node_manager() {
         log_info "Found fnm: $(fnm --version)"
         return 0
     fi
-    
+
     # Check for fnm in common locations if not in PATH
     for fnm_path in "$HOME/.fnm/fnm" "$HOME/.local/bin/fnm" "/usr/local/bin/fnm"; do
         if [ -x "$fnm_path" ]; then
@@ -92,7 +92,7 @@ detect_node_manager() {
             return 0
         fi
     done
-    
+
     # Check for nvm
     if command_exists nvm; then
         NODE_MANAGER="nvm"
@@ -100,7 +100,7 @@ detect_node_manager() {
         log_info "Found nvm (already loaded)"
         return 0
     fi
-    
+
     # Check for nvm script
     if [ -s "$HOME/.nvm/nvm.sh" ]; then
         NODE_MANAGER="nvm"
@@ -108,7 +108,7 @@ detect_node_manager() {
         log_info "Found nvm script at: $HOME/.nvm/nvm.sh"
         return 0
     fi
-    
+
     # Check for nvm in other common locations
     for nvm_path in "$HOME/.config/nvm/nvm.sh" "/usr/local/nvm/nvm.sh"; do
         if [ -s "$nvm_path" ]; then
@@ -118,7 +118,7 @@ detect_node_manager() {
             return 0
         fi
     done
-    
+
     # No Node.js version manager found
     NODE_MANAGER=""
     NODE_MANAGER_CMD=""
@@ -128,34 +128,34 @@ detect_node_manager() {
 # Setup Node.js using fnm
 setup_fnm() {
     log_info "Setting up Node.js ${NODE_VERSION} using fnm..."
-    
+
     # Initialize fnm environment if needed
     if ! command_exists node || ! command_exists npm; then
         log_info "Initializing fnm environment..."
         eval "$($NODE_MANAGER_CMD env --use-on-cd)"
     fi
-    
+
     # Install Node.js version
     log_info "Installing Node.js ${NODE_VERSION}..."
     $NODE_MANAGER_CMD install "$NODE_VERSION" || error_exit "Failed to install Node.js ${NODE_VERSION}"
-    
+
     # Use the installed version
     log_info "Using Node.js ${NODE_VERSION}..."
     $NODE_MANAGER_CMD use "$NODE_VERSION" || error_exit "Failed to use Node.js ${NODE_VERSION}"
-    
+
     # Verify installation
     if ! command_exists node; then
         log_info "Re-initializing fnm environment..."
         eval "$($NODE_MANAGER_CMD env --use-on-cd)"
     fi
-    
+
     log_success "Node.js $(node --version) is now active"
 }
 
 # Setup Node.js using nvm
 setup_nvm() {
     log_info "Setting up Node.js ${NODE_VERSION} using nvm..."
-    
+
     # Source nvm if it exists but isn't loaded
     if [ -s "$HOME/.nvm/nvm.sh" ] && ! command_exists nvm; then
         log_info "Loading nvm..."
@@ -170,14 +170,14 @@ setup_nvm() {
         source "/usr/local/nvm/nvm.sh"
         NODE_MANAGER_CMD="nvm"
     fi
-    
+
     # Install and use Node.js version
     log_info "Installing Node.js ${NODE_VERSION}..."
     $NODE_MANAGER_CMD install "$NODE_VERSION" || error_exit "Failed to install Node.js ${NODE_VERSION}"
-    
+
     log_info "Using Node.js ${NODE_VERSION}..."
     $NODE_MANAGER_CMD use "$NODE_VERSION" || error_exit "Failed to use Node.js ${NODE_VERSION}"
-    
+
     log_success "Node.js $(node --version) is now active"
 }
 
@@ -201,20 +201,20 @@ setup_node_manager() {
         echo "  Then restart your terminal and run this script again."
         exit 1
     fi
-    
+
     log_success "Using $NODE_MANAGER for Node.js version management"
-    
+
     # Setup Node.js using the detected manager
     case "$NODE_MANAGER" in
-        "fnm")
-            setup_fnm
-            ;;
-        "nvm")
-            setup_nvm
-            ;;
-        *)
-            error_exit "Unknown Node.js version manager: $NODE_MANAGER"
-            ;;
+    "fnm")
+        setup_fnm
+        ;;
+    "nvm")
+        setup_nvm
+        ;;
+    *)
+        error_exit "Unknown Node.js version manager: $NODE_MANAGER"
+        ;;
     esac
 }
 
@@ -224,17 +224,17 @@ check_docker() {
         log_info "Skipping Docker checks (--skip-docker flag)"
         return 0
     fi
-    
+
     log_info "Checking Docker installation..."
-    
+
     if ! command_exists docker; then
         error_exit "Docker is not installed. Please install Docker Desktop or Docker Engine."
     fi
-    
+
     if ! docker info >/dev/null 2>&1; then
         error_exit "Docker daemon is not running. Please start Docker."
     fi
-    
+
     # Check Docker Compose (new version or legacy)
     if command_exists "docker-compose"; then
         COMPOSE_CMD="docker-compose"
@@ -245,11 +245,11 @@ check_docker() {
     else
         error_exit "Docker Compose is not available. Please install Docker Compose."
     fi
-    
+
     if ! version_ge "$COMPOSE_VERSION" "$REQUIRED_DOCKER_COMPOSE_VERSION"; then
         log_warning "Docker Compose version $COMPOSE_VERSION is older than recommended $REQUIRED_DOCKER_COMPOSE_VERSION"
     fi
-    
+
     log_success "Docker and Docker Compose are ready (version: $COMPOSE_VERSION)"
 }
 
@@ -259,9 +259,9 @@ install_global_deps() {
         log_info "Skipping global dependencies installation (--skip-deps flag)"
         return 0
     fi
-    
+
     log_info "Installing global dependencies..."
-    
+
     # Check if pnpm is already installed
     if command_exists pnpm; then
         log_info "pnpm is already installed ($(pnpm --version))"
@@ -269,12 +269,12 @@ install_global_deps() {
         log_info "Installing pnpm globally..."
         npm install -g pnpm || error_exit "Failed to install pnpm"
     fi
-    
+
     # Check if turbo is available
     if ! command_exists turbo && ! npx turbo --version >/dev/null 2>&1; then
         log_warning "Turbo is not globally installed. Will use npx turbo."
     fi
-    
+
     log_success "Global dependencies are ready"
 }
 
@@ -284,13 +284,13 @@ install_project_deps() {
         log_info "Skipping project dependencies installation (--skip-deps flag)"
         return 0
     fi
-    
+
     log_info "Installing project dependencies..."
-    
+
     if [ ! -f "package.json" ]; then
         error_exit "package.json not found. Are you in the correct directory?"
     fi
-    
+
     pnpm install || error_exit "Failed to install project dependencies"
     log_success "Project dependencies installed"
 }
@@ -302,13 +302,13 @@ start_docker_services() {
         log_warning "Assuming PostgreSQL and MinIO services are already running"
         return 0
     fi
-    
+
     log_info "Starting Docker services..."
-    
+
     if [ ! -f "docker-compose.yml" ] && [ ! -f "docker-compose.yaml" ]; then
         error_exit "docker-compose.yml not found in current directory"
     fi
-    
+
     $COMPOSE_CMD up -d || error_exit "Failed to start Docker services"
     log_success "Docker services started"
 }
@@ -320,33 +320,33 @@ wait_for_postgres() {
         log_info "Assuming PostgreSQL is already running and ready"
         return 0
     fi
-    
+
     log_info "Waiting for PostgreSQL to be ready..."
-    
+
     local timeout=$DB_READY_TIMEOUT
     local count=0
     local postgres_container="local-web-api-psql"
-    
+
     # Check if container exists and is running
     if ! docker ps -q -f "name=$postgres_container" | grep -q .; then
         error_exit "PostgreSQL container '$postgres_container' not found or not running"
     fi
-    
+
     # Wait for PostgreSQL to be ready
     while [ $count -lt $timeout ]; do
         if docker exec "$postgres_container" pg_isready -U admin -d database >/dev/null 2>&1; then
             log_success "PostgreSQL is ready"
             return 0
         fi
-        
+
         sleep 1
         count=$((count + 1))
-        
+
         if [ $((count % 10)) -eq 0 ]; then
             log_info "Still waiting for PostgreSQL... (${count}s/${timeout}s)"
         fi
     done
-    
+
     error_exit "PostgreSQL did not become ready within ${timeout} seconds"
 }
 
@@ -357,40 +357,40 @@ wait_for_minio() {
         log_info "Assuming MinIO is already running and ready"
         return 0
     fi
-    
+
     log_info "Waiting for MinIO to be ready..."
-    
+
     local timeout=$MINIO_READY_TIMEOUT
     local count=0
     local minio_container="local-web-api-minio"
-    
+
     # Check if container exists and is running
     if ! docker ps -q -f "name=$minio_container" | grep -q .; then
         error_exit "MinIO container '$minio_container' not found or not running"
     fi
-    
+
     # Wait for MinIO to be ready
     while [ $count -lt $timeout ]; do
         if curl -f "$MINIO_ENDPOINT/minio/health/live" >/dev/null 2>&1; then
             log_success "MinIO is ready"
             return 0
         fi
-        
+
         sleep 1
         count=$((count + 1))
-        
+
         if [ $((count % 10)) -eq 0 ]; then
             log_info "Still waiting for MinIO... (${count}s/${timeout}s)"
         fi
     done
-    
+
     error_exit "MinIO did not become ready within ${timeout} seconds"
 }
 
 # Setup MinIO bucket
 setup_minio_bucket() {
     log_info "Setting up MinIO bucket: $S3_BUCKET_NAME"
-    
+
     # Determine which mc command to use
     if command_exists mc; then
         MC_CMD="mc"
@@ -400,24 +400,24 @@ setup_minio_bucket() {
         log_info "Using cached MinIO client"
     else
         log_info "Downloading and caching MinIO client..."
-        
+
         # Create cache directory
         mkdir -p "$CACHE_DIR"
-        
+
         # Detect architecture and OS
         local os_type="linux"
         local arch_type="amd64"
-        
+
         if [[ "$OSTYPE" == "darwin"* ]]; then
             os_type="darwin"
         fi
-        
+
         if [[ "$(uname -m)" == "arm64" ]] || [[ "$(uname -m)" == "aarch64" ]]; then
             arch_type="arm64"
         fi
-        
+
         local download_url="https://dl.min.io/client/mc/release/${os_type}-${arch_type}/mc"
-        
+
         if command_exists curl; then
             curl -f -o "$MC_CACHED" "$download_url" || error_exit "Failed to download MinIO client"
         elif command_exists wget; then
@@ -425,16 +425,16 @@ setup_minio_bucket() {
         else
             error_exit "curl or wget is required to download MinIO client. Please install one of them."
         fi
-        
+
         chmod +x "$MC_CACHED"
         MC_CMD="$MC_CACHED"
         log_success "MinIO client downloaded and cached at $MC_CACHED"
     fi
-    
+
     # Configure MinIO alias
     log_info "Configuring MinIO client..."
     $MC_CMD alias set local-minio "$MINIO_ENDPOINT" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null 2>&1 || error_exit "Failed to configure MinIO client"
-    
+
     # Create bucket if it doesn't exist
     if $MC_CMD ls "local-minio/$S3_BUCKET_NAME" >/dev/null 2>&1; then
         log_info "Bucket '$S3_BUCKET_NAME' already exists"
@@ -443,7 +443,7 @@ setup_minio_bucket() {
         $MC_CMD mb "local-minio/$S3_BUCKET_NAME" || error_exit "Failed to create bucket '$S3_BUCKET_NAME'"
         log_success "Bucket '$S3_BUCKET_NAME' created successfully"
     fi
-    
+
     # Set public read policy for development (optional)
     log_info "Setting bucket policy for development..."
     $MC_CMD anonymous set public "local-minio/$S3_BUCKET_NAME" >/dev/null 2>&1 || log_warning "Could not set public policy on bucket (this is optional)"
@@ -452,13 +452,13 @@ setup_minio_bucket() {
 # Setup API configuration
 setup_api_config() {
     log_info "Setting up API configuration..."
-    
+
     if [ ! -d "$API_DIR" ]; then
         error_exit "API directory '$API_DIR' not found"
     fi
-    
+
     cd "$API_DIR"
-    
+
     # Copy environment file if it doesn't exist
     if [ ! -f ".env" ]; then
         if [ -f ".env.dist" ]; then
@@ -470,10 +470,10 @@ setup_api_config() {
     else
         log_info "Environment file already exists"
     fi
-    
+
     # Update S3 configuration in .env file
     log_info "Updating S3 configuration in .env file..."
-    
+
     # Replace S3_BUCKET_NAME
     if grep -q "S3_BUCKET_NAME=" .env; then
         if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -485,10 +485,10 @@ setup_api_config() {
         fi
         log_success "Updated S3_BUCKET_NAME to $S3_BUCKET_NAME"
     else
-        echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" >> .env
+        echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" >>.env
         log_success "Added S3_BUCKET_NAME=$S3_BUCKET_NAME to .env"
     fi
-    
+
     # Replace MINIO_ENDPOINT
     if grep -q "MINIO_ENDPOINT=" .env; then
         if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -500,40 +500,40 @@ setup_api_config() {
         fi
         log_success "Updated MINIO_ENDPOINT to $MINIO_ENDPOINT"
     else
-        echo "MINIO_ENDPOINT=$MINIO_ENDPOINT" >> .env
+        echo "MINIO_ENDPOINT=$MINIO_ENDPOINT" >>.env
         log_success "Added MINIO_ENDPOINT=$MINIO_ENDPOINT to .env"
     fi
-    
+
     # Add AWS credentials for MinIO if not present
     if ! grep -q "AWS_ACCESS_KEY_ID=" .env; then
-        echo "AWS_ACCESS_KEY_ID=$MINIO_ROOT_USER" >> .env
+        echo "AWS_ACCESS_KEY_ID=$MINIO_ROOT_USER" >>.env
         log_success "Added AWS_ACCESS_KEY_ID for MinIO"
     fi
-    
+
     if ! grep -q "AWS_SECRET_ACCESS_KEY=" .env; then
-        echo "AWS_SECRET_ACCESS_KEY=$MINIO_ROOT_PASSWORD" >> .env
+        echo "AWS_SECRET_ACCESS_KEY=$MINIO_ROOT_PASSWORD" >>.env
         log_success "Added AWS_SECRET_ACCESS_KEY for MinIO"
     fi
-    
+
     if ! grep -q "AWS_REGION=" .env; then
-        echo "AWS_REGION=us-east-1" >> .env
+        echo "AWS_REGION=us-east-1" >>.env
         log_success "Added AWS_REGION for MinIO"
     fi
-    
+
     # Verify database configuration for safety
     check_database_config
-    
+
     cd - >/dev/null
 }
 
 # Check database configuration to prevent production data loss
 check_database_config() {
     log_info "Verifying database configuration for safety..."
-    
+
     if [ ! -f ".env" ]; then
         error_exit ".env file not found"
     fi
-    
+
     # Check for localhost in database URL
     if grep -q "localhost\|127.0.0.1\|::1" .env; then
         log_success "Database configuration appears to be for local development"
@@ -551,13 +551,21 @@ check_database_config() {
 # Check if database needs migration
 check_database_status() {
     log_info "Checking database status..."
-    
+
+    # setup environment
+    cp .env.dist .env
+
     # Try to check migration status
-    if npx prisma migrate status >/dev/null 2>&1; then
-        # Check if there are pending migrations
-        local status_output
-        status_output=$(npx prisma migrate status 2>&1)
-        
+    local status_output
+    local exit_code
+
+    # Capture both output and exit code
+    set +e # Temporarily disable exit on error
+    status_output=$(npx prisma migrate status 2>&1)
+    exit_code=$?
+
+    # Check if the command ran successfully (exit code 0 or 1 are both "successful" runs)
+    if [[ $exit_code -eq 0 || $exit_code -eq 1 ]]; then
         if echo "$status_output" | grep -q "Database schema is up to date"; then
             log_success "Database schema is up to date"
             return 0
@@ -565,19 +573,20 @@ check_database_status() {
             log_info "Database has pending migrations"
             return 1
         else
-            log_warning "Could not determine database migration status"
+            log_warning "Could not determine database migration status (output not parseable)"
             return 2
         fi
     else
-        log_warning "Unable to check database migration status"
+        log_warning "Error occurred when running npx prisma migrate status (exit code: $exit_code)"
         return 2
     fi
+    set -e # Re-enable exit on error
 }
 
 # Try to migrate database
 migrate_database() {
     log_info "Attempting to migrate database..."
-    
+
     if npx prisma migrate deploy >/dev/null 2>&1; then
         log_success "Database migrated successfully"
         return 0
@@ -591,20 +600,20 @@ migrate_database() {
 ask_user_confirmation() {
     local prompt="$1"
     local response
-    
+
     while true; do
         echo -n "$prompt (y/n): "
         read -r response
         case "$response" in
-            [Yy]|[Yy][Ee][Ss])
-                return 0
-                ;;
-            [Nn]|[Nn][Oo])
-                return 1
-                ;;
-            *)
-                echo "Please answer yes (y) or no (n)."
-                ;;
+        [Yy] | [Yy][Ee][Ss])
+            return 0
+            ;;
+        [Nn] | [Nn][Oo])
+            return 1
+            ;;
+        *)
+            echo "Please answer yes (y) or no (n)."
+            ;;
         esac
     done
 }
@@ -612,17 +621,17 @@ ask_user_confirmation() {
 # Generate local keys and setup database
 setup_database() {
     log_info "Setting up database and keys..."
-    
+
     cd "$API_DIR"
-    
+
     # Generate local keys
     log_info "Generating local keys..."
     pnpm run local-keys || error_exit "Failed to generate local keys"
-    
-    # Generate Prisma client
-    log_info "Generating Prisma client..."
-    pnpm run prisma-generate || error_exit "Failed to generate Prisma client"
-    
+
+    cd - >/dev/null
+
+    cd "packages/db"
+
     # Handle database setup based on --clear-db flag
     if [ "$CLEAR_DB" = true ]; then
         log_info "Clearing and resetting database (--clear-db flag provided)..."
@@ -632,19 +641,40 @@ setup_database() {
         local db_status
         check_database_status
         db_status=$?
-        
+
         case $db_status in
-            0)
-                # Database is up to date, nothing to do
-                log_success "Database is already up to date"
-                ;;
-            1)
-                # Has pending migrations, try to migrate
-                log_info "Database has pending migrations, attempting to migrate..."
+        0)
+            # Database is up to date, nothing to do
+            log_success "Database is already up to date"
+            ;;
+        1)
+            # Has pending migrations, try to migrate
+            log_info "Database has pending migrations, attempting to migrate..."
+            if migrate_database; then
+                log_success "Database migrated successfully"
+            else
+                log_warning "Migration failed. Database may need to be reset."
+                if ask_user_confirmation "Do you want to reset the database? This will delete all data"; then
+                    log_info "Resetting database..."
+                    pnpm run db-reset || error_exit "Failed to reset database"
+                else
+                    log_error "Database setup cancelled by user"
+                    exit 1
+                fi
+            fi
+            ;;
+        2)
+            # Could not determine status, ask user what to do
+            log_warning "Could not determine database status."
+            echo "You can either:"
+            echo "  1. Try to migrate (safe, preserves data)"
+            echo "  2. Reset database (destructive, deletes all data)"
+            echo
+            if ask_user_confirmation "Do you want to try migrating first"; then
                 if migrate_database; then
                     log_success "Database migrated successfully"
                 else
-                    log_warning "Migration failed. Database may need to be reset."
+                    log_warning "Migration failed."
                     if ask_user_confirmation "Do you want to reset the database? This will delete all data"; then
                         log_info "Resetting database..."
                         pnpm run db-reset || error_exit "Failed to reset database"
@@ -653,40 +683,19 @@ setup_database() {
                         exit 1
                     fi
                 fi
-                ;;
-            2)
-                # Could not determine status, ask user what to do
-                log_warning "Could not determine database status."
-                echo "You can either:"
-                echo "  1. Try to migrate (safe, preserves data)"
-                echo "  2. Reset database (destructive, deletes all data)"
-                echo
-                if ask_user_confirmation "Do you want to try migrating first"; then
-                    if migrate_database; then
-                        log_success "Database migrated successfully"
-                    else
-                        log_warning "Migration failed."
-                        if ask_user_confirmation "Do you want to reset the database? This will delete all data"; then
-                            log_info "Resetting database..."
-                            pnpm run db-reset || error_exit "Failed to reset database"
-                        else
-                            log_error "Database setup cancelled by user"
-                            exit 1
-                        fi
-                    fi
+            else
+                if ask_user_confirmation "Do you want to reset the database? This will delete all data"; then
+                    log_info "Resetting database..."
+                    pnpm run db-reset || error_exit "Failed to reset database"
                 else
-                    if ask_user_confirmation "Do you want to reset the database? This will delete all data"; then
-                        log_info "Resetting database..."
-                        pnpm run db-reset || error_exit "Failed to reset database"
-                    else
-                        log_error "Database setup cancelled by user"
-                        exit 1
-                    fi
+                    log_error "Database setup cancelled by user"
+                    exit 1
                 fi
-                ;;
+            fi
+            ;;
         esac
     fi
-    
+
     cd - >/dev/null
     log_success "Database setup completed"
 }
@@ -694,12 +703,12 @@ setup_database() {
 # Start development server
 start_dev_server() {
     log_info "Starting development server..."
-    
+
     # Use turbo if available, otherwise use pnpm
     if command_exists turbo; then
-        turbo dev --filter=@reefguide/web-api --filter=@reefguide/app
+        turbo dev
     elif npx turbo --version >/dev/null 2>&1; then
-        npx turbo dev --filter=@reefguide/web-api
+        npx turbo dev
     else
         log_warning "Turbo not found, falling back to pnpm"
         cd "$API_DIR"
@@ -725,15 +734,15 @@ main() {
     echo "ReefGuide Development Environment Setup"
     echo "============================================"
     echo
-    
+
     # Set up cleanup trap
     trap cleanup EXIT INT TERM
-    
+
     # Verify we're in the right directory
     if [ ! -f "package.json" ]; then
         error_exit "No package.json found. Please run this script from the project root directory."
     fi
-    
+
     # Execute setup steps
     setup_node_manager
     check_docker
@@ -745,7 +754,7 @@ main() {
     setup_minio_bucket
     setup_api_config
     setup_database
-    
+
     echo
     log_success "Setup completed successfully!"
     echo
@@ -831,31 +840,31 @@ usage() {
 # Handle command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        -h|--help)
-            usage
-            exit 0
-            ;;
-        --clear-db)
-            CLEAR_DB=true
-            shift
-            ;;
-        --cleanup)
-            CLEANUP_ON_EXIT=true
-            shift
-            ;;
-        --skip-docker)
-            SKIP_DOCKER=true
-            shift
-            ;;
-        --skip-deps)
-            SKIP_DEPS=true
-            shift
-            ;;
-        *)
-            log_error "Unknown option: $1"
-            usage
-            exit 1
-            ;;
+    -h | --help)
+        usage
+        exit 0
+        ;;
+    --clear-db)
+        CLEAR_DB=true
+        shift
+        ;;
+    --cleanup)
+        CLEANUP_ON_EXIT=true
+        shift
+        ;;
+    --skip-docker)
+        SKIP_DOCKER=true
+        shift
+        ;;
+    --skip-deps)
+        SKIP_DEPS=true
+        shift
+        ;;
+    *)
+        log_error "Unknown option: $1"
+        usage
+        exit 1
+        ;;
     esac
 done
 

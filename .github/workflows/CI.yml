@@ -2,66 +2,68 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
-
+    branches: [main]
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '24'
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: Install dependencies
+        run: pnpm install
+      - name: Prisma generate
+        run: pnpm run generate
+      - name: Run typecheck
+        run: pnpm run type-check
+      - name: Run linter
+        run: pnpm run lint -- --verbose --output-logs=full
+      - name: Start Docker services (PostgreSQL DB)
+        run: docker compose up -d
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          # Use pg_isready to check if PostgreSQL is accepting connections
+          timeout=60
+          counter=0
+          until docker exec local-web-api-psql pg_isready -U admin -d database || [ $counter -eq $timeout ]; do
+            echo "Waiting for PostgreSQL to be ready... ($counter/$timeout)"
+            counter=$((counter+1))
+            sleep 1
+          done
 
-    - name: Use Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20'
+          if [ $counter -eq $timeout ]; then
+            echo "Timed out waiting for PostgreSQL to be ready"
+            exit 1
+          fi
 
-    - name: Install dependencies
-      run: npm i
-
-    - name: Prisma generate
-      run: npm run prisma-generate
-
-    - name: Run typecheck
-      run: npm run typecheck
-
-    - name: Run linter
-      run: npm run lint
-
-    - name: Start Docker services (PostgreSQL DB)
-      run: docker compose up -d
-
-    - name: Wait for PostgreSQL to be ready
-      run: |
-        # Use pg_isready to check if PostgreSQL is accepting connections
-        timeout=60
-        counter=0
-        until docker exec local-web-api-psql pg_isready -U admin -d database || [ $counter -eq $timeout ]; do
-          echo "Waiting for PostgreSQL to be ready... ($counter/$timeout)"
-          counter=$((counter+1))
-          sleep 1
-        done
-        
-        if [ $counter -eq $timeout ]; then
-          echo "Timed out waiting for PostgreSQL to be ready"
-          exit 1
-        fi
-        
-        echo "PostgreSQL is ready!"
-
-    - name: Copy environment file and set test mode
-      run: cp .env.example .env && echo -en "\nTEST_MODE=true" >> .env
-
-    - name: Generate local keys
-      run: npm run local-keys
-
-    - name: Reset database
-      run: npm run db-reset
-
-    - name: Run tests
-      run: npm run test
-
-    - name: Stop Docker services
-      run: docker compose down
+          echo "PostgreSQL is ready!"
+      - name: Copy environment file and set test mode
+        run: cd packages/web-api && cp .env.dist .env && echo -en "\nTEST_MODE=true" >> .env
+      - name: Generate local keys
+        run: cd packages/web-api && pnpm run local-keys
+      - name: Reset database
+        run: cd packages/db && cp .env.dist .env && pnpm run db-reset
+      - name: Run tests
+        # TODO expand to other packages
+        run: npx turbo test --filter=@reefguide/web-api
+      - name: Stop Docker services
+        run: docker compose down

@@ -1,39 +1,39 @@
 name: Code Formatting Check
-
 on:
   pull_request:
     branches: [main]
-
 jobs:
   format-check:
     name: Prettier Check
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Setup node cache
-        id: node-cache
+          node-version: 24
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      - name: Setup pnpm cache
         uses: actions/cache@v3
         with:
-          path: '**/node_modules'
-          key: npm-${{ hashFiles('package-lock.json') }}-${{ hashFiles('package.json') }}
-          restore-keys: npm-
-
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
       - name: Install dependencies
-        if: steps.node-cache.outputs.cache-hit != 'true'
-        run: npm i
-
-      - name: Check formatting and lint 
-        run: npm run format
-
+        run: pnpm install
+      - name: Prisma generate
+        run: pnpm run generate
+      - name: Check formatting and lint
+        run: pnpm run format:check
       - name: Comment on PR if formatting issues found
         if: failure()
         uses: actions/github-script@v7
@@ -43,5 +43,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '❌ Code formatting check failed. Please run `npm run format:write` locally and commit the changes.'
+              body: '❌ Code formatting check failed. Please run `pnpm run format:write` locally and commit the changes.'
             })

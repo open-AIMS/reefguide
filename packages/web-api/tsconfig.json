@@ -5,11 +5,10 @@
     "outDir": "build",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "typeRoots": ["./node_modules/@types", "src/api/types/express/"]
+    "typeRoots": ["./node_modules/@types", "src/types/express/"]
   },
   "include": [
     "src/**/*.ts",
-    "test/**/*.ts",
-    "bin/**.ts"
+    "test/**/*.ts"
   ]
 }
