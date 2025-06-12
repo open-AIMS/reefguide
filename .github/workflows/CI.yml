@@ -64,6 +64,6 @@ jobs:
         run: cd packages/db && cp .env.dist .env && pnpm run db-reset
       - name: Run tests
         # TODO expand to other packages
-        run: turbo test --filter=@reefguide/web-api
+        run: npx turbo test --filter=@reefguide/web-api
       - name: Stop Docker services
         run: docker compose down
