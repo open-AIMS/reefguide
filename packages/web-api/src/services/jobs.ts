@@ -161,77 +161,64 @@ export class JobService {
     }
   }
 
+  /**
+   * Checks the job cache for an existing job matching the given payload and type.
+   *
+   * Priority order for job selection:
+   * 1. SUCCEEDED jobs (newest first)
+   * 2. IN_PROGRESS jobs (newest first)
+   * 3. PENDING jobs (newest first)
+   * 4. FAILED jobs are never returned
+   *
+   * @param jobPaylod - The job payload to match against (note: contains typo in parameter name)
+   * @param jobType - The type of job to search for
+   * @returns Promise<Job | undefined> - The best matching job or undefined if no suitable job found
+   */
   public async checkJobCache(jobPaylod: any, jobType: JobType): Promise<Job | undefined> {
     // Calculate job hash
     const hash = await this.generateJobHash({ jobType, payload: jobPaylod });
+
     // Find jobs with a matching hash
     const existingJobs = await prisma.job.findMany({ where: { hash } });
 
-    // What jobs are we interested in - those that are incomplete, or
-    // successful. Choose the latest edition.
-    let bestCandidate: Job | undefined = undefined;
-    for (const job of existingJobs) {
-      if (!bestCandidate) {
-        bestCandidate = job;
-        continue;
-      }
+    // Filter out FAILED jobs immediately - we never want to return them
+    const validJobs = existingJobs.filter(job => job.status !== 'FAILED');
 
-      // If the job is successful, always prioritise unless another successful job which is newer
-      if (job.status === 'SUCCEEDED') {
-        // We have a candidate, is this one better?
-        if (job.created_at > bestCandidate.created_at) {
-          // this one is newer - so let's keep it
-          bestCandidate = job;
-          continue;
-        }
-
-        // Otherwise - proceed on
-        continue;
-      }
-
-      // The job is not successful, is it in progress at least?
-      if (job.status === 'PENDING' || job.status === 'IN_PROGRESS') {
-        // If current job is succesful, keep it
-        if (bestCandidate.status === 'SUCCEEDED') {
-          // keep the successful
-          continue;
-        }
-
-        // Is it also a pending/in progress?
-        if (bestCandidate.status === 'PENDING' || bestCandidate.status === 'IN_PROGRESS') {
-          // This is a 'tie' - choose newer
-          if (job.created_at > bestCandidate.created_at) {
-            // this one is newer - so let's keep it
-            bestCandidate = job;
-            continue;
-          }
-        }
-
-        // Otherwise it must have failed, pick new one
-        bestCandidate = job;
-        continue;
-      }
-
-      // The job must be failed - if we have any job of superior status, keep it
-      if (
-        bestCandidate.status === 'SUCCEEDED' ||
-        bestCandidate.status === 'IN_PROGRESS' ||
-        bestCandidate.status === 'PENDING'
-      ) {
-        // keep the successful
-        continue;
-      }
-
-      // This is a 'tie' - choose newer
-      if (job.created_at > bestCandidate.created_at) {
-        // this one is newer - so let's keep it
-        bestCandidate = job;
-        continue;
-      }
+    if (validJobs.length === 0) {
+      return undefined;
     }
 
-    // return the best candidate with hash match
-    return bestCandidate;
+    // Sort jobs by priority: SUCCEEDED > IN_PROGRESS > PENDING
+    // Within each status group, sort by creation date (newest first)
+    const sortedJobs = validJobs.sort((a, b) => {
+      // Define status priority (lower number = higher priority)
+      const getStatusPriority = (status: string): number => {
+        switch (status) {
+          case 'SUCCEEDED':
+            return 1;
+          case 'IN_PROGRESS':
+            return 2;
+          case 'PENDING':
+            return 3;
+          default:
+            return 4; // Should not happen since we filtered FAILED
+        }
+      };
+
+      const priorityA = getStatusPriority(a.status);
+      const priorityB = getStatusPriority(b.status);
+
+      // First sort by status priority
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
+      // If same status, sort by creation date (newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+    // Return the best candidate (first in sorted array)
+    return sortedJobs[0];
   }
 
   /**
