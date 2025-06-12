@@ -28,6 +28,7 @@ runs:
     - name: Run config script
       shell: bash
       run: |
+        cd packages/infra
         chmod +x config
         ./config ${{ inputs.namespace }} ${{ inputs.environment }} --repo-dir ./${{ inputs.config-repo-path }} --branch ${{ inputs.branch }}
 
@@ -35,6 +36,7 @@ runs:
       id: parse-config
       shell: bash
       run: |
+        cd packages/infra
         CONFIG_FILE="configs/${{ inputs.environment }}.json"
         if [ ! -f "$CONFIG_FILE" ]; then
           echo "Error: Config file not found at $CONFIG_FILE"

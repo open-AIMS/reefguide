@@ -1,0 +1,16 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": [
+    "//"
+  ],
+  "tasks": {
+    "build": {
+      "env": [
+        "NODE_ENV",
+        "NG_APP_REEFGUIDE_API_URL",
+        "NG_APP_WEB_API_URL",
+        "NG_APP_ADRIA_API_URL"
+      ]
+    }
+  }
+}

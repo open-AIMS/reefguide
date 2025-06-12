@@ -31,7 +31,7 @@ jobs:
           # The OAuth token providing access
           token: ${{ secrets.CDK_CONFIG_REPO_TOKEN }}
           # Where to clone the repo to
-          path: ./config_repo
+          path: packages/infra/config_repo
       - name: Run CDK Config Setup Action
         uses: ./.github/actions/config
         id: cdk-config-setup
@@ -39,7 +39,7 @@ jobs:
           namespace: ${{ vars.CDK_DEPLOY_NAMESPACE }}
           environment: ${{ vars.CDK_DEPLOY_ENVIRONMENT }}
           branch: ${{ vars.CDK_DEPLOY_BRANCH }}
-          config-repo-path: config_repo
+          config-repo-path: packages/infra/config_repo
       - name: Display AWS Target Details
         run: |
           echo "Deploying to:"

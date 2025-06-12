@@ -199,7 +199,9 @@ export class ReefguideStack extends cdk.Stack {
         reefGuideApi.endpoint,
         webAPI.endpoint,
         'blob:'
-      ].concat(ARC_GIS_ENDPOINTS)
+      ].concat(ARC_GIS_ENDPOINTS),
+      reefGuideAPIEndpoint: reefGuideApi.endpoint,
+      webApiEndpoint: webAPI.endpoint
     });
 
     new JobSystem(this, 'job-system', {
