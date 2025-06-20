@@ -236,15 +236,14 @@ export class ReefguideStack extends cdk.Stack {
           jobTypes: [JobType.SUITABILITY_ASSESSMENT, JobType.REGIONAL_ASSESSMENT, JobType.TEST],
           // This specifies the image to be used - should be in the full format
           // i.e. "ghcr.io/open-aims/reefguideapi.jl/reefguide-src:latest"
-          workerImage: 'ghcr.io/open-aims/reefguideapi.jl/reefguide-src:latest',
-          // TODO tinker with performance here - we can make these chunky if
-          // needed as they should run transiently
+          workerImage: 'ghcr.io/open-aims/reefguideworker.jl/reefguide-worker:latest',
+          // Can tinker with performance here
           cpu: 4096,
           memoryLimitMiB: 8192,
           serverPort: 3000,
 
           // Launch the worker
-          command: ['using ReefGuideAPI; ReefGuideAPI.start_worker()'],
+          command: ['using ReefGuideWorker; ReefGuideWorker.start_worker()'],
           desiredMinCapacity: 0,
           desiredMaxCapacity: 5,
           scalingFactor: 3.3,
@@ -255,7 +254,9 @@ export class ReefguideStack extends cdk.Stack {
           // worker task
           env: {
             CONFIG_PATH: '/data/reefguide/config.toml',
-            JULIA_DEBUG: 'ReefGuideAPI'
+            JULIA_DEBUG: 'ReefGuideWorker',
+            DATA_PATH: '/data/reefguide',
+            CACHE_PATH: '/data/reefguide/cache'
           },
 
           // Mount up the reefguide API shared storage
