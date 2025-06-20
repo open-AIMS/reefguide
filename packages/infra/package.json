@@ -10,10 +10,6 @@
         "fix": "gts fix",
         "format:write": "prettier --write \"src/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
         "format:check": "prettier --check \"src/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
-        "dev-manager": "env-cmd -f src/job-manager/.env ts-node src/job-manager/src/index.ts",
-        "dev-worker": "env-cmd -f src/example-worker/.env ts-node src/example-worker/src/index.ts",
-        "start-manager": "ts-node -T src/job-manager/src/index.ts",
-        "start-worker": "ts-node -T src/example-worker/src/index.ts",
         "aws-keys": "node scripts/awsKeys.js"
     },
     "keywords": [],

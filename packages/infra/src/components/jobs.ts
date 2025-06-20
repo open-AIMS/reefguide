@@ -247,7 +247,7 @@ export class JobSystem extends Construct {
     // Add capacity manager container
     capacityManagerTask.addContainer('capacity-manager', {
       // Docker command - node entrypoint
-      command: ['packages/job-manager/build/src/index.js'],
+      command: ['packages/capacity-manager/build/src/index.js'],
       image: ecs.ContainerImage.fromAsset('../..', {
         buildArgs: {
           PORT: String(3000),
