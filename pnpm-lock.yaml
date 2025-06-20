@@ -121,6 +121,49 @@ importers:
         specifier: ~2.1.0
         version: 2.1.0(jasmine-core@5.6.0)(karma-jasmine@5.1.0(karma@6.4.4))(karma@6.4.4)
 
+  packages/capacity-manager:
+    dependencies:
+      '@aws-sdk/client-ec2':
+        specifier: ^3.692.0
+        version: 3.827.0
+      '@aws-sdk/client-ecs':
+        specifier: ^3.687.0
+        version: 3.826.0
+      '@reefguide/db':
+        specifier: workspace:*
+        version: link:../db
+      '@reefguide/types':
+        specifier: workspace:*
+        version: link:../types
+      axios:
+        specifier: ^1.7.7
+        version: 1.9.0
+      env-cmd:
+        specifier: ^10.1.0
+        version: 10.1.0
+      express:
+        specifier: ^4.21.1
+        version: 4.21.2
+      jwt-decode:
+        specifier: ^4.0.0
+        version: 4.0.0
+      winston:
+        specifier: ^3.17.0
+        version: 3.17.0
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.62
+    devDependencies:
+      '@types/express':
+        specifier: ^4.17.21
+        version: 4.17.23
+      ts-node:
+        specifier: ^10.9.2
+        version: 10.9.2(@types/node@22.15.31)(typescript@5.8.3)
+      ts-node-dev:
+        specifier: ^2.0.0
+        version: 2.0.0(@types/node@22.15.31)(typescript@5.8.3)
+
   packages/db:
     dependencies:
       '@prisma/client':
@@ -312,49 +355,6 @@ importers:
       webpack-node-externals:
         specifier: ^3.0.0
         version: 3.0.0
-
-  packages/job-manager:
-    dependencies:
-      '@aws-sdk/client-ec2':
-        specifier: ^3.692.0
-        version: 3.827.0
-      '@aws-sdk/client-ecs':
-        specifier: ^3.687.0
-        version: 3.826.0
-      '@reefguide/db':
-        specifier: workspace:*
-        version: link:../db
-      '@reefguide/types':
-        specifier: workspace:*
-        version: link:../types
-      axios:
-        specifier: ^1.7.7
-        version: 1.9.0
-      env-cmd:
-        specifier: ^10.1.0
-        version: 10.1.0
-      express:
-        specifier: ^4.21.1
-        version: 4.21.2
-      jwt-decode:
-        specifier: ^4.0.0
-        version: 4.0.0
-      winston:
-        specifier: ^3.17.0
-        version: 3.17.0
-      zod:
-        specifier: ^3.23.8
-        version: 3.25.62
-    devDependencies:
-      '@types/express':
-        specifier: ^4.17.21
-        version: 4.17.23
-      ts-node:
-        specifier: ^10.9.2
-        version: 10.9.2(@types/node@22.15.31)(typescript@5.8.3)
-      ts-node-dev:
-        specifier: ^2.0.0
-        version: 2.0.0(@types/node@22.15.31)(typescript@5.8.3)
 
   packages/types:
     dependencies:

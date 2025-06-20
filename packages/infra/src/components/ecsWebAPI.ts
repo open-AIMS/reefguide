@@ -93,7 +93,8 @@ export class ECSWebAPI extends Construct {
         PORT: String(this.internalPort),
         APP_NAME: '@reefguide/web-api'
       },
-      exclude: STANDARD_EXCLUSIONS
+      exclude: STANDARD_EXCLUSIONS,
+      ignoreMode: cdk.IgnoreMode.GIT
     });
 
     // Task definition
