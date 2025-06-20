@@ -33,17 +33,19 @@ pnpm i
 
 ## Run turbo commands
 
-Using the installed turbo
+You can now run turbo commands, for example:
+
+using the installed turbo (in the workspace)
 
 ```
-npx turbo ...
+npx turbo <insert command here>
 ```
 
 Or global install (using npm)
 
 ```
 npm turbo -g
-turbo ...
+turbo <insert command here>
 ```
 
 ## Spinning up docker and minio
