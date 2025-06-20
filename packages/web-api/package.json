@@ -15,8 +15,6 @@
         "format:check": "prettier --check \"{src,test}/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
         "clean": "gts clean",
         "fix": "gts fix",
-        "studio": "prisma studio",
-        "db-reset": "prisma db push --force-reset",
         "local-keys": "node scripts/localKeys.js",
         "start-web-api-docker": "ts-node -T --files src/index.ts"
     },

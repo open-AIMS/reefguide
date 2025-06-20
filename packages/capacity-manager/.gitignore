@@ -1,0 +1,5 @@
+build
+dist
+env.json
+.env.*
+!.env.dist

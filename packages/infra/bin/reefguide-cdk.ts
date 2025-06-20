@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import 'source-map-support/register';
-import { getConfigFromFile } from '../src/infra/infraConfig';
-import { ReefguideStack } from '../src/infra/infra';
+import { getConfigFromFile } from '../src/infraConfig';
+import { ReefguideStack } from '../src/infra';
 
 // Read the config file name from the environment variable
 const configFileName = process.env.CONFIG_FILE_NAME;

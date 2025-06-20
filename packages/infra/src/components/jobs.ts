@@ -1,4 +1,4 @@
-import { Annotations, Duration, Stack } from 'aws-cdk-lib';
+import { Annotations, Duration, IgnoreMode, Stack } from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as efs from 'aws-cdk-lib/aws-efs';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
@@ -8,6 +8,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as sm from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 import { JobType } from '@reefguide/db';
+import { STANDARD_EXCLUSIONS } from '../infra';
 
 // Define job type configuration
 export interface JobTypeConfig {
@@ -246,13 +247,15 @@ export class JobSystem extends Construct {
     // Add capacity manager container
     capacityManagerTask.addContainer('capacity-manager', {
       // Docker command - node entrypoint
-      command: ['packages/infra/build/src/job-manager/src/index.js'],
+      command: ['packages/job-manager/build/src/index.js'],
       image: ecs.ContainerImage.fromAsset('../..', {
         buildArgs: {
           PORT: String(3000),
-          APP_NAME: '@reefguide/infra'
+          APP_NAME: '@reefguide/capacity-manager'
         },
-        exclude: ['packages/infra/cdk.out', '.*node_modules.*']
+        // Exclude common directories that shouldn't be included
+        exclude: STANDARD_EXCLUSIONS,
+        ignoreMode: IgnoreMode.GIT
       }),
       logging: ecs.LogDrivers.awsLogs({
         streamPrefix: 'capacity-manager',

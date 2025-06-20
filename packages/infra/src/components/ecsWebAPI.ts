@@ -11,6 +11,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import { WebAPIConfig } from '../infraConfig';
 import { SharedBalancer } from './networking';
+import { STANDARD_EXCLUSIONS } from '../infra';
 
 /**
  * Properties for the WebAPI construct
@@ -92,7 +93,7 @@ export class ECSWebAPI extends Construct {
         PORT: String(this.internalPort),
         APP_NAME: '@reefguide/web-api'
       },
-      exclude: ['packages/infra', '.*node_modules.*']
+      exclude: STANDARD_EXCLUSIONS
     });
 
     // Task definition

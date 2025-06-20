@@ -13,6 +13,21 @@ import { Db } from './components/db';
 import { JobType } from '@reefguide/db';
 import { ECSWebAPI } from './components/ecsWebAPI';
 
+export const STANDARD_EXCLUSIONS = [
+  'node_modules',
+  '.git',
+  '.turbo',
+  'packages/infra',
+  '.env',
+  '.env**',
+  '.github',
+  '.turbo',
+  '.vscode',
+  'build',
+  'dist',
+  'cdk.out'
+];
+
 export interface ReefguideWebApiProps extends cdk.StackProps {
   config: DeploymentConfig;
 }

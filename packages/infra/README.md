@@ -87,8 +87,8 @@ A REST API to support Reef Guide (AIMS), built with Express, TypeScript, Zod and
 
 ### Customization
 
-- Modify `src/infra/components/` files to adjust individual service configurations.
-- Update `src/infra/infra.ts` to change overall stack structure.
+- Modify `src/components/` files to adjust individual service configurations.
+- Update `src.ts` to change overall stack structure.
 - Adjust auto-scaling, instance types, and other parameters in the configuration JSON files.
 
 ## Configuring CDK

@@ -8,6 +8,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
 import { ReefGuideFrontendConfig } from '../infraConfig';
+import { STANDARD_EXCLUSIONS } from '../infra';
 
 /**
  * Properties for the ReefGuideFrontend construct
@@ -23,7 +24,7 @@ export interface ReefGuideFrontendProps {
   config: ReefGuideFrontendConfig;
   /** CSP entries and endpoints */
   cspEntries: string[];
-  /** Enable debugging settings @default false */
+  /** Enable debugging settings @default false*/
   debugMode?: boolean;
   /** Path to monorepo root (relative to infrastructure) @default '../..' */
   buildPath?: string;
@@ -53,8 +54,9 @@ export class ReefGuideFrontend extends Construct {
     // Setup distribution and static bucket hosting
     this.setupDistribution(props);
 
-    // Build and deploy the frontend
-    this.setupBundling(props);
+    // Build and deploy the frontend TODO this is not working at the moment due
+    // to the BucketDeployment custom resource being extremely slow
+    // this.setupBundling(props);
 
     // Setup outputs
     this.setupOutputs();
@@ -117,7 +119,7 @@ export class ReefGuideFrontend extends Construct {
       sources: [
         s3deploy.Source.asset(buildPath, {
           // Exclude common directories that shouldn't be included
-          exclude: ['node_modules', '.git', '.turbo', 'packages/infra', '.env', '.env**'],
+          exclude: STANDARD_EXCLUSIONS,
           // Generate asset hash based on the specific app directory
           // This ensures rebuilds only when the app code changes
           assetHashType: cdk.AssetHashType.SOURCE,
