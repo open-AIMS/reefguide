@@ -6,18 +6,21 @@
     "scripts": {
         "build": "turbo build",
         "dev": "turbo dev",
-        "format": "turbo format",
+        "format:write": "turbo format:write",
+        "format:check": "turbo format:check",
         "lint": "turbo lint",
         "test": "turbo test",
         "type-check": "turbo type-check",
-        "clean": "turbo clean"
+        "clean": "turbo clean",
+        "generate": "pnpm --filter @reefguide/db run generate"
     },
     "devDependencies": {
         "@types/node": "^22.15.31",
         "gts": "^6.0.2",
         "prettier": "^3.5.3",
         "turbo": "^2.5.4",
-        "typescript": "^5.8.3"
+        "typescript": "^5.8.3",
+        "eslint": "^8.57.0"
     },
     "packageManager": "pnpm@10.12.1",
     "engines": {

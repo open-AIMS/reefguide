@@ -44,3 +44,7 @@ Thumbs.db
 out
 
 .vscode/
+
+.env
+.env*
+!.env.dist

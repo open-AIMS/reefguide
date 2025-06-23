@@ -1,0 +1,30 @@
+{
+    "name": "@reefguide/db",
+    "version": "0.1.0",
+    "description": "Database client and schema for ReefGuide",
+    "main": "dist/src/index.js",
+    "types": "dist/src/index.d.ts",
+    "scripts": {
+        "prebuild": "prisma generate",
+        "build": "tsc",
+        "generate": "prisma generate",
+        "studio": "prisma studio",
+        "db-reset": "prisma db push --force-reset",
+        "lint": "gts lint",
+        "type-check": "tsc --noEmit",
+        "clean": "gts clean",
+        "fix": "gts fix",
+        "format:write": "prettier --write \"src/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
+        "format:check": "prettier --check \"src/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\""
+    },
+    "dependencies": {
+        "@prisma/client": "^6.0.1"
+    },
+    "devDependencies": {
+        "prisma": "^6.0.1",
+        "typescript": "^5.0.0"
+    },
+    "prisma": {
+        "schema": "prisma/schema.prisma"
+    }
+}

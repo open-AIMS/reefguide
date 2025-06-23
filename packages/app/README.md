@@ -5,9 +5,11 @@ Prototype Decision Support app for the [ADRIA.jl](https://github.com/open-AIMS/A
 platform and CoralBlox model. This project also contains the Reef Guide app.
 
 ## Table of Contents
+
 - [Quick Start](#quick-start)
 - [Angular Developer Setup](#angular-developer-setup)
 - [Development Server](#development-server)
+- [Environment variables](#environment-variables)
 - [ReefGuide Web API Integration](#reefguide-web-api-integration)
 - [Code Scaffolding](#code-scaffolding)
 - [Configuration](#configuration)
@@ -44,8 +46,10 @@ This project was generated with [Angular CLI](https://github.com/angular/angular
 version 18.0.6.
 
 **One-time setup:**
+
 1. Install [Node v22](https://nodejs.org/en/download/package-manager)\
    In a Linux environment consider using [Node Version Manager](https://github.com/nvm-sh/nvm):
+
    ```bash
    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
    source ~/.bashrc
@@ -54,6 +58,7 @@ version 18.0.6.
    ```
 
 2. Install Angular CLI globally:
+
    ```bash
    npm install -g @angular/cli
    ```
@@ -63,7 +68,7 @@ version 18.0.6.
    npm install --legacy-peer-deps
    ```
 
-**Note:** *--legacy-peer-deps* will be necessary until ArcGIS updates peer deps to Angular 18.
+**Note:** _--legacy-peer-deps_ will be necessary until ArcGIS updates peer deps to Angular 18.
 
 A script security error may be raised if using PowerShell.
 If this occurs, run the following to [fix Powershell execution policy](https://angular.dev/tools/cli/setup-local#powershell-execution-policy):
@@ -79,14 +84,43 @@ The application will automatically reload if you change any of the source files.
 
 The APIs are proxied to avoid CSRF issues; see [proxy.conf.json](src/proxy.conf.json)
 
+## Environment variables
+
+This project uses [@ngx-env/builder](https://github.com/chihab/dotenv-run/tree/main/packages/angular) for environment variable management.
+
+**Setup:**
+
+1. Copy `.env.dist` to `.env`:
+   ```bash
+   cp .env.dist .env
+   ```
+2. Update the values in `.env` as needed for your local development
+
+**Available Variables:**
+
+- `NG_APP_REEFGUIDE_API_URL` - ReefGuide API endpoint
+- `NG_APP_ADRIA_API_URL` - Adria API endpoint
+- `NG_APP_WEB_API_URL` - Web API endpoint
+
+**Usage:**
+
+```typescript
+// In your components/services
+const apiUrl = import.meta.env.NG_APP_REEFGUIDE_API_URL;
+```
+
+**Note:** Environment variables are embedded at build time and visible in the compiled application. Do not store secrets here.
+
 ## ReefGuide Web API Integration
 
 A working ReefGuide Web API instance is required to use the application.
 
 **Option 1: Use existing API instance**
+
 - Configure the `webApiUrl` in the environment file to point to your API instance
 
 **Option 2: Set up local API instance**
+
 1. Clone the ReefGuide Web API repository:
    ```bash
    git clone https://github.com/open-AIMS/reefguide-web-api.git
@@ -95,7 +129,7 @@ A working ReefGuide Web API instance is required to use the application.
 3. Update the `webApiUrl` in your environment configuration
 
 The `webApiUrl` entry in the configuration file needs to point to this, or an alternate,
-API instance. See the *Configuration* section.
+API instance. See the _Configuration_ section.
 
 ## Code Scaffolding
 
@@ -105,7 +139,7 @@ Run `ng generate component component-name` to generate a new component. You can 
 
 The environment pattern is used for configuration:
 
-- **Development**: [environment.development.ts](src/environments/environment.development.ts) 
+- **Development**: [environment.development.ts](src/environments/environment.development.ts)
 - **Production**: [environment.ts](src/environments/environment.ts)
 
 The APIs are proxied by the local dev server to avoid CORS issues, see [proxy.conf.json](src/proxy.conf.json).
@@ -120,6 +154,7 @@ directory.
 After the **Build** step:
 
 1. Navigate to the build output:
+
    ```bash
    cd dist/adria-app/browser
    ```
@@ -134,9 +169,11 @@ After the **Build** step:
 ## Testing
 
 ### Unit Tests
+
 Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
 
 ### End-to-End Tests
+
 Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this
 command, you need to first add a package that implements end-to-end testing capabilities.
 

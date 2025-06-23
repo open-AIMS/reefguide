@@ -1,0 +1,7 @@
+.turbo
+.github
+dist
+node_modules
+.editorconfig
+.env
+
