@@ -2,9 +2,13 @@
     "name": "@reefguide/cli",
     "version": "0.1",
     "description": "Work in progress CLI for ReefGuide",
+    "main": "build/src/index.js",
+    "bin": {
+        "reefguide-cli": "build/src/index.js"
+    },
     "scripts": {
         "build": "tsc",
-        "prestart" : "pnpm run build",
+        "prestart": "pnpm run build",
         "start": "node build/src/index.js",
         "watch": "tsc -w",
         "lint": "gts lint",

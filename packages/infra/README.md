@@ -37,11 +37,11 @@ A REST API to support Reef Guide (AIMS), built with Express, TypeScript, Zod and
 ### Components
 
 1. **VPC**: A Virtual Private Cloud with public subnets.
-2. **ECS Cluster**: Hosts the ReefGuideAPI Fargate service.
+2. **ECS Cluster**: Hosts various Fargate services.
 3. **Application Load Balancer (ALB)**: Handles incoming traffic and distributes it to the ECS services.
 4. **API Gateway**: Manages the REST API for the Web API service.
 5. **Lambda Function**: Runs the Web API service.
-6. **EFS (Elastic File System)**: Provides persistent storage for the ReefGuideAPI service.
+6. **EFS (Elastic File System)**: Provides persistent storage for the worker nodes.
 7. **S3 Bucket**: Used for intermediary data transfer between the user and the EC2 service instance which mounts the EFS.
 8. **EC2 Instance**: Manages the EFS filesystem.
 9. **Route 53**: Handles DNS routing.
@@ -49,13 +49,6 @@ A REST API to support Reef Guide (AIMS), built with Express, TypeScript, Zod and
 11. **Secrets Manager**: Stores sensitive configuration data.
 
 ### Service Architecture
-
-#### ReefGuideAPI
-
-- Runs as a Fargate service in the ECS cluster.
-- Uses an Application Load Balancer for traffic distribution.
-- Implements auto-scaling based on CPU and memory utilization.
-- Utilizes EFS for persistent storage.
 
 #### WebAPI
 

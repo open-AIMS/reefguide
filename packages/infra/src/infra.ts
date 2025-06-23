@@ -4,7 +4,6 @@ import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import { ReefGuideNetworking } from './components/networking';
-import { ReefGuideAPI } from './components/reefGuideAPI';
 import { DeploymentConfig } from './infraConfig';
 import { ReefGuideFrontend } from './components/reefGuideFrontend';
 import { JobSystem } from './components/jobs';
@@ -81,7 +80,6 @@ export class ReefguideStack extends cdk.Stack {
 
     // Domain configurations
     const domains = {
-      reefGuideAPI: `${config.domains.reefGuideAPI}.${config.domains.baseDomain}`,
       webAPI: `${config.domains.webAPI}.${config.domains.baseDomain}`,
       frontend: `${config.domains.frontend}.${config.domains.baseDomain}`
     };
@@ -110,6 +108,7 @@ export class ReefguideStack extends cdk.Stack {
     const networking = new ReefGuideNetworking(this, 'networking', {
       certificate: primaryCert
     });
+    const cluster = networking.cluster;
 
     // Setup RDS if desired TODO it would be nice to automatically provide these
     // credentials rather than require the user to inject them into the secret
@@ -122,20 +121,6 @@ export class ReefguideStack extends cdk.Stack {
         storageGb: config.db.storageGb
       });
     }
-
-    // ReefGuideAPI.jl
-    // ===============
-
-    // Deploy the reef guide API as a load balanced ECS service
-    const reefGuideApi = new ReefGuideAPI(this, 'reef-guide-api', {
-      vpc: networking.vpc,
-      certificate: primaryCert,
-      domainName: domains.reefGuideAPI,
-      hz: hz,
-      sharedBalancer: networking.sharedBalancer,
-      config: config.reefGuideAPI
-    });
-    const cluster = reefGuideApi.fargateService.cluster;
 
     // ==============
     // STORAGE BUCKET
@@ -180,8 +165,6 @@ export class ReefguideStack extends cdk.Stack {
         managerCreds: managerCreds,
         workerCreds: workerCreds,
         adminCreds: adminCreds,
-        reefguideApiClusterName: cluster.clusterName,
-        reefguideApiServiceName: reefGuideApi.fargateService.serviceName,
         cluster: cluster,
         sharedBalancer: networking.sharedBalancer,
         vpc: networking.vpc
@@ -194,9 +177,6 @@ export class ReefguideStack extends cdk.Stack {
       );
       throw Error('Deployment failed.');
     }
-
-    // Let the Web API interact with the Julia cluster
-    webAPI.registerCluster(reefGuideApi.fargateService);
 
     // ========
     // FRONTEND
@@ -211,11 +191,9 @@ export class ReefguideStack extends cdk.Stack {
       cspEntries: [
         // S3 bucket downloads within this region
         `https://*.s3.${cdk.Stack.of(this).region}.amazonaws.com`,
-        reefGuideApi.endpoint,
         webAPI.endpoint,
         'blob:'
       ].concat(ARC_GIS_ENDPOINTS),
-      reefGuideAPIEndpoint: reefGuideApi.endpoint,
       webApiEndpoint: webAPI.endpoint
     });
 
@@ -232,8 +210,14 @@ export class ReefguideStack extends cdk.Stack {
       },
       workers: [
         {
-          // This worker handles both tests and suitability assessments
-          jobTypes: [JobType.SUITABILITY_ASSESSMENT, JobType.REGIONAL_ASSESSMENT, JobType.TEST],
+          // This worker handles both tests and suitability assessments, as well
+          // as some misc jobs
+          jobTypes: [
+            JobType.SUITABILITY_ASSESSMENT,
+            JobType.REGIONAL_ASSESSMENT,
+            JobType.TEST,
+            JobType.DATA_SPECIFICATION_UPDATE
+          ],
           // This specifies the image to be used - should be in the full format
           // i.e. "ghcr.io/open-aims/reefguideapi.jl/reefguide-src:latest"
           workerImage: 'ghcr.io/open-aims/reefguideworker.jl/reefguide-worker:latest',
@@ -261,12 +245,12 @@ export class ReefguideStack extends cdk.Stack {
 
           // Mount up the reefguide API shared storage
           efsMounts: {
-            efsReadWrite: [reefGuideApi.efs],
+            efsReadWrite: [networking.efs],
             volumes: [
               {
                 name: 'efs-volume',
                 efsVolumeConfiguration: {
-                  fileSystemId: reefGuideApi.efs.fileSystemId,
+                  fileSystemId: networking.efs.fileSystemId,
                   rootDirectory: '/data/reefguide',
                   transitEncryption: 'ENABLED',
                   authorizationConfig: { iam: 'ENABLED' }

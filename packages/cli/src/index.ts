@@ -179,7 +179,7 @@ class AdminCLI {
 // Create CLI program
 const program = new Command();
 
-program.name('ReefGuide Admin').description('ReefGuide Admin CLI Tool').version('0.1.0');
+program.name('reefguide-cli').description('ReefGuide Admin CLI Tool').version('0.1.0');
 
 program
   .command('data-spec-reload')
