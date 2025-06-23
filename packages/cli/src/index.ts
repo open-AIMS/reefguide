@@ -4,12 +4,18 @@ import { Command } from 'commander';
 import axios, { AxiosInstance } from 'axios';
 import * as dotenv from 'dotenv';
 import { read } from 'read';
-import { CreateJobResponse, JobDetailsResponse, LoginInput, LoginResponse } from '@reefguide/types';
+import {
+  CreateJobResponse,
+  CriteriaRangeOutput,
+  JobDetailsResponse,
+  ListRegionsResponse,
+  LoginInput,
+  LoginResponse,
+  RegionalCriteria
+} from '@reefguide/types';
 
 // Load environment variables
 dotenv.config();
-
-// TODO move these into @reefguide/types
 
 class AdminCLI {
   private apiClient: AxiosInstance;
@@ -152,6 +158,104 @@ class AdminCLI {
     }
   }
 
+  // Get all available regions
+  private async getRegions(): Promise<ListRegionsResponse> {
+    try {
+      const response = await this.apiClient.get<ListRegionsResponse>(
+        `${this.baseUrl}/admin/regions`
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        throw new Error('Unauthorized - invalid token or insufficient permissions');
+      }
+      throw new Error(`Failed to fetch regions: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  // Get criteria for a specific region
+  private async getCriteriaForRegion(regionName: string): Promise<CriteriaRangeOutput> {
+    try {
+      const response = await this.apiClient.get<CriteriaRangeOutput>(
+        `${this.baseUrl}/admin/criteria/${regionName}/ranges`
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error(`Region '${regionName}' not found`);
+      }
+      if (error.response?.status === 401) {
+        throw new Error('Unauthorized - invalid token or insufficient permissions');
+      }
+      throw new Error(
+        `Failed to fetch criteria for region ${regionName}: ${error.response?.data?.message || error.message}`
+      );
+    }
+  }
+
+  // View current data specification
+  async viewDataSpec(): Promise<void> {
+    try {
+      // Get API endpoint
+      this.baseUrl = await this.getApiEndpoint();
+
+      // Get credentials
+      const { username, password } = await this.getCredentials();
+
+      // Login
+      await this.login(username, password);
+
+      console.log('📋 Fetching current data specification...\n');
+
+      // Get all regions
+      const regionsData = await this.getRegions();
+
+      if (regionsData.regions.length === 0) {
+        console.log('ℹ️  No regions found in the database.');
+        return;
+      }
+
+      console.log(`Found ${regionsData.regions.length} region(s):\n`);
+
+      // For each region, get and display criteria
+      for (const region of regionsData.regions) {
+        console.log(`🌊 Region: ${region.display_name} (${region.name})`);
+        if (region.description) {
+          console.log(`   Description: ${region.description}`);
+        }
+        console.log(`   Criteria count: ${region.criteria_count}\n`);
+
+        if (region.criteria_count > 0) {
+          try {
+            const criteria = await this.getCriteriaForRegion(region.name);
+
+            Object.entries(criteria).forEach(([criteriaName, details]) => {
+              console.log(`   📊 ${details.display_title} (${criteriaName})`);
+              if (details.display_subtitle) {
+                console.log(`      ${details.display_subtitle}`);
+              }
+              console.log(
+                `      Range: ${details.min_val} to ${details.max_val}${details.units ? ` ${details.units}` : ''}`
+              );
+              console.log(
+                `      Default: ${details.default_min_val} to ${details.default_max_val}${details.units ? ` ${details.units}` : ''}`
+              );
+              console.log(`      Payload prefix: ${details.payload_property_prefix}`);
+              console.log('');
+            });
+          } catch (error: any) {
+            console.log(`   ❌ Error fetching criteria: ${error.message}\n`);
+          }
+        }
+
+        console.log('─'.repeat(60) + '\n');
+      }
+    } catch (error: any) {
+      console.error(`❌ Error: ${error.message}`);
+      process.exit(1);
+    }
+  }
+
   // Main command function
   async dataSpecReload(): Promise<void> {
     try {
@@ -190,6 +294,14 @@ program
     console.log('🔄 Starting data specification process...');
     await cli.dataSpecReload();
     console.log('✅ Data specification reload process completed successfully.');
+  });
+
+program
+  .command('regions')
+  .description('Lists out regions and their criteria ranges')
+  .action(async () => {
+    const cli = new AdminCLI();
+    await cli.viewDataSpec();
   });
 
 // Parse command line arguments

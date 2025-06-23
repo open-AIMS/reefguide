@@ -313,3 +313,15 @@ export const dataSpecificationUpdateResponseSchema = z.object({
   })
 });
 export type DataSpecificationUpdateResponse = z.infer<typeof dataSpecificationUpdateResponseSchema>;
+
+export const listRegionsResponseSchema = z.object({
+  regions: z.array(
+    z.object({
+      name: z.string(),
+      display_name: z.string(),
+      description: z.string().nullable(),
+      criteria_count: z.number()
+    })
+  )
+});
+export type ListRegionsResponse = z.infer<typeof listRegionsResponseSchema>;

@@ -4,6 +4,7 @@ import {
   dataSpecificationUpdateInputSchema,
   DataSpecificationUpdateRequestResponse,
   DataSpecificationUpdateResponse,
+  ListRegionsResponse,
   UpdateCriteriaInput
 } from '@reefguide/types';
 import express, { Response, Router } from 'express';
@@ -245,6 +246,41 @@ router.get(
     }
   }
 );
+
+/**
+ * Get all available regions with basic info
+ */
+router.get(
+  '/regions',
+  passport.authenticate('jwt', { session: false }),
+  async (req, res: Response<ListRegionsResponse>) => {
+    try {
+      const regions = await prisma.region.findMany({
+        include: {
+          _count: {
+            select: { criteria: true }
+          }
+        },
+        orderBy: { name: 'asc' }
+      });
+
+      const formattedRegions = regions.map(region => ({
+        name: region.name,
+        display_name: region.display_name,
+        description: region.description,
+        criteria_count: region._count.criteria
+      }));
+
+      res.json({ regions: formattedRegions });
+    } catch (error) {
+      throw new InternalServerError(
+        'Failed to fetch regions. Error: ' + error,
+        error as Error
+      );
+    }
+  }
+);
+
 
 /**
  * Forces the DB to perform its seed initialisation
