@@ -1,4 +1,5 @@
 import { prisma, RefreshToken } from '@reefguide/db';
+import { RefreshTokenContents, RefreshTokenContentsSchema } from '@reefguide/types';
 import { NextFunction } from 'express';
 import { z } from 'zod';
 import {
@@ -6,7 +7,6 @@ import {
   InvalidRefreshTokenException,
   UnauthorizedException
 } from '../exceptions';
-import { RefreshTokenContents, RefreshTokenContentsSchema } from '../types/auth';
 
 /**
  * is the user an admin?

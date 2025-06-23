@@ -1,12 +1,12 @@
 {
-    "name": "@reefguide/example-worker",
+    "name": "@reefguide/cli",
     "version": "0.1",
-    "description": "Example worker implementation for ReefGuide job system.",
-    "main": "src/index.ts",
+    "description": "Work in progress CLI for ReefGuide",
     "scripts": {
-        "start": "env-cmd ts-node --files src/index.ts",
-        "watch": "tsc -w",
         "build": "tsc",
+        "prestart" : "pnpm run build",
+        "start": "node build/src/index.js",
+        "watch": "tsc -w",
         "lint": "gts lint",
         "type-check": "tsc --noEmit",
         "format:write": "prettier --write \"{src,test}/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
@@ -20,11 +20,12 @@
     "dependencies": {
         "@reefguide/db": "workspace:*",
         "@reefguide/types": "workspace:*",
-        "axios": "^1.7.7",
+        "axios": "^1.9.0",
+        "commander": "^14.0.0",
+        "dotenv": "^16.5.0",
         "env-cmd": "^10.1.0",
-        "express": "^4.21.1",
         "jwt-decode": "^4.0.0",
-        "zod": "^3.23.8"
+        "read": "^4.1.0"
     },
     "devDependencies": {
         "@types/express": "^4.17.21",

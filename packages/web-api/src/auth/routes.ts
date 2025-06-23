@@ -1,9 +1,4 @@
 import { prisma } from '@reefguide/db';
-import bcryptjs from 'bcryptjs';
-import express, { Request, Response, Router } from 'express';
-import { processRequest } from 'zod-express-middleware';
-import * as Exceptions from '../exceptions';
-import { registerUser } from '../services/auth';
 import {
   LoginInputSchema,
   LoginResponse,
@@ -12,7 +7,12 @@ import {
   RegisterResponse,
   TokenInputSchema,
   TokenResponse
-} from '../types/auth';
+} from '@reefguide/types';
+import bcryptjs from 'bcryptjs';
+import express, { Request, Response, Router } from 'express';
+import { processRequest } from 'zod-express-middleware';
+import * as Exceptions from '../exceptions';
+import { registerUser } from '../services/auth';
 import { generateRefreshToken, signJwt } from './jwtUtils';
 import { passport } from './passportConfig';
 import {

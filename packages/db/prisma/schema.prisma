@@ -99,9 +99,14 @@ enum StorageScheme {
 }
 
 enum JobType {
+    // An example test job - doesn't do anything
     TEST
+    // Performs the regional suitability assessment
     SUITABILITY_ASSESSMENT
+    // Performs the regional assessment
     REGIONAL_ASSESSMENT
+    // Updates the data specification
+    DATA_SPECIFICATION_UPDATE
 }
 
 enum JobStatus {
@@ -205,4 +210,63 @@ model JobResult {
     storage_uri    String
     // Optional metadata about the results
     metadata       Json?
+}
+
+// Criteria for regional and suitability assessments
+
+model Region {
+    id           Int      @id @default(autoincrement())
+    name         String   @unique
+    display_name String
+    description  String?
+    created_at   DateTime @default(now())
+    updated_at   DateTime @updatedAt
+
+    // Relations
+    criteria RegionalCriteria[]
+
+    @@map("regions")
+}
+
+model Criteria {
+    id               Int      @id @default(autoincrement())
+    name             String   @unique
+    display_title    String
+    display_subtitle String?
+    units            String?
+    min_tooltip      String?
+    max_tooltip      String?
+    payload_prefix   String
+    created_at       DateTime @default(now())
+    updated_at       DateTime @updatedAt
+
+    // Relations
+    regionalCriteria RegionalCriteria[]
+
+    @@map("criteria")
+}
+
+model RegionalCriteria {
+    id          Int @id @default(autoincrement())
+    region_id   Int
+    criteria_id Int
+
+    // Actual bounds for this criteria in this region
+    min_val Float
+    max_val Float
+
+    // Default bounds (what users typically use)
+    default_min_val Float
+    default_max_val Float
+
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+
+    // Relations
+    region   Region   @relation(fields: [region_id], references: [id], onDelete: Cascade)
+    criteria Criteria @relation(fields: [criteria_id], references: [id], onDelete: Cascade)
+
+    // Ensure each criteria appears only once per region
+    @@unique([region_id, criteria_id])
+    @@map("regional_criteria")
 }

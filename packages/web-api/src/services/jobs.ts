@@ -86,6 +86,14 @@ export const jobTypeSchemas: JobSchemaMap = {
         cog_path: z.string().describe('Relative location of the COG file in the output directory')
       })
       .strict()
+  },
+  DATA_SPECIFICATION_UPDATE: {
+    // Empty input spec
+    input: z.object({
+      cache_buster: z.number().optional().describe('Cache buster to force update')
+    }),
+    // Empty output spec - results are lodged directly
+    result: z.object({}).strict()
   }
 };
 
