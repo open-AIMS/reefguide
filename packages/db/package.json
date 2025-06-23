@@ -5,6 +5,7 @@
     "main": "dist/src/index.js",
     "types": "dist/src/index.d.ts",
     "scripts": {
+        "prebuild": "prisma generate",
         "build": "tsc",
         "generate": "prisma generate",
         "studio": "prisma studio",
