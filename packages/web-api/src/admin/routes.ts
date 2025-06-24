@@ -28,12 +28,16 @@ router.post(
   passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
   async (req, res: Response<DataSpecificationUpdateRequestResponse>) => {
+    console.log('Received request to create data specification update job');
     if (!req.user) {
       throw new InternalServerError('User object was not available after authorization.');
     }
 
+    console.log('User authenticated:', req.user.email);
     const dataSpecService = getDataSpecificationService();
+    console.log('Service setup');
     const { jobId, message } = await dataSpecService.createDataSpecificationUpdateJob();
+    console.log('Job created with ID:', jobId);
 
     res.status(200).json({
       jobId,

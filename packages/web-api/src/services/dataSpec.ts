@@ -11,9 +11,13 @@ export interface RequestDataSpecificationJobResult {
 
 export class DataSpecificationService {
   private jobService: JobService;
+  private adminEmail: string = config.creds.adminUsername;
 
-  constructor() {
+  constructor({ adminEmail = undefined }: { adminEmail?: string } = {}) {
     this.jobService = new JobService();
+    if (adminEmail) {
+      this.adminEmail = adminEmail;
+    }
   }
 
   /**
@@ -60,7 +64,7 @@ export class DataSpecificationService {
     try {
       const adminUser = await prisma.user.findUnique({
         where: {
-          email: config.creds.adminUsername
+          email: this.adminEmail
         },
         select: {
           id: true,
