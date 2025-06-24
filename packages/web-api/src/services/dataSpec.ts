@@ -3,6 +3,12 @@ import { JobService } from './jobs';
 import { config } from '../config';
 import { InternalServerError } from '../exceptions';
 
+export interface RequestDataSpecificationJobResult {
+  jobId: number;
+  cached: boolean;
+  message: string;
+}
+
 export class DataSpecificationService {
   private jobService: JobService;
 
@@ -14,11 +20,7 @@ export class DataSpecificationService {
    * Creates a data specification update job
    * @returns Object containing job details and whether it was cached
    */
-  public async createDataSpecificationUpdateJob(): Promise<{
-    jobId: number;
-    cached: boolean;
-    message: string;
-  }> {
+  public async createDataSpecificationUpdateJob(): Promise<RequestDataSpecificationJobResult> {
     try {
       // Get the admin user using config credentials
       const adminUser = await this.getConfigAdminUser();
@@ -69,18 +71,18 @@ export class DataSpecificationService {
 
       if (!adminUser) {
         console.error(`Admin user not found: ${config.creds.adminUsername}`);
-        return null;
+        return undefined;
       }
 
       if (!adminUser.roles.includes('ADMIN')) {
         console.error(`User ${config.creds.adminUsername} does not have ADMIN role`);
-        return null;
+        return undefined;
       }
 
       return adminUser;
     } catch (error) {
       console.error('Error finding config admin user:', error);
-      return null;
+      return undefined;
     }
   }
 }

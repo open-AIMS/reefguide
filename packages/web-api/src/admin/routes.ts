@@ -204,6 +204,9 @@ router.get(
     try {
       const region = await prisma.region.findUnique({
         where: { name: regionName },
+        // The structure is region -> regional_criteria[] -> criteria, here we
+        // request that we explore this link so that the returned object has
+        // already traversed these links
         include: {
           criteria: {
             include: {
@@ -256,6 +259,7 @@ router.get(
   async (_req, res: Response<ListRegionsResponse>) => {
     try {
       const regions = await prisma.region.findMany({
+        // Include the count of criteria for each region
         include: {
           _count: {
             select: { criteria: true }
