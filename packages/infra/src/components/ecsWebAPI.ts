@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
-import { Duration, aws_iam as iam, aws_secretsmanager as sm } from 'aws-cdk-lib';
+import { Duration } from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as sm from 'aws-cdk-lib/aws-secretsmanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';

@@ -253,7 +253,7 @@ router.get(
 router.get(
   '/regions',
   passport.authenticate('jwt', { session: false }),
-  async (req, res: Response<ListRegionsResponse>) => {
+  async (_req, res: Response<ListRegionsResponse>) => {
     try {
       const regions = await prisma.region.findMany({
         include: {
@@ -285,7 +285,7 @@ router.get(
   '/init',
   passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
-  async (req, res) => {
+  async (_req, res) => {
     // if the user is admin, allow forceful re-init in case of out of date admin
     // or other service creds
     await initialiseAdmins();
@@ -304,7 +304,7 @@ router.post(
   passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
   processRequest({}),
-  async (req, res) => {
+  async (_req, _res) => {
     throw new BadRequestException('Deprecated endpoint.');
   }
 );
@@ -313,7 +313,7 @@ router.get(
   '/status',
   passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
-  async (req, res: Response) => {
+  async (_req, _res: Response) => {
     throw new BadRequestException('Deprecated endpoint.');
   }
 );
@@ -322,7 +322,7 @@ router.post(
   '/redeploy',
   passport.authenticate('jwt', { session: false }),
   assertUserIsAdminMiddleware,
-  async (req, res) => {
+  async (_req, _res) => {
     throw new BadRequestException('Deprecated endpoint.');
   }
 );

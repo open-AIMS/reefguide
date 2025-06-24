@@ -10,8 +10,7 @@ import {
   JobDetailsResponse,
   ListRegionsResponse,
   LoginInput,
-  LoginResponse,
-  RegionalCriteria
+  LoginResponse
 } from '@reefguide/types';
 
 // Load environment variables
@@ -20,7 +19,7 @@ dotenv.config();
 class AdminCLI {
   private apiClient: AxiosInstance;
   private token: string | null = null;
-  private baseUrl: string = '';
+  private baseUrl = '';
 
   constructor() {
     this.apiClient = axios.create({
@@ -32,7 +31,7 @@ class AdminCLI {
   }
 
   // Utility function to prompt for input
-  private async promptInput(question: string, hideInput: boolean = false): Promise<string> {
+  private async promptInput(question: string, hideInput = false): Promise<string> {
     return read<string>({ prompt: question, silent: hideInput }).then(result => {
       return (result || '').trim();
     });
@@ -118,7 +117,6 @@ class AdminCLI {
     console.log(`📊 Monitoring job ${jobId}...`);
 
     const startTime = Date.now();
-    let lastStatus = '';
 
     while (true) {
       try {
@@ -130,7 +128,6 @@ class AdminCLI {
 
         const elapsed = Math.round((Date.now() - startTime) / 1000);
         console.log(`[${elapsed}s] Job status: ${currentStatus}`);
-        lastStatus = currentStatus;
 
         // Check if job is complete
         if (currentStatus === 'SUCCEEDED') {
