@@ -273,14 +273,10 @@ router.get(
 
       res.json({ regions: formattedRegions });
     } catch (error) {
-      throw new InternalServerError(
-        'Failed to fetch regions. Error: ' + error,
-        error as Error
-      );
+      throw new InternalServerError('Failed to fetch regions. Error: ' + error, error as Error);
     }
   }
 );
-
 
 /**
  * Forces the DB to perform its seed initialisation

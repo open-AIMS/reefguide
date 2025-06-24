@@ -105,7 +105,7 @@ export function getConfig(): Config {
       directUrl: env.DIRECT_URL
     },
     aws: {
-      region: env.AWS_REGION,
+      region: env.AWS_REGION
     },
     s3: {
       minio,
