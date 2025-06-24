@@ -11,53 +11,6 @@ export const ReefGuideFrontendConfigSchema = z.object({
 });
 export type ReefGuideFrontendConfig = z.infer<typeof ReefGuideFrontendConfigSchema>;
 
-export const ReefGuideAPIConfigSchema = z.object({
-  /** ReefGuideAPI.jl docker image */
-  reefGuideDockerImage: z.string(),
-  /** ReefGuideAPI.jl docker image */
-  port: z.number().default(8000),
-  /** reefGuide docker image e.g. latest, sha-123456 */
-  reefGuideDockerImageTag: z.string().default('latest'),
-  /** The number of CPU units for the Fargate task */
-  cpu: z.number().int().positive(),
-  /** The amount of memory (in MiB) for the Fargate task */
-  memory: z.number().int().positive(),
-  /** Auto scaling configuration for the reefGuide service */
-  autoScaling: z.object({
-    // Is auto scaling enabled?
-    enabled: z.boolean().default(false),
-    /** The minimum number of tasks to run */
-    minCapacity: z.number().int().positive().default(1),
-    /** The maximum number of tasks that can be run */
-    maxCapacity: z.number().int().positive().default(3),
-    /** The target CPU utilization percentage for scaling */
-    targetCpuUtilization: z.number().min(0).max(100).default(70),
-    /** The target memory utilization percentage for scaling */
-    targetMemoryUtilization: z.number().min(0).max(100).default(95),
-    /** The cooldown period (in seconds) before allowing another scale in action */
-    scaleInCooldown: z.number().int().nonnegative().default(300),
-    /** The cooldown period (in seconds) before allowing another scale out action */
-    scaleOutCooldown: z.number().int().nonnegative().default(150)
-  }),
-  // Optional memory alerting - include configuration if desired
-  memoryAlerting: z
-    .object({
-      /** Email address to send notifications to */
-      emailAddress: z.string().email('Must provide a valid email address as email alert target.'),
-      /** Memory threshold percentage (0-100) */
-      averageThreshold: z.number().min(0).max(100).default(85),
-      /** Memory threshold percentage (0-100) */
-      maxThreshold: z.number().min(0).max(100).default(95),
-      /** Number of consecutive evaluation periods that must breach the
-       * threshold before alerting */
-      evaluationPeriods: z.number().positive().default(2),
-      /** Period in seconds over which to calculate the average */
-      metricPeriod: z.number().positive().default(60)
-    })
-    .optional()
-});
-export type ReefGuideAPIConfig = z.infer<typeof ReefGuideAPIConfigSchema>;
-
 // These are the values needed inside the API secret object - they are validated
 // at runtime.
 export const ApiSecretConfigSchema = z.object({
@@ -115,8 +68,6 @@ export type WebAPIConfig = z.infer<typeof WebAPIConfigSchema>;
 const DomainsConfigSchema = z.object({
   /** The base domain for all services. Note: Apex domains are not currently supported. */
   baseDomain: z.string(),
-  /** The subdomain prefix for the ECS ReefGuideAPI service */
-  reefGuideAPI: z.string().default('guide-api'),
   /** The subdomain prefix for the Web REST API in this repo */
   webAPI: z.string().default('web-api'),
   /** The subdomain prefix for the frontend app */
@@ -157,10 +108,6 @@ export const DeploymentConfigSchema = z.object({
 
   // Configuration for the web API deployment (this repo)
   webAPI: WebAPIConfigSchema,
-
-  // Configuration for the ReefGuideAPI deployment
-  // (https://github.com/open-AIMS/ReefGuideAPI.jl)
-  reefGuideAPI: ReefGuideAPIConfigSchema,
 
   // Frontend
   frontend: ReefGuideFrontendConfigSchema,

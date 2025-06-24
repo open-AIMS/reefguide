@@ -14,8 +14,6 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   DIRECT_URL: z.string().url(),
   AWS_REGION: z.string(),
-  ECS_CLUSTER_NAME: z.string(),
-  ECS_SERVICE_NAME: z.string(),
   S3_BUCKET_NAME: z.string(),
   S3_URL_EXPIRY_SECONDS: z.number().default(3600),
   S3_MAX_FILES: z.number().default(10),
@@ -48,10 +46,6 @@ export interface Config {
   };
   aws: {
     region: string;
-    ecs: {
-      clusterName: string;
-      serviceName: string;
-    };
   };
   s3: {
     minio?: MinioConfig;
@@ -111,11 +105,7 @@ export function getConfig(): Config {
       directUrl: env.DIRECT_URL
     },
     aws: {
-      region: env.AWS_REGION,
-      ecs: {
-        clusterName: env.ECS_CLUSTER_NAME,
-        serviceName: env.ECS_SERVICE_NAME
-      }
+      region: env.AWS_REGION
     },
     s3: {
       minio,

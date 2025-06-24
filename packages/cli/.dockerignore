@@ -1,0 +1,17 @@
+# ignore everything
+* 
+*/ 
+.*
+
+
+# Include specific folders/files
+
+# Include package*
+!package.json
+!package-lock.json
+!**/package.json
+!**/package-lock.json
+!tsconfig.json
+
+# We just need src
+!src/

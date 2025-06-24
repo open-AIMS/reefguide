@@ -1,8 +1,13 @@
 import { ICertificate } from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as efs from 'aws-cdk-lib/aws-efs';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import { IVpc, Vpc } from 'aws-cdk-lib/aws-ec2';
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Construct } from 'constructs';
+import { RemovalPolicy } from 'aws-cdk-lib';
 
 /**
  * Properties for the SharedBalancers construct
@@ -160,6 +165,15 @@ export class ReefGuideNetworking extends Construct {
   /** The shared Application Load Balancer */
   public readonly sharedBalancer: SharedBalancer;
 
+  /** The shared ECS cluster */
+  public readonly cluster: ecs.Cluster;
+
+  /** A bucket used for intermediary data transfer */
+  public readonly dataBucket: s3.Bucket;
+
+  /** Creates a file system - exposed here */
+  public readonly efs: efs.FileSystem;
+
   /**
    * Creates a new ReefGuideNetworking instance.
    * @param scope The scope in which to define this construct
@@ -177,6 +191,10 @@ export class ReefGuideNetworking extends Construct {
       natGateways: 0
     });
 
+    this.cluster = new ecs.Cluster(this, 'reef-guide-cluster', {
+      vpc: this.vpc
+    });
+
     // Create the shared ALB - public facing
     this.sharedBalancer = new SharedBalancer(this, 'shared-balancer', {
       vpc: this.vpc,
@@ -184,5 +202,108 @@ export class ReefGuideNetworking extends Construct {
       isPublic: true,
       subnetType: ec2.SubnetType.PUBLIC
     });
+
+    // ========================
+    // SERVICE INSTANCE FOR EFS
+    // ========================
+
+    // EC2 Instance for EFS management - be sure to shut down when not using
+    const instanceType = ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MEDIUM);
+
+    // Use Ubuntu image as it is a bit easier for users
+    const machineImage = ec2.MachineImage.lookup({
+      // AMI: ami-0892a9c01908fafd1
+      name: 'ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20240801'
+    });
+
+    // ===================
+    // DATA TRANSFER SETUP
+    // ===================
+
+    // Create S3 Bucket - setup to be transient
+    this.dataBucket = new s3.Bucket(this, 'job-transfer-bucket', {
+      versioned: false,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      removalPolicy: RemovalPolicy.RETAIN,
+      autoDeleteObjects: false
+    });
+
+    // Create EFS File System
+    const fileSystem = new efs.FileSystem(this, 'efs', {
+      vpc: this.vpc,
+      lifecyclePolicy: efs.LifecyclePolicy.AFTER_14_DAYS,
+      performanceMode: efs.PerformanceMode.GENERAL_PURPOSE,
+      throughputMode: efs.ThroughputMode.BURSTING,
+      encrypted: true,
+      removalPolicy: RemovalPolicy.RETAIN
+    });
+    this.efs = fileSystem;
+
+    // Role for EC2 to use
+    const efsManagementRole = new iam.Role(this, 'EFSManagementRole', {
+      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')
+    });
+
+    // Allow SSM connection
+    efsManagementRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore')
+    );
+
+    // Allow EFS operations
+    efsManagementRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonElasticFileSystemClientReadWriteAccess')
+    );
+
+    // Allow EFS read write
+    fileSystem.grantReadWrite(efsManagementRole);
+
+    // grant rw for bucket
+    this.dataBucket.grantReadWrite(efsManagementRole);
+
+    const userData = ec2.UserData.forLinux();
+    const scriptLocation = '/home/ubuntu/mountefs.sh';
+    userData.addCommands(
+      // update etc
+      'sudo apt -y update',
+      // get deps
+      'sudo apt -y install unzip git binutils rustc cargo pkg-config libssl-dev ranger',
+      // efs utils install
+      'git clone https://github.com/aws/efs-utils',
+      'cd efs-utils',
+      './build-deb.sh',
+      'sudo apt -y install ./build/amazon-efs-utils*deb',
+      'cd home/ubuntu',
+      // setup reefguide mount in /efs of ubuntu user
+      'mkdir /home/ubuntu/efs',
+      `sudo mount -t efs -o tls,iam ${fileSystem.fileSystemId} /home/ubuntu/efs/`,
+
+      // Leave a script to help mount in the future
+      `touch ${scriptLocation} && chmod +x ${scriptLocation} && echo "sudo mount -t efs -o tls,iam ${fileSystem.fileSystemId} /home/ubuntu/efs/" > ${scriptLocation}`,
+
+      // Install AWS CLI
+      'curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"',
+      'unzip awscliv2.zip',
+      'sudo ./aws/install'
+    );
+
+    const efsManagementInstance = new ec2.Instance(this, 'EFSManagementInstance', {
+      vpc: this.vpc,
+      instanceType: instanceType,
+      allowAllOutbound: true,
+      vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
+      machineImage: machineImage,
+      userData: userData,
+      role: efsManagementRole,
+      associatePublicIpAddress: true,
+      blockDevices: [
+        {
+          deviceName: '/dev/xvda',
+          volume: ec2.BlockDeviceVolume.ebs(50)
+        }
+      ]
+    });
+
+    // Allow EC2 instance to access EFS
+    fileSystem.connections.allowDefaultPortFrom(efsManagementInstance);
   }
 }

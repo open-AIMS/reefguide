@@ -30,7 +30,6 @@ export interface ReefGuideFrontendProps {
   buildPath?: string;
   /** Endpoints for services needed */
   webApiEndpoint: string;
-  reefGuideAPIEndpoint: string;
 }
 
 /**
@@ -105,7 +104,6 @@ export class ReefGuideFrontend extends Construct {
     // Build environment variables from config
     const environment: { [key: string]: string } = {
       NODE_ENV: 'production',
-      NG_APP_REEFGUIDE_API_URL: props.reefGuideAPIEndpoint,
       NG_APP_WEB_API_URL: props.webApiEndpoint,
       NG_APP_ADRIA_API_URL: 'https://fake.com'
     };

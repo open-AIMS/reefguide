@@ -1,4 +1,5 @@
 import { prisma, UserAction, UserRole } from '@reefguide/db';
+import { UserDetailsSchema } from '@reefguide/types';
 import express, { Response, Router } from 'express';
 import { z } from 'zod';
 import { processRequest } from 'zod-express-middleware';
@@ -6,7 +7,6 @@ import { passport } from '../auth/passportConfig';
 import { assertUserIsAdminMiddleware } from '../auth/utils';
 import { handlePrismaError, NotFoundException } from '../exceptions';
 import { changePassword, registerUser } from '../services/auth';
-import { UserDetailsSchema } from '../types/auth';
 
 require('express-async-errors');
 export const router: Router = express.Router();

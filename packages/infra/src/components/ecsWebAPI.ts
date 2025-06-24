@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
-import { Duration, aws_iam as iam, aws_secretsmanager as sm } from 'aws-cdk-lib';
+import { Duration } from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as sm from 'aws-cdk-lib/aws-secretsmanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
@@ -27,14 +28,10 @@ export interface ECSWebAPIProps {
   config: WebAPIConfig;
   /** The VPC to put this service into */
   vpc: ec2.IVpc;
-  /** Shared balancer to use */
-  sharedBalancer: SharedBalancer;
   /** The ECS cluster to put this service into */
   cluster: ecs.ICluster;
-  /** The name of the ECS cluster service which hosts the Julia compute nodes */
-  reefguideApiClusterName: string;
-  /** The name of the ECS service which hosts the Julia compute nodes */
-  reefguideApiServiceName: string;
+  /** The shared application load balancer construct */
+  sharedBalancer: SharedBalancer;
   /** Creds to initialise for the manager and worker services */
   managerCreds: sm.Secret;
   workerCreds: sm.Secret;
@@ -130,10 +127,6 @@ export class ECSWebAPI extends Construct {
         // Fully qualified domain for API domain - this defines the JWT iss
         API_DOMAIN: this.endpoint,
         AWS_REGION: cdk.Stack.of(this).region,
-
-        // ECS cluster of ReefGuideAPI
-        ECS_CLUSTER_NAME: props.reefguideApiClusterName,
-        ECS_SERVICE_NAME: props.reefguideApiServiceName,
 
         // Storage bucket name
         S3_BUCKET_NAME: props.storageBucket.bucketName
@@ -269,29 +262,5 @@ export class ECSWebAPI extends Construct {
       value: this.endpoint,
       description: 'Web REST API endpoint'
     });
-  }
-
-  /**
-   * Registers an ECS service with this API by granting the necessary permissions
-   * to the ECS service to manage the service
-   * @param service The ECS Fargate service to register
-   */
-  public registerCluster(service: ecs.FargateService) {
-    // Create a policy that allows the Lambda to describe and update the ECS service
-    const ecsPolicy = new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        // Permissions to get service status
-        'ecs:DescribeServices',
-        'ecs:ListServices',
-        // Permissions to modify service
-        'ecs:UpdateService'
-      ],
-      // Scope the permissions to just this specific service and its cluster
-      resources: [service.serviceArn, service.cluster.clusterArn]
-    });
-
-    // Add the policy to the service's role
-    this.taskDefinition.addToTaskRolePolicy(ecsPolicy);
   }
 }

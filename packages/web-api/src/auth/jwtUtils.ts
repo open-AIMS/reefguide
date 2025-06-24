@@ -1,8 +1,8 @@
 import { prisma } from '@reefguide/db';
+import { JwtContents, RefreshTokenContents } from '@reefguide/types';
 import { randomUUID } from 'crypto';
 import jwt, { Algorithm } from 'jsonwebtoken';
 import { config } from '../config';
-import { JwtContents, RefreshTokenContents } from '../types/auth';
 import { base64encode, encodeRefreshToken } from './utils';
 
 // Key signing and validation parameters

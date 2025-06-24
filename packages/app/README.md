@@ -98,7 +98,6 @@ This project uses [@ngx-env/builder](https://github.com/chihab/dotenv-run/tree/m
 
 **Available Variables:**
 
-- `NG_APP_REEFGUIDE_API_URL` - ReefGuide API endpoint
 - `NG_APP_ADRIA_API_URL` - Adria API endpoint
 - `NG_APP_WEB_API_URL` - Web API endpoint
 
@@ -106,7 +105,7 @@ This project uses [@ngx-env/builder](https://github.com/chihab/dotenv-run/tree/m
 
 ```typescript
 // In your components/services
-const apiUrl = import.meta.env.NG_APP_REEFGUIDE_API_URL;
+const apiUrl = import.meta.env.NG_APP_WEB_API_URL;
 ```
 
 **Note:** Environment variables are embedded at build time and visible in the compiled application. Do not store secrets here.
