@@ -39,7 +39,7 @@ jobs:
           namespace: ${{ vars.CDK_DEPLOY_NAMESPACE }}
           environment: ${{ vars.CDK_DEPLOY_ENVIRONMENT }}
           branch: ${{ vars.CDK_DEPLOY_BRANCH }}
-          config-repo-path: packages/infra/config_repo
+          config-repo-path: config_repo
       - name: Display AWS Target Details
         run: |
           echo "Deploying to:"
