@@ -1,5 +1,5 @@
 import { prisma, UserRole } from '@reefguide/db';
-import bcryptjs from 'bcryptjs';
+import bcryptjs from 'bcrypt';
 import { BadRequestException } from '../exceptions';
 
 /**
