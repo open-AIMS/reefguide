@@ -8,7 +8,7 @@ import {
   TokenInputSchema,
   TokenResponse
 } from '@reefguide/types';
-import bcryptjs from 'bcryptjs';
+import bcryptjs from 'bcrypt';
 import express, { Request, Response, Router } from 'express';
 import { processRequest } from 'zod-express-middleware';
 import * as Exceptions from '../exceptions';
