@@ -73,6 +73,9 @@ jobs:
             ${{ runner.os }}-pnpm-store-
       - name: Install dependencies
         run: pnpm install
+      - name: Build the infra package
+        run: |
+          pnpm exec turbo run build --filter=packages/infra
       - name: Install dependencies and run CDK deploy
         working-directory: packages/infra
         run: |
