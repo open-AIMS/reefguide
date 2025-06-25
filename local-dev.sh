@@ -19,6 +19,7 @@ REQUIRED_DOCKER_COMPOSE_VERSION="2.0.0"
 DB_READY_TIMEOUT=60
 MINIO_READY_TIMEOUT=60
 API_DIR="packages/web-api"
+DB_DIR="packages/db"
 S3_BUCKET_NAME="reefguide-dev"
 MINIO_ENDPOINT="http://localhost:9000"
 MINIO_ROOT_USER="minioadmin"
@@ -702,6 +703,12 @@ setup_database() {
 
 # Start development server
 start_dev_server() {
+    log_info "Generating Prisma client..."
+
+    cd "$DB_DIR"
+    pnpm run generate || error_exit "Failed to generate Prisma client"
+    cd - >/dev/null
+
     log_info "Starting development server..."
 
     # Use turbo if available, otherwise use pnpm
