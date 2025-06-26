@@ -39,7 +39,7 @@ require('express-async-errors');
 export const router: Router = express.Router();
 
 // All users are granted this role by default
-const baseRoles: UserRole[] = [UserRole.DEFAULT];
+export const BASE_ROLES: UserRole[] = [UserRole.DEFAULT];
 
 /**
  * Register a new user
@@ -56,7 +56,7 @@ router.post(
       const approval = await preApprovedUserService.use(email);
 
       const startingRoles = approval ? approval.roles : [];
-      for (const role of baseRoles) {
+      for (const role of BASE_ROLES) {
         if (!startingRoles.includes(role)) {
           startingRoles.push(role);
         }

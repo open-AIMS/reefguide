@@ -10,6 +10,7 @@ import { InvalidRefreshTokenException } from '../src/exceptions';
 import { JobService } from '../src/services/jobs';
 import { ListUserLogsResponse } from '../src/users/routes';
 import { adminToken, clearDbs, user1Email, user1Token, user2Token, userSetup } from './utils';
+import { BASE_ROLES } from '../src/auth/routes';
 
 afterAll(async () => {
   // clear when finished
@@ -1604,7 +1605,7 @@ describe('API', () => {
       const user = await prisma.user.findUnique({
         where: { id: res.body.userId }
       });
-      expect(user?.roles).toEqual(['ADMIN']);
+      expect(user?.roles).toEqual(['ADMIN'].concat(BASE_ROLES));
       expect(user?.email).toBe('admin-preapproved@example.com');
 
       // Verify pre-approval was marked as used
@@ -1626,11 +1627,11 @@ describe('API', () => {
 
       expect(res.body).toHaveProperty('userId');
 
-      // Verify user was created with base roles (empty array in this case)
+      // Verify user was created with base roles
       const user = await prisma.user.findUnique({
         where: { id: res.body.userId }
       });
-      expect(user?.roles).toEqual([]);
+      expect(user?.roles).toEqual(BASE_ROLES);
       expect(user?.email).toBe('regular-user@example.com');
     });
 
@@ -1705,14 +1706,11 @@ describe('API', () => {
         .set('Authorization', `Bearer ${loginRes.body.token}`)
         .expect(200);
 
-      expect(profileRes.body.user.roles).toEqual(['ADMIN']);
+      expect(profileRes.body.user.roles).toEqual(['ADMIN'].concat(BASE_ROLES));
       expect(profileRes.body.user.email).toBe('admin-preapproved@example.com');
     });
 
     it('should combine base roles with pre-approved roles (if base roles exist)', async () => {
-      // This test assumes you might have base roles in the future
-      // For now it just verifies the role merging logic works correctly
-
       const res = await request(app)
         .post('/api/auth/register')
         .send({
@@ -1725,11 +1723,8 @@ describe('API', () => {
         where: { id: res.body.userId }
       });
 
-      // Since baseRoles is empty, should just have the pre-approved roles
-      expect(user?.roles).toEqual(['ADMIN']);
-
-      // If you later add base roles, you can test that they get merged properly
-      // For example, if baseRoles = ['USER'], result should be ['ADMIN', 'USER'] or ['USER', 'ADMIN']
+      // Should have base roles and ADMIN
+      expect(user?.roles).toEqual(['ADMIN'].concat(BASE_ROLES));
     });
 
     it('should handle case-insensitive email matching for pre-approvals', async () => {
@@ -1755,7 +1750,7 @@ describe('API', () => {
       const user = await prisma.user.findUnique({
         where: { id: res.body.userId }
       });
-      expect(user?.roles).toEqual(['ADMIN']);
+      expect(user?.roles).toEqual(['ADMIN'].concat(BASE_ROLES));
 
       // Verify pre-approval was marked as used
       const preApproval = await prisma.preApprovedUser.findUnique({
