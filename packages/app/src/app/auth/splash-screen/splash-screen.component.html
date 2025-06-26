@@ -49,7 +49,7 @@
               novalidate>
 
           <!-- Email Field -->
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline" class="full-width form-field">
             <mat-label>Email Address</mat-label>
             <mat-icon matPrefix>email</mat-icon>
             <input matInput
@@ -72,7 +72,7 @@
           </mat-form-field>
 
           <!-- Password Field -->
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline" class="full-width form-field">
             <mat-label>Password</mat-label>
             <mat-icon matPrefix>lock</mat-icon>
             <input matInput
@@ -211,14 +211,29 @@
           </div>
         </div>
 
-        <!-- Logout Option -->
-        <div class="logout-section">
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button mat-raised-button
+                  color="accent"
+                  (click)="refreshSession()"
+                  [disabled]="isAuthenticating()"
+                  class="refresh-button"
+                  matTooltip="Refresh your session to get updated permissions">
+            <mat-progress-spinner *ngIf="isAuthenticating()"
+                                  diameter="16"
+                                  mode="indeterminate"
+                                  class="small-spinner">
+            </mat-progress-spinner>
+            <mat-icon *ngIf="!isAuthenticating()">refresh</mat-icon>
+            <span>{{ isAuthenticating() ? 'Refreshing...' : 'Refresh Access' }}</span>
+          </button>
+
           <button mat-stroked-button
                   color="primary"
                   (click)="authService.logout()"
                   class="logout-button">
             <mat-icon>logout</mat-icon>
-            Sign Out
+            <span>Sign Out</span>
           </button>
         </div>
       </mat-card-content>

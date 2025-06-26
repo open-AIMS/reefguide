@@ -57,6 +57,21 @@
 }
 
 // =====================================
+// Application Toolbar (if used)
+// =====================================
+
+.app-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  .toolbar-spacer {
+    flex: 1 1 auto;
+  }
+}
+
+// =====================================
 // Main Content Area
 // =====================================
 
@@ -77,15 +92,18 @@
 // =====================================
 
 .splash-overlay-component {
-  position: absolute;
+  position: fixed; // Changed from absolute to fixed
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw; // Use viewport units
+  height: 100vh; // Use viewport units
   z-index: 9999;
 
-  // Ensure splash is always on top
+  // Ensure splash is always on top and interactive
   pointer-events: all;
+
+  // Prevent the splash from being affected by parent transforms
+  transform: translateZ(0);
 }
 
 // =====================================
@@ -114,6 +132,15 @@
     &.splash-active.blur-background {
       // Less blur on mobile for better performance
       filter: blur(2px) brightness(0.8);
+    }
+  }
+
+  .app-main {
+    // Adjust for mobile toolbar height
+    height: calc(100vh - 56px);
+
+    .app-container:not(.has-toolbar) & {
+      height: 100vh;
     }
   }
 }
@@ -170,3 +197,24 @@
   transform: translateZ(0);
   will-change: opacity, transform;
 }
+
+// =====================================
+// Debug Styles (remove in production)
+// =====================================
+
+// Uncomment for debugging splash states
+/*
+.app-container::before {
+  content: attr(class);
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 10000;
+  font-family: monospace;
+}
+*/

@@ -1,25 +1,27 @@
-import { Component, inject, input, output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatDividerModule } from '@angular/material/divider';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { merge, take } from 'rxjs';
-import { AuthService } from '../auth.service';
-import { WebApiService } from '../../../api/web-api.service';
 import { extractErrorMessage } from '../../../api/api-util';
-import { UserAccessState, SplashConfig } from '../auth.types';
+import { WebApiService } from '../../../api/web-api.service';
+import { AuthService } from '../auth.service';
+import { SplashConfig, UserAccessState } from '../auth.types';
 
 type AuthMode = 'login' | 'register';
 type Credentials = { email: string; password: string };
 
 /**
+ * Splash Screen Component for MADAME Application
+ *
  * This component serves as the main entry point for user authentication and authorization.
  * It displays different panels based on the user's access state and handles the login/register flow.
  *
@@ -86,6 +88,12 @@ export class SplashScreenComponent {
   /** Whether password field is visible */
   hidePassword = signal(true);
 
+  /** Signal to track form validity - needed for computed to work properly */
+  private formValid = signal(false);
+
+  /** Signal to track form disabled state */
+  private formDisabled = signal(false);
+
   /**
    * Reactive form for login/register with validation
    */
@@ -94,12 +102,42 @@ export class SplashScreenComponent {
     password: new FormControl('', [Validators.required, Validators.minLength(8)])
   });
 
+  constructor() {
+    // Initialize form state signals
+    this.formValid.set(this.authForm.valid);
+    this.formDisabled.set(this.authForm.disabled);
+
+    // Subscribe to form changes and update signals
+    this.authForm.valueChanges.subscribe(() => {
+      this.formValid.set(this.authForm.valid);
+    });
+
+    this.authForm.statusChanges.subscribe(() => {
+      this.formValid.set(this.authForm.valid);
+      this.formDisabled.set(this.authForm.disabled);
+    });
+
+    // Effect to ensure form is enabled by default
+    effect(() => {
+      if (!this.isAuthenticating() && this.authForm.disabled) {
+        this.authForm.enable();
+        this.formDisabled.set(false);
+      }
+    });
+  }
+
   /**
    * Computed properties for template binding
    */
   isLoginMode = computed(() => this.authMode() === 'login');
   isRegisterMode = computed(() => this.authMode() === 'register');
-  canSubmit = computed(() => this.authForm.valid && !this.isAuthenticating());
+  canSubmit = computed(() => {
+    const formValid = this.formValid();
+    const notAuthenticating = !this.isAuthenticating();
+    const formEnabled = !this.formDisabled();
+
+    return formValid && notAuthenticating && formEnabled;
+  });
 
   /**
    * Get the appropriate title for the current state
@@ -133,8 +171,10 @@ export class SplashScreenComponent {
       case 'unauthenticated':
         return 'Please sign in to access the marine environment analysis platform.';
       case 'unauthorized':
-        return config.unauthorizedMessage ||
-               'Your account needs analyst or administrator access to use this application.';
+        return (
+          config.unauthorizedMessage ||
+          'Your account needs analyst or administrator access to use this application.'
+        );
       default:
         return '';
     }
@@ -185,17 +225,14 @@ export class SplashScreenComponent {
    * Handle login request
    */
   private login(credentials: Credentials): void {
-    console.info('Attempting login for:', credentials.email);
     this.setAuthenticating(true);
 
     this.authService.login(credentials.email, credentials.password).subscribe({
       next: () => {
-        console.info('Login successful');
         this.setAuthenticating(false);
         this.loginSuccess.emit();
       },
-      error: (error) => {
-        console.error('Login failed:', error);
+      error: error => {
         this.handleError(error);
       }
     });
@@ -205,17 +242,14 @@ export class SplashScreenComponent {
    * Handle registration request
    */
   private register(credentials: Credentials): void {
-    console.info('Attempting registration for:', credentials.email);
     this.setAuthenticating(true);
 
     this.webApiService.register(credentials).subscribe({
       next: () => {
-        console.info('Registration successful, attempting login');
         // After successful registration, automatically log in
         this.login(credentials);
       },
-      error: (error) => {
-        console.error('Registration failed:', error);
+      error: error => {
         this.handleError(error);
       }
     });
@@ -262,9 +296,11 @@ export class SplashScreenComponent {
    */
   private clearErrorOnChange(...controls: FormControl[]): void {
     const valueChanges = controls.map(control => control.valueChanges);
-    merge(...valueChanges).pipe(take(1)).subscribe(() => {
-      this.resetErrors();
-    });
+    merge(...valueChanges)
+      .pipe(take(1))
+      .subscribe(() => {
+        this.resetErrors();
+      });
   }
 
   /**
@@ -275,15 +311,24 @@ export class SplashScreenComponent {
     const { email, password } = this.authForm.controls;
 
     // Clear server errors while preserving validation errors
-    if (email.hasError('serverError')) {
-      email.setErrors(email.hasError('required') || email.hasError('email') ?
-        { required: email.hasError('required'), email: email.hasError('email') } : null);
-    }
+    const emailValidationErrors = {
+      ...(email.hasError('required') && { required: true }),
+      ...(email.hasError('email') && { email: true })
+    };
 
-    if (password.hasError('serverError')) {
-      password.setErrors(password.hasError('required') || password.hasError('minlength') ?
-        { required: password.hasError('required'), minlength: password.hasError('minlength') } : null);
-    }
+    const passwordValidationErrors = {
+      ...(password.hasError('required') && { required: true }),
+      ...(password.hasError('minlength') && { minlength: true })
+    };
+
+    email.setErrors(Object.keys(emailValidationErrors).length > 0 ? emailValidationErrors : null);
+    password.setErrors(
+      Object.keys(passwordValidationErrors).length > 0 ? passwordValidationErrors : null
+    );
+
+    // Force form validation update
+    email.updateValueAndValidity();
+    password.updateValueAndValidity();
   }
 
   /**
@@ -291,10 +336,16 @@ export class SplashScreenComponent {
    */
   private setAuthenticating(authenticating: boolean): void {
     this.isAuthenticating.set(authenticating);
+
     if (authenticating) {
       this.authForm.disable();
+      this.formDisabled.set(true);
     } else {
       this.authForm.enable();
+      this.formDisabled.set(false);
+      // Force validation update after re-enabling
+      this.authForm.updateValueAndValidity();
+      this.formValid.set(this.authForm.valid);
     }
   }
 
@@ -312,6 +363,25 @@ export class SplashScreenComponent {
   onKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Enter' && this.canSubmit()) {
       this.onSubmit();
+    }
+  }
+
+  /**
+   * Refresh user session to get updated roles
+   */
+  refreshSession(): void {
+    // Force token refresh which will get updated user roles
+    const currentAuth = this.authService.getAuthenticatedUser();
+    if (currentAuth) {
+      this.setAuthenticating(true);
+      // Call the public refreshToken method
+      this.authService.refreshToken();
+
+      // Reset authenticating state after a delay
+      setTimeout(() => {
+        this.setAuthenticating(false);
+        // The splash screen will automatically update based on new roles via signals
+      }, 1500);
     }
   }
 }

@@ -38,6 +38,18 @@ export class AuthService {
     return this._authenticated;
   }
 
+  /**
+   * Signal containing current user data - updates when token refreshes
+   */
+  private _currentUser = signal<JwtContents | undefined>(undefined);
+
+  /**
+   * Read-only accessor for current user signal
+   */
+  get currentUserSignal(): Signal<JwtContents | undefined> {
+    return this._currentUser.asReadonly();
+  }
+
   private readonly api = inject(WebApiService);
 
   /**
@@ -218,7 +230,9 @@ export class AuthService {
 
     this.clearStore();
 
+    // Update both signals when user becomes unauthenticated
     this._authenticated.set(false);
+    this._currentUser.set(undefined);
   }
 
   /**
@@ -259,12 +273,16 @@ export class AuthService {
 
     console.log('onAuth', auth);
     this.auth = auth;
+
+    // Update both signals when user data changes
     this._authenticated.set(true);
+    this._currentUser.set(auth.user);
+
     this.scheduleTokenRefresh(token);
     return true;
   }
 
-  private refreshToken() {
+  public refreshToken() {
     const auth = this.auth;
     if (auth === undefined) {
       throw new Error("unauthenticated, can't refresh token");

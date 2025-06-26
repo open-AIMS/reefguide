@@ -5,28 +5,6 @@ import { Observable, distinctUntilChanged } from 'rxjs';
 import { AuthService } from './auth.service';
 import { REQUIRED_ROLES, SplashConfig, SplashState, UserAccessState } from './auth.types';
 
-/**
- * Service that manages application-wide access control and splash screen state.
- *
- * This service combines authentication status with role-based authorization
- * to determine whether users can access the main application. It provides
- * a centralized way to manage the splash screen visibility and user access state.
- *
- * @example
- * ```typescript
- * constructor(private appAccess: AppAccessService) {
- *   // Subscribe to access state changes
- *   this.appAccess.userAccessState$.subscribe(state => {
- *     console.log('User access changed:', state);
- *   });
- *
- *   // Check if splash should be shown
- *   if (this.appAccess.shouldShowSplash()) {
- *     // Show splash screen
- *   }
- * }
- * ```
- */
 @Injectable({
   providedIn: 'root'
 })
@@ -51,13 +29,15 @@ export class AppAccessService {
    */
   public readonly userAccessState = computed<UserAccessState>(() => {
     const isAuthenticated = this.authService.authenticated();
+    const currentUser = this.authService.currentUserSignal();
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !currentUser) {
       return 'unauthenticated';
     }
 
-    // Check if user has required roles
-    const hasRequiredRole = this.hasRequiredRoles();
+    // Check if user has required roles using the signal-based user data
+    const hasRequiredRole = REQUIRED_ROLES.some(role => currentUser.roles.includes(role));
+
     return hasRequiredRole ? 'authorized' : 'unauthorized';
   });
 
