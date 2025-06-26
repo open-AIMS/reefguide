@@ -10,10 +10,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { User } from '@reefguide/db';
 import { of } from 'rxjs';
 import { catchError, finalize, tap } from 'rxjs/operators';
 import { WebApiService } from '../../../../api/web-api.service';
-import { User } from '../../../../api/web-api.types';
 
 interface UpdatePasswordForm {
   password: FormControl<string>;

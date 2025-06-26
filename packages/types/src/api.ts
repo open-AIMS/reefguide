@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { JobStatus, JobType, PreApprovedUser, StorageScheme, UserRole } from '@reefguide/db';
+import {
+  JobStatus,
+  JobType,
+  PreApprovedUser,
+  StorageScheme,
+  UserAction,
+  UserRole
+} from '@reefguide/db';
 
 // Auth schemas
 export const RegisterInputSchema = z.object({
@@ -30,6 +37,7 @@ export type LoginResponse = z.infer<typeof LoginResponseSchema>;
 // Profile schema
 export const ProfileResponseSchema = z.object({
   user: z.object({
+    roles: z.array(z.nativeEnum(UserRole)),
     id: z.number(),
     email: z.string().email()
   })
@@ -64,6 +72,48 @@ export type TokenResponse = z.infer<typeof TokenResponseSchema>;
 // Set of user roles
 export const UserRolesEnumSchema = z.nativeEnum(UserRole);
 export type UserRolesEnum = z.infer<typeof UserRolesEnumSchema>;
+
+export const UpdateUserRolesSchema = z.object({
+  roles: z.array(z.nativeEnum(UserRole))
+});
+
+// Response Types
+export const UserResponseSchema = z.object({
+  id: z.number()
+});
+
+export type UserResponse = z.infer<typeof UserResponseSchema>;
+
+export const UpdateUserPasswordSchema = z.object({
+  password: z.string().min(8)
+});
+
+// Schema Definitions
+export const CreateUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  roles: z.array(z.nativeEnum(UserRole)).optional()
+});
+
+export const ListUserLogsResponseSchema = z.object({
+  logs: z.array(
+    z.object({
+      id: z.number(),
+      userId: z.number(),
+      time: z.date(),
+      action: z.nativeEnum(UserAction),
+      metadata: z.any().optional(),
+      user: UserDetailsSchema
+    })
+  ),
+  pagination: z.object({
+    page: z.number(),
+    limit: z.number(),
+    total: z.number(),
+    pages: z.number()
+  })
+});
+export type ListUserLogsResponse = z.infer<typeof ListUserLogsResponseSchema>;
 
 // JWT contents
 export const JwtContentsSchema = z.object({

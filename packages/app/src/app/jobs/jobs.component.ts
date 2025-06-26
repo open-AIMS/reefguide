@@ -1,13 +1,13 @@
-import { Component, inject, ViewChild } from '@angular/core';
-import { WebApiService } from '../../api/web-api.service';
-import { Observable } from 'rxjs';
-import { ListJobsResponse } from '../../api/web-api.types';
 import { CommonModule } from '@angular/common';
+import { Component, inject, ViewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { RouterLink } from '@angular/router';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { RouterLink } from '@angular/router';
+import { ListJobsResponse } from '@reefguide/types';
+import { Observable } from 'rxjs';
+import { WebApiService } from '../../api/web-api.service';
 
 @Component({
   selector: 'app-jobs',

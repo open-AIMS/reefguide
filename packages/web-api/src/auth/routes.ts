@@ -166,7 +166,7 @@ router.get(
       );
     }
     // The user is attached to the request by Passport
-    res.json({ user: req.user });
+    res.json({ user: req.user, });
   }
 );
 

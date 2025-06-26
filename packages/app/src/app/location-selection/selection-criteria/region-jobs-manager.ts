@@ -1,22 +1,23 @@
+import { inject } from '@angular/core';
+import { JobType } from '@reefguide/db';
+import { DownloadResponse, JobDetails } from '@reefguide/types';
 import {
   BehaviorSubject,
   concatMap,
   distinct,
   filter,
+  finalize,
   map,
   mergeMap,
   Observable,
   Subject,
   switchMap,
   takeUntil,
-  tap,
-  finalize
+  tap
 } from 'rxjs';
-import { ReefGuideConfigService } from '../reef-guide-config.service';
-import { inject } from '@angular/core';
-import { DownloadResponse, JobDetails, JobType } from '../../../api/web-api.types';
 import { WebApiService } from '../../../api/web-api.service';
 import { retryHTTPErrors } from '../../../util/http-util';
+import { ReefGuideConfigService } from '../reef-guide-config.service';
 
 export type RegionDownloadResponse = DownloadResponse & { region: string };
 

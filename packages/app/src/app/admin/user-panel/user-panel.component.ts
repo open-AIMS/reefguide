@@ -12,14 +12,14 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
+import { User } from '@reefguide/db';
 import { BehaviorSubject, catchError, finalize, of, switchMap } from 'rxjs';
+import { extractErrorMessage } from '../../../api/api-util';
 import { WebApiService } from '../../../api/web-api.service';
-import { User } from '../../../api/web-api.types';
 import { AuthService } from '../../auth/auth.service';
 import { AdminCreateUserDialogComponent } from './user-create/create-user.component';
 import { UserEditRolesDialogComponent } from './user-edit-roles/edit-user-roles.component';
 import { AdminUpdateUserPasswordDialogComponent } from './user-update-password/update-password.component';
-import { extractErrorMessage } from '../../../api/api-util';
 
 @Component({
   selector: 'app-admin-panel',

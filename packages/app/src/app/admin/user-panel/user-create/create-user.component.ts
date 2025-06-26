@@ -11,9 +11,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { catchError, finalize, tap } from 'rxjs/operators';
 import { of } from 'rxjs';
-import { UserRole } from '../../../../api/web-api.types';
 import { MatIconModule } from '@angular/material/icon';
 import { WebApiService } from '../../../../api/web-api.service';
+import { UserRole } from '@reefguide/db';
 
 interface CreateUserForm {
   email: FormControl<string>;

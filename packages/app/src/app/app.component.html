@@ -1,1 +1,27 @@
-<router-outlet />
+<!-- Main Application Container -->
+<div
+  [ngClass]="getAppContainerClasses()"
+  [attr.aria-hidden]="getMainContentAriaAttributes()['aria-hidden']"
+  [attr.inert]="getMainContentAriaAttributes()['inert'] || null"
+>
+  <!-- Main Application Content -->
+  <!-- This renders in the background even when splash is showing -->
+  <div class="main-content" *ngIf="shouldRenderMainContent()">
+    <!-- Router Outlet - Main App Routes -->
+    <main class="app-main" role="main">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
+  <!-- Splash Screen Overlay -->
+  <!-- Only shows when user needs authentication or authorization -->
+  <app-splash-screen
+    *ngIf="splashState().isVisible"
+    [userState]="userAccessState()"
+    [config]="splashConfig()"
+    (loginSuccess)="onLoginSuccess()"
+    (dismissed)="onSplashDismissed()"
+    class="splash-overlay-component"
+  >
+  </app-splash-screen>
+</div>
