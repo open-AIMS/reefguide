@@ -2,7 +2,7 @@ import express, { Router } from 'express';
 import { z } from 'zod';
 import { processRequest } from 'zod-express-middleware';
 import { passport } from '../auth/passportConfig';
-import { userIsAdmin } from '../auth/utils';
+import { assertUserHasRoleMiddleware, userIsAdmin } from '../auth/utils';
 import { NotFoundException, UnauthorizedException } from '../exceptions';
 import { prisma } from '@reefguide/db';
 require('express-async-errors');
@@ -20,31 +20,37 @@ const updateNoteSchema = z.object({
 });
 
 /** Get all notes for the user, or all notes if admin */
-router.get('/', passport.authenticate('jwt', { session: false }), async (req, res) => {
-  if (!req.user) {
-    throw new UnauthorizedException();
+router.get(
+  '/',
+  passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
+  async (req, res) => {
+    if (!req.user) {
+      throw new UnauthorizedException();
+    }
+
+    let notes;
+
+    if (userIsAdmin(req.user)) {
+      // Admin gets all notes
+      notes = await prisma.polygonNote.findMany({});
+    } else {
+      // Normal users get only their own notes
+      notes = await prisma.polygonNote.findMany({
+        where: { user_id: req.user.id }
+      });
+    }
+
+    res.json({ notes });
   }
-
-  let notes;
-
-  if (userIsAdmin(req.user)) {
-    // Admin gets all notes
-    notes = await prisma.polygonNote.findMany({});
-  } else {
-    // Normal users get only their own notes
-    notes = await prisma.polygonNote.findMany({
-      where: { user_id: req.user.id }
-    });
-  }
-
-  res.json({ notes });
-});
+);
 
 /** Get all notes for a specific polygon*/
 router.get(
   '/:id',
   processRequest({ params: z.object({ id: z.string() }) }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res) => {
     if (!req.user) {
       throw new UnauthorizedException();
@@ -78,6 +84,7 @@ router.post(
     body: createNoteSchema
   }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res) => {
     if (!req.user) {
       throw new UnauthorizedException();
@@ -119,6 +126,7 @@ router.put(
     params: z.object({ id: z.string() })
   }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res) => {
     if (!req.user) {
       throw new UnauthorizedException();
@@ -155,6 +163,7 @@ router.delete(
   '/:id',
   processRequest({ params: z.object({ id: z.string() }) }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res) => {
     if (!req.user) {
       throw new UnauthorizedException();

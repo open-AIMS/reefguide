@@ -15,7 +15,7 @@ import express, { Response, Router } from 'express';
 import { z } from 'zod';
 import { processRequest } from 'zod-express-middleware';
 import { passport } from '../auth/passportConfig';
-import { userIsAdmin } from '../auth/utils';
+import { assertUserHasRoleMiddleware, userIsAdmin } from '../auth/utils';
 import { config } from '../config';
 import { BadRequestException, UnauthorizedException } from '../exceptions';
 import { JobService } from '../services/jobs';
@@ -33,6 +33,7 @@ router.post(
     body: createJobSchema
   }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res: Response<z.infer<typeof createJobResponseSchema>>) => {
     if (!req.user) throw new UnauthorizedException();
 
@@ -56,6 +57,7 @@ router.get(
     query: listJobsSchema
   }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res: Response<ListJobsResponse>) => {
     if (!req.user) throw new UnauthorizedException();
 
@@ -78,6 +80,7 @@ router.get(
     query: pollJobsSchema
   }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res: Response<PollJobsResponse>) => {
     const jobs = await jobService.pollJobs(req.query.jobType as JobType);
     res.json({ jobs });
@@ -90,6 +93,7 @@ router.post(
     body: assignJobSchema
   }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res: Response<AssignJobResponse>) => {
     const assignment = await jobService.assignJob(
       req.body.jobId,
@@ -104,6 +108,7 @@ router.get(
   '/requests',
   processRequest({}),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res) => {
     if (!req.user) throw new UnauthorizedException();
 
@@ -125,6 +130,7 @@ router.post(
     body: submitResultSchema
   }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res: Response<void>) => {
     const assignmentId = parseInt(req.params.id);
     await jobService.submitResult(assignmentId, req.body.status, req.body.resultPayload);
@@ -138,6 +144,7 @@ router.get(
     params: z.object({ id: z.string() })
   }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res: Response<JobDetailsResponse>) => {
     if (!req.user) throw new UnauthorizedException();
     const jobId = parseInt(req.params.id);
@@ -152,6 +159,7 @@ router.post(
     params: z.object({ id: z.string() })
   }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res: Response<JobDetailsResponse>) => {
     if (!req.user) throw new UnauthorizedException();
     const jobId = parseInt(req.params.id);
@@ -169,6 +177,7 @@ router.get(
     })
   }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res) => {
     if (!req.user) throw new UnauthorizedException();
 

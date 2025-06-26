@@ -11,7 +11,7 @@ import express, { Response, Router } from 'express';
 import { z } from 'zod';
 import { processRequest } from 'zod-express-middleware';
 import { passport } from '../auth/passportConfig';
-import { assertUserIsAdminMiddleware } from '../auth/utils';
+import { assertUserHasRoleMiddleware, assertUserIsAdminMiddleware } from '../auth/utils';
 import { BadRequestException, InternalServerError, NotFoundException } from '../exceptions';
 import { initialiseAdmins } from '../initialise';
 import { getDataSpecificationService } from '../services/dataSpec';
@@ -199,6 +199,7 @@ router.post(
 router.get(
   '/criteria/:region/ranges',
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   processRequest({
     params: z.object({ region: z.string() })
   }),
@@ -260,6 +261,7 @@ router.get(
 router.get(
   '/regions',
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (_req, res: Response<ListRegionsResponse>) => {
     try {
       const regions = await prisma.region.findMany({

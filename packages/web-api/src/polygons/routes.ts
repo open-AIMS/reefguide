@@ -2,7 +2,7 @@ import express, { Router } from 'express';
 import { z } from 'zod';
 import { processRequest } from 'zod-express-middleware';
 import { passport } from '../auth/passportConfig';
-import { userIsAdmin } from '../auth/utils';
+import { assertUserHasRoleMiddleware, userIsAdmin } from '../auth/utils';
 import { NotFoundException, UnauthorizedException } from '../exceptions';
 import { GeoJSONPolygonSchema } from '../types/geoJson';
 import { prisma } from '@reefguide/db';
@@ -24,6 +24,7 @@ router.get(
   '/:id',
   processRequest({ params: z.object({ id: z.string() }) }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res) => {
     if (!req.user) {
       throw new UnauthorizedException();
@@ -48,22 +49,27 @@ router.get(
 );
 
 /** Get all polygons for user, or all if admin */
-router.get('/', passport.authenticate('jwt', { session: false }), async (req, res) => {
-  if (!req.user) {
-    throw new UnauthorizedException();
+router.get(
+  '/',
+  passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
+  async (req, res) => {
+    if (!req.user) {
+      throw new UnauthorizedException();
+    }
+    if (userIsAdmin(req.user)) {
+      // Admin gets all
+      res.json({ polygons: await prisma.polygon.findMany() });
+      return;
+    }
+    // Normal users get only their own polygons
+    res.json({
+      polygons: await prisma.polygon.findMany({
+        where: { user_id: req.user.id }
+      })
+    });
   }
-  if (userIsAdmin(req.user)) {
-    // Admin gets all
-    res.json({ polygons: await prisma.polygon.findMany() });
-    return;
-  }
-  // Normal users get only their own polygons
-  res.json({
-    polygons: await prisma.polygon.findMany({
-      where: { user_id: req.user.id }
-    })
-  });
-});
+);
 
 /** Create a new Polygon */
 router.post(
@@ -72,6 +78,7 @@ router.post(
     body: createPolygonSchema
   }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res) => {
     if (!req.user) {
       throw new UnauthorizedException();
@@ -97,6 +104,7 @@ router.put(
     body: updatePolygonSchema
   }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res) => {
     if (!req.user) {
       throw new UnauthorizedException();
@@ -132,6 +140,7 @@ router.delete(
   '/:id',
   processRequest({ params: z.object({ id: z.string() }) }),
   passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
   async (req, res) => {
     if (!req.user) {
       throw new UnauthorizedException();
