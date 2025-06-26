@@ -23,7 +23,7 @@ export const userSetup = async () => {
     data: {
       email: user1Email,
       password: hashedPassword,
-      roles: []
+      roles: ['ANALYST']
     }
   });
 
@@ -31,7 +31,7 @@ export const userSetup = async () => {
     data: {
       email: user2Email,
       password: hashedPassword,
-      roles: []
+      roles: ['ANALYST']
     }
   });
 
