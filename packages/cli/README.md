@@ -50,6 +50,126 @@ This command displays:
 - Criteria for each region including ranges, defaults, and units
 - Payload prefixes for API integration
 
+## User Audit Management
+
+The user audit system provides tools for exporting and reviewing all users in the system, including both active users and pre-approved users.
+
+#### `user-audit export`
+
+Export all users to a CSV file for auditing, backup, or bulk processing.
+
+```bash
+# Export all active users (simple format)
+pnpm start user-audit export users.csv
+
+# Export all users including pre-approvals (extended format)
+pnpm start user-audit export users-full.csv --include-pre-approvals
+
+# Export with verbose output during processing
+pnpm start user-audit export users.csv --verbose
+
+# Export only active users
+pnpm start user-audit export active-users.csv --status-filter active
+
+# Export only pre-approved users
+pnpm start user-audit export pre-approvals.csv --status-filter pre-approved --include-pre-approvals
+```
+
+**Options:**
+
+- `--include-pre-approvals`: Include pre-approved users in the export
+- `--status-filter <status>`: Filter by status (`active`, `pre-approved`, or `all`)
+- `--verbose`: Show detailed information during export process
+
+**CSV Output Formats:**
+
+_Simple Format (compatible with pre-approval import):_
+
+```csv
+email,roles
+admin@company.com,ADMIN;USER
+user@company.com,USER
+```
+
+_Extended Format (with --include-pre-approvals):_
+
+```csv
+email,roles,status,user_id,pre_approval_id,used,used_at,created_at,created_by,notes
+admin@company.com,ADMIN;USER,active,1,,,,,
+pending@company.com,USER,pre-approved,,5,false,,2024-01-15T10:30:00Z,admin@company.com,New hire
+```
+
+#### `user-audit list`
+
+Display users in the console without creating a file.
+
+```bash
+# List all active users
+pnpm start user-audit list
+
+# List all users including pre-approvals
+pnpm start user-audit list --include-pre-approvals
+
+# List first 20 users only
+pnpm start user-audit list --limit 20
+
+# List only pre-approved users
+pnpm start user-audit list --status-filter pre-approved --include-pre-approvals
+```
+
+**Options:**
+
+- `--include-pre-approvals`: Include pre-approved users in listing
+- `--status-filter <status>`: Filter by status (`active`, `pre-approved`, or `all`)
+- `--limit <number>`: Maximum number of users to display
+
+**Console Output Example:**
+
+```bash
+📊 User Listing:
+   ✅ Active users: 15
+   ⏳ Pending pre-approvals: 3
+   🔄 Used pre-approvals: 2
+
+✅ Active Users (15):
+   ✅ admin@company.com - ADMIN, USER (active)
+   ✅ manager@company.com - ADMIN (active)
+
+⏳ Pending Pre-approvals (3):
+   ⏳ newbie@company.com - USER (pre-approved)
+     Status: Pending
+     Created: 1/15/2024 by admin@company.com
+```
+
+### Use Cases
+
+**Regular User Audits:**
+
+```bash
+# Monthly audit export
+pnpm start user-audit export "audit-$(date +%Y-%m).csv" --include-pre-approvals --verbose
+```
+
+**Access Reviews:**
+
+```bash
+# Review all admin users
+pnpm start user-audit list | grep ADMIN
+
+# Export for compliance review
+pnpm start user-audit export compliance-review.csv --include-pre-approvals
+```
+
+**Troubleshooting:**
+
+```bash
+# Check pending pre-approvals
+pnpm start user-audit list --status-filter pre-approved --include-pre-approvals
+
+# Quick user count
+pnpm start user-audit list --limit 0
+```
+
 ## Pre-Approval Management
 
 The pre-approval system handles both existing users and new users:

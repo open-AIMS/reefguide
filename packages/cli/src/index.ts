@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import * as dotenv from 'dotenv';
 import { createDataSpecCommands } from './commands/data-spec';
 import { createPreapprovalCommands } from './commands/pre-approval';
+import { createUserAuditCommands } from './commands/user-audit';
 
 // Load environment variables
 dotenv.config();
@@ -19,6 +20,7 @@ program
 // Add command modules
 createDataSpecCommands(program);
 createPreapprovalCommands(program);
+createUserAuditCommands(program);
 
 // Parse command line arguments
 program.parse();
