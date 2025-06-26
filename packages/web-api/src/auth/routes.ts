@@ -1,4 +1,4 @@
-import { prisma } from '@reefguide/db';
+import { prisma, UserRole } from '@reefguide/db';
 import {
   BulkCreatePreApprovedUsersInputSchema,
   BulkCreatePreApprovedUsersResponse,
@@ -38,6 +38,9 @@ import { PreApprovedUserService } from '../services/preApproval';
 require('express-async-errors');
 export const router: Router = express.Router();
 
+// All users are granted this role by default
+const baseRoles: UserRole[] = [];
+
 /**
  * Register a new user
  */
@@ -46,11 +49,26 @@ router.post(
   processRequest({ body: RegisterInputSchema }),
   async (req: Request, res: Response<RegisterResponse>) => {
     const { password, email } = req.body;
-    const newUserId = await registerUser({ email, password, roles: [] });
-    res.status(200).json({ userId: newUserId });
+
+    const result = await prisma.$transaction(async tx => {
+      // Check for pre-approval within transaction
+      const preApprovedUserService = new PreApprovedUserService(tx);
+      const approval = await preApprovedUserService.use(email);
+
+      const startingRoles = approval ? approval.roles : [];
+      for (const role of baseRoles) {
+        if (!startingRoles.includes(role)) {
+          startingRoles.push(role);
+        }
+      }
+
+      const newUserId = await registerUser({ email, password, roles: startingRoles });
+      return newUserId;
+    });
+
+    res.status(200).json({ userId: result });
   }
 );
-
 /**
  * Login user
  */

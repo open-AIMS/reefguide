@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, PreApprovedUser } from '@reefguide/db';
+import { PrismaClient, UserRole, PreApprovedUser, Prisma } from '@reefguide/db';
 import { BadRequestException, NotFoundException } from '../exceptions';
 
 /**
@@ -42,9 +42,9 @@ export interface UsePreApprovalResult {
  * Provides CRUD operations and business logic for the pre-approval workflow
  */
 export class PreApprovedUserService {
-  private prisma: PrismaClient;
+  private prisma: PrismaClient | Prisma.TransactionClient;
 
-  constructor(prisma: PrismaClient) {
+  constructor(prisma: PrismaClient | Prisma.TransactionClient) {
     this.prisma = prisma;
   }
 
@@ -361,7 +361,7 @@ export class PreApprovedUserService {
    * @param olderThanDays - Delete used pre-approvals older than this many days
    * @returns Promise<number> - Number of records deleted
    */
-  async cleanupUsedPreApprovals(olderThanDays: number = 30): Promise<number> {
+  async cleanupUsedPreApprovals(olderThanDays = 30): Promise<number> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 

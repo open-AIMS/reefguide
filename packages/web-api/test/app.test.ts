@@ -1319,7 +1319,7 @@ describe('API', () => {
         data: {
           email: 'preapproved@example.com',
           roles: ['ADMIN'],
-          created_by_user_id: user1Id,
+          created_by_user_id: user1Id
         }
       });
       preApprovedUserId = preApproved.id;
@@ -1331,7 +1331,7 @@ describe('API', () => {
           .post('/api/auth/admin/pre-approved-users')
           .send({
             email: 'newpreapproved@example.com',
-            roles: ['ADMIN'],
+            roles: ['ADMIN']
           })
           .expect(201);
 
@@ -1476,7 +1476,7 @@ describe('API', () => {
         const res = await authRequest(app, 'admin')
           .put(`/api/auth/admin/pre-approved-users/${preApprovedUserId}`)
           .send({
-            email: 'updated@example.com',
+            email: 'updated@example.com'
           })
           .expect(200);
 
@@ -1566,6 +1566,202 @@ describe('API', () => {
           .send({ olderThanDays: 30 })
           .expect(401);
       });
+    });
+  });
+  describe('Registration with Pre-Approvals', () => {
+    beforeEach(async () => {
+      // Create test pre-approved users
+      await prisma.preApprovedUser.createMany({
+        data: [
+          {
+            email: 'admin-preapproved@example.com',
+            roles: ['ADMIN'],
+            created_by_user_id: user1Id
+          },
+          {
+            email: 'used-preapproved@example.com',
+            roles: ['ADMIN'],
+            used: true,
+            used_at: new Date(),
+            created_by_user_id: user1Id
+          }
+        ]
+      });
+    });
+
+    it('should register user with pre-approved roles', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: 'admin-preapproved@example.com',
+          password: 'password123'
+        })
+        .expect(200);
+
+      expect(res.body).toHaveProperty('userId');
+
+      // Verify user was created with correct roles
+      const user = await prisma.user.findUnique({
+        where: { id: res.body.userId }
+      });
+      expect(user?.roles).toEqual(['ADMIN']);
+      expect(user?.email).toBe('admin-preapproved@example.com');
+
+      // Verify pre-approval was marked as used
+      const preApproval = await prisma.preApprovedUser.findUnique({
+        where: { email: 'admin-preapproved@example.com' }
+      });
+      expect(preApproval?.used).toBe(true);
+      expect(preApproval?.used_at).toBeTruthy();
+    });
+
+    it('should register user without pre-approval with base roles', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: 'regular-user@example.com',
+          password: 'password123'
+        })
+        .expect(200);
+
+      expect(res.body).toHaveProperty('userId');
+
+      // Verify user was created with base roles (empty array in this case)
+      const user = await prisma.user.findUnique({
+        where: { id: res.body.userId }
+      });
+      expect(user?.roles).toEqual([]);
+      expect(user?.email).toBe('regular-user@example.com');
+    });
+
+    it('should fail registration if pre-approval already used', async () => {
+      await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: 'used-preapproved@example.com',
+          password: 'password123'
+        })
+        .expect(400);
+
+      // Verify no user was created
+      const user = await prisma.user.findUnique({
+        where: { email: 'used-preapproved@example.com' }
+      });
+      expect(user).toBeNull();
+    });
+
+    it('should handle transaction rollback if user creation fails', async () => {
+      // Create a user with the same email first to cause conflict
+      await prisma.user.create({
+        data: {
+          email: 'admin-preapproved@example.com',
+          password: 'hashedpassword',
+          roles: []
+        }
+      });
+
+      // Try to register with pre-approved email (should fail due to duplicate email)
+      await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: 'admin-preapproved@example.com',
+          password: 'password123'
+        })
+        .expect(400);
+
+      // Verify pre-approval was NOT marked as used (transaction rolled back)
+      const preApproval = await prisma.preApprovedUser.findUnique({
+        where: { email: 'admin-preapproved@example.com' }
+      });
+      expect(preApproval?.used).toBe(false);
+      expect(preApproval?.used_at).toBeNull();
+    });
+
+    it('should login with pre-approved user after registration', async () => {
+      // Register the pre-approved user
+      await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: 'admin-preapproved@example.com',
+          password: 'password123'
+        })
+        .expect(200);
+
+      // Login with the same credentials
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'admin-preapproved@example.com',
+          password: 'password123'
+        })
+        .expect(200);
+
+      expect(loginRes.body).toHaveProperty('token');
+      expect(loginRes.body).toHaveProperty('refreshToken');
+
+      // Verify profile includes correct roles
+      const profileRes = await request(app)
+        .get('/api/auth/profile')
+        .set('Authorization', `Bearer ${loginRes.body.token}`)
+        .expect(200);
+
+      expect(profileRes.body.user.roles).toEqual(['ADMIN']);
+      expect(profileRes.body.user.email).toBe('admin-preapproved@example.com');
+    });
+
+    it('should combine base roles with pre-approved roles (if base roles exist)', async () => {
+      // This test assumes you might have base roles in the future
+      // For now it just verifies the role merging logic works correctly
+
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: 'admin-preapproved@example.com',
+          password: 'password123'
+        })
+        .expect(200);
+
+      const user = await prisma.user.findUnique({
+        where: { id: res.body.userId }
+      });
+
+      // Since baseRoles is empty, should just have the pre-approved roles
+      expect(user?.roles).toEqual(['ADMIN']);
+
+      // If you later add base roles, you can test that they get merged properly
+      // For example, if baseRoles = ['USER'], result should be ['ADMIN', 'USER'] or ['USER', 'ADMIN']
+    });
+
+    it('should handle case-insensitive email matching for pre-approvals', async () => {
+      // Create pre-approval with lowercase email
+      await prisma.preApprovedUser.create({
+        data: {
+          email: 'case-test@example.com',
+          roles: ['ADMIN'],
+          created_by_user_id: user1Id
+        }
+      });
+
+      // Register with different case
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: 'Case-Test@Example.COM',
+          password: 'password123'
+        })
+        .expect(200);
+
+      // Verify user was created with pre-approved roles
+      const user = await prisma.user.findUnique({
+        where: { id: res.body.userId }
+      });
+      expect(user?.roles).toEqual(['ADMIN']);
+
+      // Verify pre-approval was marked as used
+      const preApproval = await prisma.preApprovedUser.findUnique({
+        where: { email: 'case-test@example.com' }
+      });
+      expect(preApproval?.used).toBe(true);
     });
   });
 });
