@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { JobStatus, JobType, StorageScheme, UserRole } from '@reefguide/db';
+import { JobStatus, JobType, PreApprovedUser, StorageScheme, UserRole } from '@reefguide/db';
 
 // Auth schemas
 export const RegisterInputSchema = z.object({
@@ -325,3 +325,67 @@ export const listRegionsResponseSchema = z.object({
   )
 });
 export type ListRegionsResponse = z.infer<typeof listRegionsResponseSchema>;
+
+// ==================
+// User pre approvals
+// ==================
+
+export const CreatePreApprovedUserInputSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  roles: z.array(z.nativeEnum(UserRole)).min(1, 'At least one role must be specified')
+});
+
+export const UpdatePreApprovedUserInputSchema = z.object({
+  email: z.string().email('Invalid email format').optional(),
+  roles: z.array(z.nativeEnum(UserRole)).min(1, 'At least one role must be specified').optional()
+});
+
+export const BulkCreatePreApprovedUsersInputSchema = z.object({
+  users: z.array(CreatePreApprovedUserInputSchema).min(1, 'At least one user must be provided')
+});
+
+export const GetPreApprovedUsersSchema = z.object({
+  email: z.string().optional(),
+  used: z.boolean().optional(),
+  createdByUserId: z.number().optional(),
+  limit: z.number().optional(),
+  offset: z.number().optional()
+});
+
+export const PreApprovedUserParamsSchema = z.object({
+  id: z.string()
+});
+
+// Response types
+export type CreatePreApprovedUserResponse = {
+  preApprovedUser: PreApprovedUser;
+};
+
+export type UpdatePreApprovedUserResponse = {
+  preApprovedUser: PreApprovedUser;
+};
+
+export type GetPreApprovedUserResponse = {
+  preApprovedUser: PreApprovedUser;
+};
+
+export type GetPreApprovedUsersResponse = {
+  preApprovedUsers: PreApprovedUser[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+};
+
+export type BulkCreatePreApprovedUsersResponse = {
+  created: PreApprovedUser[];
+  errors: Array<{ email: string; error: string }>;
+  summary: {
+    totalRequested: number;
+    totalCreated: number;
+    totalErrors: number;
+  };
+};
+
+export type DeletePreApprovedUserResponse = { message: string };

@@ -1309,4 +1309,263 @@ describe('API', () => {
       });
     });
   });
+
+  describe('Pre-Approved Users', () => {
+    let preApprovedUserId: number;
+
+    beforeEach(async () => {
+      // Create a test pre-approved user
+      const preApproved = await prisma.preApprovedUser.create({
+        data: {
+          email: 'preapproved@example.com',
+          roles: ['ADMIN'],
+          created_by_user_id: user1Id,
+        }
+      });
+      preApprovedUserId = preApproved.id;
+    });
+
+    describe('POST /api/auth/admin/pre-approved-users', () => {
+      it('should create a new pre-approved user', async () => {
+        const res = await authRequest(app, 'admin')
+          .post('/api/auth/admin/pre-approved-users')
+          .send({
+            email: 'newpreapproved@example.com',
+            roles: ['ADMIN'],
+          })
+          .expect(201);
+
+        expect(res.body.preApprovedUser).toHaveProperty('email', 'newpreapproved@example.com');
+        expect(res.body.preApprovedUser.roles).toEqual(['ADMIN']);
+        expect(res.body.preApprovedUser).toHaveProperty('used', false);
+      });
+
+      it('should return 401 for non-admin users', async () => {
+        await authRequest(app, 'user1')
+          .post('/api/auth/admin/pre-approved-users')
+          .send({
+            email: 'test@example.com',
+            roles: ['ADMIN']
+          })
+          .expect(401);
+      });
+
+      it('should return 400 for duplicate email', async () => {
+        await authRequest(app, 'admin')
+          .post('/api/auth/admin/pre-approved-users')
+          .send({
+            email: 'preapproved@example.com',
+            roles: ['ADMIN']
+          })
+          .expect(400);
+      });
+
+      it('should return 400 for invalid input', async () => {
+        await authRequest(app, 'admin')
+          .post('/api/auth/admin/pre-approved-users')
+          .send({
+            email: 'invalid-email',
+            roles: []
+          })
+          .expect(400);
+      });
+    });
+
+    describe('POST /api/auth/admin/pre-approved-users/bulk', () => {
+      it('should bulk create pre-approved users', async () => {
+        const res = await authRequest(app, 'admin')
+          .post('/api/auth/admin/pre-approved-users/bulk')
+          .send({
+            users: [
+              { email: 'bulk1@example.com', roles: ['ADMIN'] },
+              { email: 'bulk2@example.com', roles: ['ADMIN'] }
+            ]
+          })
+          .expect(201);
+
+        expect(res.body.created).toHaveLength(2);
+        expect(res.body.errors).toHaveLength(0);
+        expect(res.body.summary.totalCreated).toBe(2);
+      });
+
+      it('should handle partial failures in bulk creation', async () => {
+        const res = await authRequest(app, 'admin')
+          .post('/api/auth/admin/pre-approved-users/bulk')
+          .send({
+            users: [
+              { email: 'valid@example.com', roles: ['ADMIN'] },
+              { email: 'preapproved@example.com', roles: ['ADMIN'] } // Duplicate
+            ]
+          })
+          .expect(201);
+
+        expect(res.body.created).toHaveLength(1);
+        expect(res.body.errors).toHaveLength(1);
+        expect(res.body.summary.totalCreated).toBe(1);
+        expect(res.body.summary.totalErrors).toBe(1);
+      });
+
+      it('should return 401 for non-admin users', async () => {
+        await authRequest(app, 'user1')
+          .post('/api/auth/admin/pre-approved-users/bulk')
+          .send({
+            users: [{ email: 'test@example.com', roles: ['ADMIN'] }]
+          })
+          .expect(401);
+      });
+    });
+
+    describe('GET /api/auth/admin/pre-approved-users', () => {
+      it('should return all pre-approved users', async () => {
+        const res = await authRequest(app, 'admin')
+          .get('/api/auth/admin/pre-approved-users')
+          .expect(200);
+
+        expect(res.body.preApprovedUsers).toBeInstanceOf(Array);
+        expect(res.body.preApprovedUsers.length).toBeGreaterThan(0);
+        expect(res.body.pagination).toHaveProperty('total');
+      });
+
+      it('should filter by used status', async () => {
+        const res = await authRequest(app, 'admin')
+          .get('/api/auth/admin/pre-approved-users')
+          .query({ used: 'false' })
+          .expect(200);
+
+        expect(res.body.preApprovedUsers.every((user: any) => !user.used)).toBe(true);
+      });
+
+      it('should filter by email', async () => {
+        const res = await authRequest(app, 'admin')
+          .get('/api/auth/admin/pre-approved-users')
+          .query({ email: 'preapproved' })
+          .expect(200);
+
+        expect(res.body.preApprovedUsers.length).toBeGreaterThan(0);
+        expect(res.body.preApprovedUsers[0].email).toContain('preapproved');
+      });
+
+      it('should return 401 for non-admin users', async () => {
+        await authRequest(app, 'user1').get('/api/auth/admin/pre-approved-users').expect(401);
+      });
+    });
+
+    describe('GET /api/auth/admin/pre-approved-users/:id', () => {
+      it('should return a specific pre-approved user', async () => {
+        const res = await authRequest(app, 'admin')
+          .get(`/api/auth/admin/pre-approved-users/${preApprovedUserId}`)
+          .expect(200);
+
+        expect(res.body.preApprovedUser).toHaveProperty('id', preApprovedUserId);
+        expect(res.body.preApprovedUser).toHaveProperty('email', 'preapproved@example.com');
+      });
+
+      it('should return 404 for non-existent pre-approved user', async () => {
+        await authRequest(app, 'admin').get('/api/auth/admin/pre-approved-users/9999').expect(404);
+      });
+
+      it('should return 401 for non-admin users', async () => {
+        await authRequest(app, 'user1')
+          .get(`/api/auth/admin/pre-approved-users/${preApprovedUserId}`)
+          .expect(401);
+      });
+    });
+
+    describe('PUT /api/auth/admin/pre-approved-users/:id', () => {
+      it('should update a pre-approved user', async () => {
+        const res = await authRequest(app, 'admin')
+          .put(`/api/auth/admin/pre-approved-users/${preApprovedUserId}`)
+          .send({
+            email: 'updated@example.com',
+          })
+          .expect(200);
+
+        expect(res.body.preApprovedUser).toHaveProperty('email', 'updated@example.com');
+      });
+
+      it('should return 404 for non-existent pre-approved user', async () => {
+        await authRequest(app, 'admin')
+          .put('/api/auth/admin/pre-approved-users/9999')
+          .send({ email: 'test@example.com' })
+          .expect(404);
+      });
+
+      it('should return 400 for used pre-approval', async () => {
+        // Mark as used
+        await prisma.preApprovedUser.update({
+          where: { id: preApprovedUserId },
+          data: { used: true, used_at: new Date() }
+        });
+
+        await authRequest(app, 'admin')
+          .put(`/api/auth/admin/pre-approved-users/${preApprovedUserId}`)
+          .send({ email: 'test@example.com' })
+          .expect(400);
+      });
+
+      it('should return 401 for non-admin users', async () => {
+        await authRequest(app, 'user1')
+          .put(`/api/auth/admin/pre-approved-users/${preApprovedUserId}`)
+          .send({ email: 'test@example.com' })
+          .expect(401);
+      });
+    });
+
+    describe('DELETE /api/auth/admin/pre-approved-users/:id', () => {
+      it('should delete a pre-approved user', async () => {
+        await authRequest(app, 'admin')
+          .delete(`/api/auth/admin/pre-approved-users/${preApprovedUserId}`)
+          .expect(200);
+
+        // Verify deletion
+        const deleted = await prisma.preApprovedUser.findUnique({
+          where: { id: preApprovedUserId }
+        });
+        expect(deleted).toBeNull();
+      });
+
+      it('should return 404 for non-existent pre-approved user', async () => {
+        await authRequest(app, 'admin')
+          .delete('/api/auth/admin/pre-approved-users/9999')
+          .expect(404);
+      });
+
+      it('should return 401 for non-admin users', async () => {
+        await authRequest(app, 'user1')
+          .delete(`/api/auth/admin/pre-approved-users/${preApprovedUserId}`)
+          .expect(401);
+      });
+    });
+
+    describe('POST /api/auth/admin/pre-approved-users/cleanup', () => {
+      it('should cleanup old used pre-approvals', async () => {
+        // Create an old used pre-approval
+        const oldDate = new Date();
+        oldDate.setDate(oldDate.getDate() - 35); // 35 days ago
+
+        await prisma.preApprovedUser.create({
+          data: {
+            email: 'old@example.com',
+            roles: ['ADMIN'],
+            used: true,
+            used_at: oldDate
+          }
+        });
+
+        const res = await authRequest(app, 'admin')
+          .post('/api/auth/admin/pre-approved-users/cleanup')
+          .send({ olderThanDays: 30 })
+          .expect(200);
+
+        expect(res.body.deletedCount).toBe(1);
+      });
+
+      it('should return 401 for non-admin users', async () => {
+        await authRequest(app, 'user1')
+          .post('/api/auth/admin/pre-approved-users/cleanup')
+          .send({ olderThanDays: 30 })
+          .expect(401);
+      });
+    });
+  });
 });

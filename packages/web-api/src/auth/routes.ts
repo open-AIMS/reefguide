@@ -1,12 +1,23 @@
 import { prisma } from '@reefguide/db';
 import {
+  BulkCreatePreApprovedUsersInputSchema,
+  BulkCreatePreApprovedUsersResponse,
+  CreatePreApprovedUserInputSchema,
+  CreatePreApprovedUserResponse,
+  DeletePreApprovedUserResponse,
+  GetPreApprovedUserResponse,
+  GetPreApprovedUsersResponse,
+  GetPreApprovedUsersSchema,
   LoginInputSchema,
   LoginResponse,
+  PreApprovedUserParamsSchema,
   ProfileResponse,
   RegisterInputSchema,
   RegisterResponse,
   TokenInputSchema,
-  TokenResponse
+  TokenResponse,
+  UpdatePreApprovedUserInputSchema,
+  UpdatePreApprovedUserResponse
 } from '@reefguide/types';
 import bcryptjs from 'bcrypt';
 import express, { Request, Response, Router } from 'express';
@@ -16,10 +27,13 @@ import { registerUser } from '../services/auth';
 import { generateRefreshToken, signJwt } from './jwtUtils';
 import { passport } from './passportConfig';
 import {
+  assertUserIsAdminMiddleware,
   decodeRefreshToken,
   getRefreshTokenObject,
   isRefreshTokenValid as validateRefreshToken
 } from './utils';
+import z from 'zod';
+import { PreApprovedUserService } from '../services/preApproval';
 
 require('express-async-errors');
 export const router: Router = express.Router();
@@ -135,5 +149,200 @@ router.get(
     }
     // The user is attached to the request by Passport
     res.json({ user: req.user });
+  }
+);
+
+/**
+ * Create a new pre-approved user (Admin only)
+ */
+router.post(
+  '/admin/pre-approved-users',
+  passport.authenticate('jwt', { session: false }),
+  assertUserIsAdminMiddleware,
+  processRequest({ body: CreatePreApprovedUserInputSchema }),
+  async (req, res: Response<CreatePreApprovedUserResponse>) => {
+    const { email, roles } = req.body;
+    const createdByUserId = req.user?.id;
+
+    const preApprovedUserService = new PreApprovedUserService(prisma);
+
+    const preApprovedUser = await preApprovedUserService.create({
+      email,
+      roles,
+      createdByUserId
+    });
+
+    res.status(201).json({ preApprovedUser });
+  }
+);
+
+/**
+ * Bulk create pre-approved users (Admin only)
+ */
+router.post(
+  '/admin/pre-approved-users/bulk',
+  passport.authenticate('jwt', { session: false }),
+  assertUserIsAdminMiddleware,
+  processRequest({ body: BulkCreatePreApprovedUsersInputSchema }),
+  async (req, res: Response<BulkCreatePreApprovedUsersResponse>) => {
+    const { users } = req.body;
+    const createdByUserId = req.user?.id;
+
+    // Add createdByUserId to each user input
+    const usersWithCreator = users.map(user => ({
+      ...user,
+      createdByUserId
+    }));
+
+    const preApprovedUserService = new PreApprovedUserService(prisma);
+    const result = await preApprovedUserService.bulkCreate(usersWithCreator);
+
+    res.status(201).json({
+      ...result,
+      summary: {
+        totalRequested: users.length,
+        totalCreated: result.created.length,
+        totalErrors: result.errors.length
+      }
+    });
+  }
+);
+
+/**
+ * Get all pre-approved users with filtering (Admin only)
+ */
+router.get(
+  '/admin/pre-approved-users',
+  passport.authenticate('jwt', { session: false }),
+  assertUserIsAdminMiddleware,
+  processRequest({ body: GetPreApprovedUsersSchema }),
+  async (req, res: Response<GetPreApprovedUsersResponse>) => {
+    const { email, used, createdByUserId, limit = 50, offset = 0 } = req.body;
+
+    const preApprovedUserService = new PreApprovedUserService(prisma);
+
+    const preApprovedUsers = await preApprovedUserService.getMany({
+      email,
+      used,
+      createdByUserId,
+      limit,
+      offset
+    });
+
+    // Get total count for pagination
+    const total = await preApprovedUserService.getCount({
+      email,
+      used,
+      createdByUserId
+    });
+
+    res.json({
+      preApprovedUsers,
+      pagination: {
+        total,
+        limit,
+        offset
+      }
+    });
+  }
+);
+
+/**
+ * Get a specific pre-approved user by ID (Admin only)
+ */
+router.get(
+  '/admin/pre-approved-users/:id',
+  passport.authenticate('jwt', { session: false }),
+  assertUserIsAdminMiddleware,
+  processRequest({ params: PreApprovedUserParamsSchema }),
+  async (req, res: Response<GetPreApprovedUserResponse>) => {
+    const { id: stringId } = req.params;
+    const id = parseInt(stringId);
+    const preApprovedUserService = new PreApprovedUserService(prisma);
+    const preApprovedUser = await preApprovedUserService.getById(id);
+
+    if (!preApprovedUser) {
+      throw new Exceptions.NotFoundException(`Pre-approved user with ID ${id} not found`);
+    }
+
+    res.json({ preApprovedUser });
+  }
+);
+
+/**
+ * Update a pre-approved user (Admin only)
+ */
+router.put(
+  '/admin/pre-approved-users/:id',
+  passport.authenticate('jwt', { session: false }),
+  assertUserIsAdminMiddleware,
+  processRequest({
+    params: PreApprovedUserParamsSchema,
+    body: UpdatePreApprovedUserInputSchema
+  }),
+  async (req, res: Response<UpdatePreApprovedUserResponse>) => {
+    const { id: stringId } = req.params;
+    const id = parseInt(stringId);
+    const updateData = req.body;
+
+    const preApprovedUserService = new PreApprovedUserService(prisma);
+
+    try {
+      const preApprovedUser = await preApprovedUserService.update(id, updateData);
+      res.json({ preApprovedUser });
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('not found')) {
+        throw new Exceptions.NotFoundException(`Pre-approved user with ID ${id} not found`);
+      }
+      if (error instanceof Error && error.message.includes('already been used')) {
+        throw new Exceptions.BadRequestException(error.message);
+      }
+      throw error;
+    }
+  }
+);
+
+/**
+ * Delete a pre-approved user (Admin only)
+ */
+router.delete(
+  '/admin/pre-approved-users/:id',
+  passport.authenticate('jwt', { session: false }),
+  assertUserIsAdminMiddleware,
+  processRequest({ params: PreApprovedUserParamsSchema }),
+  async (req, res: Response<DeletePreApprovedUserResponse>) => {
+    const { id: stringId } = req.params;
+    const id = parseInt(stringId);
+
+    const preApprovedUserService = new PreApprovedUserService(prisma);
+    const success = await preApprovedUserService.delete(id);
+
+    if (!success) {
+      throw new Exceptions.NotFoundException(`Pre-approved user with ID ${id} not found`);
+    }
+
+    res.json({ message: `Successfully deleted pre-approval with ID ${id}` });
+  }
+);
+
+/**
+ * Cleanup old used pre-approvals (Admin only)
+ */
+router.post(
+  '/admin/pre-approved-users/cleanup',
+  passport.authenticate('jwt', { session: false }),
+  assertUserIsAdminMiddleware,
+  processRequest({
+    body: z.object({
+      olderThanDays: z.number().min(1).default(30)
+    })
+  }),
+  async (req, res: Response<{ deletedCount: number }>) => {
+    const { olderThanDays = 30 } = req.body;
+
+    const preApprovedUserService = new PreApprovedUserService(prisma);
+    const deletedCount = await preApprovedUserService.cleanupUsedPreApprovals(olderThanDays);
+
+    res.json({ deletedCount });
   }
 );
