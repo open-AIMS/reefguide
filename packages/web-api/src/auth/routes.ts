@@ -39,7 +39,7 @@ require('express-async-errors');
 export const router: Router = express.Router();
 
 // All users are granted this role by default
-const baseRoles: UserRole[] = [];
+const baseRoles: UserRole[] = [UserRole.DEFAULT];
 
 /**
  * Register a new user

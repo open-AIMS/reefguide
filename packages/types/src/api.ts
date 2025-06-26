@@ -62,7 +62,7 @@ export const TokenResponseSchema = z.object({
 export type TokenResponse = z.infer<typeof TokenResponseSchema>;
 
 // Set of user roles
-export const UserRolesEnumSchema = z.enum(['ADMIN']);
+export const UserRolesEnumSchema = z.nativeEnum(UserRole);
 export type UserRolesEnum = z.infer<typeof UserRolesEnumSchema>;
 
 // JWT contents

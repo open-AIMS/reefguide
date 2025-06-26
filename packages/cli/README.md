@@ -91,12 +91,12 @@ pnpm start preapproval add-users "user1@example.com:ADMIN,USER" "user2@example.c
    🔄 newuser@example.com - Created pre-approval for roles: ADMIN
 ```
 
-#### `preapproval add-user-bulk`
+#### `preapproval add-users-bulk`
 
 Bulk process users from CSV file with intelligent user detection.
 
 ```bash
-pnpm start preapproval add-user-bulk users.csv
+pnpm start preapproval add-users-bulk users.csv
 ```
 
 **CSV Format:**
@@ -143,7 +143,7 @@ pnpm start preapproval add-users "user@example.com:ADMIN,USER"
 
 ```bash
 # CSV with mix of existing and new users
-pnpm start preapproval add-user-bulk new-team-members.csv
+pnpm start preapproval add-users-bulk new-team-members.csv
 # Existing users get immediate role updates
 # New users get pre-approvals for when they register
 ```
@@ -161,7 +161,7 @@ pnpm start preapproval add-users "user1@company.com:ADMIN" "user2@company.com:AD
 ```bash
 # Give all users in CSV additional permissions
 # Mix of existing users (immediate update) and future users (pre-approval)
-pnpm start preapproval add-user-bulk role-updates.csv
+pnpm start preapproval add-users-bulk role-updates.csv
 ```
 
 ### Error Handling

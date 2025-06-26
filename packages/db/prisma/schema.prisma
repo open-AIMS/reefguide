@@ -11,8 +11,8 @@ datasource db {
 
 enum UserRole {
     ADMIN
-    // If we want, we could add a role such as REEFGUIDE_USER which the API can
-    // validate to ensure a user can run API operations
+    ANALYST
+    DEFAULT
 }
 
 // User - linked to passport js
