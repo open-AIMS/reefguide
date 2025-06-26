@@ -12,7 +12,7 @@ import {
   ListOptions,
   ParsedUser,
   CsvValidationError,
-  UserProcessingResult,
+  UserProcessingResult
 } from '../types/cli-types';
 
 // Utility functions
@@ -163,7 +163,6 @@ async function processUsersWithBulkFallback(
   const results: UserProcessingResult[] = [];
 
   // First, separate existing users from potential pre-approvals
-  const existingUsers: ParsedUser[] = [];
   const potentialPreApprovals: ParsedUser[] = [];
 
   console.log('\n🔍 Checking for existing users...');
@@ -448,7 +447,7 @@ function formatUserProcessingResult(result: UserProcessingResult): string {
         const roleChange =
           result.originalRoles.length !== result.newRoles.length
             ? ` (${result.originalRoles.join(', ')} → ${result.newRoles.join(', ')})`
-            : ` (no new roles added)`;
+            : ' (no new roles added)';
         return `✅ ${result.email} - Updated existing user${roleChange}`;
       }
       return `✅ ${result.email} - Updated existing user`;
@@ -458,7 +457,7 @@ function formatUserProcessingResult(result: UserProcessingResult): string {
         const roleChange =
           result.originalRoles.length !== result.newRoles.length
             ? ` (${result.originalRoles.join(', ')} → ${result.newRoles.join(', ')})`
-            : ` (no new roles added)`;
+            : ' (no new roles added)';
         return `🔄 ${result.email} - Updated existing pre-approval${roleChange}`;
       }
       return `🔄 ${result.email} - Created pre-approval for roles: ${result.preApproval?.roles.join(', ')}`;
@@ -498,7 +497,7 @@ async function addUsers(userInputs: string[]): Promise<void> {
     const preApproved = results.filter(r => r.action === 'pre-approved');
     const errors = results.filter(r => r.action === 'error');
 
-    console.log(`\n📊 Results:`);
+    console.log('\n📊 Results:');
     console.log(`   ✅ Users updated: ${updated.length}`);
     console.log(`   🔄 Pre-approvals processed: ${preApproved.length}`);
     console.log(`   ❌ Errors: ${errors.length}`);
@@ -562,7 +561,7 @@ async function addUsersBulk(filepath: string): Promise<void> {
     const newPreApprovals = preApproved.filter(r => !r.originalRoles);
     const updatedPreApprovals = preApproved.filter(r => r.originalRoles);
 
-    console.log(`\n📊 Bulk Processing Results:`);
+    console.log('\n📊 Bulk Processing Results:');
     console.log(`   📝 Total processed: ${users.length}`);
     console.log(`   ✅ Users updated: ${updated.length}`);
     console.log(`   🆕 New pre-approvals created: ${newPreApprovals.length}`);
@@ -660,7 +659,7 @@ async function listPreApprovals(options: ListOptions): Promise<void> {
     // Show pagination info if there are more results
     if (pagination.total > preApprovedUsers.length) {
       console.log(`📄 Showing ${preApprovedUsers.length} of ${pagination.total} total results`);
-      console.log(`   Use --limit option to see more results`);
+      console.log('   Use --limit option to see more results');
     }
   } catch (error: any) {
     console.error(`❌ Error: ${error.response?.data?.message || error.message}`);

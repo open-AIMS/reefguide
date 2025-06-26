@@ -12,10 +12,7 @@ dotenv.config();
 // Create CLI program
 const program = new Command();
 
-program
-  .name('reefguide-cli')
-  .description('ReefGuide Admin CLI Tool')
-  .version('0.1.0');
+program.name('reefguide-cli').description('ReefGuide Admin CLI Tool').version('0.1.0');
 
 // Add command modules
 createDataSpecCommands(program);

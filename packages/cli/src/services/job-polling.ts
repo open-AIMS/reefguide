@@ -143,31 +143,43 @@ export class JobPollingService {
   ): Promise<Record<number, JobPollingResult>> {
     console.log(`📊 Monitoring ${jobIds.length} jobs concurrently...`);
 
-    const results = await Promise.allSettled(
+    const results = await Promise.all(
       jobIds.map(async jobId => {
-        const result = await this.pollJob(jobId, {
-          ...options,
-          onStatusUpdate: (status, elapsed) => {
-            console.log(`[${elapsed}s] Job ${jobId}: ${status}`);
-          }
-        });
-        return { jobId, result };
+        try {
+          const result = await this.pollJob(jobId, {
+            ...options,
+            onStatusUpdate: (status, elapsed) => {
+              console.log(`[${elapsed}s] Job ${jobId}: ${status}`);
+            }
+          });
+          return { jobId, result, success: true };
+        } catch (error) {
+          return {
+            jobId,
+            result: {
+              finalStatus: 'ERROR',
+              totalTime: 0,
+              success: false
+            },
+            success: false,
+            error
+          };
+        }
       })
     );
 
     const jobResults: Record<number, JobPollingResult> = {};
-
     results.forEach((result, index) => {
       const jobId = jobIds[index];
-      if (result.status === 'fulfilled') {
-        jobResults[jobId] = result.value.result;
+      if (result.success) {
+        jobResults[jobId] = result.result;
       } else {
         jobResults[jobId] = {
           finalStatus: 'ERROR',
           totalTime: 0,
           success: false
         };
-        console.error(`❌ Failed to poll job ${jobId}:`, result.reason);
+        console.error(`❌ Failed to poll job ${jobId}:`, result.error);
       }
     });
 

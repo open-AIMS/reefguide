@@ -254,7 +254,7 @@ async function exportUserAudit(
     const pendingPreApprovals = preApprovedUsers.filter(u => !u.used);
     const usedPreApprovals = preApprovedUsers.filter(u => u.used);
 
-    console.log(`\n📊 User Audit Summary:`);
+    console.log('\n📊 User Audit Summary:');
     console.log(`   ✅ Active users: ${activeUsers.length}`);
 
     if (options.includePreApprovals) {
@@ -267,7 +267,7 @@ async function exportUserAudit(
 
     // Show detailed list if verbose
     if (options.verbose && auditUsers.length > 0) {
-      console.log(`\n📋 User Details:`);
+      console.log('\n📋 User Details:');
 
       if (activeUsers.length > 0) {
         console.log(`\n✅ Active Users (${activeUsers.length}):`);
@@ -292,7 +292,7 @@ async function exportUserAudit(
     }
 
     // Generate and write CSV
-    console.log(`\n📝 Generating CSV export...`);
+    console.log('\n📝 Generating CSV export...');
     const csvContent = generateCsvContent(auditUsers, !!options.includePreApprovals);
 
     await fs.writeFile(absolutePath, csvContent, 'utf-8');
@@ -304,7 +304,7 @@ async function exportUserAudit(
 
     if (!options.includePreApprovals) {
       console.log(
-        `💡 Tip: Use --include-pre-approvals for detailed export with pre-approval status`
+        '💡 Tip: Use --include-pre-approvals for detailed export with pre-approval status'
       );
     }
   } catch (error: any) {
@@ -358,7 +358,7 @@ async function listUsers(options: {
     const pendingPreApprovals = preApprovedUsers.filter(u => !u.used);
     const usedPreApprovals = preApprovedUsers.filter(u => u.used);
 
-    console.log(`\n📊 User Listing:`);
+    console.log('\n📊 User Listing:');
     console.log(`   ✅ Active users: ${activeUsers.length}`);
 
     if (options.includePreApprovals) {
