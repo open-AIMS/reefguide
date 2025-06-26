@@ -1,7 +1,3 @@
-/**
- * Module to manage pre approvals including bulk loading from CSV
- */
-
 import { Command } from 'commander';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -10,11 +6,12 @@ import { UserRole } from '@reefguide/db';
 import { ApiClientService } from '../services/api-client';
 import {
   PreApprovedUser,
-  BulkCreateResponse,
+  ExistingUser,
   ListPreApprovedUsersResponse,
   ListOptions,
   ParsedUser,
-  CsvValidationError
+  CsvValidationError,
+  UserProcessingResult
 } from '../types/cli-types';
 
 // Utility functions
@@ -47,6 +44,126 @@ function parseUserInput(input: string): ParsedUser {
   const roles = parseRoles(rolesString);
 
   return { email: email.trim(), roles };
+}
+
+function mergeRoles(existingRoles: UserRole[], newRoles: UserRole[]): UserRole[] {
+  const allRoles = [...existingRoles];
+
+  for (const role of newRoles) {
+    if (!allRoles.includes(role)) {
+      allRoles.push(role);
+    }
+  }
+
+  return allRoles;
+}
+
+async function findExistingUser(
+  apiClient: ApiClientService,
+  email: string
+): Promise<ExistingUser | null> {
+  try {
+    // Get all users and find by email (since there's no direct email lookup endpoint)
+    const response = await apiClient.client.get<ExistingUser[]>(`${apiClient.apiBaseUrl}/users`);
+    const users = response.data;
+
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    return user || null;
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+async function updateUserRoles(
+  apiClient: ApiClientService,
+  userId: number,
+  roles: UserRole[]
+): Promise<ExistingUser> {
+  try {
+    const response = await apiClient.client.put<ExistingUser>(
+      `${apiClient.apiBaseUrl}/users/${userId}/roles`,
+      { roles }
+    );
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      `Failed to update user roles: ${error.response?.data?.message || error.message}`
+    );
+  }
+}
+
+async function createPreApproval(
+  apiClient: ApiClientService,
+  user: ParsedUser
+): Promise<PreApprovedUser> {
+  try {
+    const response = await apiClient.client.post<{ preApprovedUser: PreApprovedUser }>(
+      `${apiClient.apiBaseUrl}/auth/admin/pre-approved-users`,
+      {
+        email: user.email,
+        roles: user.roles
+      }
+    );
+    return response.data.preApprovedUser;
+  } catch (error: any) {
+    throw new Error(
+      `Failed to create pre-approval: ${error.response?.data?.message || error.message}`
+    );
+  }
+}
+
+async function processUser(
+  apiClient: ApiClientService,
+  user: ParsedUser
+): Promise<UserProcessingResult> {
+  try {
+    // Check if user exists
+    const existingUser = await findExistingUser(apiClient, user.email);
+
+    if (existingUser) {
+      // User exists - update their roles
+      const originalRoles = [...existingUser.roles];
+      const mergedRoles = mergeRoles(existingUser.roles, user.roles);
+
+      // Only update if there are new roles to add
+      if (mergedRoles.length > originalRoles.length) {
+        const updatedUser = await updateUserRoles(apiClient, existingUser.id, mergedRoles);
+        return {
+          email: user.email,
+          action: 'updated',
+          user: updatedUser,
+          originalRoles,
+          newRoles: mergedRoles
+        };
+      } else {
+        // No new roles to add
+        return {
+          email: user.email,
+          action: 'updated',
+          user: existingUser,
+          originalRoles,
+          newRoles: originalRoles
+        };
+      }
+    } else {
+      // User doesn't exist - create pre-approval
+      const preApproval = await createPreApproval(apiClient, user);
+      return {
+        email: user.email,
+        action: 'pre-approved',
+        preApproval
+      };
+    }
+  } catch (error: any) {
+    return {
+      email: user.email,
+      action: 'error',
+      error: error.message
+    };
+  }
 }
 
 async function validateCsvFile(filepath: string): Promise<ParsedUser[]> {
@@ -150,10 +267,30 @@ function formatPreApprovedUser(user: PreApprovedUser): string {
      Created: ${formatDate(user.created_at)}${createdBy}${notes}`;
 }
 
+function formatUserProcessingResult(result: UserProcessingResult): string {
+  switch (result.action) {
+    case 'updated':
+      const roleChange =
+        result.originalRoles?.length !== result.newRoles?.length
+          ? ` (${result.originalRoles?.join(', ')} → ${result.newRoles?.join(', ')})`
+          : ` (no new roles added)`;
+      return `✅ ${result.email} - Updated existing user${roleChange}`;
+
+    case 'pre-approved':
+      return `🔄 ${result.email} - Created pre-approval for roles: ${result.preApproval?.roles.join(', ')}`;
+
+    case 'error':
+      return `❌ ${result.email} - Error: ${result.error}`;
+
+    default:
+      return `❓ ${result.email} - Unknown action`;
+  }
+}
+
 // Command implementations
 async function addUsers(userInputs: string[]): Promise<void> {
   try {
-    console.log('👥 Adding pre-approved users...');
+    console.log('👥 Processing users (updating existing or creating pre-approvals)...');
 
     // Parse and validate inputs
     const users = userInputs.map((input: string) => parseUserInput(input));
@@ -167,30 +304,44 @@ async function addUsers(userInputs: string[]): Promise<void> {
     const apiClient = new ApiClientService();
     await apiClient.initialize();
 
-    // Make API call
-    const response = await apiClient.client.post<BulkCreateResponse>(
-      `${apiClient.apiBaseUrl}/auth/admin/pre-approved-users/bulk`,
-      { users }
-    );
+    console.log('\n🔍 Checking for existing users...');
+
+    // Process each user
+    const results: UserProcessingResult[] = [];
+    for (const user of users) {
+      console.log(`   Processing ${user.email}...`);
+      const result = await processUser(apiClient, user);
+      results.push(result);
+    }
 
     // Display results
-    const { created, errors, summary } = response.data;
+    const updated = results.filter(r => r.action === 'updated');
+    const preApproved = results.filter(r => r.action === 'pre-approved');
+    const errors = results.filter(r => r.action === 'error');
 
     console.log(`\n📊 Results:`);
-    console.log(`   ✅ Successfully created: ${summary.totalCreated}`);
-    console.log(`   ❌ Errors: ${summary.totalErrors}`);
+    console.log(`   ✅ Users updated: ${updated.length}`);
+    console.log(`   🔄 Pre-approvals created: ${preApproved.length}`);
+    console.log(`   ❌ Errors: ${errors.length}`);
 
-    if (created.length > 0) {
-      console.log('\n✅ Successfully created:');
-      created.forEach((user: PreApprovedUser) => {
-        console.log(`   ${user.email} (ID: ${user.id})`);
+    if (updated.length > 0) {
+      console.log('\n✅ Updated Users:');
+      updated.forEach((result: UserProcessingResult) => {
+        console.log(`   ${formatUserProcessingResult(result)}`);
+      });
+    }
+
+    if (preApproved.length > 0) {
+      console.log('\n🔄 Pre-approvals Created:');
+      preApproved.forEach((result: UserProcessingResult) => {
+        console.log(`   ${formatUserProcessingResult(result)}`);
       });
     }
 
     if (errors.length > 0) {
       console.log('\n❌ Errors:');
-      errors.forEach(({ email, error }: { email: string; error: string }) => {
-        console.log(`   ${email}: ${error}`);
+      errors.forEach((result: UserProcessingResult) => {
+        console.log(`   ${formatUserProcessingResult(result)}`);
       });
     }
   } catch (error: any) {
@@ -220,32 +371,46 @@ async function addUsersBulk(filepath: string): Promise<void> {
     const apiClient = new ApiClientService();
     await apiClient.initialize();
 
-    // Make API call
-    console.log('\n🚀 Sending bulk request to API...');
-    const response = await apiClient.client.post<BulkCreateResponse>(
-      `${apiClient.apiBaseUrl}/auth/admin/pre-approved-users/bulk`,
-      { users }
-    );
+    console.log('\n🔍 Processing users (checking for existing users)...');
+
+    // Process each user
+    const results: UserProcessingResult[] = [];
+    for (let i = 0; i < users.length; i++) {
+      const user = users[i];
+      console.log(`   [${i + 1}/${users.length}] Processing ${user.email}...`);
+      const result = await processUser(apiClient, user);
+      results.push(result);
+    }
 
     // Display results
-    const { created, errors, summary } = response.data;
+    const updated = results.filter(r => r.action === 'updated');
+    const preApproved = results.filter(r => r.action === 'pre-approved');
+    const errors = results.filter(r => r.action === 'error');
 
-    console.log(`\n📊 Bulk Import Results:`);
-    console.log(`   📝 Total requested: ${summary.totalRequested}`);
-    console.log(`   ✅ Successfully created: ${summary.totalCreated}`);
-    console.log(`   ❌ Errors: ${summary.totalErrors}`);
+    console.log(`\n📊 Bulk Processing Results:`);
+    console.log(`   📝 Total processed: ${users.length}`);
+    console.log(`   ✅ Users updated: ${updated.length}`);
+    console.log(`   🔄 Pre-approvals created: ${preApproved.length}`);
+    console.log(`   ❌ Errors: ${errors.length}`);
 
-    if (created.length > 0) {
-      console.log('\n✅ Successfully created:');
-      created.forEach((user: PreApprovedUser) => {
-        console.log(`   ${user.email} → ${user.roles.join(', ')} (ID: ${user.id})`);
+    if (updated.length > 0) {
+      console.log('\n✅ Updated Users:');
+      updated.forEach((result: UserProcessingResult) => {
+        console.log(`   ${formatUserProcessingResult(result)}`);
+      });
+    }
+
+    if (preApproved.length > 0) {
+      console.log('\n🔄 Pre-approvals Created:');
+      preApproved.forEach((result: UserProcessingResult) => {
+        console.log(`   ${formatUserProcessingResult(result)}`);
       });
     }
 
     if (errors.length > 0) {
       console.log('\n❌ Errors:');
-      errors.forEach(({ email, error }: { email: string; error: string }) => {
-        console.log(`   ${email}: ${error}`);
+      errors.forEach((result: UserProcessingResult) => {
+        console.log(`   ${formatUserProcessingResult(result)}`);
       });
     }
   } catch (error: any) {
@@ -322,11 +487,13 @@ async function listPreApprovals(options: ListOptions): Promise<void> {
 
 // Export function to create commands
 export function createPreapprovalCommands(program: Command): void {
-  const preapproval = program.command('preapproval').description('Manage pre-approved users');
+  const preapproval = program
+    .command('preapproval')
+    .description('Manage users and pre-approved users');
 
   preapproval
     .command('add-users')
-    .description('Add multiple pre-approved users with specified roles')
+    .description('Add users (update existing user roles or create pre-approvals for new users)')
     .argument(
       '<users...>',
       'User specifications in format email:ROLE1,ROLE2 (e.g., "user@example.com:ADMIN,USER")'
@@ -337,7 +504,7 @@ export function createPreapprovalCommands(program: Command): void {
 
   preapproval
     .command('add-users-bulk')
-    .description('Bulk add pre-approved users from CSV file')
+    .description('Bulk process users from CSV file (update existing or create pre-approvals)')
     .argument('<filepath>', 'Path to CSV file with columns: email, roles (semicolon-separated)')
     .action(async (filepath: string) => {
       await addUsersBulk(filepath);
@@ -345,7 +512,7 @@ export function createPreapprovalCommands(program: Command): void {
 
   preapproval
     .command('list')
-    .description('List all pre-approved users')
+    .description('List all pre-approved users (does not include existing users)')
     .option('--used <boolean>', 'Filter by used status (true/false)')
     .option('--limit <number>', 'Maximum number of results to return', '50')
     .action(async (options: ListOptions) => {

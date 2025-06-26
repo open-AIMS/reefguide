@@ -50,66 +50,134 @@ This command displays:
 - Criteria for each region including ranges, defaults, and units
 - Payload prefixes for API integration
 
-### Pre-Approval Management
+## Pre-Approval Management
+
+The pre-approval system handles both existing users and new users:
+
+- **Existing users**: Roles are updated to include the specified roles (merging with existing roles)
+- **New users**: Pre-approvals are created for future registration
 
 #### `preapproval add-users`
 
-Add multiple pre-approved users with specified roles.
+Add or update users with specified roles. Automatically detects existing users and updates their roles.
 
 ```bash
-# Single user
+# Single user - will update if exists, create pre-approval if not
 pnpm start preapproval add-users "admin@example.com:ADMIN"
 
-# Multiple users
+# Multiple users with different role combinations
 pnpm start preapproval add-users "user1@example.com:ADMIN,USER" "user2@example.com:ADMIN"
 ```
 
-**Format:** `email:ROLE1,ROLE2` where roles are comma-separated.
+**Behavior:**
 
-#### `preapproval add-users-bulk`
+- **Existing user**: Adds new roles to existing roles (e.g., if user has `[USER]`, adding `ADMIN` results in `[USER, ADMIN]`)
+- **New user**: Creates a pre-approval that will be consumed during registration
+- **Duplicate roles**: Automatically deduplicates (adding `ADMIN` to a user who already has `ADMIN` has no effect)
 
-Bulk import pre-approved users from a CSV file.
+**Output Example:**
 
 ```bash
-pnpm start preapproval add-users-bulk users.csv
+📊 Results:
+   ✅ Users updated: 2
+   🔄 Pre-approvals created: 1
+   ❌ Errors: 0
+
+✅ Updated Users:
+   ✅ existing@example.com - Updated existing user (USER → USER, ADMIN)
+   ✅ another@example.com - Updated existing user (no new roles added)
+
+🔄 Pre-approvals Created:
+   🔄 newuser@example.com - Created pre-approval for roles: ADMIN
+```
+
+#### `preapproval add-user-bulk`
+
+Bulk process users from CSV file with intelligent user detection.
+
+```bash
+pnpm start preapproval add-user-bulk users.csv
 ```
 
 **CSV Format:**
 
 ```csv
 email,roles
-admin@example.com,ADMIN;USER
-manager@example.com,ADMIN
-user@example.com,USER
+existing.user@example.com,ADMIN;USER
+new.user@example.com,ADMIN
+current.admin@example.com,USER
 ```
-
-**CSV Requirements:**
-
-- Header row with `email` and `roles` columns
-- Roles separated by semicolons (`;`)
-- Valid email addresses required
-- Roles must match valid UserRole enum values
 
 #### `preapproval list`
 
-List all pre-approved users with filtering options.
+Lists only pre-approved users (not existing users).
 
 ```bash
-# List all pre-approved users
-pnpm start preapproval list
-
-# Filter by status
-pnpm start preapproval list --used true
+# List unused pre-approvals
 pnpm start preapproval list --used false
 
-# Limit results
+# List all pre-approvals with higher limit
 pnpm start preapproval list --limit 100
 ```
 
-**Options:**
+**Note:** This command only shows pre-approvals, not existing users. To see
+existing users, use the API directly or future CLI commands.
 
-- `--used <boolean>`: Filter by used status (true/false)
-- `--limit <number>`: Maximum number of results (default: 50)
+### Smart Role Merging
+
+The system intelligently merges roles:
+
+```bash
+# User currently has: [USER]
+pnpm start preapproval add-users "user@example.com:ADMIN,MODERATOR"
+# Result: [USER, ADMIN, MODERATOR]
+
+# User currently has: [ADMIN]
+pnpm start preapproval add-users "user@example.com:ADMIN,USER"
+# Result: [ADMIN, USER] (ADMIN not duplicated)
+```
+
+### Use Cases
+
+**Onboarding New Team Members:**
+
+```bash
+# CSV with mix of existing and new users
+pnpm start preapproval add-user-bulk new-team-members.csv
+# Existing users get immediate role updates
+# New users get pre-approvals for when they register
+```
+
+**Promoting Existing Users:**
+
+```bash
+# Promote existing users to admin
+pnpm start preapproval add-users "user1@company.com:ADMIN" "user2@company.com:ADMIN"
+# Their existing roles are preserved and ADMIN is added
+```
+
+**Bulk Role Updates:**
+
+```bash
+# Give all users in CSV additional permissions
+# Mix of existing users (immediate update) and future users (pre-approval)
+pnpm start preapproval add-user-bulk role-updates.csv
+```
+
+### Error Handling
+
+The system provides detailed error reporting:
+
+- **Invalid emails**: Validation before processing
+- **Invalid roles**: Clear error messages with valid options
+- **API errors**: Network issues, permission problems
+- **Partial failures**: Continues processing other users if some fail
+
+```bash
+❌ Errors:
+   ❌ invalid.email - Error: Invalid email format
+   ❌ user@example.com - Error: Failed to update user roles: Unauthorized
+```
 
 ## Environment Variables
 

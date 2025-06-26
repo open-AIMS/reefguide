@@ -15,6 +15,12 @@ export interface PreApprovedUser {
   };
 }
 
+export interface ExistingUser {
+  id: number;
+  email: string;
+  roles: UserRole[];
+}
+
 export interface BulkCreateResponse {
   created: PreApprovedUser[];
   errors: Array<{ email: string; error: string }>;
@@ -31,6 +37,26 @@ export interface ListPreApprovedUsersResponse {
     total: number;
     limit: number;
     offset: number;
+  };
+}
+
+export interface UserProcessingResult {
+  email: string;
+  action: 'updated' | 'pre-approved' | 'error';
+  user?: ExistingUser;
+  preApproval?: PreApprovedUser;
+  error?: string;
+  originalRoles?: UserRole[];
+  newRoles?: UserRole[];
+}
+
+export interface BulkUserProcessingResponse {
+  results: UserProcessingResult[];
+  summary: {
+    totalRequested: number;
+    totalUpdated: number;
+    totalPreApproved: number;
+    totalErrors: number;
   };
 }
 
