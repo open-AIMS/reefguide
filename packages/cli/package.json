@@ -8,8 +8,8 @@
     },
     "scripts": {
         "build": "tsc",
-        "prestart": "pnpm run build",
         "start": "node build/src/index.js",
+        "buildstart": "pnpm run build && node build/src/index.js",
         "watch": "tsc -w",
         "lint": "gts lint",
         "type-check": "tsc --noEmit",
@@ -22,9 +22,12 @@
     "author": "AIMS",
     "license": "MIT",
     "dependencies": {
+        "@reefguide/db": "workspace:*",
         "@reefguide/types": "workspace:*",
         "axios": "^1.10.0",
         "commander": "^14.0.0",
+        "csv-parse": "^5.6.0",
+        "csv-stringify": "^6.5.2",
         "dotenv": "^16.5.0",
         "env-cmd": "^10.1.0",
         "jwt-decode": "^4.0.0",

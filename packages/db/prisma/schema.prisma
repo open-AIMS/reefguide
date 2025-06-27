@@ -11,23 +11,24 @@ datasource db {
 
 enum UserRole {
     ADMIN
-    // If we want, we could add a role such as REEFGUIDE_USER which the API can
-    // validate to ensure a user can run API operations
+    ANALYST
+    DEFAULT
 }
 
 // User - linked to passport js
 model User {
-    id            Int            @id @default(autoincrement())
-    email         String         @unique
-    password      String
+    id              Int               @id @default(autoincrement())
+    email           String            @unique
+    password        String
     // What roles does the user have?
-    roles         UserRole[]     @default([])
-    polygons      Polygon[]
-    notes         PolygonNote[]
-    refreshTokens RefreshToken[]
-    jobs          Job[]
-    jobRequests   JobRequest[]
-    log           UserLog[]
+    roles           UserRole[]        @default([])
+    polygons        Polygon[]
+    notes           PolygonNote[]
+    refreshTokens   RefreshToken[]
+    jobs            Job[]
+    jobRequests     JobRequest[]
+    log             UserLog[]
+    PreApprovedUser PreApprovedUser[]
 }
 
 enum UserAction {
@@ -53,6 +54,24 @@ model UserLog {
     // Which user was this for?
     user   User @relation(fields: [userId], references: [id])
     userId Int
+}
+
+// Pre-approved users - stores email addresses and roles before user registration
+model PreApprovedUser {
+    id                 Int        @id @default(autoincrement())
+    email              String     @unique
+    // What roles should this user get when they register?
+    roles              UserRole[]
+    created_at         DateTime   @default(now())
+    updated_at         DateTime   @updatedAt
+    // Who created this pre-approval? (admin user)
+    created_by_user_id Int?
+    created_by_user    User?      @relation(fields: [created_by_user_id], references: [id], onDelete: SetNull)
+    // Track if this pre-approval has been used (when user actually registers)
+    used               Boolean    @default(false)
+    used_at            DateTime?
+
+    @@map("pre_approved_users")
 }
 
 // User submitted polygon - has notes
