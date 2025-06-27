@@ -27,7 +27,7 @@
 
       <mat-card-content class="loading-content">
         <mat-progress-bar mode="indeterminate" class="loading-bar"></mat-progress-bar>
-        <p class="loading-text">Initializing marine environment analysis platform...</p>
+        <p class="loading-text">Initializing {{ config().appName }} platform...</p>
       </mat-card-content>
     </mat-card>
 
@@ -268,15 +268,25 @@
     <!-- Footer -->
     <div class="splash-footer">
       <p class="footer-text">
-        {{ config().appName || 'MADAME' }} - Model Assessment and Decision Analysis for Marine
-        Environments
+        {{ config().appName || 'ReefGuide' }} - A distributed platform for identifying candidate
+        coral deployment sites
       </p>
       <div class="footer-links">
-        <a href="#" class="footer-link" matTooltip="Documentation">
+        <a
+          href="{{ config().documentationLink }}"
+          target="_blank"
+          class="footer-link"
+          matTooltip="Documentation"
+        >
           <mat-icon>help</mat-icon>
           Help
         </a>
-        <a href="#" class="footer-link" matTooltip="About this application">
+        <a
+          href="{{ config().aboutLink }}"
+          target="_blank"
+          class="footer-link"
+          matTooltip="About this application"
+        >
           <mat-icon>info</mat-icon>
           About
         </a>

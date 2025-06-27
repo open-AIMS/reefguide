@@ -156,7 +156,7 @@ export class SplashScreenComponent {
       case 'loading':
         return 'Checking your access permissions...';
       case 'unauthenticated':
-        return `Please sign in to access the ${config.appName ?? 'ReefGuide'} platform.`;
+        return `Please sign in to access the platform.`;
       case 'unauthorized':
         return (
           config.unauthorizedMessage ||

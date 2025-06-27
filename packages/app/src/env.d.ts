@@ -6,6 +6,8 @@ declare interface Env {
   NG_APP_SPLASH_ADMIN_EMAIL: string;
   NG_APP_SPLASH_APP_NAME: string;
   NG_APP_SPLASH_SHOW_BACKGROUND_MAP: string;
+  NG_APP_DOCUMENTATION_LINK: string;
+  NG_APP_ABOUT_LINK: string;
 }
 
 declare interface ImportMeta {

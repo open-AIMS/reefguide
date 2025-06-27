@@ -28,6 +28,9 @@ export interface SplashConfig {
   unauthorizedMessage?: string;
   /** App name to display in the splash screen */
   appName?: string;
+  /** Docs and about links to display in login footer */
+  documentationLink: string;
+  aboutLink: string;
 }
 
 /**

@@ -211,6 +211,7 @@ $blur-amount: 12px;
   padding: 1.8rem 1.5rem 0.75rem !important;
 
   mat-card-title {
+    text-align: left;
     font-size: 1.4rem !important;
     font-weight: 600 !important;
     color: $ocean-dark;
@@ -219,6 +220,7 @@ $blur-amount: 12px;
   }
 
   mat-card-subtitle {
+    text-align: left;
     color: rgba($ocean-dark, 0.7) !important;
     font-size: 0.9rem !important;
     line-height: 1.4;

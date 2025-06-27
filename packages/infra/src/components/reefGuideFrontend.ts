@@ -66,7 +66,7 @@ export class ReefGuideFrontend extends Construct {
   }
 
   private setupDistribution(props: ReefGuideFrontendProps) {
-    const website = new StaticWebsite(this, 'website', {
+    const website = new StaticWebsite(this, 'staticweb', {
       hostedZone: props.hz,
       domainNames: [props.domainName],
       removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -99,7 +99,7 @@ export class ReefGuideFrontend extends Construct {
     this.endpoint = `https://${props.domainName}`;
   }
 
-  private setupBundling(props: ReefGuideFrontendProps) {
+  private _setupBundling(props: ReefGuideFrontendProps) {
     // Default to monorepo root (typically two levels up from infrastructure)
     const buildPath = props.buildPath ?? '../..';
     const packageName = '@reefguide/app';
@@ -228,7 +228,7 @@ export class ReefGuideFrontend extends Construct {
       description: 'Name of the S3 bucket used for website content'
     });
 
-    // CloudFront distribution URL
+    //// CloudFront distribution URL
     new cdk.CfnOutput(this, 'distribution-url', {
       value: this.distribution.distributionDomainName,
       description: 'URL of the CloudFront distribution'
