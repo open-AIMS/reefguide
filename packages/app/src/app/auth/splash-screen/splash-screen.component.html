@@ -1,10 +1,11 @@
 <!-- Splash Screen Overlay -->
-<div class="splash-overlay"
-     role="dialog"
-     aria-modal="true"
-     [attr.aria-label]="getTitle()"
-     (keydown)="onKeyDown($event)">
-
+<div
+  class="splash-overlay"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="getTitle()"
+  (keydown)="onKeyDown($event)"
+>
   <!-- Background Animation -->
   <div class="splash-background">
     <div class="wave wave-1"></div>
@@ -14,7 +15,6 @@
 
   <!-- Main Content Container -->
   <div class="splash-content">
-
     <!-- Loading State -->
     <mat-card class="splash-card" *ngIf="userState() === 'loading'">
       <mat-card-header class="splash-header">
@@ -43,21 +43,19 @@
 
       <mat-card-content>
         <!-- Authentication Form -->
-        <form [formGroup]="authForm"
-              (ngSubmit)="onSubmit()"
-              class="auth-form"
-              novalidate>
-
+        <form [formGroup]="authForm" (ngSubmit)="onSubmit()" class="auth-form" novalidate>
           <!-- Email Field -->
           <mat-form-field appearance="outline" class="full-width form-field">
             <mat-label>Email Address</mat-label>
             <mat-icon matPrefix>email</mat-icon>
-            <input matInput
-                   type="email"
-                   formControlName="email"
-                   placeholder="Enter your email"
-                   autocomplete="email"
-                   [attr.aria-describedby]="authForm.get('email')?.errors ? 'email-error' : null">
+            <input
+              matInput
+              type="email"
+              formControlName="email"
+              placeholder="Enter your email"
+              autocomplete="email"
+              [attr.aria-describedby]="authForm.get('email')?.errors ? 'email-error' : null"
+            />
 
             <!-- Email Validation Errors -->
             <mat-error *ngIf="authForm.get('email')?.hasError('required')">
@@ -75,19 +73,23 @@
           <mat-form-field appearance="outline" class="full-width form-field">
             <mat-label>Password</mat-label>
             <mat-icon matPrefix>lock</mat-icon>
-            <input matInput
-                   [type]="hidePassword() ? 'password' : 'text'"
-                   formControlName="password"
-                   placeholder="Enter your password"
-                   [autocomplete]="isLoginMode() ? 'current-password' : 'new-password'"
-                   [attr.aria-describedby]="authForm.get('password')?.errors ? 'password-error' : null">
+            <input
+              matInput
+              [type]="hidePassword() ? 'password' : 'text'"
+              formControlName="password"
+              placeholder="Enter your password"
+              [autocomplete]="isLoginMode() ? 'current-password' : 'new-password'"
+              [attr.aria-describedby]="authForm.get('password')?.errors ? 'password-error' : null"
+            />
 
-            <button mat-icon-button
-                    matSuffix
-                    type="button"
-                    (click)="togglePasswordVisibility()"
-                    [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'"
-                    [attr.aria-pressed]="!hidePassword()">
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="togglePasswordVisibility()"
+              [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'"
+              [attr.aria-pressed]="!hidePassword()"
+            >
               <mat-icon>{{ hidePassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
             </button>
 
@@ -98,7 +100,10 @@
             <mat-error *ngIf="authForm.get('password')?.hasError('minlength')">
               Password must be at least 8 characters long
             </mat-error>
-            <mat-error *ngIf="authForm.get('password')?.hasError('serverError')" id="password-error">
+            <mat-error
+              *ngIf="authForm.get('password')?.hasError('serverError')"
+              id="password-error"
+            >
               {{ errorMessage() }}
             </mat-error>
           </mat-form-field>
@@ -110,27 +115,36 @@
           </div>
 
           <!-- General Error Message -->
-          <div class="error-message"
-               *ngIf="errorMessage() && !authForm.get('email')?.hasError('serverError') && !authForm.get('password')?.hasError('serverError')"
-               role="alert"
-               aria-live="polite">
+          <div
+            class="error-message"
+            *ngIf="
+              errorMessage() &&
+              !authForm.get('email')?.hasError('serverError') &&
+              !authForm.get('password')?.hasError('serverError')
+            "
+            role="alert"
+            aria-live="polite"
+          >
             <mat-icon color="warn">error</mat-icon>
             <span>{{ errorMessage() }}</span>
           </div>
 
           <!-- Submit Button -->
-          <button mat-raised-button
-                  color="primary"
-                  type="submit"
-                  class="auth-button full-width"
-                  [disabled]="!canSubmit()"
-                  [attr.aria-label]="getButtonText()">
-
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            class="auth-button full-width"
+            [disabled]="!canSubmit()"
+            [attr.aria-label]="getButtonText()"
+          >
             <!-- Loading Spinner -->
-            <mat-progress-spinner *ngIf="isAuthenticating()"
-                                  diameter="20"
-                                  mode="indeterminate"
-                                  class="button-spinner">
+            <mat-progress-spinner
+              *ngIf="isAuthenticating()"
+              diameter="20"
+              mode="indeterminate"
+              class="button-spinner"
+            >
             </mat-progress-spinner>
 
             <!-- Button Icon -->
@@ -148,22 +162,26 @@
         <div class="mode-switch">
           <p *ngIf="isLoginMode()">
             Don't have an account?
-            <button mat-button
-                    color="primary"
-                    type="button"
-                    (click)="switchMode()"
-                    class="switch-button">
+            <button
+              mat-button
+              color="primary"
+              type="button"
+              (click)="switchMode()"
+              class="switch-button"
+            >
               Create Account
             </button>
           </p>
 
           <p *ngIf="isRegisterMode()">
             Already have an account?
-            <button mat-button
-                    color="primary"
-                    type="button"
-                    (click)="switchMode()"
-                    class="switch-button">
+            <button
+              mat-button
+              color="primary"
+              type="button"
+              (click)="switchMode()"
+              class="switch-button"
+            >
               Sign In
             </button>
           </p>
@@ -201,10 +219,12 @@
           <div class="contact-text">
             <h4>Request Access</h4>
             <p>{{ getContactInfo() }}</p>
-            <button mat-raised-button
-                    color="accent"
-                    [attr.href]="'mailto:' + config().adminEmail + '?subject=MADAME Access Request'"
-                    class="contact-button">
+            <button
+              mat-raised-button
+              color="accent"
+              [attr.href]="'mailto:' + config().adminEmail + '?subject=MADAME Access Request'"
+              class="contact-button"
+            >
               <mat-icon>email</mat-icon>
               Request Access
             </button>
@@ -213,25 +233,31 @@
 
         <!-- Action Buttons -->
         <div class="action-buttons">
-          <button mat-raised-button
-                  color="accent"
-                  (click)="refreshSession()"
-                  [disabled]="isAuthenticating()"
-                  class="refresh-button"
-                  matTooltip="Refresh your session to get updated permissions">
-            <mat-progress-spinner *ngIf="isAuthenticating()"
-                                  diameter="16"
-                                  mode="indeterminate"
-                                  class="small-spinner">
+          <button
+            mat-raised-button
+            color="accent"
+            (click)="refreshSession()"
+            [disabled]="isAuthenticating()"
+            class="refresh-button"
+            matTooltip="Refresh your session to get updated permissions"
+          >
+            <mat-progress-spinner
+              *ngIf="isAuthenticating()"
+              diameter="16"
+              mode="indeterminate"
+              class="small-spinner"
+            >
             </mat-progress-spinner>
             <mat-icon *ngIf="!isAuthenticating()">refresh</mat-icon>
             <span>{{ isAuthenticating() ? 'Refreshing...' : 'Refresh Access' }}</span>
           </button>
 
-          <button mat-stroked-button
-                  color="primary"
-                  (click)="authService.logout()"
-                  class="logout-button">
+          <button
+            mat-stroked-button
+            color="primary"
+            (click)="authService.logout()"
+            class="logout-button"
+          >
             <mat-icon>logout</mat-icon>
             <span>Sign Out</span>
           </button>
@@ -242,7 +268,8 @@
     <!-- Footer -->
     <div class="splash-footer">
       <p class="footer-text">
-        {{ config().appName || 'MADAME' }} - Model Assessment and Decision Analysis for Marine Environments
+        {{ config().appName || 'MADAME' }} - Model Assessment and Decision Analysis for Marine
+        Environments
       </p>
       <div class="footer-links">
         <a href="#" class="footer-link" matTooltip="Documentation">

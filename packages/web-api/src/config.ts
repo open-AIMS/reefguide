@@ -27,14 +27,16 @@ const envSchema = z.object({
   ADMIN_USERNAME: z.string(),
   ADMIN_PASSWORD: z.string(),
   // Token configuration - with proper defaults
-  ACCESS_TOKEN_EXPIRY_MINUTES: z.string()
+  ACCESS_TOKEN_EXPIRY_MINUTES: z
+    .string()
     .optional()
     .default('10')
     .transform(val => parseInt(val, 10))
     .refine(val => !isNaN(val) && val > 0, {
       message: 'ACCESS_TOKEN_EXPIRY_MINUTES must be a positive number'
     }),
-  REFRESH_TOKEN_EXPIRY_MINUTES: z.string()
+  REFRESH_TOKEN_EXPIRY_MINUTES: z
+    .string()
     .optional()
     // 48 hours
     .default((48 * 60).toString())
@@ -92,11 +94,11 @@ export interface Config {
 export function getConfig(): Config {
   // Parse and validate environment variables
   const env = envSchema.parse(process.env);
-  
+
   // Replace escaped newlines in JWT keys
   const privateKey = env.JWT_PRIVATE_KEY.replace(/\\n/g, '\n');
   const publicKey = env.JWT_PUBLIC_KEY.replace(/\\n/g, '\n');
-  
+
   let minio: MinioConfig | undefined = undefined;
   if (env.MINIO_ENDPOINT) {
     if (!env.MINIO_USERNAME || !env.MINIO_PASSWORD) {
@@ -110,7 +112,7 @@ export function getConfig(): Config {
       password: env.MINIO_PASSWORD
     };
   }
-  
+
   // Construct the configuration object
   const config: Config = {
     port: env.PORT,
@@ -149,7 +151,7 @@ export function getConfig(): Config {
       accessTokenExpirySeconds: env.ACCESS_TOKEN_EXPIRY_MINUTES * 60
     }
   };
-  
+
   // Log configuration in non-production environments (excluding sensitive data)
   if (config.isDevelopment) {
     const logConfig = {
@@ -159,11 +161,11 @@ export function getConfig(): Config {
     };
     console.debug('API Configuration:', JSON.stringify(logConfig, null, 2));
   }
-  
+
   // Update process.env with parsed values
   process.env.DATABASE_URL = config.database.url;
   process.env.DIRECT_URL = config.database.directUrl;
-  
+
   return config;
 }
 

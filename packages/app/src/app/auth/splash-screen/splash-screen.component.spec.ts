@@ -9,8 +9,7 @@ describe('SplashScreenComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SplashScreenComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(SplashScreenComponent);
     component = fixture.componentInstance;
