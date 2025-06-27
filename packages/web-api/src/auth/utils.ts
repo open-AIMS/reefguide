@@ -1,4 +1,4 @@
-import { prisma, RefreshToken } from '@reefguide/db';
+import { prisma, RefreshToken, UserRole } from '@reefguide/db';
 import { RefreshTokenContents, RefreshTokenContentsSchema } from '@reefguide/types';
 import { NextFunction } from 'express';
 import { z } from 'zod';
@@ -126,7 +126,7 @@ export const isRefreshTokenValid = (refreshToken: RefreshToken): boolean => {
  */
 export const assertUserIsAdminMiddleware = (
   req: Express.Request,
-  res: Express.Response,
+  _res: Express.Response,
   next: NextFunction
 ) => {
   if (!req.user) {
@@ -138,4 +138,49 @@ export const assertUserIsAdminMiddleware = (
   }
 
   next();
+};
+
+/**
+ * Checks the user has at least one of the specified roles.
+ *
+ * By default, admin will always make this return true, unless you make
+ * grantedByAdmin = false.
+ *
+ * @param sufficientRoles List of roles that will make this pass
+ * @param grantedByAdmin By default, admin will grant anything- disable this if
+ * you want it to be ignored
+ *
+ * Generates a middleware as follows: NOTE: must be ran after the passport auth
+ * middleware (so that req.user is populated)
+ * @param req Express req
+ * @param res Express res
+ * @param next next function
+ */
+export const assertUserHasRoleMiddleware = ({
+  sufficientRoles,
+  grantedByAdmin = true
+}: {
+  sufficientRoles: UserRole[];
+  grantedByAdmin?: boolean;
+}) => {
+  return (req: Express.Request, _res: Express.Response, next: NextFunction) => {
+    if (!req.user) {
+      throw new UnauthorizedException('Unauthenticated.');
+    }
+
+    if (grantedByAdmin && userIsAdmin(req.user)) {
+      next();
+      return;
+    }
+    const roles = req.user.roles;
+
+    for (const sufficient of sufficientRoles) {
+      if (roles.includes(sufficient)) {
+        next();
+        return;
+      }
+    }
+
+    throw new UnauthorizedException('You are not authorised to access this service.');
+  };
 };
