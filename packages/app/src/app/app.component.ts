@@ -16,7 +16,6 @@ import { SplashScreenComponent } from './auth/splash-screen/splash-screen.compon
  * 1. Checking user authentication and authorization status
  * 2. Showing splash screen when user needs to authenticate or lacks access
  * 3. Blurring background content while splash is active
- * 4. Providing smooth transitions between auth states
  *
  * The component maintains the existing functionality while adding
  * the new access control layer on top.
@@ -31,7 +30,7 @@ import { SplashScreenComponent } from './auth/splash-screen/splash-screen.compon
 export class AppComponent implements OnInit {
   private readonly appAccessService = inject(AppAccessService);
 
-  title = 'adria-app';
+  title = 'ReefGuide';
 
   /**
    * Current user access state - drives splash screen visibility
@@ -48,38 +47,9 @@ export class AppComponent implements OnInit {
    */
   readonly splashConfig = signal(environment.splashConfig);
 
-  constructor() {
-    // Initialize splash screen configuration from environment
-    this.appAccessService.updateSplashConfig(environment.splashConfig);
-
-    // Log access state changes for debugging
-    this.appAccessService.userAccessState$.subscribe(state => {
-      console.log(`[AppComponent] User access state: ${state}`);
-    });
-  }
-
   ngOnInit(): void {
     // Initialize third-party components
     this.initializeThirdPartyComponents();
-  }
-
-  /**
-   * Handle successful login from splash screen
-   */
-  onLoginSuccess(): void {
-    console.log('[AppComponent] Login successful, splash will auto-hide');
-    // The splash screen will automatically hide when userAccessState becomes 'authorized'
-    // No manual intervention needed due to reactive state management
-  }
-
-  /**
-   * Handle splash screen dismissal
-   * Note: In our implementation, splash only dismisses when user is authorized,
-   * so this is mainly for future extensibility
-   */
-  onSplashDismissed(): void {
-    console.log('[AppComponent] Splash screen dismissed');
-    // Could add analytics or other side effects here
   }
 
   /**
@@ -118,7 +88,6 @@ export class AppComponent implements OnInit {
 
   /**
    * Check if the main app content should be rendered
-   * Optimization: don't render heavy components when splash is showing
    */
   shouldRenderMainContent(): boolean {
     // Always render content so it loads in background while splash shows
@@ -133,8 +102,10 @@ export class AppComponent implements OnInit {
     const state = this.splashState();
 
     return {
+      // hidden?
       'aria-hidden': state.isVisible,
-      inert: state.shouldBlockInteractions // Prevents focus and interaction
+      // Prevents focus and interaction
+      inert: state.shouldBlockInteractions
     };
   }
 }

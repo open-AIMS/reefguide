@@ -30,6 +30,10 @@ export interface ReefGuideFrontendProps {
   buildPath?: string;
   /** Endpoints for services needed */
   webApiEndpoint: string;
+  /** Admin email address to contact for access */
+  adminEmail: string;
+  /** App name to display in login panel */
+  appName: string;
 }
 
 /**
@@ -105,7 +109,10 @@ export class ReefGuideFrontend extends Construct {
     const environment: { [key: string]: string } = {
       NODE_ENV: 'production',
       NG_APP_WEB_API_URL: props.webApiEndpoint,
-      NG_APP_ADRIA_API_URL: 'https://fake.com'
+      NG_APP_ADRIA_API_URL: 'https://fake.com',
+      NG_APP_SPLASH_ADMIN_EMAIL: props.adminEmail,
+      NG_APP_SPLASH_APP_NAME: props.appName,
+      NG_APP_SPLASH_SHOW_BACKGROUND_MAP: 'true'
     };
 
     // Setup deployment with build process

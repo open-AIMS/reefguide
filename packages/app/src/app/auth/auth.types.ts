@@ -65,15 +65,6 @@ export interface SplashState {
 }
 
 /**
- * Utility type to check if a user has any of the required roles.
- */
-export type HasRequiredRole<T extends UserRole[]> = T extends readonly (infer U)[]
-  ? U extends UserRole
-    ? boolean
-    : never
-  : never;
-
-/**
  * Helper type for components that need to check user authorization.
  */
 export type AuthorizedUser = JwtContents;

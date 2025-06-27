@@ -20,25 +20,12 @@ type AuthMode = 'login' | 'register';
 type Credentials = { email: string; password: string };
 
 /**
- * Splash Screen Component for MADAME Application
+ * Splash Screen Component
  *
- * This component serves as the main entry point for user authentication and authorization.
- * It displays different panels based on the user's access state and handles the login/register flow.
+ * This component serves as the main entry point for user authentication and
+ * authorization. It displays different panels based on the user's access state
+ * and handles the login/register flow.
  *
- * Features:
- * - Animated background with backdrop blur
- * - Login and registration forms with validation
- * - Role-based access messaging
- * - Responsive design with loading states
- * - Accessible form controls with proper ARIA labels
- *
- * @example
- * ```html
- * <app-splash-screen
- *   [userState]="userAccessState()"
- *   [config]="splashConfig()"
- *   (loginSuccess)="onLoginSuccess()">
- * </app-splash-screen>
  * ```
  */
 @Component({
@@ -88,7 +75,7 @@ export class SplashScreenComponent {
   /** Whether password field is visible */
   hidePassword = signal(true);
 
-  /** Signal to track form validity - needed for computed to work properly */
+  /** Signal to track form validity */
   private formValid = signal(false);
 
   /** Signal to track form disabled state */
@@ -144,7 +131,7 @@ export class SplashScreenComponent {
    */
   getTitle = computed(() => {
     const state = this.userState();
-    const appName = this.config().appName || 'MADAME';
+    const appName = this.config().appName || 'Reef Guide';
 
     switch (state) {
       case 'loading':
@@ -380,7 +367,8 @@ export class SplashScreenComponent {
       // Reset authenticating state after a delay
       setTimeout(() => {
         this.setAuthenticating(false);
-        // The splash screen will automatically update based on new roles via signals
+        // The splash screen will automatically update based on new roles via
+        // signals
       }, 1500);
     }
   }

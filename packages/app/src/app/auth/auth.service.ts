@@ -57,7 +57,8 @@ export class AuthService {
    * Enhanced to provide strongly typed user information.
    */
   user$: Observable<JwtContents | undefined> = toObservable(this._authenticated).pipe(
-    map(isAuthenticated => {
+    map(_isAuthenticated => {
+      // TODO what is the point of mapping through _authenticated?
       return this.auth?.user;
     })
   );
@@ -79,10 +80,8 @@ export class AuthService {
   );
 
   private auth?: AuthenticatedUser;
-
   private lsToken = 'jwtToken';
   private lsRefreshToken = 'jwtRefreshToken';
-
   private refreshHandle?: any;
 
   constructor() {

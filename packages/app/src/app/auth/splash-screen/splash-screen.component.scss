@@ -1,13 +1,5 @@
 /**
  * Splash Screen Component Styles
- *
- * Features:
- * - Full-screen overlay with backdrop blur
- * - Animated ocean wave background
- * - Responsive card layouts
- * - Material Design theming
- * - Smooth animations and transitions
- * - Accessibility-friendly interactions
  */
 
 // =====================================
@@ -99,11 +91,7 @@ $blur-amount: 12px;
     position: absolute;
     width: 100%;
     height: 100%;
-    background: radial-gradient(
-      ellipse at center,
-      rgba(255, 255, 255, 0.3) 0%,
-      transparent 70%
-    );
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
     border-radius: 50%;
     animation: float linear infinite;
   }
@@ -143,7 +131,8 @@ $blur-amount: 12px;
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0) rotate(0deg);
   }
   25% {
@@ -263,7 +252,8 @@ $blur-amount: 12px;
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     box-shadow: 0 4px 16px rgba($ocean-primary, 0.3);
   }
@@ -667,7 +657,8 @@ $blur-amount: 12px;
       height: 1.2rem;
     }
 
-    h3, h4 {
+    h3,
+    h4 {
       font-size: 0.9rem !important;
     }
 

@@ -50,25 +50,11 @@
   position: relative;
   width: 100%;
   height: 100%;
-  background-color: #fafafa; // Material Design background
+  // Material Design background
+  background-color: #fafafa;
 
   // Smooth transition for interaction states
   transition: pointer-events 0.2s ease;
-}
-
-// =====================================
-// Application Toolbar (if used)
-// =====================================
-
-.app-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
-  .toolbar-spacer {
-    flex: 1 1 auto;
-  }
 }
 
 // =====================================
@@ -78,13 +64,8 @@
 .app-main {
   position: relative;
   width: 100%;
-  height: calc(100vh - 64px); // Subtract toolbar height if using toolbar
+  height: 100%;
   overflow: auto;
-
-  // If not using toolbar, use full height
-  .app-container:not(.has-toolbar) & {
-    height: 100vh;
-  }
 }
 
 // =====================================
@@ -92,18 +73,15 @@
 // =====================================
 
 .splash-overlay-component {
-  position: fixed; // Changed from absolute to fixed
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100vw; // Use viewport units
-  height: 100vh; // Use viewport units
+  width: 100vw;
+  height: 100vh;
+  // On top
   z-index: 9999;
-
   // Ensure splash is always on top and interactive
   pointer-events: all;
-
-  // Prevent the splash from being affected by parent transforms
-  transform: translateZ(0);
 }
 
 // =====================================
@@ -128,13 +106,6 @@
 // =====================================
 
 @media (max-width: 768px) {
-  .app-container {
-    &.splash-active.blur-background {
-      // Less blur on mobile for better performance
-      filter: blur(2px) brightness(0.8);
-    }
-  }
-
   .app-main {
     // Adjust for mobile toolbar height
     height: calc(100vh - 56px);
@@ -185,36 +156,7 @@
 // Performance Optimizations
 // =====================================
 
-// Use GPU acceleration for smooth transitions
-.app-container {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000px;
-}
-
 // Optimize rendering when splash is showing
 .splash-overlay-component {
-  transform: translateZ(0);
   will-change: opacity, transform;
 }
-
-// =====================================
-// Debug Styles (remove in production)
-// =====================================
-
-// Uncomment for debugging splash states
-/*
-.app-container::before {
-  content: attr(class);
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  z-index: 10000;
-  font-family: monospace;
-}
-*/
