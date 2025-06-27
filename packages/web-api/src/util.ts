@@ -76,3 +76,10 @@ export function hashObject(obj: any): string {
     );
   }
 }
+
+/**
+ * Trims and lower cases email addresses
+ */
+export function tidyUpEmail(email: string) {
+  return email.toLowerCase().trim();
+}

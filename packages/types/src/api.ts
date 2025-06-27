@@ -334,11 +334,13 @@ export const CreatePreApprovedUserInputSchema = z.object({
   email: z.string().email('Invalid email format'),
   roles: z.array(z.nativeEnum(UserRole)).min(1, 'At least one role must be specified')
 });
+export type CreatePreApprovedUserInput = z.infer<typeof CreatePreApprovedUserInputSchema>;
 
 export const UpdatePreApprovedUserInputSchema = z.object({
   email: z.string().email('Invalid email format').optional(),
   roles: z.array(z.nativeEnum(UserRole)).min(1, 'At least one role must be specified').optional()
 });
+export type UpdatePreApprovedUserInput = z.infer<typeof UpdatePreApprovedUserInputSchema>;
 
 export const BulkCreatePreApprovedUsersInputSchema = z.object({
   users: z.array(CreatePreApprovedUserInputSchema).min(1, 'At least one user must be provided')

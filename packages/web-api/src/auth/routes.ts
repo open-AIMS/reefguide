@@ -75,7 +75,7 @@ router.post(
 router.post(
   '/login',
   processRequest({ body: LoginInputSchema }),
-  async (req: Request, res: Response<LoginResponse>) => {
+  async (req, res: Response<LoginResponse>) => {
     const { email, password: submittedPassword } = req.body;
 
     // Find user by email
@@ -180,6 +180,10 @@ router.post(
   processRequest({ body: CreatePreApprovedUserInputSchema }),
   async (req, res: Response<CreatePreApprovedUserResponse>) => {
     const { email, roles } = req.body;
+    if (!req.user) {
+      throw new Exceptions.UnauthorizedException('Not authenticated');
+    }
+
     const createdByUserId = req.user?.id;
 
     const preApprovedUserService = new PreApprovedUserService(prisma);
@@ -204,6 +208,10 @@ router.post(
   processRequest({ body: BulkCreatePreApprovedUsersInputSchema }),
   async (req, res: Response<BulkCreatePreApprovedUsersResponse>) => {
     const { users } = req.body;
+
+    if (!req.user) {
+      throw new Exceptions.UnauthorizedException('Not authenticated.');
+    }
     const createdByUserId = req.user?.id;
 
     // Add createdByUserId to each user input

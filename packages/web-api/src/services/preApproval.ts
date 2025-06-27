@@ -1,22 +1,7 @@
 import { PrismaClient, UserRole, PreApprovedUser, Prisma } from '@reefguide/db';
 import { BadRequestException, NotFoundException } from '../exceptions';
-
-/**
- * Input type for creating a new pre-approved user
- */
-export interface CreatePreApprovedUserInput {
-  email: string;
-  roles: UserRole[];
-  createdByUserId?: number;
-}
-
-/**
- * Input type for updating an existing pre-approved user
- */
-export interface UpdatePreApprovedUserInput {
-  email?: string;
-  roles?: UserRole[];
-}
+import { CreatePreApprovedUserInput, UpdatePreApprovedUserInput } from '@reefguide/types';
+import { tidyUpEmail } from '../util';
 
 /**
  * Options for querying pre-approved users
@@ -55,7 +40,9 @@ export class PreApprovedUserService {
    * @returns Promise<PreApprovedUser> - The created pre-approved user
    * @throws Error if email already exists or validation fails
    */
-  async create(input: CreatePreApprovedUserInput): Promise<PreApprovedUser> {
+  async create(
+    input: CreatePreApprovedUserInput & { createdByUserId: number }
+  ): Promise<PreApprovedUser> {
     // Validate input
     if (!input.email || !input.email.trim()) {
       throw new BadRequestException('Email is required');
@@ -67,7 +54,7 @@ export class PreApprovedUserService {
 
     // Check if email already exists (either as pre-approved or actual user)
     const existingPreApproval = await this.prisma.preApprovedUser.findUnique({
-      where: { email: input.email.toLowerCase().trim() }
+      where: { email: tidyUpEmail(input.email) }
     });
 
     if (existingPreApproval) {
@@ -75,7 +62,7 @@ export class PreApprovedUserService {
     }
 
     const existingUser = await this.prisma.user.findUnique({
-      where: { email: input.email.toLowerCase().trim() }
+      where: { email: tidyUpEmail(input.email) }
     });
 
     if (existingUser) {
@@ -95,7 +82,7 @@ export class PreApprovedUserService {
 
     return await this.prisma.preApprovedUser.create({
       data: {
-        email: input.email.toLowerCase().trim(),
+        email: tidyUpEmail(input.email),
         roles: input.roles,
         created_by_user_id: input.createdByUserId
       },
@@ -121,7 +108,7 @@ export class PreApprovedUserService {
 
     return await this.prisma.preApprovedUser.findMany({
       where: {
-        ...(email && { email: { contains: email.toLowerCase(), mode: 'insensitive' } }),
+        ...(email && { email: { contains: tidyUpEmail(email), mode: 'insensitive' } }),
         ...(used !== undefined && { used }),
         ...(createdByUserId && { created_by_user_id: createdByUserId })
       },
@@ -152,7 +139,7 @@ export class PreApprovedUserService {
 
     return await this.prisma.preApprovedUser.count({
       where: {
-        ...(email && { email: { contains: email.toLowerCase(), mode: 'insensitive' } }),
+        ...(email && { email: { contains: tidyUpEmail(email), mode: 'insensitive' } }),
         ...(used !== undefined && { used }),
         ...(createdByUserId && { created_by_user_id: createdByUserId })
       }
@@ -181,22 +168,23 @@ export class PreApprovedUserService {
       throw new BadRequestException('Cannot update a pre-approval that has already been used');
     }
 
+    const email = input.email ? tidyUpEmail(input.email) : undefined;
     // If updating email, check for conflicts
-    if (input.email && input.email.toLowerCase().trim() !== existing.email) {
+    if (email) {
       const emailConflict = await this.prisma.preApprovedUser.findUnique({
-        where: { email: input.email.toLowerCase().trim() }
+        where: { email }
       });
 
       if (emailConflict) {
-        throw new BadRequestException(`Pre-approval already exists for email: ${input.email}`);
+        throw new BadRequestException(`Pre-approval already exists for email: ${email}`);
       }
 
       const userConflict = await this.prisma.user.findUnique({
-        where: { email: input.email.toLowerCase().trim() }
+        where: { email }
       });
 
       if (userConflict) {
-        throw new BadRequestException(`User already registered with email: ${input.email}`);
+        throw new BadRequestException(`User already registered with email: ${email}`);
       }
     }
 
@@ -208,7 +196,7 @@ export class PreApprovedUserService {
     return await this.prisma.preApprovedUser.update({
       where: { id },
       data: {
-        ...(input.email && { email: input.email.toLowerCase().trim() }),
+        ...(email && { email }),
         ...(input.roles && { roles: input.roles })
       },
       include: {
@@ -231,7 +219,7 @@ export class PreApprovedUserService {
    * @throws Error if pre-approval already used
    */
   async use(email: string): Promise<UsePreApprovalResult | undefined> {
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = tidyUpEmail(email.toLowerCase().trim());
 
     const preApproval = await this.prisma.preApprovedUser.findUnique({
       where: { email: normalizedEmail }
@@ -333,7 +321,7 @@ export class PreApprovedUserService {
    * @param inputs - Array of pre-approved user data
    * @returns Promise<{ created: PreApprovedUser[], errors: Array<{email: string, error: string}> }>
    */
-  async bulkCreate(inputs: CreatePreApprovedUserInput[]): Promise<{
+  async bulkCreate(inputs: (CreatePreApprovedUserInput & { createdByUserId: number })[]): Promise<{
     created: PreApprovedUser[];
     errors: Array<{ email: string; error: string }>;
   }> {
