@@ -112,7 +112,7 @@ function convertToAuditFormat(
         used: preApproval.used,
         usedAt: preApproval.used_at?.toTimeString(),
         createdAt: preApproval.created_at.toTimeString(),
-        createdById: preApproval.created_by_user_id ?? undefined,
+        createdById: preApproval.created_by_user_id ?? undefined
       });
     });
   }
@@ -136,7 +136,7 @@ function generateCsvContent(auditUsers: AuditUser[], includePreApprovals: boolea
       used: user.used !== undefined ? user.used.toString() : '',
       used_at: user.usedAt || '',
       created_at: user.createdAt || '',
-      created_by: user.createdById || '',
+      created_by: user.createdById || ''
     }));
 
     return csvStringify(csvData, {

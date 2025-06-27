@@ -1,22 +1,17 @@
+import { PreApprovedUser, UserRole } from '@reefguide/db';
+import { BulkCreatePreApprovedUsersResponse, GetPreApprovedUsersResponse } from '@reefguide/types';
 import { Command } from 'commander';
+import { parse as csvParse } from 'csv-parse/sync';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { parse as csvParse } from 'csv-parse/sync';
-import { PreApprovedUser, UserRole } from '@reefguide/db';
 import { ApiClientService } from '../services/api-client';
 import {
-  ListOptions,
   CsvValidationError,
-  UserProcessingResult,
+  ExistingUser,
+  ListOptions,
   ParsedUser,
-  ExistingUser
+  UserProcessingResult
 } from '../types/cli-types';
-import {
-  BulkCreatePreApprovedUsersResponse,
-  GetPreApprovedUserResponse,
-  GetPreApprovedUsersResponse,
-  JwtContents
-} from '@reefguide/types';
 
 // Utility functions
 function parseRoles(rolesString: string): UserRole[] {
