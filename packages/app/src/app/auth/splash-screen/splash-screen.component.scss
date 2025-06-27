@@ -208,7 +208,7 @@ $blur-amount: 12px;
 // Direct targeting of the splash header content
 .splash-header {
   text-align: center;
-  padding: 1.25rem 1.5rem 0.75rem !important;
+  padding: 1.8rem 1.5rem 0.75rem !important;
 
   mat-card-title {
     font-size: 1.4rem !important;
@@ -395,7 +395,7 @@ $blur-amount: 12px;
 
 .mode-switch {
   text-align: center;
-  padding: 0 1.5rem 1.5rem;
+  padding: 0;
 
   p {
     color: rgba($ocean-dark, 0.7);
@@ -623,11 +623,11 @@ $blur-amount: 12px;
   .splash-header {
     padding: 1rem 1rem 0.5rem !important;
 
-    .mat-card-title {
+    mat-card-title {
       font-size: 1.2rem !important;
     }
 
-    .mat-card-subtitle {
+    mat-card-subtitle {
       font-size: 0.85rem !important;
     }
   }
@@ -696,6 +696,7 @@ $blur-amount: 12px;
   .splash-icon {
     width: 44px;
     height: 44px;
+    margin-top: 0.5rem;
     margin-bottom: 0.5rem;
 
     .mat-icon {
@@ -708,7 +709,7 @@ $blur-amount: 12px;
   .splash-header {
     padding: 0.75rem 1.5rem 0.5rem !important;
 
-    .mat-card-title {
+    mat-card-title {
       font-size: 1.2rem !important;
     }
   }
