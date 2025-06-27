@@ -219,15 +219,15 @@
           <div class="contact-text">
             <h4>Request Access</h4>
             <p>{{ getContactInfo() }}</p>
-            <button
-              mat-raised-button
-              color="accent"
-              [attr.href]="'mailto:' + config().adminEmail + '?subject=MADAME Access Request'"
-              class="contact-button"
-            >
-              <mat-icon>email</mat-icon>
-              Request Access
-            </button>
+              <button
+                mat-raised-button
+                color="accent"
+                (click)="openEmailClient()"
+                class="contact-button"
+              >
+                <mat-icon>email</mat-icon>
+                Request Access
+              </button>
           </div>
         </div>
 

@@ -344,6 +344,30 @@ export class SplashScreenComponent {
     return `Please contact ${config.adminEmail} to request access.`;
   }
 
+  openEmailClient() {
+    const adminEmail = this.config().adminEmail;
+    const subject = 'ReefGuide Access Request';
+    const emailUrl = `mailto:${adminEmail}?subject=${encodeURIComponent(subject)}`;
+
+    // Try to open mailto
+    window.open(emailUrl, '_self');
+
+    // Also provide fallback instructions
+    setTimeout(() => {
+      if (
+        confirm(
+          "If your email client didn't open, would you like to copy the email address to your clipboard?"
+        )
+      ) {
+        navigator.clipboard.writeText(adminEmail).then(() => {
+          alert(
+            `Email address copied! Please send your request to:\n${adminEmail}\nSubject: ReefGuide Access Request`
+          );
+        });
+      }
+    }, 1000);
+  }
+
   /**
    * Handle keyboard events for better accessibility
    */
