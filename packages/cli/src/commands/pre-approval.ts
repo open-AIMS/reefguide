@@ -2,18 +2,21 @@ import { Command } from 'commander';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { parse as csvParse } from 'csv-parse/sync';
-import { UserRole } from '@reefguide/db';
+import { PreApprovedUser, UserRole } from '@reefguide/db';
 import { ApiClientService } from '../services/api-client';
 import {
-  PreApprovedUser,
-  ExistingUser,
-  BulkCreateResponse,
-  ListPreApprovedUsersResponse,
   ListOptions,
-  ParsedUser,
   CsvValidationError,
-  UserProcessingResult
+  UserProcessingResult,
+  ParsedUser,
+  ExistingUser
 } from '../types/cli-types';
+import {
+  BulkCreatePreApprovedUsersResponse,
+  GetPreApprovedUserResponse,
+  GetPreApprovedUsersResponse,
+  JwtContents
+} from '@reefguide/types';
 
 // Utility functions
 function parseRoles(rolesString: string): UserRole[] {
@@ -84,7 +87,7 @@ async function findExistingPreApproval(
 ): Promise<PreApprovedUser | null> {
   try {
     // Get pre-approved user by email - we need to search through the list since there's no direct endpoint
-    const response = await apiClient.client.get<ListPreApprovedUsersResponse>(
+    const response = await apiClient.client.get<GetPreApprovedUsersResponse>(
       `${apiClient.apiBaseUrl}/auth/admin/pre-approved-users`,
       { params: { email: email, limit: 1 } }
     );
@@ -212,7 +215,7 @@ async function processUsersWithBulkFallback(
 
     try {
       // Try bulk create
-      const bulkResponse = await apiClient.client.post<BulkCreateResponse>(
+      const bulkResponse = await apiClient.client.post<BulkCreatePreApprovedUsersResponse>(
         `${apiClient.apiBaseUrl}/auth/admin/pre-approved-users/bulk`,
         { users: potentialPreApprovals }
       );
@@ -430,14 +433,13 @@ function formatDate(dateString: string): string {
 
 function formatPreApprovedUser(user: PreApprovedUser): string {
   const status = user.used ? '✅ Used' : '⏳ Pending';
-  const usedAt = user.used_at ? ` (${formatDate(user.used_at)})` : '';
-  const createdBy = user.created_by_user ? ` by ${user.created_by_user.email}` : '';
-  const notes = user.notes ? `\n     Notes: ${user.notes}` : '';
+  const usedAt = user.used_at ? ` (${formatDate(user.used_at.toTimeString())})` : '';
+  const createdBy = user.created_by_user_id ? ` by ${user.created_by_user_id}` : '';
 
   return `📧 ${user.email}
      Roles: ${user.roles.join(', ')}
      Status: ${status}${usedAt}
-     Created: ${formatDate(user.created_at)}${createdBy}${notes}`;
+     Created: ${formatDate(user.created_at.toTimeString())}${createdBy}`;
 }
 
 function formatUserProcessingResult(result: UserProcessingResult): string {
@@ -619,7 +621,7 @@ async function listPreApprovals(options: ListOptions): Promise<void> {
     }
 
     // Make API call
-    const response = await apiClient.client.get<ListPreApprovedUsersResponse>(
+    const response = await apiClient.client.get<GetPreApprovedUsersResponse>(
       `${apiClient.apiBaseUrl}/auth/admin/pre-approved-users`,
       { params }
     );

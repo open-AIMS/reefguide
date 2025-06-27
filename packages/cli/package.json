@@ -8,8 +8,8 @@
     },
     "scripts": {
         "build": "tsc",
-        "prestart": "pnpm run build",
         "start": "node build/src/index.js",
+        "buildstart": "pnpm run build && node build/src/index.js",
         "watch": "tsc -w",
         "lint": "gts lint",
         "type-check": "tsc --noEmit",

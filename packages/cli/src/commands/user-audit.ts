@@ -2,9 +2,10 @@ import { Command } from 'commander';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { stringify as csvStringify } from 'csv-stringify/sync';
-import { UserRole } from '@reefguide/db';
+import { PreApprovedUser, UserRole } from '@reefguide/db';
 import { ApiClientService } from '../services/api-client';
-import { ExistingUser, PreApprovedUser, ListPreApprovedUsersResponse } from '../types/cli-types';
+import { ExistingUser } from '../types/cli-types';
+import { GetPreApprovedUsersResponse } from '@reefguide/types';
 
 interface AuditUser {
   email: string;
@@ -15,8 +16,7 @@ interface AuditUser {
   used?: boolean;
   usedAt?: string | null;
   createdAt?: string;
-  createdBy?: string;
-  notes?: string;
+  createdById?: number;
 }
 
 interface UserAuditOptions {
@@ -46,7 +46,7 @@ async function fetchAllPreApprovals(apiClient: ApiClientService): Promise<PreApp
     const limit = 100;
 
     while (true) {
-      const response = await apiClient.client.get<ListPreApprovedUsersResponse>(
+      const response = await apiClient.client.get<GetPreApprovedUsersResponse>(
         `${apiClient.apiBaseUrl}/auth/admin/pre-approved-users`,
         { params: { limit, offset } }
       );
@@ -110,10 +110,9 @@ function convertToAuditFormat(
         status: 'pre-approved',
         preApprovalId: preApproval.id,
         used: preApproval.used,
-        usedAt: preApproval.used_at,
-        createdAt: preApproval.created_at,
-        createdBy: preApproval.created_by_user?.email,
-        notes: preApproval.notes
+        usedAt: preApproval.used_at?.toTimeString(),
+        createdAt: preApproval.created_at.toTimeString(),
+        createdById: preApproval.created_by_user_id ?? undefined,
       });
     });
   }
@@ -137,8 +136,7 @@ function generateCsvContent(auditUsers: AuditUser[], includePreApprovals: boolea
       used: user.used !== undefined ? user.used.toString() : '',
       used_at: user.usedAt || '',
       created_at: user.createdAt || '',
-      created_by: user.createdBy || '',
-      notes: user.notes || ''
+      created_by: user.createdById || '',
     }));
 
     return csvStringify(csvData, {
@@ -189,12 +187,8 @@ function formatAuditUser(user: AuditUser): string {
       details += `\n     Created: ${new Date(user.createdAt).toLocaleDateString()}`;
     }
 
-    if (user.createdBy) {
-      details += ` by ${user.createdBy}`;
-    }
-
-    if (user.notes) {
-      details += `\n     Notes: ${user.notes}`;
+    if (user.createdById) {
+      details += ` by ${user.createdById}`;
     }
   }
 
