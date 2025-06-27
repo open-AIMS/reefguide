@@ -205,21 +205,26 @@ $blur-amount: 12px;
 // Card Header Styles
 // =====================================
 
+// Direct targeting of the splash header content
 .splash-header {
   text-align: center;
   padding: 1.25rem 1.5rem 0.75rem !important;
 
-  .mat-card-title {
+  mat-card-title {
     font-size: 1.4rem !important;
     font-weight: 600 !important;
     color: $ocean-dark;
-    margin-bottom: 0.4rem !important;
+    display: block !important;
+    margin-bottom: 0.8rem !important;
   }
 
-  .mat-card-subtitle {
+  mat-card-subtitle {
     color: rgba($ocean-dark, 0.7) !important;
     font-size: 0.9rem !important;
     line-height: 1.4;
+    margin-bottom: 0.5rem;
+    display: block !important;
+    margin-top: 0 !important;
   }
 }
 
