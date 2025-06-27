@@ -1,16 +1,15 @@
 import { JobStatus, JobType, prisma, UserAction } from '@reefguide/db';
-import { createJobResponseSchema } from '@reefguide/types';
+import { createJobResponseSchema, ListUserLogsResponse } from '@reefguide/types';
 import { randomInt } from 'crypto';
 import { Express } from 'express';
 import request from 'supertest';
 import app from '../src/apiSetup';
 import { signJwt } from '../src/auth/jwtUtils';
+import { BASE_ROLES } from '../src/auth/routes';
 import { decodeRefreshToken, encodeRefreshToken } from '../src/auth/utils';
 import { InvalidRefreshTokenException } from '../src/exceptions';
 import { JobService } from '../src/services/jobs';
-import { ListUserLogsResponse } from '../src/users/routes';
 import { adminToken, clearDbs, user1Email, user1Token, user2Token, userSetup } from './utils';
-import { BASE_ROLES } from '../src/auth/routes';
 
 afterAll(async () => {
   // clear when finished
