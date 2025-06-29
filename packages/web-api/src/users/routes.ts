@@ -1,5 +1,11 @@
-import { prisma, UserAction, UserRole } from '@reefguide/db';
-import { UserDetailsSchema } from '@reefguide/types';
+import { prisma } from '@reefguide/db';
+import {
+  CreateUserSchema,
+  ListUserLogsResponse,
+  UpdateUserPasswordSchema,
+  UpdateUserRolesSchema,
+  UserResponse
+} from '@reefguide/types';
 import express, { Response, Router } from 'express';
 import { z } from 'zod';
 import { processRequest } from 'zod-express-middleware';
@@ -10,48 +16,6 @@ import { changePassword, registerUser } from '../services/auth';
 
 require('express-async-errors');
 export const router: Router = express.Router();
-
-const UpdateUserRolesSchema = z.object({
-  roles: z.array(z.nativeEnum(UserRole))
-});
-
-// Response Types
-const UserResponseSchema = z.object({
-  id: z.number()
-});
-
-type UserResponse = z.infer<typeof UserResponseSchema>;
-
-const UpdateUserPasswordSchema = z.object({
-  password: z.string().min(8)
-});
-
-// Schema Definitions
-const CreateUserSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  roles: z.array(z.nativeEnum(UserRole)).optional()
-});
-
-export const ListUserLogsResponseSchema = z.object({
-  logs: z.array(
-    z.object({
-      id: z.number(),
-      userId: z.number(),
-      time: z.date(),
-      action: z.nativeEnum(UserAction),
-      metadata: z.any().optional(),
-      user: UserDetailsSchema
-    })
-  ),
-  pagination: z.object({
-    page: z.number(),
-    limit: z.number(),
-    total: z.number(),
-    pages: z.number()
-  })
-});
-export type ListUserLogsResponse = z.infer<typeof ListUserLogsResponseSchema>;
 
 /**
  * Get all users (admin only)

@@ -1,29 +1,25 @@
-import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../environments/environment';
+import { inject, Injectable } from '@angular/core';
+import { JobType, Polygon, PolygonNote, User, UserRole } from '@reefguide/db';
 import {
   CreateJobResponse,
   DownloadResponse,
   JobDetailsResponse,
-  JobType,
   ListJobsResponse,
+  ListUserLogsResponse,
   LoginResponse,
-  Note,
-  Polygon,
-  User,
-  UserLogs,
-  UserProfile,
-  UserRole
-} from './web-api.types';
+  ProfileResponse
+} from '@reefguide/types';
 import {
+  distinctUntilKeyChanged,
   interval,
   map,
   Observable,
   switchMap,
-  distinctUntilKeyChanged,
   takeWhile,
   tap
 } from 'rxjs';
+import { environment } from '../environments/environment';
 import { retryHTTPErrors } from '../util/http-util';
 
 type JobId = CreateJobResponse['jobId'];
@@ -60,7 +56,7 @@ export class WebApiService {
   }
 
   getProfile() {
-    return this.http.get<UserProfile>(`${this.base}/auth/profile`);
+    return this.http.get<ProfileResponse>(`${this.base}/auth/profile`);
   }
 
   getPolygons(): Observable<Polygon[]> {
@@ -85,12 +81,12 @@ export class WebApiService {
   }
 
   // TODO remaining note endpoints, types
-  getNotes(): Observable<Array<Note>> {
-    return this.http.get<Array<Note>>(`${this.base}/notes`);
+  getNotes(): Observable<Array<PolygonNote>> {
+    return this.http.get<Array<PolygonNote>>(`${this.base}/notes`);
   }
 
-  getNote(id: string): Observable<Note> {
-    return this.http.get<Note>(`${this.base}/notes/${id}`);
+  getNote(id: string): Observable<PolygonNote> {
+    return this.http.get<PolygonNote>(`${this.base}/notes/${id}`);
   }
 
   createNote(polygonId: number, content: string) {
@@ -141,7 +137,9 @@ export class WebApiService {
   }
 
   userLogs({ page, limit }: { page: number; limit: number }) {
-    return this.http.get<UserLogs>(`${this.baseUsers}/utils/log?page=${page}&limit=${limit}`);
+    return this.http.get<ListUserLogsResponse>(
+      `${this.baseUsers}/utils/log?page=${page}&limit=${limit}`
+    );
   }
 
   // ## Jobs System ##

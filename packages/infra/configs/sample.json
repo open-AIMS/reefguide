@@ -1,50 +1,52 @@
 {
-  "stackName": "reef-guide-stack",
-  "hostedZone": {
-    "id": "Z1234567890ABCDEFGHIJ",
-    "name": "example.com"
-  },
-  "certificates": {
-    "primary": "arn:aws:acm:region:123456789012:certificate/12345678-1234-1234-1234-123456789012",
-    "cloudfront": "arn:aws:acm:us-east-1:123456789012:certificate/98765432-9876-9876-9876-987654321098"
-  },
-  "domains": {
-    "baseDomain": "example.com",
-    "reefGuideAPI": "guide-api",
-    "webAPI": "web-api"
-  },
-  "aws": {
-    "account": "123456789012",
-    "region": "ap-southeast-2"
-  },
-  "webAPI": {
-    "apiSecretsArn": "arn:aws:secretsmanager:region:123456789012:secret:api-secrets-123456",
-    "nodeEnv": "production",
-    "port": 5000
-  },
-  "reefGuideAPI": {
-    "reefGuideDockerImage": "ghcr.io/open-aims/reefguideapi.jl/reefguide-src",
-    "reefGuideDockerImageTag": "latest",
-    "cpu": 1024,
-    "memory": 2048,
-    "autoScaling": {
-      "minCapacity": 1,
-      "maxCapacity": 5,
-      "targetCpuUtilization": 70,
-      "targetMemoryUtilization": 80,
-      "scaleInCooldown": 300,
-      "scaleOutCooldown": 300
+    "stackName": "reef-guide-stack",
+    "hostedZone": {
+        "id": "Z1234567890ABCDEFGHIJ",
+        "name": "example.com"
     },
-    "memoryAlerting": {
-      "emailAddress": "alerts@example.com",
-      "memoryThresholdPercent": 75,
-      "maxMemoryThresholdPercent": 95,
-      "evaluationPeriods": 2,
-      "metricPeriod": 60
+    "certificates": {
+        "primary": "arn:aws:acm:region:123456789012:certificate/12345678-1234-1234-1234-123456789012",
+        "cloudfront": "arn:aws:acm:us-east-1:123456789012:certificate/98765432-9876-9876-9876-987654321098"
+    },
+    "domains": {
+        "baseDomain": "example.com",
+        "reefGuideAPI": "guide-api",
+        "webAPI": "web-api"
+    },
+    "aws": {
+        "account": "123456789012",
+        "region": "ap-southeast-2"
+    },
+    "webAPI": {
+        "apiSecretsArn": "arn:aws:secretsmanager:region:123456789012:secret:api-secrets-123456",
+        "nodeEnv": "production",
+        "port": 5000
+    },
+    "reefGuideAPI": {
+        "reefGuideDockerImage": "ghcr.io/open-aims/reefguideapi.jl/reefguide-src",
+        "reefGuideDockerImageTag": "latest",
+        "cpu": 1024,
+        "memory": 2048,
+        "autoScaling": {
+            "minCapacity": 1,
+            "maxCapacity": 5,
+            "targetCpuUtilization": 70,
+            "targetMemoryUtilization": 80,
+            "scaleInCooldown": 300,
+            "scaleOutCooldown": 300
+        },
+        "memoryAlerting": {
+            "emailAddress": "alerts@example.com",
+            "memoryThresholdPercent": 75,
+            "maxMemoryThresholdPercent": 95,
+            "evaluationPeriods": 2,
+            "metricPeriod": 60
+        }
+    },
+    "frontend": {
+        "indexDocument": "index.html",
+        "errorDocument": "error.html",
+        "adminEmail": "email@email.com",
+        "appName": "ReefGuide"
     }
-  },
-  "frontend": {
-    "indexDocument": "index.html",
-    "errorDocument": "error.html"
-  }
 }

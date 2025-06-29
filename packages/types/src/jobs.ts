@@ -1,0 +1,136 @@
+import { JobType } from '@reefguide/db';
+import { z } from 'zod';
+
+/**
+ * Shared criteria schema used across multiple job types.
+ * Contains common assessment parameters for regional and suitability assessments.
+ */
+export const sharedCriteriaSchema = z.object({
+  // High level config - common to all current scenarios
+  region: z.string().describe('Region for assessment'),
+  reef_type: z.string().describe('The type of reef, slopes or flats'),
+  // Criteria - all optional to match the Union{Float64,Nothing} in worker
+  depth_min: z.number().optional().describe('The depth minimum (the deeper more negative value)'),
+  depth_max: z
+    .number()
+    .optional()
+    .describe('The depth maximum (the shallower less negative value)'),
+  slope_min: z.number().optional().describe('The slope range (min)'),
+  slope_max: z.number().optional().describe('The slope range (max)'),
+  rugosity_min: z.number().optional().describe('The rugosity range (min)'),
+  rugosity_max: z.number().optional().describe('The rugosity range (max)'),
+  waves_period_min: z.number().optional().describe('The wave period range (min)'),
+  waves_period_max: z.number().optional().describe('The wave period range (max)'),
+  waves_height_min: z.number().optional().describe('The wave height range (min)'),
+  waves_height_max: z.number().optional().describe('The wave height range (max)')
+});
+
+/**
+ * Individual job input schemas
+ */
+export const testJobInputSchema = z
+  .object({
+    // This is just to break up the hash
+    id: z.number()
+  })
+  .strict();
+
+export const suitabilityAssessmentInputSchema = sharedCriteriaSchema
+  .extend({
+    x_dist: z.number().describe('Length (m) of the target polygon'),
+    y_dist: z.number().describe('Width (m) of the target polygon'),
+    threshold: z.number().optional().describe('Suitability threshold integer (min)')
+  })
+  .strict();
+
+export const regionalAssessmentInputSchema = sharedCriteriaSchema.strict();
+
+export const dataSpecificationUpdateJobInputSchema = z.object({
+  cache_buster: z.number().optional().describe('Cache buster to force update')
+});
+
+/**
+ * Individual job result schemas
+ */
+export const testJobResultSchema = z.object({}).strict().optional();
+
+export const suitabilityAssessmentResultSchema = z
+  .object({
+    geojson_path: z
+      .string()
+      .describe(
+        'Relative path in job storage location to the GeoJSON file containing assessment results'
+      )
+  })
+  .strict();
+
+export const regionalAssessmentResultSchema = z
+  .object({
+    cog_path: z.string().describe('Relative location of the COG file in the output directory')
+  })
+  .strict();
+
+export const dataSpecificationUpdateResultSchema = z.object({}).strict();
+
+/**
+ * Exported TypeScript types inferred from schemas
+ */
+export type SharedCriteria = z.infer<typeof sharedCriteriaSchema>;
+export type TestJobInput = z.infer<typeof testJobInputSchema>;
+export type SuitabilityAssessmentInput = z.infer<typeof suitabilityAssessmentInputSchema>;
+export type RegionalAssessmentInput = z.infer<typeof regionalAssessmentInputSchema>;
+export type DataSpecificationUpdateJobInput = z.infer<typeof dataSpecificationUpdateJobInputSchema>;
+export type TestJobResult = z.infer<typeof testJobResultSchema>;
+export type SuitabilityAssessmentResult = z.infer<typeof suitabilityAssessmentResultSchema>;
+export type RegionalAssessmentResult = z.infer<typeof regionalAssessmentResultSchema>;
+export type DataSpecificationUpdateJobResult = z.infer<typeof dataSpecificationUpdateResultSchema>;
+
+/**
+ * Schema definitions for each job type's input and output payloads.
+ * Each job type must define an input schema and may optionally define a result schema.
+ */
+export const jobTypeSchemas: JobSchemaMap = {
+  TEST: {
+    input: testJobInputSchema,
+    result: testJobResultSchema
+  },
+  // The suitability assessment job takes in regional parameters and returns the location of the file relative to the job storage location.
+  SUITABILITY_ASSESSMENT: {
+    input: suitabilityAssessmentInputSchema,
+    result: suitabilityAssessmentResultSchema
+  },
+  REGIONAL_ASSESSMENT: {
+    input: regionalAssessmentInputSchema,
+    result: regionalAssessmentResultSchema
+  },
+  DATA_SPECIFICATION_UPDATE: {
+    input: dataSpecificationUpdateJobInputSchema,
+    result: dataSpecificationUpdateResultSchema
+  }
+};
+
+export const jobExpiryMap: JobExpiryMap = {
+  TEST: {
+    // expires in one hour
+    expiryMinutes: 60
+  },
+  SUITABILITY_ASSESSMENT: {
+    // expires in one hour
+    expiryMinutes: 60
+  }
+};
+
+/** Job type map */
+type JobSchemaMap = {
+  [K: string]: {
+    input: z.ZodSchema<any>;
+    result?: z.ZodSchema<any>;
+  };
+};
+
+/** Expiry time map */
+type JobExpiryMap = {
+  [K in JobType]?: {
+    expiryMinutes: number;
+  };
+};
