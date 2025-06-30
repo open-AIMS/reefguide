@@ -2,7 +2,7 @@ import { prisma } from '@reefguide/db';
 import { JwtContents, RefreshTokenContents } from '@reefguide/types';
 import { randomUUID } from 'crypto';
 import jwt, { Algorithm } from 'jsonwebtoken';
-import { config } from '../config';
+import { config, REFRESH_DURATION_SECONDS, TOKEN_EXPIRY } from '../config';
 import { base64encode, encodeRefreshToken } from './utils';
 
 // Key signing and validation parameters
@@ -10,14 +10,10 @@ const PRIVATE_KEY: jwt.Secret = config.jwt.privateKey;
 export const PUBLIC_KEY = config.jwt.publicKey;
 const KEY_ID = config.jwt.keyId;
 const ISSUER = config.apiDomain;
-// 10 minutes for main token
-const TOKEN_EXPIRY = 10 * 60;
 export const ALGORITHM: Algorithm = 'RS256';
 const KEY_TYPE = 'RSA';
 const KEY_USE = 'sig';
 const KEY_EXPONENT = 'AQAB';
-// Set expiry time for refresh tokens (hours)
-const REFRESH_DURATION_HOURS = 48;
 
 /**
  * Signs a JWT with the given payload.
@@ -83,7 +79,7 @@ export const generateRefreshToken = async (user_id: number): Promise<string> => 
   // Generate a random UUID
   const randString = randomUUID();
 
-  const expiryTimestampSeconds = Math.floor(Date.now() / 1000) + REFRESH_DURATION_HOURS * 60 * 60;
+  const expiryTimestampSeconds = Math.floor(Date.now() / 1000) + REFRESH_DURATION_SECONDS;
 
   // Create a new RefreshToken in the database
   const refreshToken = await prisma.refreshToken.create({

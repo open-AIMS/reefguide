@@ -1,0 +1,159 @@
+/**
+ * App Component Styles with Splash Screen Integration
+ *
+ * Manages the main application container states and provides
+ * smooth transitions between authenticated and unauthenticated states.
+ */
+
+// =====================================
+// Main App Container
+// =====================================
+
+.app-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+
+  // Smooth transitions for state changes
+  transition: filter 0.3s ease-in-out;
+
+  // Normal state - full interaction
+  &:not(.splash-active) {
+    filter: none;
+
+    .main-content {
+      pointer-events: all;
+    }
+  }
+
+  // Splash active state
+  &.splash-active {
+    // Blur background when splash is showing
+    &.blur-background {
+      filter: blur(4px) brightness(0.7);
+    }
+
+    // Block interactions with main content
+    &.block-interactions .main-content {
+      pointer-events: none;
+      user-select: none;
+    }
+  }
+}
+
+// =====================================
+// Main Application Content
+// =====================================
+
+.main-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  // Material Design background
+  background-color: #fafafa;
+
+  // Smooth transition for interaction states
+  transition: pointer-events 0.2s ease;
+}
+
+// =====================================
+// Main Content Area
+// =====================================
+
+.app-main {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+// =====================================
+// Splash Screen Overlay Component
+// =====================================
+
+.splash-overlay-component {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  // On top
+  z-index: 9999;
+  // Ensure splash is always on top and interactive
+  pointer-events: all;
+}
+
+// =====================================
+// Loading State Optimizations
+// =====================================
+
+// When splash is active, optimize main content rendering
+.app-container.splash-active {
+  .main-content {
+    // Reduce resource usage when content is not visible
+    will-change: auto;
+
+    // Hide content from screen readers when splash is active
+    &[aria-hidden='true'] {
+      visibility: hidden;
+    }
+  }
+}
+
+// =====================================
+// Responsive Design
+// =====================================
+
+@media (max-width: 768px) {
+  .app-main {
+    // Adjust for mobile toolbar height
+    height: calc(100vh - 56px);
+
+    .app-container:not(.has-toolbar) & {
+      height: 100vh;
+    }
+  }
+}
+
+// =====================================
+// Accessibility Enhancements
+// =====================================
+
+// Reduced motion preferences
+@media (prefers-reduced-motion: reduce) {
+  .app-container,
+  .main-content {
+    transition: none !important;
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+  .app-container.splash-active.blur-background {
+    filter: none;
+    background-color: rgba(0, 0, 0, 0.8);
+  }
+}
+
+// Focus management when splash is active
+.app-container.splash-active .main-content {
+  // Prevent keyboard navigation to background content
+  * {
+    user-select: none;
+  }
+
+  // Hide focus indicators on background content
+  *:focus {
+    outline: none !important;
+  }
+}
+
+// =====================================
+// Performance Optimizations
+// =====================================
+
+// Optimize rendering when splash is showing
+.splash-overlay-component {
+  will-change: opacity, transform;
+}

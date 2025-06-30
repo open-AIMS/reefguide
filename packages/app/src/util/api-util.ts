@@ -1,11 +1,11 @@
-import { DownloadResponse } from '../api/web-api.types';
-
 /*
 Misc utilities for working with data from our API.
 
 These may be simple, but help to track where we're doing certain operations
 and make it easier to update these places in the future.
  */
+
+import { DownloadResponse } from '@reefguide/types';
 
 /**
  * Get the first file from job results.

@@ -1,55 +1,57 @@
 {
-    "name": "@reefguide/app",
-    "version": "0.1",
-    "scripts": {
-        "ng": "ng",
-        "start": "ng serve",
-        "dev": "ng serve",
-        "build": "ng build",
-        "watch": "ng build --watch --configuration development",
-        "test": "ng test",
-        "format:check": "prettier --check \"src/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
-        "format:write": "prettier --write \"src/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\""
-    },
-    "private": true,
-    "dependencies": {
-        "@angular/animations": "^19.2.11",
-        "@angular/cdk": "^19.2.16",
-        "@angular/common": "^19.2.11",
-        "@angular/compiler": "^19.2.11",
-        "@angular/core": "^19.2.11",
-        "@angular/forms": "^19.2.11",
-        "@angular/material": "^19.2.16",
-        "@angular/platform-browser": "^19.2.11",
-        "@angular/platform-browser-dynamic": "^19.2.11",
-        "@angular/router": "^19.2.11",
-        "@arcgis/core": "^4.30.3",
-        "@arcgis/map-components": "^4.32.14",
-        "@arcgis/map-components-angular": "^4.30.2",
-        "@esri/calcite-components": "^3.2.1",
-        "@esri/calcite-components-angular": "^2.11.1",
-        "@ngx-env/builder": "^19.0.4",
-        "jwt-decode": "^4.0.0",
-        "rxjs": "~7.8.2",
-        "tslib": "^2.3.0",
-        "zod": "^3.25.62"
-    },
-    "devDependencies": {
-        "@angular-devkit/build-angular": "^19.2.12",
-        "@angular/cli": "^19.2.12",
-        "@angular/compiler-cli": "^19.2.11",
-        "@types/jasmine": "~5.1.0",
-        "jasmine-core": "~5.6.0",
-        "karma": "~6.4.0",
-        "karma-chrome-launcher": "~3.2.0",
-        "karma-coverage": "~2.2.0",
-        "karma-jasmine": "~5.1.0",
-        "karma-jasmine-html-reporter": "~2.1.0"
-    },
-    "overrides": {
-        "@arcgis/map-components-angular": {
-            "@angular/core": "^19.2.5",
-            "@angular/common": "^19.2.5"
-        }
+  "name": "@reefguide/app",
+  "version": "0.1",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "dev": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
+    "format:write": "prettier --write \"src/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\""
+  },
+  "private": true,
+  "dependencies": {
+    "@reefguide/types": "workspace:*",
+    "@reefguide/db": "workspace:*",
+    "@angular/animations": "^19.2.11",
+    "@angular/cdk": "^19.2.16",
+    "@angular/common": "^19.2.11",
+    "@angular/compiler": "^19.2.11",
+    "@angular/core": "^19.2.11",
+    "@angular/forms": "^19.2.11",
+    "@angular/material": "^19.2.16",
+    "@angular/platform-browser": "^19.2.11",
+    "@angular/platform-browser-dynamic": "^19.2.11",
+    "@angular/router": "^19.2.11",
+    "@arcgis/core": "^4.30.3",
+    "@arcgis/map-components": "^4.32.14",
+    "@arcgis/map-components-angular": "^4.30.2",
+    "@esri/calcite-components": "^3.2.1",
+    "@esri/calcite-components-angular": "^2.11.1",
+    "@ngx-env/builder": "^19.0.4",
+    "jwt-decode": "^4.0.0",
+    "rxjs": "~7.8.2",
+    "tslib": "^2.3.0",
+    "zod": "^3.25.62"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^19.2.12",
+    "@angular/cli": "^19.2.12",
+    "@angular/compiler-cli": "^19.2.11",
+    "@types/jasmine": "~5.1.0",
+    "jasmine-core": "~5.6.0",
+    "karma": "~6.4.0",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.0",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.1.0"
+  },
+  "overrides": {
+    "@arcgis/map-components-angular": {
+      "@angular/core": "^19.2.5",
+      "@angular/common": "^19.2.5"
     }
+  }
 }

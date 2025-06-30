@@ -1,7 +1,4 @@
-import {
-  JobTypePayload_RegionalAssessment,
-  JobTypePayload_SuitabilityAssessment
-} from '../../api/web-api.types';
+import { RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
 
 /**
  * The original criteria names used by ReefGuideApi.jl REST API
@@ -30,10 +27,10 @@ export const criteriaIdToPayloadId: Record<string, string> = {
  */
 export function criteriaToJobPayload(
   criteria: SelectionCriteria
-): Omit<JobTypePayload_RegionalAssessment, 'region'> {
+): Omit<RegionalAssessmentInput, 'region'> {
   const payload: Record<string, any> = {
     reef_type: 'slopes'
-  } satisfies Partial<JobTypePayload_RegionalAssessment>;
+  } satisfies Partial<RegionalAssessmentInput>;
 
   for (let [criteriaId, range] of Object.entries(criteria)) {
     const payloadProp = criteriaIdToPayloadId[criteriaId];
@@ -43,14 +40,14 @@ export function criteriaToJobPayload(
     payload[`${payloadProp}_min`] = range[0];
     payload[`${payloadProp}_max`] = range[1];
   }
-  return payload as JobTypePayload_RegionalAssessment;
+  return payload as RegionalAssessmentInput;
 }
 
 export function criteriaToSiteSuitabilityJobPayload(
   region: string,
   criteria: SelectionCriteria,
   siteCriteria: SiteSuitabilityCriteria
-): JobTypePayload_SuitabilityAssessment {
+): SuitabilityAssessmentInput {
   return {
     ...criteriaToJobPayload(criteria),
     region,

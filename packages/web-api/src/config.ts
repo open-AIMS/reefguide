@@ -25,7 +25,25 @@ const envSchema = z.object({
   WORKER_USERNAME: z.string(),
   WORKER_PASSWORD: z.string(),
   ADMIN_USERNAME: z.string(),
-  ADMIN_PASSWORD: z.string()
+  ADMIN_PASSWORD: z.string(),
+  // Token configuration - with proper defaults
+  ACCESS_TOKEN_EXPIRY_MINUTES: z
+    .string()
+    .optional()
+    .default('10')
+    .transform(val => parseInt(val, 10))
+    .refine(val => !isNaN(val) && val > 0, {
+      message: 'ACCESS_TOKEN_EXPIRY_MINUTES must be a positive number'
+    }),
+  REFRESH_TOKEN_EXPIRY_MINUTES: z
+    .string()
+    .optional()
+    // 48 hours
+    .default((48 * 60).toString())
+    .transform(val => parseInt(val, 10))
+    .refine(val => !isNaN(val) && val > 0, {
+      message: 'REFRESH_TOKEN_EXPIRY_MINUTES must be a positive number'
+    })
 });
 
 /**
@@ -60,6 +78,11 @@ export interface Config {
     workerPassword: string;
     adminUsername: string;
     adminPassword: string;
+  };
+  tokens: {
+    accessTokenExpiryMinutes: number;
+    refreshTokenExpiryMinutes: number;
+    accessTokenExpirySeconds: number; // Computed convenience property
   };
 }
 
@@ -120,12 +143,23 @@ export function getConfig(): Config {
       managerUsername: env.MANAGER_USERNAME,
       adminUsername: env.ADMIN_USERNAME,
       adminPassword: env.ADMIN_PASSWORD
+    },
+    tokens: {
+      accessTokenExpiryMinutes: env.ACCESS_TOKEN_EXPIRY_MINUTES,
+      refreshTokenExpiryMinutes: env.REFRESH_TOKEN_EXPIRY_MINUTES,
+      // Computed convenience property for seconds
+      accessTokenExpirySeconds: env.ACCESS_TOKEN_EXPIRY_MINUTES * 60
     }
   };
 
-  // Log configuration in non-production environments
+  // Log configuration in non-production environments (excluding sensitive data)
   if (config.isDevelopment) {
-    console.debug('API Configuration:', JSON.stringify(config, null, 2));
+    const logConfig = {
+      ...config,
+      jwt: { keyId: config.jwt.keyId }, // Only log key ID, not the actual keys
+      creds: '[HIDDEN]' // Hide credentials from logs
+    };
+    console.debug('API Configuration:', JSON.stringify(logConfig, null, 2));
   }
 
   // Update process.env with parsed values
@@ -136,3 +170,8 @@ export function getConfig(): Config {
 }
 
 export const config = getConfig();
+
+// Export token configuration constants for backward compatibility and convenience
+export const TOKEN_EXPIRY = config.tokens.accessTokenExpirySeconds;
+export const REFRESH_DURATION_MINUTES = config.tokens.refreshTokenExpiryMinutes;
+export const REFRESH_DURATION_SECONDS = config.tokens.refreshTokenExpiryMinutes * 60;

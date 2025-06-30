@@ -7,7 +7,12 @@ export const ReefGuideFrontendConfigSchema = z.object({
   /** The index document of the website */
   indexDocument: z.string().default('index.html'),
   /** The error document of the website */
-  errorDocument: z.string().default('error.html')
+  errorDocument: z.string().default('error.html'),
+  /** The app name to display in frontend */
+  appName: z.string().min(1, 'App name must not be empty').default('ReefGuide'),
+  /** The email address of the admin user displayed as a contact email for
+   * requesting access */
+  adminEmail: z.string().email()
 });
 export type ReefGuideFrontendConfig = z.infer<typeof ReefGuideFrontendConfigSchema>;
 

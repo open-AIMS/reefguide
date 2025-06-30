@@ -1,4 +1,3 @@
-import { environment } from '../../environments/environment';
 import {
   computed,
   DestroyRef,
@@ -11,11 +10,17 @@ import {
   Signal,
   WritableSignal
 } from '@angular/core';
-import { ArcgisMap } from '@arcgis/map-components-angular';
-import GroupLayer from '@arcgis/core/layers/GroupLayer';
-import TileLayer from '@arcgis/core/layers/TileLayer';
-import { ReefGuideApiService } from './reef-guide-api.service';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import esriConfig from '@arcgis/core/config.js';
+import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
+import GroupLayer from '@arcgis/core/layers/GroupLayer';
+import ImageryTileLayer from '@arcgis/core/layers/ImageryTileLayer';
+import TileLayer from '@arcgis/core/layers/TileLayer';
+import Editor from '@arcgis/core/widgets/Editor';
+import { ArcgisMap } from '@arcgis/map-components-angular';
+import { JobType } from '@reefguide/db';
 import {
   BehaviorSubject,
   filter,
@@ -32,36 +37,27 @@ import {
   tap,
   throttleTime
 } from 'rxjs';
-import { CriteriaRequest, ReadyRegion } from './selection-criteria/criteria-request.class';
-import ImageryTileLayer from '@arcgis/core/layers/ImageryTileLayer';
-import {
-  ColorRGBA,
-  createGlobalPolygonLayer,
-  createSingleColorRasterFunction
-} from '../../util/arcgis/arcgis-layer-util';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { ReefGuideConfigService } from './reef-guide-config.service';
-import WebTileLayer from '@arcgis/core/layers/WebTileLayer';
+import { WebApiService } from '../../api/web-api.service';
+import { environment } from '../../environments/environment';
+import { getFirstFileFromResults } from '../../util/api-util';
+import { ColorRGBA } from '../../util/arcgis/arcgis-layer-util';
+import { seperateHttpParams, urlToBlobObjectURL } from '../../util/http-util';
 import { isDefined } from '../../util/js-util';
-import esriConfig from '@arcgis/core/config.js';
 import { AuthService } from '../auth/auth.service';
-import Editor from '@arcgis/core/widgets/Editor';
-import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import { StylableLayer } from '../widgets/layer-style-editor/layer-style-editor.component';
+import { ReefGuideApiService } from './reef-guide-api.service';
 import {
   criteriaToSiteSuitabilityJobPayload,
   SelectionCriteria,
   SiteSuitabilityCriteria
 } from './reef-guide-api.types';
-import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
-import { StylableLayer } from '../widgets/layer-style-editor/layer-style-editor.component';
-import { JobType, JobTypePayload_SuitabilityAssessment } from '../../api/web-api.types';
-import { WebApiService } from '../../api/web-api.service';
+import { ReefGuideConfigService } from './reef-guide-config.service';
+import { CriteriaRequest, ReadyRegion } from './selection-criteria/criteria-request.class';
 import {
   RegionDownloadResponse,
   RegionJobsManager
 } from './selection-criteria/region-jobs-manager';
-import { seperateHttpParams, urlToBlobObjectURL } from '../../util/http-util';
-import { getFirstFileFromResults } from '../../util/api-util';
+import { SuitabilityAssessmentInput } from '@reefguide/types';
 
 interface CriteriaLayer {
   layer: TileLayer;
@@ -427,7 +423,7 @@ export class ReefGuideMapService {
    * @param payload
    * @param groupLayer
    */
-  addSiteSuitabilityLayer(payload: JobTypePayload_SuitabilityAssessment) {
+  addSiteSuitabilityLayer(payload: SuitabilityAssessmentInput) {
     // TODO[OpenLayers] site suitability loading indicator
     // TODO:region rework multi-request progress tracking, review RegionJobsManager
     // this works, but is bespoke for this kind of request, will refactor job requests

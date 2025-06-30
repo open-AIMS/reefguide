@@ -26,10 +26,7 @@ import { ReefGuideConfigService } from './reef-guide-config.service';
 import { ReefGuideMapService } from './reef-guide-map.service';
 import { SelectionCriteriaComponent } from './selection-criteria/selection-criteria.component';
 import { WebApiService } from '../../api/web-api.service';
-import {
-  JobTypePayload_RegionalAssessment,
-  JobTypePayload_SuitabilityAssessment
-} from '../../api/web-api.types';
+import { RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
 
 type DrawerModes = 'criteria' | 'style';
 
@@ -160,9 +157,9 @@ export class LocationSelectionComponent implements AfterViewInit {
             throw new Error('REGIONAL_ASSESSMENT job input_payload missing!');
           }
           // this final payload contains the region
-          const raFinalPayload: JobTypePayload_RegionalAssessment = job.input_payload;
+          const raFinalPayload: RegionalAssessmentInput = job.input_payload;
 
-          const ssPayload: JobTypePayload_SuitabilityAssessment = {
+          const ssPayload: SuitabilityAssessmentInput = {
             ...raFinalPayload,
             threshold: siteSuitability.SuitabilityThreshold,
             x_dist: siteSuitability.xdist,
