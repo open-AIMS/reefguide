@@ -106,7 +106,11 @@ export const jobTypeSchemas: JobSchemaMap = {
   DATA_SPECIFICATION_UPDATE: {
     input: dataSpecificationUpdateJobInputSchema,
     result: dataSpecificationUpdateResultSchema
-  }
+  },
+  ADRIA_MODEL_RUN: {
+    input: testJobInputSchema,
+    result: testJobResultSchema
+  },
 };
 
 export const jobExpiryMap: JobExpiryMap = {

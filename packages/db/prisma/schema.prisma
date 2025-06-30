@@ -126,6 +126,8 @@ enum JobType {
     REGIONAL_ASSESSMENT
     // Updates the data specification
     DATA_SPECIFICATION_UPDATE
+    // Testing adria job
+    ADRIA_MODEL_RUN
 }
 
 enum JobStatus {
