@@ -140,9 +140,6 @@
 .app-container.splash-active .main-content {
   // Prevent keyboard navigation to background content
   * {
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     user-select: none;
   }
 

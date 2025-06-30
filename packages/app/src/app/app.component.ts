@@ -22,7 +22,6 @@ import { SplashScreenComponent } from './auth/splash-screen/splash-screen.compon
  */
 @Component({
   selector: 'app-root',
-  standalone: true,
   imports: [CommonModule, RouterOutlet, MatToolbarModule, MatButtonModule, SplashScreenComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
@@ -45,7 +44,7 @@ export class AppComponent implements OnInit {
   /**
    * Splash screen configuration from environment
    */
-  readonly splashConfig = signal(environment.splashConfig);
+  readonly splashConfig = environment.splashConfig;
 
   ngOnInit(): void {
     // Initialize third-party components
