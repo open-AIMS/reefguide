@@ -86,7 +86,7 @@ export class RegionJobsManager {
 
         console.log(`startJob region=${region}`, finalPayload);
         const trackedJob = this.jobsManager.startJob(jobType, finalPayload);
-        return trackedJob.jobProgress$.pipe(
+        return trackedJob.jobDetails$.pipe(
           tap(job => {
             console.log(`Job id=${job.id} type=${job.type} update`, job);
             this.jobUpdate.next(job);

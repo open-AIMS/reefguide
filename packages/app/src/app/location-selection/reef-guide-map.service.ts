@@ -436,7 +436,7 @@ export class ReefGuideMapService {
     this.activeSiteSuitabilityRegions.add(region);
 
     const job = this.jobsManager.startJob('SUITABILITY_ASSESSMENT', payload);
-    job.jobProgress$
+    job.jobDetails$
       .pipe(
         tap(job => {
           console.log(`Job id=${job.id} type=${job.type} update`, job);

@@ -1,6 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { Observable } from 'rxjs';
-import { WebApiService } from '../../api/web-api.service';
+import { StartedJob, WebApiService } from '../../api/web-api.service';
 import { JobType } from '@reefguide/db';
 import { JobDetailsResponse } from '@reefguide/types';
 
@@ -23,8 +22,8 @@ export class JobsManagerService {
   }
 
   startJob(jobType: JobType, payload: Record<string, any>) {
-    const jobProgress$: Observable<JobDetailsResponse['job']> = this.webApi.startJob(jobType, payload);
-    const trackedJob = new TrackedJob(jobType, payload, jobProgress$);
+    const startedJob = this.webApi.startJob(jobType, payload);
+    const trackedJob = new TrackedJob(jobType, payload, startedJob);
     this.jobs.update(jobs => {
       jobs.push(trackedJob);
       return jobs;
@@ -45,20 +44,24 @@ export class JobsManagerService {
 
 let lastTrackedJobId = 0;
 
+type ExtendedJobStatus = JobDetailsResponse['job']['status'] | 'CREATING' | 'CREATED';
+
 export class TrackedJob {
   // constantly incrementing id (needed by @for track)
-  public id: number;
-  public jobProgress$: Observable<JobDetailsResponse['job']>;
+  public readonly id: number;
+  public readonly createJob$: StartedJob['createJob$'];
+  public readonly status$: StartedJob['status$'];
+  public readonly jobDetails$: StartedJob['jobDetails$'];
 
   constructor(
     public readonly jobType: JobType,
     public readonly payload: Record<string, any>,
-    jobProgress$: Observable<JobDetailsResponse['job']>
+    startedJob: StartedJob
   ) {
     this.id = lastTrackedJobId++;
-
-    // FIXME need to share observable
-    this.jobProgress$ = jobProgress$;
+    this.createJob$ = startedJob.createJob$;
+    this.status$ = startedJob.status$;
+    this.jobDetails$ = startedJob.jobDetails$;
   }
 
 }
