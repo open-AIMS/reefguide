@@ -18,6 +18,7 @@ import {
 import { WebApiService } from '../../../api/web-api.service';
 import { retryHTTPErrors } from '../../../util/http-util';
 import { ReefGuideConfigService } from '../reef-guide-config.service';
+import { JobsManagerService } from '../../jobs/jobs-manager.service';
 
 export type RegionDownloadResponse = DownloadResponse & { region: string };
 
@@ -28,6 +29,7 @@ export type RegionDownloadResponse = DownloadResponse & { region: string };
 export class RegionJobsManager {
   private readonly api = inject(WebApiService);
   private readonly config = inject(ReefGuideConfigService);
+  private readonly jobsManager = inject(JobsManagerService);
 
   private busyRegions = new Set<string>();
   private _busyRegions$ = new BehaviorSubject<Set<string>>(this.busyRegions);
@@ -83,7 +85,8 @@ export class RegionJobsManager {
         };
 
         console.log(`startJob region=${region}`, finalPayload);
-        return api.startJob(jobType, finalPayload).pipe(
+        const trackedJob = this.jobsManager.startJob(jobType, finalPayload);
+        return trackedJob.jobProgress$.pipe(
           tap(job => {
             console.log(`Job id=${job.id} type=${job.type} update`, job);
             this.jobUpdate.next(job);

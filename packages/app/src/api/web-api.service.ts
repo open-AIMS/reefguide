@@ -25,11 +25,11 @@ import { retryHTTPErrors } from '../util/http-util';
 type JobId = CreateJobResponse['jobId'];
 
 /**
- * MADAME/ReefGuide Web API - see https://github.com/open-AIMS/reefguide-web-api
+ * MADAME/ReefGuide Web API - see packages/web-api
  *
- * This service provides authentication endpoints, which is used by AuthService.
- *
- * It also provides admin endpoints for controlling clusters and managing users.
+ * This is a low-level HTTP API providing methods for all of the web-api features -
+ * auth, user management, jobs, polygons, etc. Other services such as AuthService
+ * and JobsManagerService are built on top of this.
  */
 @Injectable({
   providedIn: 'root'
@@ -171,11 +171,13 @@ export class WebApiService {
   /**
    * Create a job and return Observable that emits job details when status changes.
    * Completes when status changes from pending/in-progress.
+   * NOW This adds 2 virtual status: CREATING and CREATED? necessary?
    * @param jobType job type
    * @param payload job type's payload
    * @param period how often to request job status in milliseconds (default 2 seconds)
    * @returns Observable of job details job sub property
    */
+  // NOW move this to JobsManager?
   startJob(
     jobType: JobType,
     payload: Record<string, any>,
@@ -184,6 +186,7 @@ export class WebApiService {
     return this.createJob(jobType, payload).pipe(
       retryHTTPErrors(3),
       switchMap(createJobResp => {
+        // NOW maybe concat with fake created status?
         const jobId = createJobResp.jobId;
         return interval(period).pipe(
           // Future: if client is tracking many jobs, it would be more efficient to
