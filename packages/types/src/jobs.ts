@@ -26,6 +26,20 @@ export const sharedCriteriaSchema = z.object({
 });
 
 /**
+ * Model parameter schema for ADRIA model runs
+ */
+export const modelParamSchema = z.object({
+  param_name: z.string().describe('Name of the model parameter'),
+  third_param_flag: z.boolean().describe('Whether the third parameter is used'),
+  lower: z.number().describe('Lower bound for the parameter'),
+  upper: z.number().describe('Upper bound for the parameter'),
+  optional_third: z
+    .number()
+    .optional()
+    .describe('Optional third parameter (e.g., step size for discrete uniform)')
+});
+
+/**
  * Individual job input schemas
  */
 export const testJobInputSchema = z
@@ -48,6 +62,22 @@ export const regionalAssessmentInputSchema = sharedCriteriaSchema.strict();
 export const dataSpecificationUpdateJobInputSchema = z.object({
   cache_buster: z.number().optional().describe('Cache buster to force update')
 });
+
+export const adriaModelRunInputSchema = z
+  .object({
+    num_scenarios: z
+      .number()
+      .int()
+      .positive()
+      .describe('Number of scenarios to run (must be power of 2)'),
+    model_params: z.array(modelParamSchema).describe('Array of model parameters for the run'),
+    rcp_scenario: z
+      .string()
+      .optional()
+      .default('45')
+      .describe('RCP scenario (e.g., "45" for RCP 4.5)')
+  })
+  .strict();
 
 /**
  * Individual job result schemas
@@ -72,18 +102,32 @@ export const regionalAssessmentResultSchema = z
 
 export const dataSpecificationUpdateResultSchema = z.object({}).strict();
 
+export const adriaModelRunResultSchema = z
+  .object({
+    output_result_set_path: z
+      .string()
+      .describe('The relative location of the result set data package'),
+    output_figure_path: z
+      .string()
+      .describe('The relative location of the resulting generate relative coral cover figure')
+  })
+  .strict();
+
 /**
  * Exported TypeScript types inferred from schemas
  */
 export type SharedCriteria = z.infer<typeof sharedCriteriaSchema>;
+export type ModelParam = z.infer<typeof modelParamSchema>;
 export type TestJobInput = z.infer<typeof testJobInputSchema>;
 export type SuitabilityAssessmentInput = z.infer<typeof suitabilityAssessmentInputSchema>;
 export type RegionalAssessmentInput = z.infer<typeof regionalAssessmentInputSchema>;
 export type DataSpecificationUpdateJobInput = z.infer<typeof dataSpecificationUpdateJobInputSchema>;
+export type AdriaModelRunInput = z.infer<typeof adriaModelRunInputSchema>;
 export type TestJobResult = z.infer<typeof testJobResultSchema>;
 export type SuitabilityAssessmentResult = z.infer<typeof suitabilityAssessmentResultSchema>;
 export type RegionalAssessmentResult = z.infer<typeof regionalAssessmentResultSchema>;
 export type DataSpecificationUpdateJobResult = z.infer<typeof dataSpecificationUpdateResultSchema>;
+export type AdriaModelRunResult = z.infer<typeof adriaModelRunResultSchema>;
 
 /**
  * Schema definitions for each job type's input and output payloads.
@@ -108,9 +152,9 @@ export const jobTypeSchemas: JobSchemaMap = {
     result: dataSpecificationUpdateResultSchema
   },
   ADRIA_MODEL_RUN: {
-    input: testJobInputSchema,
-    result: testJobResultSchema
-  },
+    input: adriaModelRunInputSchema,
+    result: adriaModelRunResultSchema
+  }
 };
 
 export const jobExpiryMap: JobExpiryMap = {
@@ -121,6 +165,10 @@ export const jobExpiryMap: JobExpiryMap = {
   SUITABILITY_ASSESSMENT: {
     // expires in one hour
     expiryMinutes: 60
+  },
+  ADRIA_MODEL_RUN: {
+    // expires in 4 hours (model runs may take longer)
+    expiryMinutes: 240
   }
 };
 

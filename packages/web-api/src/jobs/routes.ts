@@ -40,7 +40,8 @@ router.post(
     const { job, jobRequest, cached } = await jobService.createJobRequest(
       req.user.id,
       req.body.type,
-      req.body.inputPayload
+      req.body.inputPayload,
+      config.disableCache
     );
 
     res.status(200).json({
