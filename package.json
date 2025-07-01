@@ -6,6 +6,7 @@
     "scripts": {
         "build": "turbo build",
         "dev": "turbo dev",
+        "dev-no-web-api": "turbo dev --filter=!@reefguide/web-api",
         "format:write": "turbo format:write",
         "format:check": "turbo format:check",
         "lint": "turbo lint",
