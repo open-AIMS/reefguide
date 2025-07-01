@@ -1,15 +1,24 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "chrome",
-            "request": "launch",
-            "name": "Debug app in Chrome",
-            "url": "http://localhost:4200",
-            "webRoot": "${workspaceFolder}/packages/app"
-        }
-    ]
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Debug app in Chrome",
+      "url": "http://localhost:4200",
+      "webRoot": "${workspaceFolder}/packages/app"
+    },
+    {
+      "name": "Debug web-api:dev",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/web-api",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run", "dev"],
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
 }
