@@ -141,6 +141,8 @@ export class LocationSelectionComponent implements AfterViewInit {
 
     this.mapService.clearAssessedLayers();
 
+    this.drawer.close();
+
     // convert criteria to job payload and start job
     const raPartialPayload = criteriaToJobPayload(criteria);
     const jobsManager = this.mapService.addJobLayers('REGIONAL_ASSESSMENT', raPartialPayload);
