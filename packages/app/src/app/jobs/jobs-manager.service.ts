@@ -157,10 +157,8 @@ export class JobsManagerService {
   }
 
   private _addTrackedJob(trackedJob: TrackedJob) {
-    this.jobs.update(jobs => {
-      jobs.push(trackedJob);
-      return jobs;
-    });
+    // change detection doesn't work if mutate list with push()
+    this.jobs.update(jobs => [...jobs, trackedJob]);
 
     // auto-remove job when succeeded.
     trackedJob.jobDetails$.subscribe(jobDetails => {
