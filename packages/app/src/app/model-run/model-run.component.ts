@@ -1,6 +1,6 @@
 import { Component, input, Signal, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { AsyncPipe, DatePipe, NgIf } from '@angular/common';
+import { AsyncPipe, DatePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -30,13 +30,12 @@ import { MatToolbar } from '@angular/material/toolbar';
     RouterLink,
     ComponentLibraryModule,
     AsyncPipe,
-    NgIf,
     MatTabsModule,
     TableComponent,
     ModelspecExplorerComponent,
     ReefMapComponent,
     MatToolbar
-  ],
+],
   providers: [ResultSetService]
 })
 export class ModelRunComponent {

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,14 +12,13 @@ import { WebApiService } from '../../../../api/web-api.service';
 @Component({
   selector: 'app-user-edit-roles-dialog',
   imports: [
-    CommonModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
     ReactiveFormsModule,
     MatDialogModule
-  ],
+],
   templateUrl: './edit-user-roles.component.html',
   styleUrl: './edit-user-roles.component.scss'
 })

@@ -7,12 +7,16 @@
       <div class="header-content">
         <h3>Cluster Status</h3>
         <div class="sync-status" [class.syncing]="isSyncing()">
-          <mat-spinner *ngIf="isSyncing()" diameter="16"></mat-spinner>
+          @if (isSyncing()) {
+            <mat-spinner diameter="16"></mat-spinner>
+          }
           <span class="sync-info" [matTooltip]="lastSynced() | date: 'medium'">
             Last synced: {{ getLastSyncedText() }}
-            <span class="next-sync" *ngIf="!isSyncing()">
-              (updates in {{ timeToNextSync() }}s)
-            </span>
+            @if (!isSyncing()) {
+              <span class="next-sync">
+                (updates in {{ timeToNextSync() }}s)
+              </span>
+            }
           </span>
         </div>
       </div>
@@ -21,71 +25,78 @@
         [disabled]="isSyncing()"
         (click)="refreshStatus()"
         matTooltip="Refresh status"
-      >
+        >
         <mat-icon>refresh</mat-icon>
       </button>
     </div>
 
     <!-- Status Content -->
-    <div *ngIf="status$ | async as status" class="status-content">
-      <!-- Metrics -->
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-label">Running</div>
-          <div class="metric-value">{{ status.runningCount || 0 }}</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">Pending</div>
-          <div class="metric-value">{{ status.pendingCount || 0 }}</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">Desired</div>
-          <div class="metric-value">{{ status.desiredCount || 0 }}</div>
-        </div>
-      </div>
-
-      <mat-divider class="my-4"></mat-divider>
-
-      <!-- Deployments -->
-      <div *ngIf="status.deployments?.length" class="deployments-section">
-        <h4>Active Deployments</h4>
-        <div class="scrollable-section">
-          <div *ngFor="let deployment of status.deployments" class="deployment-card">
-            <div class="deployment-header">
-              <span class="status-badge" [class.status-primary]="deployment.status === 'PRIMARY'">
-                {{ deployment.status }}
-              </span>
-              <span class="deployment-count">
-                {{ deployment.runningCount }}/{{ deployment.desiredCount }}
-                running
-              </span>
-            </div>
-            <div
-              *ngIf="deployment.rolloutState"
-              class="deployment-state text-truncate"
-              [matTooltip]="deployment.rolloutStateReason"
-            >
-              {{ deployment.rolloutStateReason }}
-            </div>
+    @if (status$ | async; as status) {
+      <div class="status-content">
+        <!-- Metrics -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">Running</div>
+            <div class="metric-value">{{ status.runningCount || 0 }}</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Pending</div>
+            <div class="metric-value">{{ status.pendingCount || 0 }}</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Desired</div>
+            <div class="metric-value">{{ status.desiredCount || 0 }}</div>
           </div>
         </div>
-      </div>
-
-      <mat-divider class="my-4"></mat-divider>
-
-      <!-- Events -->
-      <div *ngIf="status.events?.length" class="events-section">
-        <h4>Recent Events</h4>
-        <div class="scrollable-section">
-          <div *ngFor="let event of status.events" class="event-item">
-            <span class="event-time">{{ event.createdAt | date: 'short' }}</span>
-            <span class="event-message text-truncate" [matTooltip]="event.message">
-              {{ event.message }}
-            </span>
+        <mat-divider class="my-4"></mat-divider>
+        <!-- Deployments -->
+        @if (status.deployments?.length) {
+          <div class="deployments-section">
+            <h4>Active Deployments</h4>
+            <div class="scrollable-section">
+              @for (deployment of status.deployments; track deployment) {
+                <div class="deployment-card">
+                  <div class="deployment-header">
+                    <span class="status-badge" [class.status-primary]="deployment.status === 'PRIMARY'">
+                      {{ deployment.status }}
+                    </span>
+                    <span class="deployment-count">
+                      {{ deployment.runningCount }}/{{ deployment.desiredCount }}
+                      running
+                    </span>
+                  </div>
+                  @if (deployment.rolloutState) {
+                    <div
+                      class="deployment-state text-truncate"
+                      [matTooltip]="deployment.rolloutStateReason"
+                      >
+                      {{ deployment.rolloutStateReason }}
+                    </div>
+                  }
+                </div>
+              }
+            </div>
           </div>
-        </div>
+        }
+        <mat-divider class="my-4"></mat-divider>
+        <!-- Events -->
+        @if (status.events?.length) {
+          <div class="events-section">
+            <h4>Recent Events</h4>
+            <div class="scrollable-section">
+              @for (event of status.events; track event) {
+                <div class="event-item">
+                  <span class="event-time">{{ event.createdAt | date: 'short' }}</span>
+                  <span class="event-message text-truncate" [matTooltip]="event.message">
+                    {{ event.message }}
+                  </span>
+                </div>
+              }
+            </div>
+          </div>
+        }
       </div>
-    </div>
+    }
   </div>
 
   <mat-divider class="my-4"></mat-divider>
@@ -97,17 +108,20 @@
       <mat-form-field>
         <mat-label>Desired Count</mat-label>
         <input matInput type="number" formControlName="desiredCount" />
-        <mat-error *ngIf="scaleForm.get('desiredCount')?.errors?.['required']">
-          Required
-        </mat-error>
-        <mat-error
-          *ngIf="
-            scaleForm.get('desiredCount')?.errors?.['min'] ||
-            scaleForm.get('desiredCount')?.errors?.['max']
-          "
-        >
-          Must be between 0 and 10
-        </mat-error>
+        @if (scaleForm.get('desiredCount')?.errors?.['required']) {
+          <mat-error>
+            Required
+          </mat-error>
+        }
+        @if (
+          scaleForm.get('desiredCount')?.errors?.['min'] ||
+          scaleForm.get('desiredCount')?.errors?.['max']
+          ) {
+          <mat-error
+            >
+            Must be between 0 and 10
+          </mat-error>
+        }
       </mat-form-field>
 
       <div class="action-buttons">
@@ -118,7 +132,7 @@
           (click)="scaleCluster()"
           matTooltip="Scale the cluster to the specified number of instances"
           matTooltipPosition="above"
-        >
+          >
           Scale Cluster
         </button>
 
@@ -129,7 +143,7 @@
           (click)="redeployCluster()"
           matTooltip="Force a new deployment using the latest container image"
           matTooltipPosition="above"
-        >
+          >
           Force Redeploy
         </button>
       </div>

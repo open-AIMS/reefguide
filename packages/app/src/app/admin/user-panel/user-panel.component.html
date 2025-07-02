@@ -15,9 +15,11 @@
               <th mat-header-cell *matHeaderCellDef>Roles</th>
               <td mat-cell *matCellDef="let user">
                 <div class="role-chips">
-                  <span class="role-chip" *ngFor="let role of user.roles">
-                    {{ role }}
-                  </span>
+                  @for (role of user.roles; track role) {
+                    <span class="role-chip">
+                      {{ role }}
+                    </span>
+                  }
                 </div>
               </td>
             </ng-container>
@@ -30,7 +32,7 @@
                   [matMenuTriggerFor]="menu"
                   [matMenuTriggerData]="{ user }"
                   aria-label="User actions"
-                >
+                  >
                   <mat-icon>more_vert</mat-icon>
                 </button>
               </td>
@@ -71,7 +73,7 @@
             <p>An error occurred... {{ userLogsError() }}</p>
           }
 
-          <ng-container *ngIf="userLogs$ | async as logs">
+          @if (userLogs$ | async; as logs) {
             <table mat-table [dataSource]="logs.logs">
               <!-- Position Column -->
               <ng-container matColumnDef="id">
@@ -92,21 +94,18 @@
                   {{ log.userId }}
                 </td>
               </ng-container>
-
               <ng-container matColumnDef="action">
                 <th mat-header-cell *matHeaderCellDef>Action</th>
                 <td mat-cell *matCellDef="let log">
                   {{ log.action }}
                 </td>
               </ng-container>
-
               <ng-container matColumnDef="time">
                 <th mat-header-cell *matHeaderCellDef>Time</th>
                 <td mat-cell *matCellDef="let log">
                   {{ log.time }}
                 </td>
               </ng-container>
-
               <tr mat-header-row *matHeaderRowDef="userLogsDisplayedColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: userLogsDisplayedColumns"></tr>
             </table>
@@ -117,7 +116,7 @@
               [pageSizeOptions]="[10, 25, 50, 100]"
               (page)="onPageChange($event)"
             ></mat-paginator>
-          </ng-container>
+          }
         </div>
       </mat-tab>
     </mat-tab-group>
