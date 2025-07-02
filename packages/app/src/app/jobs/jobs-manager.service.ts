@@ -14,13 +14,21 @@ export class JobsManagerService {
   readonly webApi = inject(WebApiService);
 
   // user's current jobs
-  jobs = signal<TrackedJob[]>([]);
+  readonly jobs = signal<TrackedJob[]>([]);
+
+  // auto-remove when succeeded after this many milliseconds.
+  autoRemoveTime: number = 1_000;
 
   constructor() {
     // TODO query users current active jobs
     // TODO auth concerns. reset on logout
   }
 
+  /**
+   * Start the job and track it.
+   * Auto-removes successful job after autoRemoveTime.
+   * @see WebApiService.startJob
+   */
   startJob(jobType: JobType, payload: Record<string, any>) {
     const startedJob = this.webApi.startJob(jobType, payload);
     const trackedJob = new TrackedJob(jobType, payload, startedJob);
@@ -28,6 +36,16 @@ export class JobsManagerService {
       jobs.push(trackedJob);
       return jobs;
     });
+
+    // auto-remove job when succeeded.
+    trackedJob.jobDetails$.subscribe(jobDetails => {
+      if (jobDetails.status === 'SUCCEEDED') {
+        setTimeout(() => {
+          this.remove(trackedJob.id);
+        }, this.autoRemoveTime);
+      }
+    })
+
     return trackedJob;
   }
 

@@ -1,0 +1,39 @@
+@let jobs = jobsManager.jobs();
+@for (job of jobs; track job.id) {
+  @let created = job.createJob$ | async;
+  @let status = job.status$ | async;
+  <div class="row">
+    @switch (status) {
+      @case ('PENDING') {
+        <mat-icon matTooltip="Waiting for worker">pending</mat-icon>
+      }
+      @case ('IN_PROGRESS') {
+        <mat-progress-spinner mode="indeterminate" diameter="24" matTooltip="working on job">
+        </mat-progress-spinner>
+      }
+      @case ('FAILED') {
+        <mat-icon class="failed" matTooltip="job error">error</mat-icon>
+      }
+      @case ('SUCCEEDED') {
+        <mat-icon class="succeeded" matTooltip="job completed">done</mat-icon>
+      }
+      @case ('CANCELLED') {
+        <mat-icon matTooltip="Job was cancelled">error</mat-icon>
+      }
+      @case ('TIMED_OUT') {
+        <mat-icon matTooltip="Job timed-out">hourglass_disabled</mat-icon>
+      }
+    }
+
+    <span>{{ getLabel(job) }}</span>
+
+    @if (created?.cached) {
+      <mat-icon matTooltip="downloading cached data">storage</mat-icon>
+    }
+    @if (status !== 'PENDING' && status !== 'IN_PROGRESS') {
+      <button mat-icon-button (click)="dismiss(job)">
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </div>
+}

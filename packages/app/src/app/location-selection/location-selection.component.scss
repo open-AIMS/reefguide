@@ -57,6 +57,14 @@ mat-drawer {
   }
 }
 
+app-job-status-list {
+  // temporary hack to move below ESRI layers button
+  position: absolute;
+  //left: 12px;
+  left: 50vw;
+  top: 204px;
+}
+
 .profile-button {
   position: absolute;
   top: 12px;
