@@ -1,53 +1,23 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { JobType, Polygon, PolygonNote, User, UserRole } from '@reefguide/db';
+import { Polygon, PolygonNote, User, UserRole } from '@reefguide/db';
 import {
   CreateJobResponse,
   DownloadResponse,
   JobDetailsResponse,
+  ListJobsQuery,
   ListJobsResponse,
   ListUserLogsResponse,
   LoginResponse,
   ProfileResponse
 } from '@reefguide/types';
 import {
-  BehaviorSubject,
-  distinctUntilKeyChanged,
-  interval,
   map,
-  Observable,
-  finalize,
-  shareReplay,
-  switchMap,
-  takeWhile,
-  tap
+  Observable
 } from 'rxjs';
 import { environment } from '../environments/environment';
-import { retryHTTPErrors } from '../util/http-util';
 
 type JobId = CreateJobResponse['jobId'];
-
-// API's job status plus 'CREATING'
-type ExtendedJobStatus = JobDetailsResponse['job']['status'] | 'CREATING';
-
-/**
- * @see WebApiService.startJob
- */
-export type StartedJob = {
-  /**
-   * Shared+replay observable from createJob.
-   */
-  createJob$: Observable<CreateJobResponse>;
-  /**
-   * Shared+replay observable with latest job details.
-   * Emits when status changes, completes when not pending OR in-progress.
-   */
-  jobDetails$: Observable<JobDetailsResponse['job']>;
-  /**
-   * Current job status
-   */
-  status$: Observable<ExtendedJobStatus>;
-};
 
 /**
  * MADAME/ReefGuide Web API - see packages/web-api
@@ -186,60 +156,10 @@ export class WebApiService {
     });
   }
 
-  // TODO API supports status filter
-  listJobs(): Observable<ListJobsResponse> {
-    return this.http.get<ListJobsResponse>(`${this.base}/jobs`);
+  listJobs(query?: ListJobsQuery): Observable<ListJobsResponse> {
+    return this.http.get<ListJobsResponse>(`${this.base}/jobs`, {
+      params: query
+    });
   }
 
-  // ## Jobs System: high-level API ##
-
-  /**
-   * Create a job and poll its details every period. Returns 3 observables to track the job
-   * creation, job details, and status.
-   * @param jobType job type
-   * @param payload job type's payload
-   * @param period how often to request job status in milliseconds (default 2 seconds)
-   * @returns StartedJob with observables to track creation, job details, and status.
-   */
-  startJob(jobType: JobType, payload: Record<string, any>, period = 2_000): StartedJob {
-    const createJob$ = this.createJob(jobType, payload).pipe(shareReplay(1));
-    const status$ = new BehaviorSubject<ExtendedJobStatus>('CREATING');
-
-    const jobDetails$ = createJob$.pipe(
-      retryHTTPErrors(3),
-      switchMap(createJobResp => {
-        const jobId = createJobResp.jobId;
-        status$.next('PENDING');
-        return interval(period).pipe(
-          // Future: if client is tracking many jobs, it would be more efficient to
-          // share the query/request for all of them (i.e. switchMap to shared observable),
-          // but this is simplest for now.
-          switchMap(() => this.getJob(jobId).pipe(retryHTTPErrors(3))),
-          // discard extra wrapping object, which has no information.
-          map(v => v.job),
-          // only emit when job status changes.
-          distinctUntilKeyChanged('status'),
-          // convert job error statuses to thrown errors.
-          tap(job => {
-            const s = job.status;
-            status$.next(s);
-            if (s === 'FAILED' || s === 'CANCELLED' || s === 'TIMED_OUT') {
-              throw new Error(`Job id=${job.id} ${s}`);
-            }
-          }),
-          // complete observable when not pending/in-progress; emit the last value
-          takeWhile(
-            x => x.status === 'PENDING' || x.status === 'IN_PROGRESS',
-            true // inclusive: emit the first value that fails the predicate
-          ),
-          finalize(() => {
-            status$.complete();
-          }),
-          shareReplay(1)
-        );
-      })
-    );
-
-    return { createJob$, jobDetails$, status$ };
-  }
 }
