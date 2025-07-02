@@ -40,7 +40,7 @@ import {
 import { WebApiService } from '../../api/web-api.service';
 import { environment } from '../../environments/environment';
 import { getFirstFileFromResults } from '../../util/api-util';
-import { ColorRGBA } from '../../util/arcgis/arcgis-layer-util';
+import { ColorRGBA, createSingleColorRasterFunction } from '../../util/arcgis/arcgis-layer-util';
 import { seperateHttpParams, urlToBlobObjectURL } from '../../util/http-util';
 import { isDefined } from '../../util/js-util';
 import { AuthService } from '../auth/auth.service';
@@ -555,10 +555,11 @@ export class ReefGuideMapService {
       title: region.region,
       url: cleanUrl,
       customParameters: params,
-      opacity: 0.9
+      opacity: 0.9,
       // gold color
-      // this breaks new COG, TODO heatmap in OpenLayers
-      //rasterFunction: createSingleColorRasterFunction(this.assessColor),
+      // Note: this only works with binary color COG, it broke with the greyscale raster.
+      // TODO heatmap in OpenLayers
+      rasterFunction: createSingleColorRasterFunction(this.assessColor),
     });
     groupLayer.add(layer);
   }
