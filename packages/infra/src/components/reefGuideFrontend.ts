@@ -103,7 +103,7 @@ export class ReefGuideFrontend extends Construct {
     // Default to monorepo root (typically two levels up from infrastructure)
     const buildPath = props.buildPath ?? '../..';
     const packageName = '@reefguide/app';
-    const outputPath = 'packages/app/dist/adria-app/browser';
+    const outputPath = 'packages/app/dist/reef-guide/browser';
 
     // Build environment variables from config
     const environment: { [key: string]: string } = {

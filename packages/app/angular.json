@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "adria-app": {
+    "reef-guide": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -17,7 +17,7 @@
         "build": {
           "builder": "@ngx-env/builder:application",
           "options": {
-            "outputPath": "dist/adria-app",
+            "outputPath": "dist/reef-guide",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [],
@@ -67,10 +67,10 @@
           "builder": "@ngx-env/builder:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "adria-app:build:production"
+              "buildTarget": "reef-guide:build:production"
             },
             "development": {
-              "buildTarget": "adria-app:build:development",
+              "buildTarget": "reef-guide:build:development",
               "proxyConfig": "src/proxy.conf.json"
             }
           },

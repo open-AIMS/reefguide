@@ -155,7 +155,7 @@ After the **Build** step:
 1. Navigate to the build output:
 
    ```bash
-   cd dist/adria-app/browser
+   cd dist/reef-guide/browser
    ```
 
 2. Sync to AWS S3 bucket:
