@@ -138,6 +138,16 @@ export class JobsManagerService {
   }
 
   /**
+   * Cancel all jobs currently tracked in the jobs list.
+   */
+  cancelAll() {
+    const jobs = this.jobs();
+    for (let job of jobs) {
+      this.cancel(job);
+    }
+  }
+
+  /**
    * Remove the corresponding TrackedJob from jobs list.
    * This does not cancel the job, it simply removes it.
    * @param trackedJobId

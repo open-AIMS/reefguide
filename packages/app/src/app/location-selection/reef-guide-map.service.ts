@@ -477,6 +477,9 @@ export class ReefGuideMapService {
       cr.cancel();
       this.criteriaRequest.set(undefined);
     }
+
+    // cancel all jobs for now, this code will be reworked soon.
+    this.jobsManager.cancelAll();
   }
 
   /**
