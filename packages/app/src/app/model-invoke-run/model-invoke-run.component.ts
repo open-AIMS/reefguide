@@ -1,13 +1,12 @@
-// src/app/model-invoke-run/model-invoke-run.component.ts
 import { Component, inject, signal } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatRippleModule } from '@angular/material/core';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { Router, RouterLink } from '@angular/router';
-import { ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatOptionModule } from '@angular/material/core';
+import { Router } from '@angular/router';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { WebApiService } from '../../api/web-api.service';
@@ -23,10 +22,10 @@ import { JobDetailsResponse, AdriaModelRunInput } from '@reefguide/types';
     CommonModule,
     MatCardModule,
     MatButtonModule,
-    MatRippleModule,
     MatSliderModule,
     MatSelectModule,
     MatFormFieldModule,
+    MatOptionModule,
     ReactiveFormsModule,
     JobStatusComponent
   ]

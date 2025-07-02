@@ -1,36 +1,35 @@
-// src/app/model-run/model-run.component.ts
+import { AsyncPipe, CommonModule, DatePipe, NgIf } from '@angular/common';
 import {
+  ChangeDetectorRef,
   Component,
   computed,
   inject,
   input,
   Signal,
-  ViewChild,
-  ChangeDetectorRef
+  ViewChild
 } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { AsyncPipe, DatePipe, NgIf, CommonModule } from '@angular/common';
-import { MatIconModule } from '@angular/material/icon';
-import { RouterLink } from '@angular/router';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { ArcgisMap, ComponentLibraryModule } from '@arcgis/map-components-angular';
-import { AdriaApiService } from '../adria-api.service';
-import { map, Observable, switchMap, of, catchError } from 'rxjs';
-import { DataFrame, ResultSetInfo } from '../../types/api.type';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { MatTabsModule } from '@angular/material/tabs';
-import { TableComponent } from '../table/table.component';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { ModelspecExplorerComponent } from '../model/modelspec-explorer/modelspec-explorer.component';
-import { dataframeToTable, SimpleTable } from '../../util/dataframe-util';
-import { ReefMapComponent } from '../reef-map/reef-map.component';
-import { ResultSetService } from '../contexts/result-set.service';
-import { MatToolbar } from '@angular/material/toolbar';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatToolbar } from '@angular/material/toolbar';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Router, RouterLink } from '@angular/router';
+import { ArcgisMap, ComponentLibraryModule } from '@arcgis/map-components-angular';
+import { AdriaModelRunResult, JobDetailsResponse } from '@reefguide/types';
+import { catchError, map, Observable, of, switchMap } from 'rxjs';
 import { WebApiService } from '../../api/web-api.service';
+import { DataFrame, ResultSetInfo } from '../../types/api.type';
+import { dataframeToTable, SimpleTable } from '../../util/dataframe-util';
+import { AdriaApiService } from '../adria-api.service';
+import { ResultSetService } from '../contexts/result-set.service';
 import { JobStatusComponent } from '../jobs/job-status/job-status.component';
-import { JobStatusConfig, getDefaultJobConfig } from '../jobs/job-status/job-status.types';
-import { JobDetailsResponse } from '@reefguide/types';
+import { getDefaultJobConfig, JobStatusConfig } from '../jobs/job-status/job-status.types';
+import { ModelspecExplorerComponent } from '../model/modelspec-explorer/modelspec-explorer.component';
+import { ReefMapComponent } from '../reef-map/reef-map.component';
+import { TableComponent } from '../table/table.component';
 
 @Component({
   selector: 'app-model-run',
@@ -62,6 +61,7 @@ export class ModelRunComponent {
   private readonly resultSetContext = inject(ResultSetService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly cdf = inject(ChangeDetectorRef);
+  private readonly router = inject(Router);
 
   // Input can be either a job ID (number) or result set ID (string)
   id = input.required<string>();
@@ -106,10 +106,10 @@ export class ModelRunComponent {
           switchMap(jobResponse => {
             const job = jobResponse.job;
             if (job.status === 'SUCCEEDED') {
-              return this.webApi.downloadJobResults(jobId).pipe(
+              // TODO don't hardcode this
+              return this.webApi.downloadJobResults(jobId, undefined, 'figure.png').pipe(
                 map(downloadResponse => {
                   // Get the figure URL from the files object
-                  // TODO unhardcode this
                   const figureUrl = downloadResponse.files['figure.png'];
                   return figureUrl || undefined;
                 }),
@@ -239,7 +239,8 @@ export class ModelRunComponent {
 
   onRetryRequested() {
     console.log('Retry requested for job');
-    // Could implement retry logic here
+    // Navigate back to the invoke page to start a new job
+    this.router.navigate(['/invoke-run']);
   }
 
   // Legacy methods for existing functionality

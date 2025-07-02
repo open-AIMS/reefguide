@@ -174,7 +174,8 @@ router.get(
   processRequest({
     params: z.object({ id: z.string() }),
     query: z.object({
-      expirySeconds: z.string().optional()
+      expirySeconds: z.string().optional(),
+      filterPrefix: z.string().optional()
     })
   }),
   passport.authenticate('jwt', { session: false }),
@@ -205,7 +206,9 @@ router.get(
     const s3Service = getS3Service();
     const urlMap = await s3Service.getPresignedUrls(
       successfulAssignment.storage_uri,
-      expirySeconds
+      expirySeconds,
+      // If the user wishes to filter the 
+      req.query.filterPrefix
     );
 
     res.json({

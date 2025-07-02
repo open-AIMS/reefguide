@@ -46,32 +46,22 @@
           <div class="range-inputs">
             <div class="form-field">
               <label for="ta_lower">Minimum Deployment</label>
-              <mat-slider
-                id="ta_lower"
-                formControlName="ta_lower"
-                min="0"
-                max="1000000"
-                step="100000"
-                discrete
-                [displayWith]="millionDeployed"
-              >
+              <mat-slider [min]="0" [max]="1000000" [step]="100000" discrete showTickMarks>
+                <input matSliderThumb formControlName="ta_lower" />
               </mat-slider>
-              <div class="slider-value">{{ millionDeployed(myForm.get('ta_lower')?.value) }}</div>
+              <div class="slider-value">
+                {{ millionDeployed(myForm.get('ta_lower')?.value || 0) }}
+              </div>
             </div>
 
             <div class="form-field">
               <label for="ta_upper">Maximum Deployment</label>
-              <mat-slider
-                id="ta_upper"
-                formControlName="ta_upper"
-                min="0"
-                max="1000000"
-                step="100000"
-                discrete
-                [displayWith]="millionDeployed"
-              >
+              <mat-slider [min]="0" [max]="1000000" [step]="100000" discrete showTickMarks>
+                <input matSliderThumb formControlName="ta_upper" />
               </mat-slider>
-              <div class="slider-value">{{ millionDeployed(myForm.get('ta_upper')?.value) }}</div>
+              <div class="slider-value">
+                {{ millionDeployed(myForm.get('ta_upper')?.value || 0) }}
+              </div>
             </div>
           </div>
         </div>
@@ -83,32 +73,22 @@
           <div class="range-inputs">
             <div class="form-field">
               <label for="ca_lower">Minimum Deployment</label>
-              <mat-slider
-                id="ca_lower"
-                formControlName="ca_lower"
-                min="0"
-                max="1000000"
-                step="100000"
-                discrete
-                [displayWith]="millionDeployed"
-              >
+              <mat-slider [min]="0" [max]="1000000" [step]="100000" discrete showTickMarks>
+                <input matSliderThumb formControlName="ca_lower" />
               </mat-slider>
-              <div class="slider-value">{{ millionDeployed(myForm.get('ca_lower')?.value) }}</div>
+              <div class="slider-value">
+                {{ millionDeployed(myForm.get('ca_lower')?.value || 0) }}
+              </div>
             </div>
 
             <div class="form-field">
               <label for="ca_upper">Maximum Deployment</label>
-              <mat-slider
-                id="ca_upper"
-                formControlName="ca_upper"
-                min="0"
-                max="1000000"
-                step="100000"
-                discrete
-                [displayWith]="millionDeployed"
-              >
+              <mat-slider [min]="0" [max]="1000000" [step]="100000" discrete showTickMarks>
+                <input matSliderThumb formControlName="ca_upper" />
               </mat-slider>
-              <div class="slider-value">{{ millionDeployed(myForm.get('ca_upper')?.value) }}</div>
+              <div class="slider-value">
+                {{ millionDeployed(myForm.get('ca_upper')?.value || 0) }}
+              </div>
             </div>
           </div>
         </div>
@@ -120,32 +100,22 @@
           <div class="range-inputs">
             <div class="form-field">
               <label for="sm_lower">Minimum Deployment</label>
-              <mat-slider
-                id="sm_lower"
-                formControlName="sm_lower"
-                min="0"
-                max="1000000"
-                step="100000"
-                discrete
-                [displayWith]="millionDeployed"
-              >
+              <mat-slider [min]="0" [max]="1000000" [step]="100000" discrete showTickMarks>
+                <input matSliderThumb formControlName="sm_lower" />
               </mat-slider>
-              <div class="slider-value">{{ millionDeployed(myForm.get('sm_lower')?.value) }}</div>
+              <div class="slider-value">
+                {{ millionDeployed(myForm.get('sm_lower')?.value || 0) }}
+              </div>
             </div>
 
             <div class="form-field">
               <label for="sm_upper">Maximum Deployment</label>
-              <mat-slider
-                id="sm_upper"
-                formControlName="sm_upper"
-                min="0"
-                max="1000000"
-                step="100000"
-                discrete
-                [displayWith]="millionDeployed"
-              >
+              <mat-slider [min]="0" [max]="1000000" [step]="100000" discrete showTickMarks>
+                <input matSliderThumb formControlName="sm_upper" />
               </mat-slider>
-              <div class="slider-value">{{ millionDeployed(myForm.get('sm_upper')?.value) }}</div>
+              <div class="slider-value">
+                {{ millionDeployed(myForm.get('sm_upper')?.value || 0) }}
+              </div>
             </div>
           </div>
         </div>
