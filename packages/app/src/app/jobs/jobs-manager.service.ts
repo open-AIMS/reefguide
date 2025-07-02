@@ -13,9 +13,12 @@ import {
   tap,
   distinctUntilKeyChanged,
   Observable,
-  of
+  of,
+  Subject,
+  takeUntil
 } from 'rxjs';
 import { retryHTTPErrors } from '../../util/http-util';
+import { AuthService } from '../auth/auth.service';
 
 // API's job status plus 'CREATING'
 export type ExtendedJobStatus = JobDetailsResponse['job']['status'] | 'CREATING';
@@ -47,7 +50,8 @@ export type StartedJob = {
   providedIn: 'root'
 })
 export class JobsManagerService {
-  readonly webApi = inject(WebApiService);
+  private readonly webApi = inject(WebApiService);
+  private readonly authService = inject(AuthService);
 
   // user's current jobs
   readonly jobs = signal<TrackedJob[]>([]);
@@ -58,9 +62,16 @@ export class JobsManagerService {
   // poll job details every milliseconds
   jobDetailsInterval: number = 2_000;
 
+  private _reset$ = new Subject<void>();
+
   constructor() {
-    // TODO auth concerns. reset on logout
-    this.refresh();
+    this.authService.user$.subscribe(user => {
+      if (user) {
+        this.refresh();
+      } else {
+        this.reset();
+      }
+    });
   }
 
   /**
@@ -94,10 +105,19 @@ export class JobsManagerService {
    */
   refresh() {
     // TODO PENDING or IN-PROGRESS
+    // TODO update API to support only my jobs, if admin, you'll see everyone's jobs
     this.webApi.listJobs({ status: 'PENDING' }).subscribe(jobs => {
       console.log('jobs', jobs);
       this.addExistingJobs(jobs);
     });
+  }
+
+  /**
+   * Clear the jobs list and unsubscribe everything.
+   */
+  reset() {
+    this.jobs.set([]);
+    this._reset$.next();
   }
 
   /**
@@ -193,6 +213,7 @@ export class JobsManagerService {
         x => x.status === 'PENDING' || x.status === 'IN_PROGRESS',
         true // inclusive: emit the first value that fails the predicate
       ),
+      takeUntil(this._reset$),
       finalize(() => {
         status$.complete();
       }),
