@@ -559,7 +559,7 @@ export class ReefGuideMapService {
       // gold color
       // Note: this only works with binary color COG, it broke with the greyscale raster.
       // TODO heatmap in OpenLayers
-      rasterFunction: createSingleColorRasterFunction(this.assessColor),
+      rasterFunction: createSingleColorRasterFunction(this.assessColor)
     });
     groupLayer.add(layer);
   }
