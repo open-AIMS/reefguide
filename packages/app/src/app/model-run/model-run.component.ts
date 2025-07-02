@@ -35,7 +35,7 @@ import { MatToolbar } from '@angular/material/toolbar';
     ModelspecExplorerComponent,
     ReefMapComponent,
     MatToolbar
-],
+  ],
   providers: [ResultSetService]
 })
 export class ModelRunComponent {

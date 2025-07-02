@@ -1,4 +1,3 @@
-
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -42,7 +41,7 @@ type Credentials = { email: string; password: string };
     MatProgressBarModule,
     MatDividerModule,
     MatTooltipModule
-],
+  ],
   templateUrl: './splash-screen.component.html',
   styleUrl: './splash-screen.component.scss'
 })

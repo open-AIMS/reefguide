@@ -13,9 +13,7 @@
           <span class="sync-info" [matTooltip]="lastSynced() | date: 'medium'">
             Last synced: {{ getLastSyncedText() }}
             @if (!isSyncing()) {
-              <span class="next-sync">
-                (updates in {{ timeToNextSync() }}s)
-              </span>
+              <span class="next-sync"> (updates in {{ timeToNextSync() }}s) </span>
             }
           </span>
         </div>
@@ -25,7 +23,7 @@
         [disabled]="isSyncing()"
         (click)="refreshStatus()"
         matTooltip="Refresh status"
-        >
+      >
         <mat-icon>refresh</mat-icon>
       </button>
     </div>
@@ -57,7 +55,10 @@
               @for (deployment of status.deployments; track deployment) {
                 <div class="deployment-card">
                   <div class="deployment-header">
-                    <span class="status-badge" [class.status-primary]="deployment.status === 'PRIMARY'">
+                    <span
+                      class="status-badge"
+                      [class.status-primary]="deployment.status === 'PRIMARY'"
+                    >
                       {{ deployment.status }}
                     </span>
                     <span class="deployment-count">
@@ -69,7 +70,7 @@
                     <div
                       class="deployment-state text-truncate"
                       [matTooltip]="deployment.rolloutStateReason"
-                      >
+                    >
                       {{ deployment.rolloutStateReason }}
                     </div>
                   }
@@ -109,18 +110,13 @@
         <mat-label>Desired Count</mat-label>
         <input matInput type="number" formControlName="desiredCount" />
         @if (scaleForm.get('desiredCount')?.errors?.['required']) {
-          <mat-error>
-            Required
-          </mat-error>
+          <mat-error> Required </mat-error>
         }
         @if (
           scaleForm.get('desiredCount')?.errors?.['min'] ||
           scaleForm.get('desiredCount')?.errors?.['max']
-          ) {
-          <mat-error
-            >
-            Must be between 0 and 10
-          </mat-error>
+        ) {
+          <mat-error> Must be between 0 and 10 </mat-error>
         }
       </mat-form-field>
 
@@ -132,7 +128,7 @@
           (click)="scaleCluster()"
           matTooltip="Scale the cluster to the specified number of instances"
           matTooltipPosition="above"
-          >
+        >
           Scale Cluster
         </button>
 
@@ -143,7 +139,7 @@
           (click)="redeployCluster()"
           matTooltip="Force a new deployment using the latest container image"
           matTooltipPosition="above"
-          >
+        >
           Force Redeploy
         </button>
       </div>

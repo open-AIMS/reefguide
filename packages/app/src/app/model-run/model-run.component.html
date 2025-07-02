@@ -8,85 +8,85 @@
     <ng-template matTabContent>
       <div class="content">
         @defer (when run()) {
-        @if (run(); as run) {
-          <h2 class="mat-headline-small">{{ run.title }}</h2>
-          @if (run.desc) {
-            <p>{{ run.desc }}</p>
+          @if (run(); as run) {
+            <h2 class="mat-headline-small">{{ run.title }}</h2>
+            @if (run.desc) {
+              <p>{{ run.desc }}</p>
+            }
+            <table class="info-table">
+              @if (run.creator) {
+                <tr>
+                  <th>Creator:</th>
+                  <td>{{ run.creator }}</td>
+                </tr>
+              }
+              @if (run.publish_date) {
+                <tr>
+                  <th>Publish Date:</th>
+                  <td>{{ run.publish_date | date }}</td>
+                </tr>
+              }
+              <tr>
+                <th>Invoked:</th>
+                <td>
+                  {{ run.invoke_time }}
+                  @if (run.runtime) {
+                    , took <em>{{ run.runtime }}</em>
+                  }
+                </td>
+              </tr>
+              <tr>
+                <th>Model:</th>
+                <td>{{ run.model_name }} {{ run.model_version }}</td>
+              </tr>
+              @if (run.handle_id) {
+                <tr>
+                  <th>Data:</th>
+                  <td><a href="https://mds.gbrrestoration.org/">M&DS</a></td>
+                </tr>
+              }
+            </table>
           }
-          <table class="info-table">
-            @if (run.creator) {
-              <tr>
-                <th>Creator:</th>
-                <td>{{ run.creator }}</td>
-              </tr>
-            }
-            @if (run.publish_date) {
-              <tr>
-                <th>Publish Date:</th>
-                <td>{{ run.publish_date | date }}</td>
-              </tr>
-            }
-            <tr>
-              <th>Invoked:</th>
-              <td>
-                {{ run.invoke_time }}
-                @if (run.runtime) {
-                  , took <em>{{ run.runtime }}</em>
-                }
-              </td>
-            </tr>
-            <tr>
-              <th>Model:</th>
-              <td>{{ run.model_name }} {{ run.model_version }}</td>
-            </tr>
-            @if (run.handle_id) {
-              <tr>
-                <th>Data:</th>
-                <td><a href="https://mds.gbrrestoration.org/">M&DS</a></td>
-              </tr>
-            }
-          </table>
-        }
         } @placeholder {
-        <p>Loading...</p>
-      }
-    </div>
-  </ng-template>
-</mat-tab>
-<mat-tab label="Parameters">
-  <ng-template matTabContent>
-    <app-modelspec-explorer [data]="modelspecDataframe$ | async"></app-modelspec-explorer>
-  </ng-template>
-</mat-tab>
-<mat-tab label="Scenarios">
-  <ng-template matTabContent>
-    @if (scenariosTable$ | async; as table) {
-      <app-table [data]="table.rows" [displayedColumns]="table.columns"></app-table>
-    }
-  </ng-template>
-</mat-tab>
-<mat-tab label="Site Ranking"> TODO </mat-tab>
-<mat-tab label="Map">
-  <ng-template matTabContent>
-    <app-reef-map></app-reef-map>
-  </ng-template>
-</mat-tab>
-<mat-tab label="Results">
-  <ng-template matTabContent>
-    <div class="center-container">
-      <select (change)="onSelectMetric($event)">
-        @for (metric of metrics; track metric) {
-          <option [value]="metric">{{ metric }}</option>
+          <p>Loading...</p>
         }
-      </select>
-      <button (click)="getMetricFigure()">Add Figure</button>
-    </div>
-
-    <div class="card-container">
-      @for (figs of metrics_figures; track figs[0]) {
-        <iframe class="plot-iframe" [srcdoc]="figs[1]"></iframe>
+      </div>
+    </ng-template>
+  </mat-tab>
+  <mat-tab label="Parameters">
+    <ng-template matTabContent>
+      <app-modelspec-explorer [data]="modelspecDataframe$ | async"></app-modelspec-explorer>
+    </ng-template>
+  </mat-tab>
+  <mat-tab label="Scenarios">
+    <ng-template matTabContent>
+      @if (scenariosTable$ | async; as table) {
+        <app-table [data]="table.rows" [displayedColumns]="table.columns"></app-table>
       }
-    </div>
-  </ng-template>
-</mat-tab>
+    </ng-template>
+  </mat-tab>
+  <mat-tab label="Site Ranking"> TODO </mat-tab>
+  <mat-tab label="Map">
+    <ng-template matTabContent>
+      <app-reef-map></app-reef-map>
+    </ng-template>
+  </mat-tab>
+  <mat-tab label="Results">
+    <ng-template matTabContent>
+      <div class="center-container">
+        <select (change)="onSelectMetric($event)">
+          @for (metric of metrics; track metric) {
+            <option [value]="metric">{{ metric }}</option>
+          }
+        </select>
+        <button (click)="getMetricFigure()">Add Figure</button>
+      </div>
+
+      <div class="card-container">
+        @for (figs of metrics_figures; track figs[0]) {
+          <iframe class="plot-iframe" [srcdoc]="figs[1]"></iframe>
+        }
+      </div>
+    </ng-template>
+  </mat-tab>
 </mat-tab-group>

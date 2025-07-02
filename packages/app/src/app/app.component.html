@@ -4,7 +4,7 @@ with required roles) -->
   [ngClass]="getAppContainerClasses()"
   [attr.aria-hidden]="getMainContentAriaAttributes()['aria-hidden']"
   [attr.inert]="getMainContentAriaAttributes()['inert'] || null"
-  >
+>
   <!-- Main Application Content -->
   <!-- This renders in the background even when splash is showing -->
   @if (shouldRenderMainContent()) {
@@ -24,6 +24,6 @@ with required roles) -->
     [userState]="userAccessState()"
     [config]="splashConfig"
     class="splash-overlay-component"
-    >
+  >
   </app-splash-screen>
 }

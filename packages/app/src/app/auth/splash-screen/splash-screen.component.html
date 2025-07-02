@@ -5,7 +5,7 @@
   aria-modal="true"
   [attr.aria-label]="getTitle()"
   (keydown)="onKeyDown($event)"
-  >
+>
   <!-- Background Animation -->
   <div class="splash-background">
     <div class="wave wave-1"></div>
@@ -56,17 +56,13 @@
                 placeholder="Enter your email"
                 autocomplete="email"
                 [attr.aria-describedby]="authForm.get('email')?.errors ? 'email-error' : null"
-                />
+              />
               <!-- Email Validation Errors -->
               @if (authForm.get('email')?.hasError('required')) {
-                <mat-error>
-                  Email is required
-                </mat-error>
+                <mat-error> Email is required </mat-error>
               }
               @if (authForm.get('email')?.hasError('email')) {
-                <mat-error>
-                  Please enter a valid email address
-                </mat-error>
+                <mat-error> Please enter a valid email address </mat-error>
               }
               @if (authForm.get('email')?.hasError('serverError')) {
                 <mat-error id="email-error">
@@ -85,7 +81,7 @@
                 placeholder="Enter your password"
                 [autocomplete]="isLoginMode() ? 'current-password' : 'new-password'"
                 [attr.aria-describedby]="authForm.get('password')?.errors ? 'password-error' : null"
-                />
+              />
               <button
                 mat-icon-button
                 matSuffix
@@ -93,24 +89,18 @@
                 (click)="togglePasswordVisibility()"
                 [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'"
                 [attr.aria-pressed]="!hidePassword()"
-                >
+              >
                 <mat-icon>{{ hidePassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
               </button>
               <!-- Password Validation Errors -->
               @if (authForm.get('password')?.hasError('required')) {
-                <mat-error>
-                  Password is required
-                </mat-error>
+                <mat-error> Password is required </mat-error>
               }
               @if (authForm.get('password')?.hasError('minlength')) {
-                <mat-error>
-                  Password must be at least 8 characters long
-                </mat-error>
+                <mat-error> Password must be at least 8 characters long </mat-error>
               }
               @if (authForm.get('password')?.hasError('serverError')) {
-                <mat-error
-                  id="password-error"
-                  >
+                <mat-error id="password-error">
                   {{ errorMessage() }}
                 </mat-error>
               }
@@ -127,12 +117,8 @@
               errorMessage() &&
               !authForm.get('email')?.hasError('serverError') &&
               !authForm.get('password')?.hasError('serverError')
-              ) {
-              <div
-                class="error-message"
-                role="alert"
-                aria-live="polite"
-                >
+            ) {
+              <div class="error-message" role="alert" aria-live="polite">
                 <mat-icon color="warn">error</mat-icon>
                 <span>{{ errorMessage() }}</span>
               </div>
@@ -145,14 +131,10 @@
               class="auth-button full-width"
               [disabled]="!canSubmit()"
               [attr.aria-label]="getButtonText()"
-              >
+            >
               <!-- Loading Spinner -->
               @if (isAuthenticating()) {
-                <mat-progress-spinner
-                  diameter="20"
-                  mode="indeterminate"
-                  class="button-spinner"
-                  >
+                <mat-progress-spinner diameter="20" mode="indeterminate" class="button-spinner">
                 </mat-progress-spinner>
               }
               <!-- Button Icon -->
@@ -176,7 +158,7 @@
                   type="button"
                   (click)="switchMode()"
                   class="switch-button"
-                  >
+                >
                   Create Account
                 </button>
               </p>
@@ -190,7 +172,7 @@
                   type="button"
                   (click)="switchMode()"
                   class="switch-button"
-                  >
+                >
                   Sign In
                 </button>
               </p>
@@ -233,7 +215,7 @@
                 color="accent"
                 (click)="openEmailClient()"
                 class="contact-button"
-                >
+              >
                 <mat-icon>email</mat-icon>
                 Request Access
               </button>
@@ -248,13 +230,9 @@
               [disabled]="isAuthenticating()"
               class="refresh-button"
               matTooltip="Refresh your session to get updated permissions"
-              >
+            >
               @if (isAuthenticating()) {
-                <mat-progress-spinner
-                  diameter="16"
-                  mode="indeterminate"
-                  class="small-spinner"
-                  >
+                <mat-progress-spinner diameter="16" mode="indeterminate" class="small-spinner">
                 </mat-progress-spinner>
               }
               @if (!isAuthenticating()) {
@@ -267,7 +245,7 @@
               color="primary"
               (click)="authService.logout()"
               class="logout-button"
-              >
+            >
               <mat-icon>logout</mat-icon>
               <span>Sign Out</span>
             </button>
@@ -288,7 +266,7 @@
           target="_blank"
           class="footer-link"
           matTooltip="Documentation"
-          >
+        >
           <mat-icon>help</mat-icon>
           Help
         </a>
@@ -297,7 +275,7 @@
           target="_blank"
           class="footer-link"
           matTooltip="About this application"
-          >
+        >
           <mat-icon>info</mat-icon>
           About
         </a>

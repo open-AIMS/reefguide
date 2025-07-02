@@ -1,4 +1,3 @@
-
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -30,7 +29,7 @@ interface UpdatePasswordForm {
     MatProgressSpinnerModule,
     ReactiveFormsModule,
     MatIconModule
-],
+  ],
   templateUrl: './update-password.component.html',
   styleUrl: './update-password.component.scss'
 })

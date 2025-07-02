@@ -22,23 +22,21 @@
           [type]="hidePassword ? 'password' : 'text'"
           autocomplete="new-password"
           [attr.aria-label]="'Password'"
-          />
+        />
         <button
           mat-icon-button
           matSuffix
           type="button"
           (click)="hidePassword = !hidePassword"
           [attr.aria-label]="'Toggle password visibility'"
-          >
+        >
           <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
         </button>
         @if (password.errors?.['required']) {
           <mat-error> Password is required </mat-error>
         }
         @if (password.errors?.['minlength']) {
-          <mat-error>
-            Password must be at least 8 characters
-          </mat-error>
+          <mat-error> Password must be at least 8 characters </mat-error>
         }
       </mat-form-field>
 
@@ -65,7 +63,7 @@
       color="primary"
       type="submit"
       [disabled]="!userForm.valid || isSubmitting()"
-      >
+    >
       <span class="button-content">
         @if (isSubmitting()) {
           <mat-spinner diameter="20" class="spinner"></mat-spinner>
