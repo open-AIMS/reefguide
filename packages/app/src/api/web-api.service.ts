@@ -146,6 +146,10 @@ export class WebApiService {
     });
   }
 
+  cancelJob(jobId: JobId): Observable<JobDetailsResponse> {
+    return this.http.post<JobDetailsResponse>(`${this.base}/jobs/${jobId}/cancel`, null);
+  }
+
   getJob(jobId: JobId): Observable<JobDetailsResponse> {
     return this.http.get<JobDetailsResponse>(`${this.base}/jobs/${jobId}`);
   }

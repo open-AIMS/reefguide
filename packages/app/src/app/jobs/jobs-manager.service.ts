@@ -40,6 +40,10 @@ export type StartedJob = {
    * Current job status
    */
   status$: Observable<ExtendedJobStatus>;
+  /**
+   * stop jobDetails$ interval
+   */
+  cancel$: Subject<void>;
 };
 
 /**
@@ -107,7 +111,6 @@ export class JobsManagerService {
     // TODO PENDING or IN-PROGRESS
     // TODO update API to support only my jobs, if admin, you'll see everyone's jobs
     this.webApi.listJobs({ status: 'PENDING' }).subscribe(jobs => {
-      console.log('jobs', jobs);
       this.addExistingJobs(jobs);
     });
   }
@@ -118,6 +121,20 @@ export class JobsManagerService {
   reset() {
     this.jobs.set([]);
     this._reset$.next();
+  }
+
+  cancel(trackedJob: TrackedJob) {
+    const jobId = trackedJob.jobId;
+    if (jobId === undefined) {
+      throw new Error(`Cannot cancel TrackedJob without jobId`);
+    }
+
+    trackedJob.cancel();
+    this.remove(trackedJob.id);
+
+    this.webApi.cancelJob(jobId).subscribe(x => {
+      console.log(`job ${jobId} cancelled`, x);
+    });
   }
 
   /**
@@ -155,14 +172,15 @@ export class JobsManagerService {
    */
   private _startJob(jobType: JobType, payload: Record<string, any>): StartedJob {
     const createJob$ = this.webApi.createJob(jobType, payload).pipe(shareReplay(1));
+    const cancel$ = new Subject<void>();
     const status$ = new BehaviorSubject<ExtendedJobStatus>('CREATING');
 
     const jobDetails$ = createJob$.pipe(
       retryHTTPErrors(3),
-      switchMap(createJobResp => this._watchJobDetails(createJobResp.jobId, status$))
+      switchMap(createJobResp => this._watchJobDetails(createJobResp.jobId, status$, cancel$))
     );
 
-    return { createJob$, jobDetails$, status$ };
+    return { createJob$, jobDetails$, status$, cancel$ };
   }
 
   /**
@@ -179,16 +197,18 @@ export class JobsManagerService {
       requestId: -1
     });
 
+    const cancel$ = new Subject<void>();
     const status$ = new BehaviorSubject<ExtendedJobStatus>(job.status);
 
-    const jobDetails$ = this._watchJobDetails(job.id, status$);
+    const jobDetails$ = this._watchJobDetails(job.id, status$, cancel$);
 
-    return { createJob$, jobDetails$, status$ };
+    return { createJob$, jobDetails$, status$, cancel$ };
   }
 
   private _watchJobDetails(
     jobId: number,
-    status$: BehaviorSubject<ExtendedJobStatus>
+    status$: BehaviorSubject<ExtendedJobStatus>,
+    cancel$: Observable<void>
   ): StartedJob['jobDetails$'] {
     status$.next('PENDING');
     return interval(this.jobDetailsInterval).pipe(
@@ -213,6 +233,7 @@ export class JobsManagerService {
         x => x.status === 'PENDING' || x.status === 'IN_PROGRESS',
         true // inclusive: emit the first value that fails the predicate
       ),
+      takeUntil(cancel$),
       takeUntil(this._reset$),
       finalize(() => {
         status$.complete();
@@ -232,6 +253,8 @@ export class TrackedJob {
   public readonly status$: StartedJob['status$'];
   public readonly jobDetails$: StartedJob['jobDetails$'];
 
+  private cancel$: Subject<void>;
+
   constructor(
     public readonly jobType: JobType,
     public readonly payload: Record<string, any>,
@@ -241,9 +264,15 @@ export class TrackedJob {
     this.createJob$ = startedJob.createJob$;
     this.status$ = startedJob.status$;
     this.jobDetails$ = startedJob.jobDetails$;
+    this.cancel$ = startedJob.cancel$;
 
     this.createJob$.subscribe(job => {
       this.jobId = job.jobId;
     });
+  }
+
+  cancel() {
+    this.cancel$.next();
+    this.cancel$.complete();
   }
 }

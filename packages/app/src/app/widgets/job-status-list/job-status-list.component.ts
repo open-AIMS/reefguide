@@ -29,6 +29,10 @@ export class JobStatusListComponent {
     return labels[trackedJob.jobType];
   }
 
+  cancel(job: TrackedJob) {
+    this.jobsManager.cancel(job);
+  }
+
   dismiss(job: TrackedJob) {
     this.jobsManager.remove(job.id);
   }
