@@ -50,7 +50,7 @@ Authorization: Bearer {{authToken}}
 {
     "type": "TEST",
     "inputPayload": {
-        "id" : 1111111
+        "id" : 1
     }
 }
 
@@ -64,7 +64,7 @@ Authorization: Bearer {{authToken}}
 {
     "type": "ADRIA_MODEL_RUN",
     "inputPayload": {
-        "num_scenarios": 32,
+        "num_scenarios": 64,
         "rcp_scenario": "45",
         "model_params": [
             {

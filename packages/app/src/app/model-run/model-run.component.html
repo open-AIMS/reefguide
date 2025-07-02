@@ -1,84 +1,199 @@
-<mat-toolbar>
-  <button mat-flat-button routerLink="/runs">Model Runs</button>
-  <span class="mat-title-medium">{{ id() }}</span>
-</mat-toolbar>
+<div class="model-run-container">
+  <!-- Page Header -->
+  <mat-toolbar class="page-header">
+    <span *ngIf="isJobView()">Model Run Job #{{ jobId() }}</span>
+    <span *ngIf="isResultSetView()">Model Run Results</span>
 
-<mat-tab-group class="fixed-height" preserveContent>
-  <mat-tab label="Details">
-    <ng-template matTabContent>
-      <div class="content">
-        @defer (when run()) {
-          @if (run(); as run) {
-            <h2 class="mat-headline-small">{{ run.title }}</h2>
-            <p *ngIf="run.desc">{{ run.desc }}</p>
-            <table class="info-table">
-              <tr *ngIf="run.creator">
-                <th>Creator:</th>
-                <td>{{ run.creator }}</td>
-              </tr>
-              <tr *ngIf="run.publish_date">
-                <th>Publish Date:</th>
-                <td>{{ run.publish_date | date }}</td>
-              </tr>
-              <tr>
-                <th>Invoked:</th>
-                <td>
-                  {{ run.invoke_time }}
-                  @if (run.runtime) {
-                    , took <em>{{ run.runtime }}</em>
-                  }
-                </td>
-              </tr>
-              <tr>
-                <th>Model:</th>
-                <td>{{ run.model_name }} {{ run.model_version }}</td>
-              </tr>
-              <tr *ngIf="run.handle_id">
-                <th>Data:</th>
-                <td><a href="https://mds.gbrrestoration.org/">M&DS</a></td>
-              </tr>
-            </table>
-          }
-        } @placeholder {
-          <p>Loading...</p>
-        }
-      </div>
-    </ng-template>
-  </mat-tab>
-  <mat-tab label="Parameters">
-    <ng-template matTabContent>
-      <app-modelspec-explorer [data]="modelspecDataframe$ | async"></app-modelspec-explorer>
-    </ng-template>
-  </mat-tab>
-  <mat-tab label="Scenarios">
-    <ng-template matTabContent>
-      @if (scenariosTable$ | async; as table) {
-        <app-table [data]="table.rows" [displayedColumns]="table.columns"></app-table>
-      }
-    </ng-template>
-  </mat-tab>
-  <mat-tab label="Site Ranking"> TODO </mat-tab>
-  <mat-tab label="Map">
-    <ng-template matTabContent>
-      <app-reef-map></app-reef-map>
-    </ng-template>
-  </mat-tab>
-  <mat-tab label="Results">
-    <ng-template matTabContent>
-      <div class="center-container">
-        <select (change)="onSelectMetric($event)">
-          @for (metric of metrics; track metric) {
-            <option [value]="metric">{{ metric }}</option>
-          }
-        </select>
-        <button (click)="getMetricFigure()">Add Figure</button>
-      </div>
+    <span class="spacer"></span>
 
-      <div class="card-container">
-        @for (figs of metrics_figures; track figs[0]) {
-          <iframe class="plot-iframe" [srcdoc]="figs[1]"></iframe>
-        }
+    <button mat-icon-button routerLink="/model-runs">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+  </mat-toolbar>
+
+  <!-- Job Status Section (for jobs that are pending/in-progress) -->
+  <app-job-status
+    *ngIf="showJobStatus() && !!job()"
+    [job]="job() ?? null"
+    [config]="jobConfig"
+    [visible]="true"
+    (jobCompleted)="onJobCompleted($event)"
+    (retryRequested)="onRetryRequested()"
+  >
+  </app-job-status>
+
+  <!-- Job Error Section -->
+  <mat-card *ngIf="showJobError()" class="error-card">
+    <mat-card-header>
+      <div mat-card-avatar>
+        <mat-icon color="warn">error</mat-icon>
       </div>
-    </ng-template>
-  </mat-tab>
-</mat-tab-group>
+      <mat-card-title>Job Failed</mat-card-title>
+      <mat-card-subtitle>The model run could not be completed</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <p>An unknown error occurred during the model run.</p>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <button mat-button (click)="onRetryRequested()">
+        <mat-icon>refresh</mat-icon>
+        Try Again
+      </button>
+      <button mat-button routerLink="/invoke-run">
+        <mat-icon>add</mat-icon>
+        New Run
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <!-- Results Section (for completed jobs or direct result sets) -->
+  <div *ngIf="showResults()" class="results-section">
+    <!-- Job Result Figure (for completed ADRIA jobs) -->
+    <mat-card *ngIf="isJobView() && resultFigure()" class="figure-card">
+      <mat-card-header>
+        <mat-card-title>Model Run Results</mat-card-title>
+        <mat-card-subtitle>Relative coral cover simulation results</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="figure-container">
+          <img [src]="resultFigure()" alt="Model run results figure" class="result-figure" />
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <a mat-button [href]="resultFigure()" download="model-results.png">
+          <mat-icon>download</mat-icon>
+          Download Figure
+        </a>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Job Information Card (for job view) -->
+    <mat-card *ngIf="isJobView() && job()" class="info-card">
+      <mat-card-header>
+        <mat-card-title>Job Information</mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-row">
+            <span class="label">Job ID:</span>
+            <span class="value">{{ job()?.id }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Status:</span>
+            <span class="value status-badge" [class]="'status-' + job()?.status?.toLowerCase()">
+              {{ job()?.status }}
+            </span>
+          </div>
+          <div class="info-row" *ngIf="job()?.created_at">
+            <span class="label">Started:</span>
+            <span class="value">{{ job()?.created_at | date: 'medium' }}</span>
+          </div>
+          <div class="info-row" *ngIf="job()?.updated_at">
+            <span class="label">Completed:</span>
+            <span class="value">{{ job()?.updated_at | date: 'medium' }}</span>
+          </div>
+          <div class="info-row" *ngIf="job()?.input_payload?.num_scenarios">
+            <span class="label">Scenarios:</span>
+            <span class="value">{{ job()?.input_payload?.num_scenarios }}</span>
+          </div>
+          <div class="info-row" *ngIf="job()?.input_payload?.rcp_scenario">
+            <span class="label">RCP Scenario:</span>
+            <span class="value">{{ job()?.input_payload?.rcp_scenario }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Legacy Result Set Content (for direct result set access) -->
+    <div *ngIf="isResultSetView()" class="legacy-results">
+      <!-- Result Set Information -->
+      <mat-card *ngIf="run()" class="info-card">
+        <mat-card-header>
+          <mat-card-title>{{ run()?.title }}</mat-card-title>
+          <mat-card-subtitle *ngIf="run()?.desc">{{ run()?.desc }}</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="info-grid">
+            <div class="info-row">
+              <span class="label">Model:</span>
+              <span class="value">{{ run()?.model_name }} {{ run()?.model_version }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Scenarios:</span>
+              <span class="value">{{ run()?.n_scenarios }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Locations:</span>
+              <span class="value">{{ run()?.n_locations }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Time Period:</span>
+              <span class="value">{{ run()?.start_year }} - {{ run()?.end_year }}</span>
+            </div>
+            <div class="info-row" *ngIf="run()?.runtime">
+              <span class="label">Runtime:</span>
+              <span class="value">{{ run()?.runtime }}</span>
+            </div>
+            <div class="info-row" *ngIf="run()?.creator">
+              <span class="label">Creator:</span>
+              <span class="value">{{ run()?.creator }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Tabs for detailed analysis -->
+      <mat-tab-group class="analysis-tabs">
+        <mat-tab label="Map View">
+          <div class="tab-content">
+            <app-reef-map></app-reef-map>
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Model Specification">
+          <div class="tab-content">
+            <app-modelspec-explorer [data]="modelspecDataframe$ | async"></app-modelspec-explorer>
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Scenarios">
+          <div class="tab-content">
+            <app-table
+              *ngIf="scenariosTable$ | async as table"
+              [data]="table.rows"
+              [displayedColumns]="table.columns"
+            >
+            </app-table>
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Figures">
+          <div class="tab-content">
+            <div class="metric-selector">
+              <label for="metric-select">Select Metric:</label>
+              <select id="metric-select" (change)="onSelectMetric($event)">
+                <option *ngFor="let metric of metrics" [value]="metric">{{ metric }}</option>
+              </select>
+              <button mat-raised-button color="primary" (click)="getMetricFigure()">
+                Generate Figure
+              </button>
+            </div>
+
+            <div class="figures-container">
+              <div *ngFor="let figure of metrics_figures" class="figure-item">
+                <h3>Figure {{ figure[0] }}</h3>
+                <div [innerHTML]="figure[1]"></div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+  </div>
+</div>

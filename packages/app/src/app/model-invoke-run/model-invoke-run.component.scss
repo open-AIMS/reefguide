@@ -1,62 +1,120 @@
-.form-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+/* src/app/model-invoke-run/model-invoke-run.component.scss */
+
+.model-invoke-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
 }
 
-form {
-  background-color: #f9f9f9;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+.form-card {
+  margin: 16px 0;
 }
 
-.form-group {
-  margin-bottom: 15px;
+.form-section {
+  margin: 32px 0;
+
+  h3 {
+    margin: 0 0 24px 0;
+    color: rgba(0, 0, 0, 0.87);
+    font-weight: 500;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    padding-bottom: 8px;
+  }
 }
 
-label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
+.form-field {
+  margin: 24px 0;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 14px;
+  }
+
+  mat-slider {
+    width: 100%;
+    margin: 12px 0;
+  }
+
+  .slider-value {
+    text-align: center;
+    font-weight: 500;
+    color: #1976d2;
+    margin-top: 8px;
+    font-size: 16px;
+  }
+
+  .full-width {
+    width: 100%;
+  }
 }
 
-input[type='input'] {
-  width: calc(100% - 20px);
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  margin-right: 10px;
-}
+.range-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
 
-mat-slider {
-  width: calc(100% - 20px);
-  margin-top: 5px;
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 .error-message {
-  color: red;
+  color: #f44336;
   font-size: 12px;
-  margin-top: 5px;
-}
-
-button {
-  width: 100%;
-  padding: 10px;
-  background-color: #007bff;
-  color: white;
-  border: none;
+  margin-top: 8px;
+  padding: 8px;
+  background-color: #ffebee;
   border-radius: 4px;
-  cursor: pointer;
+  border-left: 4px solid #f44336;
 }
 
-button:hover {
-  background-color: #0056b3;
+/* Form validation styles */
+.ng-invalid.ng-touched {
+  mat-slider {
+    .mdc-slider__track {
+      background-color: #f44336 !important;
+    }
+  }
 }
 
-.loading-spinner-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* Button styles */
+mat-card-actions {
+  padding: 16px 24px;
+
+  button {
+    min-width: 140px;
+
+    &:disabled {
+      opacity: 0.6;
+    }
+  }
+}
+
+/* Job status integration */
+app-job-status {
+  display: block;
+  margin-bottom: 24px;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+  .model-invoke-container {
+    padding: 16px;
+  }
+
+  .form-section {
+    margin: 24px 0;
+
+    h3 {
+      font-size: 18px;
+    }
+  }
+
+  .form-field {
+    margin: 16px 0;
+  }
 }

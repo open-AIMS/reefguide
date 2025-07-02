@@ -1,0 +1,95 @@
+<mat-card *ngIf="visible()" [ngClass]="containerClasses()" class="job-status-card">
+  <mat-card-header>
+    <div mat-card-avatar>
+      <mat-icon [class.spinning]="isLoading()">{{ statusIcon() }}</mat-icon>
+    </div>
+
+    <mat-card-title>{{ config().title }}</mat-card-title>
+
+    <mat-card-subtitle *ngIf="config().subtitle">
+      {{ config().subtitle }}
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <!-- Job Purpose/Description -->
+    <p class="job-purpose">{{ config().purpose }}</p>
+
+    <!-- Current Status Message -->
+    <div class="status-message">
+      <p [class]="'status-' + jobStatus().toLowerCase()">
+        {{ statusMessage() }}
+      </p>
+    </div>
+
+    <!-- Progress Indicators -->
+    <div class="progress-section" *ngIf="isLoading()">
+      <!-- Indeterminate progress bar for loading states -->
+      <mat-progress-bar mode="indeterminate" [color]="config().theme || 'primary'">
+      </mat-progress-bar>
+
+      <!-- Elapsed Time -->
+      <div class="time-info" *ngIf="config().showElapsedTime && elapsedTime()">
+        <span class="elapsed-time">
+          <mat-icon>schedule</mat-icon>
+          Elapsed: {{ elapsedTime() }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Success State -->
+    <div class="success-section" *ngIf="isSuccess()">
+      <div class="success-icon">
+        <mat-icon color="primary">check_circle_outline</mat-icon>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-section" *ngIf="isError()">
+      <div class="error-details">
+        <mat-icon color="warn">warning</mat-icon>
+        <span class="error-message">An error occurred processing your job!</span>
+      </div>
+    </div>
+
+    <!-- Detailed Progress (if enabled) -->
+    <div class="detailed-progress" *ngIf="config().showDetailedProgress && job()">
+      <div class="job-details">
+        <div class="job-detail-row">
+          <span class="label">Job ID:</span>
+          <span class="value">{{ job()?.id }}</span>
+        </div>
+
+        <div class="job-detail-row">
+          <span class="label">Status:</span>
+          <span class="value status-badge" [class]="'status-' + jobStatus().toLowerCase()">
+            {{ jobStatus() }}
+          </span>
+        </div>
+
+        <div class="job-detail-row" *ngIf="job()?.created_at">
+          <span class="label">Started:</span>
+          <span class="value">{{ job()?.created_at | date: 'medium' }}</span>
+        </div>
+
+        <div
+          class="job-detail-row"
+          *ngIf="job()?.updated_at && job()?.created_at !== job()?.updated_at"
+        >
+          <span class="label">Last Updated:</span>
+          <span class="value">{{ job()?.updated_at | date: 'medium' }}</span>
+        </div>
+      </div>
+    </div>
+  </mat-card-content>
+
+  <!-- Action Buttons -->
+  <mat-card-actions *ngIf="isError()" align="end">
+    <button mat-button color="primary" (click)="onRetry()">
+      <mat-icon>refresh</mat-icon>
+      Retry
+    </button>
+
+    <button mat-stroked-button (click)="onCancel()">Cancel</button>
+  </mat-card-actions>
+</mat-card>
