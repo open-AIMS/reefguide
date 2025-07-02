@@ -11,10 +11,7 @@ import {
   LoginResponse,
   ProfileResponse
 } from '@reefguide/types';
-import {
-  map,
-  Observable
-} from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { environment } from '../environments/environment';
 
 type JobId = CreateJobResponse['jobId'];
@@ -25,7 +22,7 @@ type JobId = CreateJobResponse['jobId'];
  * This is a low-level HTTP API providing methods for all of the web-api features -
  * auth, user management, jobs, polygons, etc. Other services such as AuthService
  * and JobsManagerService are built on top of this.
-*/
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -165,5 +162,4 @@ export class WebApiService {
       params: query
     });
   }
-
 }

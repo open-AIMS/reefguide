@@ -7,7 +7,7 @@ $errorColor: rgb(155, 33, 33);
 
 .row {
   padding: 0px 8px;
-  min-height: 48px;  // height of mat-icon-button, prevents relayout on button show
+  min-height: 48px; // height of mat-icon-button, prevents relayout on button show
   display: flex;
   align-items: center;
   gap: 8px;
