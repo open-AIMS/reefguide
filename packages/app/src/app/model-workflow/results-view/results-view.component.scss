@@ -4,10 +4,12 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  gap: 16px;
   overflow-y: auto;
 }
 
-.figure-card {
+.figure-card,
+.vega-card {
   flex-shrink: 0;
 }
 
@@ -29,6 +31,42 @@
   height: auto;
   object-fit: contain;
   border-radius: 4px;
+}
+
+.vega-content {
+  padding: 16px;
+}
+
+.vega-chart-container {
+  width: 100%;
+  min-height: 400px;
+
+  // Ensure Vega charts are responsive
+  :deep(.vega-embed) {
+    width: 100% !important;
+
+    .vega-actions {
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      margin-top: 8px;
+
+      a {
+        color: #1976d2;
+        text-decoration: none;
+
+        &:hover {
+          background-color: #e3f2fd;
+        }
+      }
+    }
+  }
+
+  // Style the chart itself
+  :deep(canvas),
+  :deep(svg) {
+    max-width: 100%;
+    height: auto;
+  }
 }
 
 .no-figure-message {

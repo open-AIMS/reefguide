@@ -13,8 +13,6 @@
   },
   "private": true,
   "dependencies": {
-    "@reefguide/types": "workspace:*",
-    "@reefguide/db": "workspace:*",
     "@angular/animations": "^19.2.11",
     "@angular/cdk": "^19.2.16",
     "@angular/common": "^19.2.11",
@@ -31,9 +29,12 @@
     "@esri/calcite-components": "^3.2.1",
     "@esri/calcite-components-angular": "^2.11.1",
     "@ngx-env/builder": "^19.0.4",
+    "@reefguide/db": "workspace:*",
+    "@reefguide/types": "workspace:*",
     "jwt-decode": "^4.0.0",
     "rxjs": "~7.8.2",
     "tslib": "^2.3.0",
+    "vega-embed": "^7.0.2",
     "zod": "^3.25.62"
   },
   "devDependencies": {

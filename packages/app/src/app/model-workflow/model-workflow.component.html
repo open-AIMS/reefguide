@@ -46,7 +46,7 @@
 
       <!-- Viewing State: Results -->
       <div class="results-container" *ngIf="isViewing()">
-        <app-results-view [job]="currentJob()"> </app-results-view>
+        <app-results-view [job]="currentJob() ?? undefined"> </app-results-view>
       </div>
     </div>
   </div>
