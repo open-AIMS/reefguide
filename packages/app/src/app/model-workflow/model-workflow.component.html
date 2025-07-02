@@ -1,0 +1,53 @@
+<!-- src/app/model-workflow/model-workflow.component.html -->
+<div class="workflow-container">
+  <!-- Simple Header -->
+  <div class="workflow-header">
+    <h1>{{ getWorkflowTitle() }}</h1>
+    <button mat-button *ngIf="!isConfiguring()" (click)="resetWorkflow()" class="new-run-button">
+      <mat-icon>refresh</mat-icon>
+      New Run
+    </button>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="workflow-content">
+    <!-- Left Panel: Parameter Configuration -->
+    <div class="left-panel">
+      <app-parameter-config (parametersSubmitted)="onParametersSubmitted($event)">
+      </app-parameter-config>
+    </div>
+
+    <!-- Right Panel: Dynamic Content Based on State -->
+    <div class="right-panel">
+      <!-- Configuring State: Instructions -->
+      <mat-card class="instructions-card" *ngIf="isConfiguring()">
+        <mat-card-header>
+          <mat-card-title>Ready to Run</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="instructions-content">
+            <mat-icon class="instructions-icon">science</mat-icon>
+            <p>{{ getRightPanelDescription() }}</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Submitting/Monitoring State: Job Status -->
+      <div class="job-status-container" *ngIf="isSubmitting() || isMonitoring()">
+        <app-job-status
+          [job]="currentJob()"
+          [config]="jobConfig"
+          (jobCompleted)="onJobCompleted($event)"
+          (retryRequested)="onRetryRequested()"
+          (cancelRequested)="onCancelRequested()"
+        >
+        </app-job-status>
+      </div>
+
+      <!-- Viewing State: Results -->
+      <div class="results-container" *ngIf="isViewing()">
+        <app-results-view [job]="currentJob() ?? undefined"> </app-results-view>
+      </div>
+    </div>
+  </div>
+</div>

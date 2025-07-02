@@ -50,9 +50,48 @@ Authorization: Bearer {{authToken}}
 {
     "type": "TEST",
     "inputPayload": {
-        "id" : 1111111
+        "id" : 1
     }
 }
+
+
+### Create a new ADRIA model run job
+# @name createADRIAJob
+POST {{baseUrl}}/jobs
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+    "type": "ADRIA_MODEL_RUN",
+    "inputPayload": {
+        "num_scenarios": 64,
+        "rcp_scenario": "45",
+        "model_params": [
+            {
+                "param_name": "N_seed_CA",
+                "third_param_flag": true,
+                "lower": 0,
+                "upper": 1000000,
+                "optional_third": 100000
+            },
+            {
+                "param_name": "N_seed_TA",
+                "third_param_flag": true,
+                "lower": 0,
+                "upper": 1000000,
+                "optional_third": 100000
+            },
+            {
+                "param_name": "N_seed_SM",
+                "third_param_flag": true,
+                "lower": 0,
+                "upper": 1000000,
+                "optional_third": 100000
+            }
+        ]
+    }
+}
+
 
 ### Create a new regional assessment job (with full params)
 # @name createRegionalAssessmentJob

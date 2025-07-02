@@ -26,6 +26,10 @@ const envSchema = z.object({
   WORKER_PASSWORD: z.string(),
   ADMIN_USERNAME: z.string(),
   ADMIN_PASSWORD: z.string(),
+  DISABLE_CACHE: z
+    .string()
+    .default('false')
+    .transform(val => ['true'].includes(val.toLowerCase())),
   // Token configuration - with proper defaults
   ACCESS_TOKEN_EXPIRY_MINUTES: z
     .string()
@@ -84,6 +88,7 @@ export interface Config {
     refreshTokenExpiryMinutes: number;
     accessTokenExpirySeconds: number; // Computed convenience property
   };
+  disableCache: boolean;
 }
 
 /**
@@ -149,7 +154,8 @@ export function getConfig(): Config {
       refreshTokenExpiryMinutes: env.REFRESH_TOKEN_EXPIRY_MINUTES,
       // Computed convenience property for seconds
       accessTokenExpirySeconds: env.ACCESS_TOKEN_EXPIRY_MINUTES * 60
-    }
+    },
+    disableCache: env.DISABLE_CACHE
   };
 
   // Log configuration in non-production environments (excluding sensitive data)

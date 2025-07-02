@@ -1,0 +1,119 @@
+/* src/app/model-workflow/results-view/results-view.component.scss */
+
+.results-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.figure-card,
+.vega-card {
+  flex-shrink: 0;
+}
+
+.figure-content {
+  padding: 0;
+}
+
+.figure-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  background-color: #f5f5f5;
+}
+
+.result-figure {
+  max-width: 100%;
+  max-height: 600px;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.vega-content {
+  padding: 16px;
+}
+
+.vega-chart-container {
+  width: 100%;
+  min-height: 400px;
+
+  // Ensure Vega charts are responsive
+  :deep(.vega-embed) {
+    width: 100% !important;
+
+    .vega-actions {
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      margin-top: 8px;
+
+      a {
+        color: #1976d2;
+        text-decoration: none;
+
+        &:hover {
+          background-color: #e3f2fd;
+        }
+      }
+    }
+  }
+
+  // Style the chart itself
+  :deep(canvas),
+  :deep(svg) {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+.no-figure-message {
+  text-align: center;
+  padding: 40px;
+  color: rgba(0, 0, 0, 0.6);
+
+  p {
+    margin: 0;
+    font-size: 16px;
+  }
+}
+
+.metric-figure-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.metric-figure {
+  width: 100%;
+
+  // Ensure any embedded SVG/HTML figures are properly sized
+  :deep(svg) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  :deep(img) {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+.remove-figure-btn {
+  align-self: flex-start;
+}
+
+.no-metrics-message {
+  text-align: center;
+  padding: 32px;
+  color: rgba(0, 0, 0, 0.6);
+  background-color: #f5f5f5;
+  border-radius: 4px;
+
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+}

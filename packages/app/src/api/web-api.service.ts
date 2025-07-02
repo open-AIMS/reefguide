@@ -155,9 +155,16 @@ export class WebApiService {
     return this.http.get<JobDetailsResponse>(`${this.base}/jobs/${jobId}`);
   }
 
-  downloadJobResults(jobId: JobId, expirySeconds?: number): Observable<DownloadResponse> {
+  downloadJobResults(
+    jobId: JobId,
+    expirySeconds?: number,
+    filterPrefix?: string
+  ): Observable<DownloadResponse> {
     return this.http.get<DownloadResponse>(`${this.base}/jobs/${jobId}/download`, {
-      params: expirySeconds !== undefined ? { expirySeconds } : undefined
+      params: {
+        ...(expirySeconds !== undefined ? { expirySeconds } : undefined),
+        ...(filterPrefix !== undefined ? { filterPrefix } : undefined)
+      }
     });
   }
 

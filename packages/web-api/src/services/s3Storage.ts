@@ -63,23 +63,25 @@ export class S3StorageService {
   }
 
   /**
-   * Lists all files in a location and generates presigned URLs with relative paths
+   * Lists all files in a location and generates presigned URLs with relative
+   * paths
    * @param locationUri S3 URI to scan
    * @param expirySeconds How long the URLs should be valid for
+   * @param filterPrefix An addition to add to the files prefix such that the
+   * user can filter the resulting list
    * @returns Map of relative file paths to presigned URLs
    */
   async getPresignedUrls(
     locationUri: string,
-    expirySeconds = 3600
+    expirySeconds = 3600,
+    filterPrefix: string | undefined = undefined
   ): Promise<Record<string, string>> {
     const { bucket, prefix } = this.parseS3Uri(locationUri);
-
-    console.log('Bucket prefix', bucket, prefix);
 
     // List all objects in the location
     const listCommand = new ListObjectsV2Command({
       Bucket: bucket,
-      Prefix: prefix
+      Prefix: prefix + (filterPrefix ? `/${filterPrefix}` : '')
     });
     const response = await this.s3Client.send(listCommand);
     const files = response.Contents || [];
