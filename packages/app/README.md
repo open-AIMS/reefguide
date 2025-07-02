@@ -1,4 +1,4 @@
-# MADAME App
+# Reef Guide App
 
 Model Assessment and Decision Analysis for Marine Environments web application.
 Prototype Decision Support app for the [ADRIA.jl](https://github.com/open-AIMS/ADRIA.jl)

@@ -29,8 +29,6 @@ import { SplashScreenComponent } from './auth/splash-screen/splash-screen.compon
 export class AppComponent implements OnInit {
   private readonly appAccessService = inject(AppAccessService);
 
-  title = 'ReefGuide';
-
   /**
    * Current user access state - drives splash screen visibility
    */
