@@ -1,50 +1,55 @@
+// src/app/app.routes.ts
 import { Routes } from '@angular/router';
-import { ModelRunListComponent } from './model-run-list/model-run-list.component';
-import { ModelRunComponent } from './model-run/model-run.component';
-import { ModelInvokeRunComponent } from './model-invoke-run/model-invoke-run.component';
-import { TestMapComponent } from './test/test-map/test-map.component';
-import { LocationSelectionComponent } from './location-selection/location-selection.component';
-import { JobsComponent } from './jobs/jobs.component';
 
 export const routes: Routes = [
   {
-    path: 'runs',
-    component: ModelRunListComponent,
-    title: 'MADAME - Model Runs'
+    path: '',
+    redirectTo: '/location-selection',
+    pathMatch: 'full'
+  },
+  {
+    path: 'new-run',
+    loadComponent: () =>
+      import('./model-workflow/model-workflow.component').then(m => m.ModelWorkflowComponent),
+    title: 'Model Run Workflow'
+  },
+  {
+    path: 'location-selection',
+    loadComponent: () =>
+      import('./location-selection/location-selection.component').then(
+        m => m.LocationSelectionComponent
+      ),
+    title: 'Location Selection'
+  },
+  {
+    path: 'jobs',
+    loadComponent: () => import('./jobs/jobs.component').then(m => m.JobsComponent),
+    title: 'Jobs'
+  },
+  {
+    path: 'test-map',
+    loadComponent: () => import('./test/test-map/test-map.component').then(m => m.TestMapComponent),
+    title: 'Test Map'
+  },
+  // Legacy routes - redirect to new workflow
+  {
+    path: 'invoke-run',
+    redirectTo: '/new-run',
+    pathMatch: 'full'
   },
   {
     path: 'view-run/:id',
-    component: ModelRunComponent,
-    title: 'MADAME - View Run'
-  },
-  {
-    path: 'reef-guide',
-    component: LocationSelectionComponent,
-    title: 'Reef Guide'
-  },
-  // for now, redirect root to location-selection
-  // TODO main nav design and routing
-  {
-    path: '',
-    redirectTo: 'reef-guide',
+    redirectTo: '/new-run',
     pathMatch: 'full'
   },
-  // Development
-  // temporary routes used for development.
   {
-    path: 'test-map',
-    component: TestMapComponent,
-    title: 'Test Map'
+    path: 'runs',
+    redirectTo: '/new-run',
+    pathMatch: 'full'
   },
+  // Fallback route
   {
-    path: 'invoke-run',
-    component: ModelInvokeRunComponent,
-    title: 'Invoke Run'
-  },
-  // initial work on jobs list page. should have auth guard.
-  {
-    path: 'jobs',
-    component: JobsComponent,
-    title: 'My Jobs'
+    path: '**',
+    redirectTo: '/new-run'
   }
 ];

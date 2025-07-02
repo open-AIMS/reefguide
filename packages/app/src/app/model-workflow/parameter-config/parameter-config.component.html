@@ -1,0 +1,114 @@
+<mat-card class="parameter-config-card">
+  <mat-card-header>
+    <mat-card-title>Model Configuration</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    <form [formGroup]="configForm" class="config-form">
+      <!-- Model Run Name -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Name of Model Run</mat-label>
+        <input matInput formControlName="runName" placeholder="example_run">
+      </mat-form-field>
+
+      <!-- Number of Scenarios -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Number of scenarios</mat-label>
+        <mat-select formControlName="numScenarios">
+          <mat-option *ngFor="let option of scenarioOptions" [value]="option">
+            {{ option }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Seeded Tabular Acropora -->
+      <div class="parameter-section">
+        <h3>Seeded Tabular Acropora (per deployment)</h3>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="0"
+            [max]="1000000"
+            [step]="50000"
+            [displayWith]="formatMillions"
+            [discrete]="false">
+            <input
+              matSliderStartThumb
+              formControlName="taLower"
+              [value]="taRange().lower">
+            <input
+              matSliderEndThumb
+              formControlName="taUpper"
+              [value]="taRange().upper">
+          </mat-slider>
+          <div class="range-display">
+            {{ formatMillions(taRange().lower) }} - {{ formatMillions(taRange().upper) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Seeded Corymbose Acropora -->
+      <div class="parameter-section">
+        <h3>Seeded Corymbose Acropora (per deployment)</h3>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="0"
+            [max]="1000000"
+            [step]="50000"
+            [displayWith]="formatMillions"
+            [discrete]="false">
+            <input
+              matSliderStartThumb
+              formControlName="caLower"
+              [value]="caRange().lower">
+            <input
+              matSliderEndThumb
+              formControlName="caUpper"
+              [value]="caRange().upper">
+          </mat-slider>
+          <div class="range-display">
+            {{ formatMillions(caRange().lower) }} - {{ formatMillions(caRange().upper) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Seeded Small Massives -->
+      <div class="parameter-section">
+        <h3>Seeded Small Massives (per deployment)</h3>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="0"
+            [max]="1000000"
+            [step]="50000"
+            [displayWith]="formatMillions"
+            [discrete]="false">
+            <input
+              matSliderStartThumb
+              formControlName="smLower"
+              [value]="smRange().lower">
+            <input
+              matSliderEndThumb
+              formControlName="smUpper"
+              [value]="smRange().upper">
+          </mat-slider>
+          <div class="range-display">
+            {{ formatMillions(smRange().lower) }} - {{ formatMillions(smRange().upper) }}
+          </div>
+        </div>
+      </div>
+    </form>
+  </mat-card-content>
+
+  <mat-card-actions>
+    <button
+      mat-raised-button
+      color="primary"
+      class="submit-button"
+      [disabled]="!canSubmit()"
+      (click)="onSubmit()">
+      Submit
+    </button>
+  </mat-card-actions>
+</mat-card>
