@@ -6,6 +6,9 @@ import { BadRequestException, NotFoundException, UnauthorizedException } from '.
 import { hashObject } from '../util';
 import { jobTypeSchemas, jobExpiryMap } from '@reefguide/types';
 
+// Job status that allow returning a cached job.
+const validCachedJobStatus = new Set<Job['status']>(['SUCCEEDED', 'IN_PROGRESS', 'PENDING']);
+
 /**
  * Service class handling job-related operations including creation, assignment,
  * result submission, and job management.
@@ -74,7 +77,7 @@ export class JobService {
    * 1. SUCCEEDED jobs (newest first)
    * 2. IN_PROGRESS jobs (newest first)
    * 3. PENDING jobs (newest first)
-   * 4. FAILED jobs are never returned
+   * 4. FAILED,CANCELLED,TIMED_OUT jobs are never returned
    *
    * @param jobPaylod - The job payload to match against (note: contains typo in parameter name)
    * @param jobType - The type of job to search for
@@ -87,8 +90,8 @@ export class JobService {
     // Find jobs with a matching hash
     const existingJobs = await prisma.job.findMany({ where: { hash } });
 
-    // Filter out FAILED jobs immediately - we never want to return them
-    const validJobs = existingJobs.filter(job => job.status !== 'FAILED');
+    // Filter out invalid jobs immediately - we never want to return them
+    const validJobs = existingJobs.filter(job => validCachedJobStatus.has(job.status));
 
     if (validJobs.length === 0) {
       return undefined;
