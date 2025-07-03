@@ -2,6 +2,7 @@
 @for (job of jobs; track job.id) {
   @let created = job.createJob$ | async;
   @let status = job.status$ | async;
+  @let isCached = created?.cached === true;
   <div class="row">
     @switch (status) {
       @case ('PENDING') {
@@ -27,16 +28,19 @@
 
     <span>{{ getLabel(job) }}</span>
 
-    @if (created?.cached) {
+    @if (isCached) {
       <mat-icon matTooltip="downloading cached data">storage</mat-icon>
     }
-    @if (status !== 'PENDING' && status !== 'IN_PROGRESS') {
-      <button mat-icon-button (click)="dismiss(job)">
-        <mat-icon>close</mat-icon>
-      </button>
-    } @else {
+    <!-- only pending jobs can be cancelled, workers in-progress do not support cancel -->
+    @if (status === 'PENDING' && !isCached) {
       <button mat-icon-button class="cancel-job" (click)="cancel(job)" matTooltip="cancel job">
         <mat-icon>remove_circle</mat-icon>
+      </button>
+    }
+    @else {
+      <!-- always show dismiss button so user can remove job from list -->
+      <button mat-icon-button (click)="dismiss(job)">
+        <mat-icon>close</mat-icon>
       </button>
     }
   </div>
