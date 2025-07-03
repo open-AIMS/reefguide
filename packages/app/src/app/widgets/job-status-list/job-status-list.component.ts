@@ -8,10 +8,10 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
 
 const labels: Record<JobType, string> = {
-  REGIONAL_ASSESSMENT: 'Criteria assessment',
-  SUITABILITY_ASSESSMENT: 'Site suitability',
-  DATA_SPECIFICATION_UPDATE: 'Data specification update',
-  TEST: 'Test'
+  REGIONAL_ASSESSMENT: 'criteria assessment',
+  SUITABILITY_ASSESSMENT: 'site suitability',
+  DATA_SPECIFICATION_UPDATE: 'data specification update',
+  TEST: 'test'
 };
 
 @Component({
@@ -26,7 +26,13 @@ export class JobStatusListComponent {
   constructor() {}
 
   getLabel(trackedJob: TrackedJob) {
-    return labels[trackedJob.jobType];
+    let label = labels[trackedJob.jobType];
+    // prefix with region if it's found in payload
+    const region = trackedJob.payload['region'];
+    if (region) {
+      label = `${region} ${label}`;
+    }
+    return label;
   }
 
   cancel(job: TrackedJob) {
