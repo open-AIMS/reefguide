@@ -6,9 +6,11 @@
       <mat-form-field>
         <mat-label>Roles</mat-label>
         <mat-select formControlName="roles" multiple>
-          <mat-option *ngFor="let role of availableRoles" [value]="role">
-            {{ role }}
-          </mat-option>
+          @for (role of availableRoles; track role) {
+            <mat-option [value]="role">
+              {{ role }}
+            </mat-option>
+          }
         </mat-select>
       </mat-form-field>
     </mat-dialog-content>

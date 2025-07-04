@@ -53,7 +53,7 @@ mat-drawer {
   }
   mat-progress-spinner {
     // @include mat.progress-spinner-color($theme, $color-variant: secondary);
-    --mdc-circular-progress-active-indicator-color: rgba(237, 237, 237, 0.8);
+    --mat-progress-spinner-active-indicator-color: rgba(237, 237, 237, 0.8);
   }
 }
 

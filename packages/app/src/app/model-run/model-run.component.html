@@ -10,16 +10,22 @@
         @defer (when run()) {
           @if (run(); as run) {
             <h2 class="mat-headline-small">{{ run.title }}</h2>
-            <p *ngIf="run.desc">{{ run.desc }}</p>
+            @if (run.desc) {
+              <p>{{ run.desc }}</p>
+            }
             <table class="info-table">
-              <tr *ngIf="run.creator">
-                <th>Creator:</th>
-                <td>{{ run.creator }}</td>
-              </tr>
-              <tr *ngIf="run.publish_date">
-                <th>Publish Date:</th>
-                <td>{{ run.publish_date | date }}</td>
-              </tr>
+              @if (run.creator) {
+                <tr>
+                  <th>Creator:</th>
+                  <td>{{ run.creator }}</td>
+                </tr>
+              }
+              @if (run.publish_date) {
+                <tr>
+                  <th>Publish Date:</th>
+                  <td>{{ run.publish_date | date }}</td>
+                </tr>
+              }
               <tr>
                 <th>Invoked:</th>
                 <td>
@@ -33,10 +39,12 @@
                 <th>Model:</th>
                 <td>{{ run.model_name }} {{ run.model_version }}</td>
               </tr>
-              <tr *ngIf="run.handle_id">
-                <th>Data:</th>
-                <td><a href="https://mds.gbrrestoration.org/">M&DS</a></td>
-              </tr>
+              @if (run.handle_id) {
+                <tr>
+                  <th>Data:</th>
+                  <td><a href="https://mds.gbrrestoration.org/">M&DS</a></td>
+                </tr>
+              }
             </table>
           }
         } @placeholder {
