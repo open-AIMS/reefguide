@@ -113,6 +113,9 @@
           <mat-icon>edit_note</mat-icon>
         </button>
       </div>
+      <!-- should be inside div.map-buttons, but temporary hack around ESRI layers button -->
+      <app-job-status-list></app-job-status-list>
+
       <div class="center-container">
         @let progress = mapService.progress$ | async;
         @if (progress != null) {

@@ -7,7 +7,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink } from '@angular/router';
 import { ListJobsResponse } from '@reefguide/types';
 import { Observable } from 'rxjs';
-import { WebApiService } from '../../api/web-api.service';
+import { WebApiService } from '../../../api/web-api.service';
 
 @Component({
   selector: 'app-jobs',
@@ -19,10 +19,10 @@ import { WebApiService } from '../../api/web-api.service';
     MatButtonModule,
     MatToolbarModule
   ],
-  templateUrl: './jobs.component.html',
-  styleUrl: './jobs.component.scss'
+  templateUrl: './jobs-table.component.html',
+  styleUrl: './jobs-table.component.scss'
 })
-export class JobsComponent {
+export class JobsTableComponent {
   api = inject(WebApiService);
   jobs$: Observable<ListJobsResponse>;
 
