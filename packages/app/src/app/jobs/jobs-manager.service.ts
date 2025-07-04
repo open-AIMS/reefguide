@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { WebApiService } from '../../api/web-api.service';
-import { JobType } from '@reefguide/db';
+import { JobStatus, JobType } from '@reefguide/db';
 import { CreateJobResponse, JobDetailsResponse, ListJobsResponse } from '@reefguide/types';
 import {
   BehaviorSubject,
@@ -21,7 +21,7 @@ import { retryHTTPErrors } from '../../util/http-util';
 import { AuthService } from '../auth/auth.service';
 
 // API's job status plus 'CREATING'
-export type ExtendedJobStatus = JobDetailsResponse['job']['status'] | 'CREATING';
+export type ExtendedJobStatus = JobStatus | 'CREATING';
 
 /**
  * @see JobsManagerService._startJob

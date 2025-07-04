@@ -7,7 +7,7 @@ import { hashObject } from '../util';
 import { jobTypeSchemas, jobExpiryMap } from '@reefguide/types';
 
 // Job status that allow returning a cached job.
-const validCachedJobStatus = new Set<Job['status']>(['SUCCEEDED', 'IN_PROGRESS', 'PENDING']);
+const validCachedJobStatus = new Set<JobStatus>(['SUCCEEDED', 'IN_PROGRESS', 'PENDING']);
 
 /**
  * Service class handling job-related operations including creation, assignment,
