@@ -2,7 +2,7 @@
 
 ## Quick start
 
-Make sure you have `nvm` and `docker` (rootless) installed, then run 
+Make sure you have `nvm` and `docker` (rootless) installed, then run
 
 ```
 ./local-dev.sh
@@ -62,7 +62,7 @@ turbo build
 
 ## Dev
 
-Make sure postgres and minio running with 
+Make sure postgres and minio running with
 
 ```
 docker compose up -d
@@ -76,7 +76,7 @@ Then
 turbo dev
 ```
 
-Or just 
+Or just
 
 ```
 ./local-dev.sh
@@ -95,3 +95,11 @@ turbo format:check
 turbo lint
 turbo fix
 ```
+
+## Debugging
+
+VSCode _launch.json_ has a few debugging configurations:
+
+* "Debug app in Chrome" - launch Chrome and attach debugger
+* "Debug web-api:dev" - launch node debugger targeting web-api `pnpm run dev`
+    * Before launching, open a terminal and run: `pnpm run dev-no-web-api`
