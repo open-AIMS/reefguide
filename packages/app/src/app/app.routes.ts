@@ -1,5 +1,6 @@
 // src/app/app.routes.ts
 import { Routes } from '@angular/router';
+import { JobsTableComponent } from './jobs/jobs-table/jobs-table.component';
 
 export const routes: Routes = [
   {
@@ -22,11 +23,6 @@ export const routes: Routes = [
     title: 'Location Selection'
   },
   {
-    path: 'jobs',
-    loadComponent: () => import('./jobs/jobs.component').then(m => m.JobsComponent),
-    title: 'Jobs'
-  },
-  {
     path: 'test-map',
     loadComponent: () => import('./test/test-map/test-map.component').then(m => m.TestMapComponent),
     title: 'Test Map'
@@ -47,9 +43,10 @@ export const routes: Routes = [
     redirectTo: '/new-run',
     pathMatch: 'full'
   },
-  // Fallback route
+  // initial work on jobs list page. should have auth guard.
   {
-    path: '**',
-    redirectTo: '/new-run'
+    path: 'jobs',
+    component: JobsTableComponent,
+    title: 'My Jobs'
   }
 ];

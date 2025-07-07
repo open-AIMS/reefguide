@@ -58,6 +58,7 @@ import {
   RegionJobsManager
 } from './selection-criteria/region-jobs-manager';
 import { SuitabilityAssessmentInput } from '@reefguide/types';
+import { JobsManagerService } from '../jobs/jobs-manager.service';
 
 interface CriteriaLayer {
   layer: TileLayer;
@@ -77,6 +78,7 @@ export class ReefGuideMapService {
   private readonly api = inject(WebApiService);
   private readonly reefGuideApi = inject(ReefGuideApiService);
   private readonly snackbar = inject(MatSnackBar);
+  private readonly jobsManager = inject(JobsManagerService);
 
   // map is set shortly after construction
   private map!: ArcgisMap;
@@ -433,8 +435,8 @@ export class ReefGuideMapService {
     this.siteSuitabilityLoading.set(true);
     this.activeSiteSuitabilityRegions.add(region);
 
-    this.api
-      .startJob('SUITABILITY_ASSESSMENT', payload)
+    const job = this.jobsManager.startJob('SUITABILITY_ASSESSMENT', payload);
+    job.jobDetails$
       .pipe(
         tap(job => {
           console.log(`Job id=${job.id} type=${job.type} update`, job);
@@ -475,6 +477,9 @@ export class ReefGuideMapService {
       cr.cancel();
       this.criteriaRequest.set(undefined);
     }
+
+    // cancel all jobs for now, this code will be reworked soon.
+    this.jobsManager.cancelAll();
   }
 
   /**

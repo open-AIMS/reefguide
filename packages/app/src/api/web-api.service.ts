@@ -1,35 +1,27 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { JobType, Polygon, PolygonNote, User, UserRole } from '@reefguide/db';
+import { Polygon, PolygonNote, User, UserRole } from '@reefguide/db';
 import {
   CreateJobResponse,
   DownloadResponse,
   JobDetailsResponse,
+  ListJobsQuery,
   ListJobsResponse,
   ListUserLogsResponse,
   LoginResponse,
   ProfileResponse
 } from '@reefguide/types';
-import {
-  distinctUntilKeyChanged,
-  interval,
-  map,
-  Observable,
-  switchMap,
-  takeWhile,
-  tap
-} from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { environment } from '../environments/environment';
-import { retryHTTPErrors } from '../util/http-util';
 
 type JobId = CreateJobResponse['jobId'];
 
 /**
- * MADAME/ReefGuide Web API - see https://github.com/open-AIMS/reefguide-web-api
+ * MADAME/ReefGuide Web API - see packages/web-api
  *
- * This service provides authentication endpoints, which is used by AuthService.
- *
- * It also provides admin endpoints for controlling clusters and managing users.
+ * This is a low-level HTTP API providing methods for all of the web-api features -
+ * auth, user management, jobs, polygons, etc. Other services such as AuthService
+ * and JobsManagerService are built on top of this.
  */
 @Injectable({
   providedIn: 'root'
@@ -151,6 +143,10 @@ export class WebApiService {
     });
   }
 
+  cancelJob(jobId: JobId): Observable<JobDetailsResponse> {
+    return this.http.post<JobDetailsResponse>(`${this.base}/jobs/${jobId}/cancel`, null);
+  }
+
   getJob(jobId: JobId): Observable<JobDetailsResponse> {
     return this.http.get<JobDetailsResponse>(`${this.base}/jobs/${jobId}`);
   }
@@ -168,54 +164,9 @@ export class WebApiService {
     });
   }
 
-  // TODO API supports status filter
-  listJobs(): Observable<ListJobsResponse> {
-    return this.http.get<ListJobsResponse>(`${this.base}/jobs`);
-  }
-
-  // ## Jobs System: high-level API ##
-
-  /**
-   * Create a job and return Observable that emits job details when status changes.
-   * Completes when status changes from pending/in-progress.
-   * @param jobType job type
-   * @param payload job type's payload
-   * @param period how often to request job status in milliseconds (default 2 seconds)
-   * @returns Observable of job details job sub property
-   */
-  startJob(
-    jobType: JobType,
-    payload: Record<string, any>,
-    period = 2_000
-  ): Observable<JobDetailsResponse['job']> {
-    return this.createJob(jobType, payload).pipe(
-      retryHTTPErrors(3),
-      switchMap(createJobResp => {
-        const jobId = createJobResp.jobId;
-        return interval(period).pipe(
-          // Future: if client is tracking many jobs, it would be more efficient to
-          // share the query/request for all of them (i.e. switchMap to shared observable),
-          // but this is simplest for now.
-          switchMap(() => this.getJob(jobId).pipe(retryHTTPErrors(3))),
-          // discard extra wrapping object, which has no information.
-          map(v => v.job),
-          // only emit when job status changes.
-          distinctUntilKeyChanged('status'),
-          // complete observable when not pending/in-progress; emit the last value
-          takeWhile(
-            x => x.status === 'PENDING' || x.status === 'IN_PROGRESS',
-            true // inclusive: emit the first value that fails the predicate
-          ),
-          // convert job error statuses to thrown errors.
-          tap(job => {
-            const s = job.status;
-            if (s === 'FAILED' || s === 'CANCELLED' || s === 'TIMED_OUT') {
-              throw new Error(`Job id=${job.id} ${s}`);
-            }
-            return job;
-          })
-        );
-      })
-    );
+  listJobs(query?: ListJobsQuery): Observable<ListJobsResponse> {
+    return this.http.get<ListJobsResponse>(`${this.base}/jobs`, {
+      params: query
+    });
   }
 }

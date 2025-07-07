@@ -27,6 +27,7 @@ import { ReefGuideMapService } from './reef-guide-map.service';
 import { SelectionCriteriaComponent } from './selection-criteria/selection-criteria.component';
 import { WebApiService } from '../../api/web-api.service';
 import { RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
+import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
 
 type DrawerModes = 'criteria' | 'style';
 
@@ -52,7 +53,8 @@ type DrawerModes = 'criteria' | 'style';
     MatExpansionModule,
     CommonModule,
     MatMenuModule,
-    MatProgressBar
+    MatProgressBar,
+    JobStatusListComponent
   ],
   providers: [ReefGuideMapService],
   templateUrl: './location-selection.component.html',
@@ -138,6 +140,8 @@ export class LocationSelectionComponent implements AfterViewInit {
     const { criteria, siteSuitability } = assessment;
 
     this.mapService.clearAssessedLayers();
+
+    this.drawer.close();
 
     // convert criteria to job payload and start job
     const raPartialPayload = criteriaToJobPayload(criteria);
