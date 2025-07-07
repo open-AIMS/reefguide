@@ -285,7 +285,7 @@ export class ReefguideStack extends cdk.Stack {
           cooldownSeconds: 60,
           env: {
             // ADRIA PARAMS
-            ADRIA_OUTPUT_DIR: '/data/reefguide/adria/scratch',
+            ADRIA_OUTPUT_DIR: '/tmp/reefguide',
             ADRIA_NUM_CORES: '2',
             ADRIA_DEBUG: 'false',
             ADRIA_THRESHOLD: '1e-8',
@@ -294,7 +294,8 @@ export class ReefguideStack extends cdk.Stack {
             JULIA_DEBUG: 'ADRIAReefGuideWorker',
             // TODO enable expansion into set of data packages
             DATA_PACKAGE_PATH: '/data/reefguide/adria/datapackages/Moore_2025-01-17_v070_rc1',
-            DATA_SCRATCH_SPACE: '/data/reefguide/adria/scratch'
+            // Don't use network FS for this - to speed up IO and reduce $$
+            DATA_SCRATCH_SPACE: '/tmp/reefguide'
           },
 
           // Mount up the reefguide API shared storage
