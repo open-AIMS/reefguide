@@ -17,7 +17,6 @@ import GroupLayer from '@arcgis/core/layers/GroupLayer';
 import ImageryTileLayer from '@arcgis/core/layers/ImageryTileLayer';
 import TileLayer from '@arcgis/core/layers/TileLayer';
 import Editor from '@arcgis/core/widgets/Editor';
-import { ArcgisMap } from '@arcgis/map-components-angular';
 import { JobType } from '@reefguide/db';
 import {
   BehaviorSubject,
@@ -178,58 +177,6 @@ export class ReefGuideMapService {
         );
       }
     };
-
-    esriConfig.request.interceptors!.push({
-      urls: [new RegExp(`^${apiUrl}`)],
-      before: params => {
-        const url = params.url as string;
-        this.pendingRequests.add(url);
-        this.pendingHighPoint = Math.max(this.pendingRequests.size, this.pendingHighPoint);
-        this.progress$.next(
-          (this.pendingHighPoint - this.pendingRequests.size) / this.pendingHighPoint
-        );
-
-        // security double-check that we're only intercepting our API urls.
-        if (url.startsWith(apiUrl)) {
-          const token = this.authService.getAuthToken();
-          if (token) {
-            const headerVal = `Bearer ${token}`;
-            if (params.requestOptions.headers === undefined) {
-              params.requestOptions.headers = {
-                Authorization: headerVal
-              };
-            } else {
-              params.requestOptions.headers.Authorization = headerVal;
-            }
-          } else {
-            // All reef-guide-api layers require authentication, so spare the API
-            // from requests it would reject with a 401 anyway.
-            throw new Error('Not authenticated');
-            // Note: we also have access to an AbortSignal here.
-            // const signal = params.requestOptions.signal as AbortSignal;
-          }
-        } else {
-          console.warn('esri request interceptor intercepted wrong URL!');
-        }
-      },
-      after: response => {
-        const url = response.url;
-        if (url) {
-          onRequestDone(url);
-        }
-      },
-      error: err => {
-        const url = err.details.url;
-        onRequestDone(url);
-
-        if (err.details.httpStatus === 401) {
-          this.authService.unauthenticated();
-        } else if (err.name !== 'AbortError') {
-          // ignore cancelled requests
-          this.httpErrors.next(err);
-        }
-      }
-    });
   }
 
   setMap(map: Map) {
@@ -449,12 +396,13 @@ export class ReefGuideMapService {
       .subscribe(jobResults => {
         this.removeActiveSiteSuitabilityRegion(region);
         const url = getFirstFileFromResults(jobResults);
-        const layer = new GeoJSONLayer({
-          title: `Site Suitability (${region})`,
-          url
-        });
+        // NOW openlayers
+        // const layer = new GeoJSONLayer({
+        //   title: `Site Suitability (${region})`,
+        //   url
+        // });
 
-        groupLayer.add(layer);
+        // groupLayer.add(layer);
       });
   }
 
@@ -590,112 +538,6 @@ export class ReefGuideMapService {
     });
 
     this.map.view.ui.add(this.editor, 'top-right');
-  }
-
-  /**
-   * WIP
-   * Need to sync with our API, but if we're switching to OpenLayers, then this will need
-   * to largely be re-written.
-   */
-  private addReefNotesLayer() {
-    const layer = new FeatureLayer({
-      title: 'Reef Notes',
-      editingEnabled: true,
-      fields: [
-        {
-          name: 'ObjectID',
-          alias: 'ObjectID',
-          type: 'oid'
-        },
-        {
-          name: 'notes',
-          alias: 'Notes',
-          type: 'string'
-        }
-      ],
-      objectIdField: 'ObjectID',
-      geometryType: 'polygon',
-      source: []
-    });
-    this.map.addLayer(layer);
-
-    layer.on('edits', edits => {
-      console.log('edits', edits);
-
-      for (let f of edits.addedFeatures) {
-        console.log('f', f);
-        f.objectId;
-        // TODO this is dodgey to get TS happy '?? 0'
-        layer.queryFeatures({ objectIds: [f.objectId ?? 0] }).then(x => {
-          console.log('q', x);
-          // Util.arcgisToGeoJSON()
-        });
-      }
-
-      // @ts-ignore
-      console.log('x', edits.edits);
-
-      /*
-      {
-    "aggregateGeometries": null,
-    "geometry": {
-        "spatialReference": {
-            "latestWkid": 3857,
-            "wkid": 102100
-        },
-        "rings": [
-            [
-                [
-                    16268327.203744985,
-                    -1892548.5535436415
-                ],
-                [
-                    16240687.576183194,
-                    -1884599.1026019813
-                ],
-                [
-                    16271873.88372356,
-                    -1878117.2435364644
-                ],
-                [
-                    16268327.203744985,
-                    -1892548.5535436415
-                ]
-            ]
-        ]
-    },
-    "symbol": null,
-    "attributes": {
-        "notes": "aoue",
-        "ObjectID": 1
-    },
-    "popupTemplate": null
-}
-
-Queried
-{
-    "features": [
-        {
-            "aggregateGeometries": null,
-            "geometry": null,
-            "symbol": null,
-            "attributes": {
-                "ObjectID": 1,
-                "notes": "a"
-            },
-            "popupTemplate": null
-        }
-    ],
-    "geometryType": "esriGeometryPolygon",
-    "spatialReference": {
-        "wkid": 4326
-    }
-}
-       */
-    });
-
-    //this.editor.when
-    //this.editor.addHandles()
   }
 
   private async addCriteriaLayers() {
