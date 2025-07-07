@@ -34,6 +34,7 @@
     "jwt-decode": "^4.0.0",
     "rxjs": "~7.8.2",
     "tslib": "^2.3.0",
+    "vega-embed": "^7.0.2",
     "zod": "^3.25.62"
   },
   "devDependencies": {

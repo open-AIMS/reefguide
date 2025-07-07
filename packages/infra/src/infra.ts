@@ -267,6 +267,59 @@ export class ReefguideStack extends cdk.Stack {
               }
             ]
           }
+        },
+        // ADRIA worker
+        {
+          jobTypes: [JobType.ADRIA_MODEL_RUN],
+          workerImage: 'ghcr.io/open-aims/adriareefguideworker.jl/adria-reefguide-worker:latest',
+          // 4CPU
+          cpu: 4096,
+          // 16GB
+          memoryLimitMiB: 16384,
+          serverPort: 3000,
+          command: ['using ADRIAReefGuideWorker; ADRIAReefGuideWorker.start_worker()'],
+          desiredMinCapacity: 0,
+          desiredMaxCapacity: 5,
+          scalingFactor: 3.3,
+          scalingSensitivity: 2.6,
+          cooldownSeconds: 60,
+          env: {
+            // ADRIA PARAMS
+            ADRIA_OUTPUT_DIR: '/tmp/reefguide',
+            ADRIA_NUM_CORES: '2',
+            ADRIA_DEBUG: 'false',
+            ADRIA_THRESHOLD: '1e-8',
+
+            // worker config
+            JULIA_DEBUG: 'ADRIAReefGuideWorker',
+            // TODO enable expansion into set of data packages
+            DATA_PACKAGE_PATH: '/data/reefguide/adria/datapackages/Moore_2025-01-17_v070_rc1',
+            // Don't use network FS for this - to speed up IO and reduce $$
+            DATA_SCRATCH_SPACE: '/tmp/reefguide'
+          },
+
+          // Mount up the reefguide API shared storage
+          efsMounts: {
+            efsReadWrite: [networking.efs],
+            volumes: [
+              {
+                name: 'efs-volume',
+                efsVolumeConfiguration: {
+                  fileSystemId: networking.efs.fileSystemId,
+                  rootDirectory: '/data/reefguide',
+                  transitEncryption: 'ENABLED',
+                  authorizationConfig: { iam: 'ENABLED' }
+                }
+              }
+            ],
+            mountPoints: [
+              {
+                sourceVolume: 'efs-volume',
+                containerPath: '/data/reefguide',
+                readOnly: false
+              }
+            ]
+          }
         }
       ],
       workerCreds,

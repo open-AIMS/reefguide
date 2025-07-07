@@ -17,6 +17,7 @@ platform and CoralBlox model. This project also contains the Reef Guide app.
 - [Deploy](#deploy)
 - [Testing](#testing)
 - [Further Help](#further-help)
+  - [ADRIA Model runs](#adria-model-runs)
 
 ## Quick Start
 
@@ -179,3 +180,7 @@ command, you need to first add a package that implements end-to-end testing capa
 ## Further Help
 
 To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+### ADRIA model runs
+
+To access the experimental ADRIA model run capability, navigate directly to `/new-run`.

@@ -138,12 +138,22 @@ export class JobService {
    * @param inputPayload - Input parameters for the job
    * @returns Object containing the job and whether it was cached
    */
-  async createJobRequest(userId: number, jobType: JobType, inputPayload: any) {
+  async createJobRequest(
+    userId: number,
+    jobType: JobType,
+    inputPayload: any,
+    disableCache = false
+  ) {
     await this.validateJobPayload(jobType, inputPayload);
 
-    // Check cache first
-    const cachedJob = await this.checkJobCache(inputPayload, jobType);
-    const cacheHit = cachedJob !== undefined;
+    let cachedJob = undefined;
+    let cacheHit = false;
+
+    // Check cache first if not disabled
+    if (!disableCache) {
+      cachedJob = await this.checkJobCache(inputPayload, jobType);
+      cacheHit = cachedJob !== undefined;
+    }
 
     // Start a transaction to create both the job request and job if needed
     const result = await prisma.$transaction(async prisma => {

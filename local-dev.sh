@@ -19,6 +19,7 @@ REQUIRED_DOCKER_COMPOSE_VERSION="2.0.0"
 DB_READY_TIMEOUT=60
 MINIO_READY_TIMEOUT=60
 API_DIR="packages/web-api"
+APP_DIR="packages/app"
 DB_DIR="packages/db"
 S3_BUCKET_NAME="reefguide-dev"
 MINIO_ENDPOINT="http://localhost:9000"
@@ -450,6 +451,31 @@ setup_minio_bucket() {
     $MC_CMD anonymous set public "local-minio/$S3_BUCKET_NAME" >/dev/null 2>&1 || log_warning "Could not set public policy on bucket (this is optional)"
 }
 
+# Setup app configuration
+setup_app_config() {
+    log_info "Setting up app configuration..."
+
+    if [ ! -d "$APP_DIR" ]; then
+        error_exit "APP directory '$APP_DIR' not found"
+    fi
+
+    cd "$APP_DIR"
+
+    # Copy environment file if it doesn't exist
+    if [ ! -f ".env" ]; then
+        if [ -f ".env.dist" ]; then
+            cp .env.dist .env || error_exit "Failed to copy .env.dist to .env"
+            log_success "Environment file created from .env.dist"
+        else
+            error_exit ".env.dist file not found in $API_DIR"
+        fi
+    else
+        log_info "Environment file already exists"
+    fi
+
+    cd - >/dev/null
+}
+
 # Setup API configuration
 setup_api_config() {
     log_info "Setting up API configuration..."
@@ -760,6 +786,7 @@ main() {
     wait_for_minio
     setup_minio_bucket
     setup_api_config
+    setup_app_config
     setup_database
 
     echo

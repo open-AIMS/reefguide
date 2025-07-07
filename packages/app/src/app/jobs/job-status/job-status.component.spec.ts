@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ModelInvokeRunComponent } from './model-invoke-run.component';
+import { JobStatusComponent } from './job-status.component';
 
-describe('ModelInvokeRunComponent', () => {
-  let component: ModelInvokeRunComponent;
-  let fixture: ComponentFixture<ModelInvokeRunComponent>;
+describe('JobStatusComponent', () => {
+  let component: JobStatusComponent;
+  let fixture: ComponentFixture<JobStatusComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ModelInvokeRunComponent]
+      imports: [JobStatusComponent]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(ModelInvokeRunComponent);
+    fixture = TestBed.createComponent(JobStatusComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
