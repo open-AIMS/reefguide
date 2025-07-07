@@ -8,7 +8,7 @@
       <!-- Model Run Name -->
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Name of Model Run</mat-label>
-        <input matInput formControlName="runName" placeholder="example_run">
+        <input matInput formControlName="runName" placeholder="example_run" />
       </mat-form-field>
 
       <!-- Number of Scenarios -->
@@ -31,15 +31,10 @@
             [max]="1000000"
             [step]="50000"
             [displayWith]="formatMillions"
-            [discrete]="false">
-            <input
-              matSliderStartThumb
-              formControlName="taLower"
-              [value]="taRange().lower">
-            <input
-              matSliderEndThumb
-              formControlName="taUpper"
-              [value]="taRange().upper">
+            [discrete]="false"
+          >
+            <input matSliderStartThumb formControlName="taLower" [value]="taRange().lower" />
+            <input matSliderEndThumb formControlName="taUpper" [value]="taRange().upper" />
           </mat-slider>
           <div class="range-display">
             {{ formatMillions(taRange().lower) }} - {{ formatMillions(taRange().upper) }}
@@ -57,15 +52,10 @@
             [max]="1000000"
             [step]="50000"
             [displayWith]="formatMillions"
-            [discrete]="false">
-            <input
-              matSliderStartThumb
-              formControlName="caLower"
-              [value]="caRange().lower">
-            <input
-              matSliderEndThumb
-              formControlName="caUpper"
-              [value]="caRange().upper">
+            [discrete]="false"
+          >
+            <input matSliderStartThumb formControlName="caLower" [value]="caRange().lower" />
+            <input matSliderEndThumb formControlName="caUpper" [value]="caRange().upper" />
           </mat-slider>
           <div class="range-display">
             {{ formatMillions(caRange().lower) }} - {{ formatMillions(caRange().upper) }}
@@ -83,15 +73,10 @@
             [max]="1000000"
             [step]="50000"
             [displayWith]="formatMillions"
-            [discrete]="false">
-            <input
-              matSliderStartThumb
-              formControlName="smLower"
-              [value]="smRange().lower">
-            <input
-              matSliderEndThumb
-              formControlName="smUpper"
-              [value]="smRange().upper">
+            [discrete]="false"
+          >
+            <input matSliderStartThumb formControlName="smLower" [value]="smRange().lower" />
+            <input matSliderEndThumb formControlName="smUpper" [value]="smRange().upper" />
           </mat-slider>
           <div class="range-display">
             {{ formatMillions(smRange().lower) }} - {{ formatMillions(smRange().upper) }}
@@ -107,7 +92,8 @@
       color="primary"
       class="submit-button"
       [disabled]="!canSubmit()"
-      (click)="onSubmit()">
+      (click)="onSubmit()"
+    >
       Submit
     </button>
   </mat-card-actions>

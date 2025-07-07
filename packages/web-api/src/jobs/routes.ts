@@ -207,7 +207,7 @@ router.get(
     const urlMap = await s3Service.getPresignedUrls(
       successfulAssignment.storage_uri,
       expirySeconds,
-      // If the user wishes to filter the 
+      // If the user wishes to filter the
       req.query.filterPrefix
     );
 

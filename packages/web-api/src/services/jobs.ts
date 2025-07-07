@@ -142,7 +142,7 @@ export class JobService {
     userId: number,
     jobType: JobType,
     inputPayload: any,
-    disableCache: boolean = false
+    disableCache = false
   ) {
     await this.validateJobPayload(jobType, inputPayload);
 

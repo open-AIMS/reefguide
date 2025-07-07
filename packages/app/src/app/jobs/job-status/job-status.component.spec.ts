@@ -9,8 +9,7 @@ describe('JobStatusComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [JobStatusComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(JobStatusComponent);
     component = fixture.componentInstance;

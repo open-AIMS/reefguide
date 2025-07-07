@@ -9,8 +9,7 @@ describe('ParameterConfigComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ParameterConfigComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ParameterConfigComponent);
     component = fixture.componentInstance;
