@@ -1,18 +1,5 @@
 <!-- src/app/model-workflow/results-view/results-view.component.html -->
 <div class="results-container">
-  <!-- Job Result Figure -->
-  <mat-card class="figure-card" *ngIf="resultFigure()">
-    <mat-card-header>
-      <mat-card-title>Model Run Results</mat-card-title>
-      <mat-card-subtitle>Job #{{ job()?.id }}</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content class="figure-content">
-      <div class="figure-container">
-        <img [src]="resultFigure()" alt="Model Run Results" class="result-figure" />
-      </div>
-    </mat-card-content>
-  </mat-card>
-
   <!-- Vega-Lite Interactive Chart -->
   <mat-card class="vega-card" *ngIf="job()?.status === 'SUCCEEDED'">
     <mat-card-header>
@@ -21,19 +8,6 @@
     </mat-card-header>
     <mat-card-content class="vega-content">
       <div #vegaChart class="vega-chart-container"></div>
-    </mat-card-content>
-  </mat-card>
-
-  <!-- Placeholder when no figure available -->
-  <mat-card class="figure-card" *ngIf="!resultFigure() && job()">
-    <mat-card-header>
-      <mat-card-title>Model Run Results</mat-card-title>
-      <mat-card-subtitle>Job #{{ job()?.id }}</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content class="figure-content">
-      <div class="no-figure-message">
-        <p>Results processing complete, but no figure is available for display.</p>
-      </div>
     </mat-card-content>
   </mat-card>
 </div>

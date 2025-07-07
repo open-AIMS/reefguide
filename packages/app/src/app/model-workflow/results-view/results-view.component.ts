@@ -24,8 +24,7 @@ import { WebApiService } from '../../../api/web-api.service';
  * - An interactive Vega-Lite chart for relative cover over time
  *
  * The component handles two download scenarios:
- * 1. PNG figure: Downloaded reactively using RxJS streams
- * 2. Vega chart: Downloaded imperatively using async/await when job completes
+ * Vega chart: Downloaded imperatively using async/await when job completes
  */
 @Component({
   selector: 'app-results-view',
@@ -51,38 +50,6 @@ export class ResultsViewComponent implements AfterViewInit {
     const job = this.job();
     return job?.id || undefined;
   });
-
-  /**
-   * Reactive download of the PNG result figure
-   * Uses RxJS streams to automatically download the figure when job completes
-   */
-  readonly resultFigure = toSignal(
-    toObservable(this.jobId).pipe(
-      switchMap(jobId => {
-        if (!jobId) return of(undefined);
-
-        return this.webApi.getJob(jobId).pipe(
-          switchMap(jobResponse => {
-            const job = jobResponse.job;
-            if (job.status === 'SUCCEEDED') {
-              return this.webApi.downloadJobResults(jobId, undefined, 'figure.png').pipe(
-                map(downloadResponse => downloadResponse.files['figure.png']),
-                catchError(error => {
-                  console.error('Error downloading PNG figure:', error);
-                  return of(undefined);
-                })
-              );
-            }
-            return of(undefined);
-          }),
-          catchError(error => {
-            console.error('Error fetching job for PNG:', error);
-            return of(undefined);
-          })
-        );
-      })
-    )
-  );
 
   constructor() {
     /**
