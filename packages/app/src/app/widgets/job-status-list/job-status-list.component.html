@@ -1,0 +1,46 @@
+@let jobs = jobsManager.jobs();
+@for (job of jobs; track job.id) {
+  @let created = job.createJob$ | async;
+  @let status = job.status$ | async;
+  @let isCached = created?.cached === true;
+  <div class="row">
+    @switch (status) {
+      @case ('PENDING') {
+        <mat-icon matTooltip="Waiting for worker">pending</mat-icon>
+      }
+      @case ('IN_PROGRESS') {
+        <mat-progress-spinner mode="indeterminate" diameter="24" matTooltip="working on job">
+        </mat-progress-spinner>
+      }
+      @case ('FAILED') {
+        <mat-icon class="failed" matTooltip="job error">error</mat-icon>
+      }
+      @case ('SUCCEEDED') {
+        <mat-icon class="succeeded" matTooltip="job completed">done</mat-icon>
+      }
+      @case ('CANCELLED') {
+        <mat-icon matTooltip="Job was cancelled">error</mat-icon>
+      }
+      @case ('TIMED_OUT') {
+        <mat-icon matTooltip="Job timed-out">hourglass_disabled</mat-icon>
+      }
+    }
+
+    <span>{{ getLabel(job) }}</span>
+
+    @if (isCached) {
+      <mat-icon matTooltip="downloading cached data">storage</mat-icon>
+    }
+    <!-- only pending jobs can be cancelled, workers in-progress do not support cancel -->
+    @if (status === 'PENDING' && !isCached) {
+      <button mat-icon-button class="cancel-job" (click)="cancel(job)" matTooltip="cancel job">
+        <mat-icon>remove_circle</mat-icon>
+      </button>
+    } @else {
+      <!-- always show dismiss button so user can remove job from list -->
+      <button mat-icon-button (click)="dismiss(job)">
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </div>
+}
