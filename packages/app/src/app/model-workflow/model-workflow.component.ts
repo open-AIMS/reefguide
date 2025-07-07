@@ -1,6 +1,6 @@
 // src/app/model-workflow/model-workflow.component.ts
 import { Component, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
@@ -23,6 +23,7 @@ type WorkflowState = 'configuring' | 'submitting' | 'monitoring' | 'viewing';
   standalone: true,
   imports: [
     CommonModule,
+    NgIf,
     MatToolbarModule,
     MatButtonModule,
     MatIconModule,

@@ -11,6 +11,7 @@ const labels: Record<JobType, string> = {
   REGIONAL_ASSESSMENT: 'criteria assessment',
   SUITABILITY_ASSESSMENT: 'site suitability',
   DATA_SPECIFICATION_UPDATE: 'data specification update',
+  ADRIA_MODEL_RUN: 'adria model run',
   TEST: 'test'
 };
 

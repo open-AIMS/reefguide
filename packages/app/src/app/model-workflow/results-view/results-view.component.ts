@@ -1,18 +1,16 @@
 import { CommonModule } from '@angular/common';
 import {
+  AfterViewInit,
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   input,
-  ViewChild,
-  effect,
-  AfterViewInit
+  ViewChild
 } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
 import { JobDetailsResponse } from '@reefguide/types';
-import { catchError, map, of, switchMap } from 'rxjs';
 import embed, { VisualizationSpec } from 'vega-embed';
 import { WebApiService } from '../../../api/web-api.service';
 

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Polygon, PolygonNote, User, UserRole } from '@reefguide/db';
+import { JobType, Polygon, PolygonNote, User, UserRole } from '@reefguide/db';
 import {
   CreateJobResponse,
   DownloadResponse,
@@ -11,8 +11,17 @@ import {
   LoginResponse,
   ProfileResponse
 } from '@reefguide/types';
-import { map, Observable } from 'rxjs';
+import {
+  distinctUntilKeyChanged,
+  interval,
+  map,
+  Observable,
+  switchMap,
+  takeWhile,
+  tap
+} from 'rxjs';
 import { environment } from '../environments/environment';
+import { retryHTTPErrors } from '../util/http-util';
 
 type JobId = CreateJobResponse['jobId'];
 
@@ -168,5 +177,58 @@ export class WebApiService {
     return this.http.get<ListJobsResponse>(`${this.base}/jobs`, {
       params: query
     });
+  }
+
+  /**
+   * DEPRECATED
+   * ==========
+   *
+   * This was removed as jobs were moved to the job manager, however it didn't
+   * expose a simple equivalent interface for launching and monitoring a single
+   * job with polling. We should merge these capabilities - but copying back
+   * here for now.
+   *
+   * Create a job and return Observable that emits job details when status
+   * changes. Completes when status changes from pending/in-progress.
+   * @param jobType job type
+   * @param payload job type's payload
+   * @param period how often to request job status in milliseconds (default 2
+   * seconds)
+   * @returns Observable of job details job sub property
+   */
+  startJob(
+    jobType: JobType,
+    payload: Record<string, any>,
+    period = 2_000
+  ): Observable<JobDetailsResponse['job']> {
+    return this.createJob(jobType, payload).pipe(
+      retryHTTPErrors(3),
+      switchMap(createJobResp => {
+        const jobId = createJobResp.jobId;
+        return interval(period).pipe(
+          // Future: if client is tracking many jobs, it would be more efficient to
+          // share the query/request for all of them (i.e. switchMap to shared observable),
+          // but this is simplest for now.
+          switchMap(() => this.getJob(jobId).pipe(retryHTTPErrors(3))),
+          // discard extra wrapping object, which has no information.
+          map(v => v.job),
+          // only emit when job status changes.
+          distinctUntilKeyChanged('status'),
+          // complete observable when not pending/in-progress; emit the last value
+          takeWhile(
+            x => x.status === 'PENDING' || x.status === 'IN_PROGRESS',
+            true // inclusive: emit the first value that fails the predicate
+          ),
+          // convert job error statuses to thrown errors.
+          tap(job => {
+            const s = job.status;
+            if (s === 'FAILED' || s === 'CANCELLED' || s === 'TIMED_OUT') {
+              throw new Error(`Job id=${job.id} ${s}`);
+            }
+            return job;
+          })
+        );
+      })
+    );
   }
 }
