@@ -107,9 +107,18 @@ export const adriaModelRunResultSchema = z
     output_result_set_path: z
       .string()
       .describe('The relative location of the result set data package'),
-    output_figure_path: z
-      .string()
-      .describe('The relative location of the resulting generate relative coral cover figure')
+    available_charts: z
+      .record(z.string())
+      .describe('Map of chart title to the relative file location on S3'),
+    chart_metadata: z.record(
+      z.object({
+        metric_name: z.string(),
+        filename: z.string(),
+        y_label: z.string(),
+        description: z.string(),
+        generation_time_seconds: z.number()
+      })
+    )
   })
   .strict();
 
