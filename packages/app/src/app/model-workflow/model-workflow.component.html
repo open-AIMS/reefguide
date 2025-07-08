@@ -1,52 +1,107 @@
 <!-- src/app/model-workflow/model-workflow.component.html -->
 <div class="workflow-container">
-  <!-- Simple Header -->
-  <div class="workflow-header">
-    <h1>{{ getWorkflowTitle() }}</h1>
-    <button mat-button *ngIf="!isConfiguring()" (click)="resetWorkflow()" class="new-run-button">
-      <mat-icon>refresh</mat-icon>
-      New Run
+  <!-- Tab Header with Controls -->
+  <div class="workspace-header">
+    <mat-tab-group
+      class="workspace-tabs"
+      [selectedIndex]="selectedTabIndex()"
+      (selectedIndexChange)="onTabSelectionChange($event)"
+      animationDuration="200ms"
+    >
+      <mat-tab *ngFor="let workspace of allWorkspaces(); trackBy: trackByWorkspace">
+        <ng-template mat-tab-label>
+          <div class="tab-label">
+            <span class="tab-name">{{ getWorkspaceDisplayName(workspace) }}</span>
+            <button
+              mat-icon-button
+              class="close-button"
+              [disabled]="!canCloseWorkspace(workspace)"
+              [matTooltip]="getCloseTooltip(workspace)"
+              (click)="closeWorkspace(workspace.id, $event)"
+              *ngIf="allWorkspaces().length > 1"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </ng-template>
+      </mat-tab>
+    </mat-tab-group>
+
+    <!-- New Workspace Button -->
+    <button
+      mat-fab
+      color="primary"
+      class="new-workspace-button"
+      matTooltip="Create new workspace"
+      (click)="createNewWorkspace()"
+    >
+      <mat-icon>add</mat-icon>
     </button>
   </div>
 
-  <!-- Main Content Area -->
-  <div class="workflow-content">
-    <!-- Left Panel: Parameter Configuration -->
-    <div class="left-panel">
-      <app-parameter-config (parametersSubmitted)="onParametersSubmitted($event)">
-      </app-parameter-config>
+  <!-- Active Workspace Content -->
+  <div class="workspace-content" *ngIf="activeWorkspace() as workspace">
+    <!-- Simple Header -->
+    <div class="workflow-header">
+      <h1>{{ getWorkflowTitle(workspace) }}</h1>
+      <button
+        mat-button
+        *ngIf="!getWorkspaceService(workspace.id)?.isConfiguring()"
+        (click)="resetWorkspace(workspace.id)"
+        class="new-run-button"
+      >
+        <mat-icon>refresh</mat-icon>
+        New Run
+      </button>
     </div>
 
-    <!-- Right Panel: Dynamic Content Based on State -->
-    <div class="right-panel">
-      <!-- Configuring State: Instructions -->
-      <mat-card class="instructions-card" *ngIf="isConfiguring()">
-        <mat-card-header>
-          <mat-card-title>Ready to Run</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="instructions-content">
-            <mat-icon class="instructions-icon">science</mat-icon>
-            <p>{{ getRightPanelDescription() }}</p>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <!-- Submitting/Monitoring State: Job Status -->
-      <div class="job-status-container" *ngIf="isSubmitting() || isMonitoring()">
-        <app-job-status
-          [job]="currentJob()"
-          [config]="jobConfig"
-          (jobCompleted)="onJobCompleted($event)"
-          (retryRequested)="onRetryRequested()"
-          (cancelRequested)="onCancelRequested()"
+    <!-- Main Content Area -->
+    <div class="workflow-content-grid">
+      <!-- Left Panel: Parameter Configuration -->
+      <div class="left-panel">
+        <app-parameter-config
+          [initialParameters]="workspace.parameters"
+          (parametersChanged)="onParametersChanged(workspace.id, $event)"
+          (parametersSubmitted)="onParametersSubmitted(workspace.id, $event)"
         >
-        </app-job-status>
+        </app-parameter-config>
       </div>
 
-      <!-- Viewing State: Results -->
-      <div class="results-container" *ngIf="isViewing()">
-        <app-results-view [job]="currentJob() ?? undefined"> </app-results-view>
+      <!-- Right Panel: Dynamic Content Based on State -->
+      <div class="right-panel">
+        <!-- Configuring State: Instructions -->
+        <mat-card class="instructions-card" *ngIf="getWorkspaceService(workspace.id)?.isConfiguring()">
+          <mat-card-header>
+            <mat-card-title>Ready to Run</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="instructions-content">
+              <mat-icon class="instructions-icon">science</mat-icon>
+              <p>Configure your model parameters on the left and click Submit to start your simulation.</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Submitting/Monitoring State: Job Status -->
+        <div class="job-status-container" *ngIf="shouldShowJobStatus(workspace.id)">
+          <app-job-status
+            [job]="getWorkspaceService(workspace.id)?.getJob() ?? null"
+            [config]="getJobConfigForWorkspace(workspace.id, workspace.parameters)"
+            (jobCompleted)="onJobCompleted(workspace.id, $event)"
+            (retryRequested)="onRetryRequested(workspace.id)"
+            (cancelRequested)="onCancelRequested(workspace.id)"
+          >
+          </app-job-status>
+        </div>
+
+        <!-- Viewing State: Results -->
+        <div class="results-container" *ngIf="getWorkspaceService(workspace.id)?.isViewing()">
+          <app-results-view
+            [job]="getWorkspaceService(workspace.id)?.getJob() ?? undefined"
+            [workspaceId]="workspace.id"
+          >
+          </app-results-view>
+        </div>
       </div>
     </div>
   </div>

@@ -7,7 +7,8 @@ import {
   ElementRef,
   inject,
   input,
-  ViewChild
+  ViewChild,
+  OnDestroy
 } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { JobDetailsResponse } from '@reefguide/types';
@@ -18,11 +19,12 @@ import { WebApiService } from '../../../api/web-api.service';
  * Results View Component
  *
  * Displays the results of a completed model run job including:
- * - A static PNG figure from the job results
  * - An interactive Vega-Lite chart for relative cover over time
  *
- * The component handles two download scenarios:
- * Vega chart: Downloaded imperatively using async/await when job completes
+ * The component handles workspace isolation by:
+ * - Tracking workspace ID to detect workspace changes
+ * - Re-rendering charts when workspace or job changes
+ * - Cleaning up previous charts before rendering new ones
  */
 @Component({
   selector: 'app-results-view',
@@ -31,17 +33,21 @@ import { WebApiService } from '../../../api/web-api.service';
   templateUrl: './results-view.component.html',
   styleUrl: './results-view.component.scss'
 })
-export class ResultsViewComponent implements AfterViewInit {
+export class ResultsViewComponent implements AfterViewInit, OnDestroy {
   private readonly webApi = inject(WebApiService);
 
   /** Input job from the parent workflow component */
   job = input<JobDetailsResponse['job'] | undefined>(undefined);
 
+  /** Input workspace ID to track workspace changes */
+  workspaceId = input<string | undefined>(undefined);
+
   /** Reference to the Vega chart container element */
   @ViewChild('vegaChart', { static: false }) vegaChartRef!: ElementRef;
 
-  /** Prevents duplicate chart rendering */
-  private hasRenderedChart = false;
+  /** Track the last rendered job/workspace combination to prevent unnecessary re-renders */
+  private lastRenderedJobId: number | null = null;
+  private lastRenderedWorkspaceId: string | null = null;
 
   /** Computed job ID for reactive streams */
   private readonly jobId = computed(() => {
@@ -49,17 +55,35 @@ export class ResultsViewComponent implements AfterViewInit {
     return job?.id || undefined;
   });
 
+  /** Computed workspace ID for tracking changes */
+  private readonly currentWorkspaceId = computed(() => {
+    return this.workspaceId() || null;
+  });
+
   constructor() {
     /**
-     * Effect to handle Vega chart rendering when job completes
-     * Triggers when job status changes to 'SUCCEEDED' and ViewChild is available
+     * Effect to handle Vega chart rendering when job completes OR workspace changes
+     * Triggers when:
+     * - Job status changes to 'SUCCEEDED'
+     * - Workspace ID changes (tab switch)
+     * - ViewChild becomes available
      */
     effect(() => {
       const job = this.job();
+      const workspaceId = this.currentWorkspaceId();
 
-      if (job?.status === 'SUCCEEDED' && this.vegaChartRef && !this.hasRenderedChart) {
-        this.hasRenderedChart = true;
-        this.downloadAndRenderVegaChart(job.id);
+      if (job?.status === 'SUCCEEDED' && this.vegaChartRef && workspaceId) {
+        // Check if we need to re-render (job changed OR workspace changed)
+        const needsRender =
+          this.lastRenderedJobId !== job.id ||
+          this.lastRenderedWorkspaceId !== workspaceId;
+
+        if (needsRender) {
+          console.log(`[${workspaceId}] Rendering Vega chart for job ${job.id}`);
+          this.downloadAndRenderVegaChart(job.id, workspaceId);
+          this.lastRenderedJobId = job.id;
+          this.lastRenderedWorkspaceId = workspaceId;
+        }
       }
     });
   }
@@ -70,19 +94,42 @@ export class ResultsViewComponent implements AfterViewInit {
    */
   ngAfterViewInit(): void {
     const job = this.job();
+    const workspaceId = this.currentWorkspaceId();
 
-    if (job?.status === 'SUCCEEDED' && !this.hasRenderedChart) {
-      this.hasRenderedChart = true;
-      this.downloadAndRenderVegaChart(job.id);
+    if (job?.status === 'SUCCEEDED' && workspaceId) {
+      const needsRender =
+        this.lastRenderedJobId !== job.id ||
+        this.lastRenderedWorkspaceId !== workspaceId;
+
+      if (needsRender) {
+        console.log(`[${workspaceId}] Initial render of Vega chart for job ${job.id}`);
+        this.downloadAndRenderVegaChart(job.id, workspaceId);
+        this.lastRenderedJobId = job.id;
+        this.lastRenderedWorkspaceId = workspaceId;
+      }
     }
+  }
+
+  /**
+   * OnDestroy lifecycle hook
+   * Clean up any rendered charts
+   */
+  ngOnDestroy(): void {
+    this.clearChart();
   }
 
   /**
    * Downloads the Vega-Lite specification and renders the interactive chart
    * @param jobId - The ID of the completed job
+   * @param workspaceId - The ID of the workspace (for logging)
    */
-  private async downloadAndRenderVegaChart(jobId: number): Promise<void> {
+  private async downloadAndRenderVegaChart(jobId: number, workspaceId: string): Promise<void> {
     try {
+      console.log(`[${workspaceId}] Downloading Vega spec for job ${jobId}`);
+
+      // Clear any existing chart first
+      this.clearChart();
+
       // Download the Vega-Lite specification file
       const downloadResponse = await this.webApi
         .downloadJobResults(jobId, undefined, 'relative_cover_vega_spec.vegalite')
@@ -91,7 +138,7 @@ export class ResultsViewComponent implements AfterViewInit {
       const vegaUrl = downloadResponse?.files['relative_cover_vega_spec.vegalite'];
 
       if (!vegaUrl) {
-        console.warn('No Vega spec URL found in download response');
+        console.warn(`[${workspaceId}] No Vega spec URL found in download response`);
         return;
       }
 
@@ -104,33 +151,47 @@ export class ResultsViewComponent implements AfterViewInit {
       const spec = await response.json();
 
       // Render the interactive chart
-      await this.renderVegaChart(spec);
+      await this.renderVegaChart(spec, workspaceId);
+
+      console.log(`[${workspaceId}] Successfully rendered Vega chart for job ${jobId}`);
     } catch (error) {
-      console.error('Error downloading/rendering Vega chart:', error);
+      console.error(`[${workspaceId}] Error downloading/rendering Vega chart:`, error);
     }
   }
 
   /**
    * Renders a Vega-Lite chart in the designated container
    * @param spec - The Vega-Lite specification object
+   * @param workspaceId - The ID of the workspace (for logging)
    */
-  private async renderVegaChart(spec: VisualizationSpec): Promise<void> {
+  private async renderVegaChart(spec: VisualizationSpec, workspaceId: string): Promise<void> {
     try {
       if (!this.vegaChartRef?.nativeElement) {
-        console.warn('Vega chart container not available');
+        console.warn(`[${workspaceId}] Vega chart container not available`);
         return;
       }
 
       // Clear any existing chart content
-      this.vegaChartRef.nativeElement.innerHTML = '';
+      this.clearChart();
 
       // Render the interactive chart with Vega-Embed
       await embed(this.vegaChartRef.nativeElement, spec, {
         actions: true, // Enable download/edit actions
         theme: 'googlecharts' // Clean theme
       });
+
+      console.log(`[${workspaceId}] Vega chart rendered successfully`);
     } catch (error) {
-      console.error('Error rendering Vega chart:', error);
+      console.error(`[${workspaceId}] Error rendering Vega chart:`, error);
+    }
+  }
+
+  /**
+   * Clear the chart container
+   */
+  private clearChart(): void {
+    if (this.vegaChartRef?.nativeElement) {
+      this.vegaChartRef.nativeElement.innerHTML = '';
     }
   }
 }

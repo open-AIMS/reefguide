@@ -1,5 +1,5 @@
 // src/app/model-workflow/parameter-config/parameter-config.component.ts
-import { Component, output, signal } from '@angular/core';
+import { Component, output, signal, input, effect } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { CommonModule } from '@angular/common';
 import { AdriaModelRunInput } from '@reefguide/types';
+import { debounceTime } from 'rxjs/operators';
 
 interface ParameterRange {
   lower: number;
@@ -278,6 +279,12 @@ export class ParameterConfigComponent {
   // Output event when user submits configuration
   parametersSubmitted = output<ModelParameters>();
 
+  // Output event when parameters change (auto-save)
+  parametersChanged = output<ModelParameters>();
+
+  // Input: Initial parameters to populate the form
+  initialParameters = input<ModelParameters | null>(null);
+
   // Available scenario options (powers of 2)
   scenarioOptions = [1, 2, 4, 8, 16, 32, 64, 128, 256];
 
@@ -352,13 +359,32 @@ export class ParameterConfigComponent {
   fogYearStartRange = signal<ParameterRange>({ lower: 2, upper: 25 });
 
   constructor() {
-    // Subscribe to form changes to update range displays (EXACT same as original)
+    // Subscribe to form changes to update range displays immediately (no debounce for UI updates)
     this.configForm.valueChanges.subscribe(() => {
       this.updateRangeSignals();
     });
 
+    // Subscribe to form changes with debounce for auto-save (performance optimization)
+    this.configForm.valueChanges
+      .pipe(debounceTime(500)) // Wait 500ms after user stops typing/sliding
+      .subscribe(() => {
+        // Auto-save: emit parameters when form changes and is valid
+        if (this.configForm.valid && this.validateRanges()) {
+          const parameters = this.buildModelParameters();
+          this.parametersChanged.emit(parameters);
+        }
+      });
+
     // Initialize range displays
     this.updateRangeSignals();
+
+    // Effect to populate form with initial parameters (one-time setup)
+    effect(() => {
+      const params = this.initialParameters();
+      if (params) {
+        this.populateFormFromParameters(params);
+      }
+    });
   }
 
   // Keep the original working formatMillions method
@@ -483,6 +509,88 @@ export class ParameterConfigComponent {
     return units ? `${formatted} ${units}` : formatted;
   }
 
+  // Build ModelParameters from current form values (for auto-save)
+  private buildModelParameters(): ModelParameters {
+    const formValue = this.configForm.value;
+
+    return {
+      runName: formValue.runName!,
+      numScenarios: formValue.numScenarios!,
+
+      // Original coral seeding parameters
+      tabularAcropora: {
+        lower: formValue.taLower!,
+        upper: formValue.taUpper!
+      },
+      corymboseAcropora: {
+        lower: formValue.caLower!,
+        upper: formValue.caUpper!
+      },
+      smallMassives: {
+        lower: formValue.smLower!,
+        upper: formValue.smUpper!
+      },
+
+      // New intervention parameters
+      minIvLocations: {
+        lower: formValue.minIvLocationsLower!,
+        upper: formValue.minIvLocationsUpper!
+      },
+      fogging: {
+        lower: formValue.foggingLower!,
+        upper: formValue.foggingUpper!
+      },
+      srm: {
+        lower: formValue.srmLower!,
+        upper: formValue.srmUpper!
+      },
+      assistedAdaptation: {
+        lower: formValue.assistedAdaptationLower!,
+        upper: formValue.assistedAdaptationUpper!
+      },
+      seedYears: {
+        lower: formValue.seedYearsLower!,
+        upper: formValue.seedYearsUpper!
+      },
+      shadeYears: {
+        lower: formValue.shadeYearsLower!,
+        upper: formValue.shadeYearsUpper!
+      },
+      fogYears: {
+        lower: formValue.fogYearsLower!,
+        upper: formValue.fogYearsUpper!
+      },
+      planHorizon: {
+        lower: formValue.planHorizonLower!,
+        upper: formValue.planHorizonUpper!
+      },
+      seedDeploymentFreq: {
+        lower: formValue.seedDeploymentFreqLower!,
+        upper: formValue.seedDeploymentFreqUpper!
+      },
+      fogDeploymentFreq: {
+        lower: formValue.fogDeploymentFreqLower!,
+        upper: formValue.fogDeploymentFreqUpper!
+      },
+      shadeDeploymentFreq: {
+        lower: formValue.shadeDeploymentFreqLower!,
+        upper: formValue.shadeDeploymentFreqUpper!
+      },
+      seedYearStart: {
+        lower: formValue.seedYearStartLower!,
+        upper: formValue.seedYearStartUpper!
+      },
+      shadeYearStart: {
+        lower: formValue.shadeYearStartLower!,
+        upper: formValue.shadeYearStartUpper!
+      },
+      fogYearStart: {
+        lower: formValue.fogYearStartLower!,
+        upper: formValue.fogYearStartUpper!
+      }
+    };
+  }
+
   canSubmit(): boolean {
     return this.configForm.valid && this.validateRanges();
   }
@@ -519,20 +627,104 @@ export class ParameterConfigComponent {
     this.smRange.set({ lower: form.smLower || 0, upper: form.smUpper || 1000000 });
 
     // New range updates following the same pattern
-    this.minIvLocationsRange.set({ lower: form.minIvLocationsLower || 5, upper: form.minIvLocationsUpper || 20 });
+    this.minIvLocationsRange.set({
+      lower: form.minIvLocationsLower || 5,
+      upper: form.minIvLocationsUpper || 20
+    });
     this.foggingRange.set({ lower: form.foggingLower || 0, upper: form.foggingUpper || 0.3 });
     this.srmRange.set({ lower: form.srmLower || 0, upper: form.srmUpper || 7 });
-    this.assistedAdaptationRange.set({ lower: form.assistedAdaptationLower || 0, upper: form.assistedAdaptationUpper || 15 });
+    this.assistedAdaptationRange.set({
+      lower: form.assistedAdaptationLower || 0,
+      upper: form.assistedAdaptationUpper || 15
+    });
     this.seedYearsRange.set({ lower: form.seedYearsLower || 5, upper: form.seedYearsUpper || 75 });
-    this.shadeYearsRange.set({ lower: form.shadeYearsLower || 5, upper: form.shadeYearsUpper || 75 });
+    this.shadeYearsRange.set({
+      lower: form.shadeYearsLower || 5,
+      upper: form.shadeYearsUpper || 75
+    });
     this.fogYearsRange.set({ lower: form.fogYearsLower || 5, upper: form.fogYearsUpper || 75 });
-    this.planHorizonRange.set({ lower: form.planHorizonLower || 0, upper: form.planHorizonUpper || 20 });
-    this.seedDeploymentFreqRange.set({ lower: form.seedDeploymentFreqLower || 0, upper: form.seedDeploymentFreqUpper || 15 });
-    this.fogDeploymentFreqRange.set({ lower: form.fogDeploymentFreqLower || 0, upper: form.fogDeploymentFreqUpper || 15 });
-    this.shadeDeploymentFreqRange.set({ lower: form.shadeDeploymentFreqLower || 1, upper: form.shadeDeploymentFreqUpper || 15 });
-    this.seedYearStartRange.set({ lower: form.seedYearStartLower || 0, upper: form.seedYearStartUpper || 25 });
-    this.shadeYearStartRange.set({ lower: form.shadeYearStartLower || 2, upper: form.shadeYearStartUpper || 25 });
-    this.fogYearStartRange.set({ lower: form.fogYearStartLower || 2, upper: form.fogYearStartUpper || 25 });
+    this.planHorizonRange.set({
+      lower: form.planHorizonLower || 0,
+      upper: form.planHorizonUpper || 20
+    });
+    this.seedDeploymentFreqRange.set({
+      lower: form.seedDeploymentFreqLower || 0,
+      upper: form.seedDeploymentFreqUpper || 15
+    });
+    this.fogDeploymentFreqRange.set({
+      lower: form.fogDeploymentFreqLower || 0,
+      upper: form.fogDeploymentFreqUpper || 15
+    });
+    this.shadeDeploymentFreqRange.set({
+      lower: form.shadeDeploymentFreqLower || 1,
+      upper: form.shadeDeploymentFreqUpper || 15
+    });
+    this.seedYearStartRange.set({
+      lower: form.seedYearStartLower || 0,
+      upper: form.seedYearStartUpper || 25
+    });
+    this.shadeYearStartRange.set({
+      lower: form.shadeYearStartLower || 2,
+      upper: form.shadeYearStartUpper || 25
+    });
+    this.fogYearStartRange.set({
+      lower: form.fogYearStartLower || 2,
+      upper: form.fogYearStartUpper || 25
+    });
+  }
+
+  // Populate form from ModelParameters (one-time initialization)
+  private populateFormFromParameters(params: ModelParameters): void {
+    // Update form values without triggering valueChanges initially
+    this.configForm.patchValue({
+      runName: params.runName,
+      numScenarios: params.numScenarios,
+
+      // Coral seeding parameters
+      taLower: params.tabularAcropora.lower,
+      taUpper: params.tabularAcropora.upper,
+      caLower: params.corymboseAcropora.lower,
+      caUpper: params.corymboseAcropora.upper,
+      smLower: params.smallMassives.lower,
+      smUpper: params.smallMassives.upper,
+
+      // Environmental intervention parameters
+      minIvLocationsLower: params.minIvLocations.lower,
+      minIvLocationsUpper: params.minIvLocations.upper,
+      foggingLower: params.fogging.lower,
+      foggingUpper: params.fogging.upper,
+      srmLower: params.srm.lower,
+      srmUpper: params.srm.upper,
+      assistedAdaptationLower: params.assistedAdaptation.lower,
+      assistedAdaptationUpper: params.assistedAdaptation.upper,
+
+      // Timing parameters
+      seedYearsLower: params.seedYears.lower,
+      seedYearsUpper: params.seedYears.upper,
+      shadeYearsLower: params.shadeYears.lower,
+      shadeYearsUpper: params.shadeYears.upper,
+      fogYearsLower: params.fogYears.lower,
+      fogYearsUpper: params.fogYears.upper,
+      planHorizonLower: params.planHorizon.lower,
+      planHorizonUpper: params.planHorizon.upper,
+
+      // Deployment strategy parameters
+      seedDeploymentFreqLower: params.seedDeploymentFreq.lower,
+      seedDeploymentFreqUpper: params.seedDeploymentFreq.upper,
+      fogDeploymentFreqLower: params.fogDeploymentFreq.lower,
+      fogDeploymentFreqUpper: params.fogDeploymentFreq.upper,
+      shadeDeploymentFreqLower: params.shadeDeploymentFreq.lower,
+      shadeDeploymentFreqUpper: params.shadeDeploymentFreq.upper,
+      seedYearStartLower: params.seedYearStart.lower,
+      seedYearStartUpper: params.seedYearStart.upper,
+      shadeYearStartLower: params.shadeYearStart.lower,
+      shadeYearStartUpper: params.shadeYearStart.upper,
+      fogYearStartLower: params.fogYearStart.lower,
+      fogYearStartUpper: params.fogYearStart.upper
+    });
+
+    // Update range signals with new values
+    this.updateRangeSignals();
   }
 
   onSubmit(): void {

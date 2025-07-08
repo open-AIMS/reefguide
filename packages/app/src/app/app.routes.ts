@@ -12,7 +12,7 @@ export const routes: Routes = [
     path: 'new-run',
     loadComponent: () =>
       import('./model-workflow/model-workflow.component').then(m => m.ModelWorkflowComponent),
-    title: 'Model Run Workflow'
+    title: 'Model run manager'
   },
   {
     path: 'location-selection',
