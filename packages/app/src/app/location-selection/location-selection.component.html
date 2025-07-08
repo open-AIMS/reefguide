@@ -63,7 +63,7 @@
     }
   </mat-drawer>
   <mat-drawer-content>
-    <div id="ol-map" class="map-container"></div>
+    <app-reef-map></app-reef-map>
     @if (authService.authenticated()) {
       @let user = authService.user$ | async;
       <div class="map-buttons">
@@ -96,7 +96,7 @@
         </button>
         <button
           mat-mini-fab
-          (click)="mapService.toggleEditor()"
+          (click)="mapService.toggleNotes()"
           matTooltipPosition="right"
           matTooltip="Notes"
         >

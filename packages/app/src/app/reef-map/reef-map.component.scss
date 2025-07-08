@@ -1,23 +1,6 @@
-// TODO prevent overlapping legend
-.timestep-container {
-  position: absolute;
-  bottom: 16px;
-  // center horizontally
-  left: 0;
-  right: 0;
-  margin: auto;
-  width: 50vw;
-  min-width: 100px;
-  max-width: 800px;
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-content: center;
-
-  background-color: rgb(249 249 249 / 95%);
-  padding-left: 8px;
-
-  app-time-slider {
-    flex: auto;
-  }
+:host {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background-color: lightcyan;
 }

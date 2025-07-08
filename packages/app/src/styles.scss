@@ -57,7 +57,7 @@ mat-tab-group.fixed-height {
 }
 
 // OpenLayers map
-.map-container {
+app-reef-map {
   // move zoom buttons to bottom-right
   .ol-zoom {
     top: unset;

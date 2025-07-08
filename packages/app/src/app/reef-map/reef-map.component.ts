@@ -1,206 +1,59 @@
-import { Component, ViewChild } from '@angular/core';
-// NOW remove next
-import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
-import Field from '@arcgis/core/layers/support/Field';
+import { AfterViewInit, Component, ElementRef, inject } from '@angular/core';
+import Map from 'ol/Map';
+import View from 'ol/View';
+import TileLayer from 'ol/layer/Tile';
+import OSM from 'ol/source/OSM';
+import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
 
-import {
-  cloneFeatureLayerAsLocal,
-  cloneRendererChangedField,
-  updateLayerFeatureAttributes
-} from '../../util/arcgis/arcgis-layer-util';
-import { BehaviorSubject, firstValueFrom, map, Observable, Subject, switchMap, tap } from 'rxjs';
-import { AdriaApiService } from '../adria-api.service';
-import { ResultSetService } from '../contexts/result-set.service';
-import { dataframeFind } from '../../util/dataframe-util';
-import { MatSliderModule } from '@angular/material/slider';
-import { DataFrame } from '../../types/api.type';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { CommonModule } from '@angular/common';
-import { TimeSliderComponent } from '../widgets/time-slider/time-slider.component';
-import { PointOrRange, pointOrRangeToParam } from '../../util/param-util';
-import Home from '@arcgis/core/widgets/Home';
-
+/**
+ * OpenLayers map and UI for layer management and map navigation.
+ *
+ * This component is primarily concerned with UI. Layer management is done with ReefGuideMapService;
+ * this component reflects the state of that service. This design enables external components
+ * to manipulate map layers.
+ *
+ * Note: year and timestamp stuff is related to old prototype that would update reef polygons
+ * with relative cover values from ADRIA. Leaving it here for now.
+ * TODO review timestep/year and relative_cover code
+ */
 @Component({
   selector: 'app-reef-map',
-  imports: [
-    MatSliderModule,
-    MatProgressSpinnerModule,
-    CommonModule,
-    TimeSliderComponent
-  ],
   templateUrl: './reef-map.component.html',
   styleUrl: './reef-map.component.scss'
 })
-export class ReefMapComponent {
-  // mapItemId = '94fe3f59dcc64b9eb94576a1f1f17ec9';
-  // "MADAME App - Testing" map
-  mapItemId = '43ef538d8be7412783eb7c5cfd3fdbe7';
+export class ReefMapComponent implements AfterViewInit {
+  private hostEl: ElementRef = inject(ElementRef);
 
-  // year timestep
-  timestep$ = new Subject<PointOrRange>();
-  // last emitted value
-  timestep?: PointOrRange;
-  timestepLoading$ = new BehaviorSubject<boolean>(false);
+  readonly mapService = inject(ReefGuideMapService, { optional: true });
 
-  yearExtent$: Observable<[number, number]>;
+  // will be defined after view init
+  map!: Map;
 
-  // NOW openlayers?
-  map: any;
+  constructor() {}
 
-  private cloned = false;
-  private reefLayer?: FeatureLayer;
+  ngAfterViewInit() {
+    this.map = new Map({
+      target: this.hostEl.nativeElement,
+      view: new View({
+        center: [0, 0],
+        zoom: 1
+      }),
+      layers: [
+        new TileLayer({
+          source: new OSM()
+        })
+      ]
+    });
 
-  constructor(
-    private api: AdriaApiService,
-    private resultSetContext: ResultSetService
-  ) {
-    this.yearExtent$ = resultSetContext.info$.pipe(map(info => [info.start_year, info.end_year]));
+    this.mapService?.setMap(this.map);
+
+    console.log('here', this.hostEl);
   }
 
   /**
-   * Zoom to the extent of displayed map features where field has values.
+   * Zoom to the extent of layer's map features.
    */
-  public async zoomToExtent(layer: FeatureLayer, field: string) {
-    const query = layer.createQuery();
-    query.where = `${field} is not null`;
-    const extent = await layer.queryExtent(query);
-
-    if (extent.count > 0) {
-      await this.map.goTo(extent.extent);
-    } else {
-      console.warn(`All values missing for field "${field}"`);
-    }
-  }
-
-  private async cloneReefsLayer(
-    layer: __esri.FeatureLayer,
-    layerView: __esri.LayerView
-  ) {
-    // only do this once
-    if (this.cloned) {
-      return;
-    }
-    this.cloned = true;
-
-    if (layer.type !== 'feature') {
-      throw new Error('expected feature layer');
-    }
-
-    const resultSetId = this.resultSetContext.id;
-
-    console.log('reef layer', layer, layerView);
-
-    //const layerJSON = (layer as any).toJSON();
-    //const popupInfo = layerJSON.popupInfo;
-
-    // examples: depth_mean, depth_max, depth_min
-    const field = 'relative_cover';
-    let renderer;
-    if (layer.renderer) {
-      renderer = cloneRendererChangedField(layer.renderer, field);
-    }
-
-    // hide original layer
-    layer.visible = false;
-
-    const relCoverData = await firstValueFrom(this.api.getMeanRelativeCover(resultSetId));
-
-    let unique_id_matchCount = 0;
-    // create a new local layer and add relative_cover field
-    const newLayer = await cloneFeatureLayerAsLocal(
-      layer,
-      {
-        title: layer.title,
-        renderer
-      },
-      {
-        newFields: [
-          new Field({
-            name: field,
-            alias: 'Relative Cover',
-            type: 'double'
-          })
-        ],
-        modifyAttributes: attrs => {
-          attrs[field] = dataframeFind(
-            relCoverData,
-            'UNIQUE_ID',
-            unique_id => {
-              const match = unique_id === attrs['UNIQUE_ID'];
-              if (match) {
-                unique_id_matchCount++;
-              }
-              return match;
-            },
-            field
-          );
-        }
-      }
-    );
-
-    console.log(`map.addLayer relative_cover, UNIQUE_ID matchCount=${unique_id_matchCount}`);
-    await this.map.addLayer(newLayer);
-    this.reefLayer = newLayer;
-
-    // start following timestep
-    this.timestep$
-      .pipe(
-        tap(timestep => {
-          this.timestep = timestep;
-          this.timestepLoading$.next(true);
-        }),
-        switchMap(timestep => this.api.getMeanRelativeCover(resultSetId, timestep))
-      )
-      .subscribe(relCoverData => this.loadTimestepRelativeCoverData(relCoverData));
-
-    // create a Home button that uses our custom zoomToExtent method.
-    const homeButton = new Home({
-      view: this.map.view,
-      goToOverride: (view, goToParameters) => {
-        this.zoomToExtent(newLayer, field);
-      }
-    });
-    this.map.view.ui.add(homeButton, 'top-right');
-
-    void this.zoomToExtent(newLayer, field);
-  }
-
-  private loadTimestepRelativeCoverData(relCoverData: DataFrame) {
-    updateLayerFeatureAttributes(this.reefLayer!, (attrs, objectIdField) => {
-      return {
-        [objectIdField]: attrs[objectIdField],
-        relative_cover: dataframeFind(
-          relCoverData,
-          'UNIQUE_ID',
-          unique_id => unique_id === attrs['UNIQUE_ID'],
-          'relative_cover'
-        )
-      };
-    });
-    this.reefLayer!.title = `Reefs Relative Cover ${pointOrRangeToParam(this.timestep!)}`;
-
-    // probably race-condition here when overlaping updates
-    this.reefLayer?.when(() => this.timestepLoading$.next(false));
-  }
-
-  /**
-   * Create a new layer from a Feature service layer URL.
-   * @param renderer
-   */
-  private testLayerFromUrl(layerUrl: string, renderer: any) {
-    const newLayer = new FeatureLayer({
-      title: 'Reef Relative Cover',
-      url: layerUrl,
-      visible: true,
-      renderer
-    });
-
-    console.log('init fields', newLayer.fields);
-
-    this.map.addLayer(newLayer);
-  }
-
-  onYearRange(event: number | [number, number]) {
-    this.timestep$.next(event);
+  public async zoomToExtent(layer: unknown) {
+    throw new Error('Not implemented!');
   }
 }

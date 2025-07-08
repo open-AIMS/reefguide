@@ -80,7 +80,6 @@ export class ReefGuideMapService {
   // map is set shortly after construction
   // TODO any for now during migration
   private map!: any; // Map
-  private editor?: __esri.Editor;
 
   assessColor: ColorRGBA = [241, 192, 12, 1];
 
@@ -474,13 +473,8 @@ export class ReefGuideMapService {
     }
   }
 
-  toggleEditor() {
-    if (this.editor) {
-      this.editor.destroy();
-      this.editor = undefined;
-    } else {
-      this.setupEditor();
-    }
+  toggleNotes() {
+    console.warn('TODO polygon notes openlayers');
   }
 
   /**
@@ -530,14 +524,6 @@ export class ReefGuideMapService {
     this.goHome();
 
     this.addCriteriaLayers();
-  }
-
-  private setupEditor() {
-    this.editor = new Editor({
-      view: this.map.view
-    });
-
-    this.map.view.ui.add(this.editor, 'top-right');
   }
 
   private async addCriteriaLayers() {

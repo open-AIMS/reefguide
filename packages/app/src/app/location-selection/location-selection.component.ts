@@ -1,5 +1,5 @@
 import { AsyncPipe, CommonModule } from '@angular/common';
-import { AfterViewInit, Component, inject, signal, ViewChild } from '@angular/core';
+import { Component, inject, signal, ViewChild } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -11,14 +11,13 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltip } from '@angular/material/tooltip';
-import { combineLatest, filter, map, Observable, of, switchMap } from 'rxjs';
+import { combineLatest, filter, map, Observable } from 'rxjs';
 import { AdminPanelComponent } from '../admin/user-panel/user-panel.component';
 import { AuthService } from '../auth/auth.service';
 import { LoginDialogComponent } from '../auth/login-dialog/login-dialog.component';
 import { ClusterAdminDialogComponent } from '../admin/cluster/ClusterAdminDialog.component';
 import { LayerStyleEditorComponent } from '../widgets/layer-style-editor/layer-style-editor.component';
 import { ConfigDialogComponent } from './config-dialog/config-dialog.component';
-import { ReefGuideApiService } from './reef-guide-api.service';
 import { CriteriaAssessment, criteriaToJobPayload } from './reef-guide-api.types';
 import { ReefGuideConfigService } from './reef-guide-config.service';
 import { ReefGuideMapService } from './reef-guide-map.service';
@@ -26,17 +25,14 @@ import { SelectionCriteriaComponent } from './selection-criteria/selection-crite
 import { WebApiService } from '../../api/web-api.service';
 import { RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
 import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
-import Map from 'ol/Map';
-import View from 'ol/View';
-import TileLayer from 'ol/layer/Tile';
-import OSM from 'ol/source/OSM';
-
+import { ReefMapComponent } from '../reef-map/reef-map.component';
 
 type DrawerModes = 'criteria' | 'style';
 
 /**
- * Prototype of Location Selection app.
- * Map be split-off as its own project in the future.
+ * Reef Guide criteria assessment and site suitability.
+ *
+ * Drawer layout with criteria assessment in left panel. Map component is main content.
  */
 @Component({
   selector: 'app-location-selection',
@@ -56,17 +52,17 @@ type DrawerModes = 'criteria' | 'style';
     CommonModule,
     MatMenuModule,
     MatProgressBar,
-    JobStatusListComponent
+    JobStatusListComponent,
+    ReefMapComponent
   ],
   providers: [ReefGuideMapService],
   templateUrl: './location-selection.component.html',
   styleUrl: './location-selection.component.scss'
 })
-export class LocationSelectionComponent implements AfterViewInit {
+export class LocationSelectionComponent {
   readonly config = inject(ReefGuideConfigService);
   readonly authService = inject(AuthService);
   readonly api = inject(WebApiService);
-  readonly reefGuideApi = inject(ReefGuideApiService);
   readonly dialog = inject(MatDialog);
   readonly mapService = inject(ReefGuideMapService);
 
@@ -77,8 +73,6 @@ export class LocationSelectionComponent implements AfterViewInit {
    */
   isAssessing$: Observable<boolean>;
 
-  // TODO OL API migration
-  map!: any;  // Map
   @ViewChild('drawer') drawer!: MatDrawer;
 
   constructor() {
@@ -91,25 +85,6 @@ export class LocationSelectionComponent implements AfterViewInit {
       // any loading=true indicates busy
       map(vals => vals.includes(true))
     );
-  }
-
-  // TODO confirm on init or after view init
-  // ngOnInit() {
-  ngAfterViewInit() {
-    this.map = new Map({
-      target: 'ol-map',
-      view: new View({
-        center: [0, 0],
-        zoom: 1,
-      }),
-      layers: [
-        new TileLayer({
-          source: new OSM(),
-        }),
-      ],
-    });
-
-    this.mapService.setMap(this.map);
   }
 
   openDrawer(mode: DrawerModes) {
