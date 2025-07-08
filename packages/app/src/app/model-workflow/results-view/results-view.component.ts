@@ -191,13 +191,6 @@ export class ResultsViewComponent implements AfterViewInit, OnDestroy {
       );
 
       this.availableCharts.set(charts);
-
-      // Auto-activate the first chart (usually relative cover)
-      if (charts.length > 0) {
-        const firstChart = { ...charts[0], isActive: true };
-        this.activeCharts.set([firstChart]);
-      }
-
       console.log(`Initialized ${charts.length} available charts`);
     } catch (error) {
       console.error('Error initializing charts:', error);
@@ -276,7 +269,11 @@ export class ResultsViewComponent implements AfterViewInit, OnDestroy {
   /**
    * Get chart specification from cache or download it
    */
-  private async getChartSpec(jobId: number, chart: ChartItem, workspaceId: string): Promise<VisualizationSpec | null> {
+  private async getChartSpec(
+    jobId: number,
+    chart: ChartItem,
+    workspaceId: string
+  ): Promise<VisualizationSpec | null> {
     const cacheKey = this.getCacheKey(jobId, chart.filename);
 
     // Check if we have a cached version
@@ -380,7 +377,9 @@ export class ResultsViewComponent implements AfterViewInit, OnDestroy {
       // Render the chart
       await embed(contentContainer, spec, {
         actions: true,
-        theme: 'googlecharts'
+        theme: 'vox',
+        width: 1400,
+        height: 500
       });
 
       console.log(`[${workspaceId}] Successfully rendered chart: ${chart.title}`);
