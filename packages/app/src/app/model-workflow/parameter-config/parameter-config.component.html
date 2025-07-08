@@ -21,14 +21,14 @@
         </mat-select>
       </mat-form-field>
 
-      <!-- Seeded Tabular Acropora -->
+      <!-- Seeded Tabular Acropora - EXACT COPY of original working code -->
       <div class="parameter-section">
         <h3>Seeded Tabular Acropora (per deployment)</h3>
         <div class="slider-container">
           <mat-slider
             class="parameter-slider"
             [min]="0"
-            [max]="1000000"
+            [max]="10000000"
             [step]="50000"
             [displayWith]="formatMillions"
             [discrete]="false"
@@ -42,14 +42,14 @@
         </div>
       </div>
 
-      <!-- Seeded Corymbose Acropora -->
+      <!-- Seeded Corymbose Acropora - EXACT COPY of original working code -->
       <div class="parameter-section">
         <h3>Seeded Corymbose Acropora (per deployment)</h3>
         <div class="slider-container">
           <mat-slider
             class="parameter-slider"
             [min]="0"
-            [max]="1000000"
+            [max]="10000000"
             [step]="50000"
             [displayWith]="formatMillions"
             [discrete]="false"
@@ -63,14 +63,14 @@
         </div>
       </div>
 
-      <!-- Seeded Small Massives -->
+      <!-- Seeded Small Massives - EXACT COPY of original working code -->
       <div class="parameter-section">
         <h3>Seeded Small Massives (per deployment)</h3>
         <div class="slider-container">
           <mat-slider
             class="parameter-slider"
             [min]="0"
-            [max]="1000000"
+            [max]="10000000"
             [step]="50000"
             [displayWith]="formatMillions"
             [discrete]="false"
@@ -80,6 +80,439 @@
           </mat-slider>
           <div class="range-display">
             {{ formatMillions(smRange().lower) }} - {{ formatMillions(smRange().upper) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Minimum Intervention Locations -->
+      <div class="parameter-section">
+        <h3>Minimum Intervention Locations</h3>
+        <div class="parameter-description">
+          Minimum number of deployment locations for both seeding and fogging
+        </div>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="1"
+            [max]="50"
+            [step]="1"
+            [displayWith]="formatNumber"
+            [discrete]="true"
+          >
+            <input
+              matSliderStartThumb
+              formControlName="minIvLocationsLower"
+              [value]="minIvLocationsRange().lower"
+            />
+            <input
+              matSliderEndThumb
+              formControlName="minIvLocationsUpper"
+              [value]="minIvLocationsRange().upper"
+            />
+          </mat-slider>
+          <div class="range-display">
+            {{ formatNumber(minIvLocationsRange().lower) }} -
+            {{ formatNumber(minIvLocationsRange().upper) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Fogging Effectiveness -->
+      <div class="parameter-section">
+        <h3>Fogging Effectiveness</h3>
+        <div class="parameter-description">
+          Assumed reduction in bleaching mortality (0.0 = no effect, 1.0 = complete protection)
+        </div>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="0"
+            [max]="1.0"
+            [step]="0.01"
+            [displayWith]="formatDecimal"
+            [discrete]="false"
+          >
+            <input
+              matSliderStartThumb
+              formControlName="foggingLower"
+              [value]="foggingRange().lower"
+            />
+            <input
+              matSliderEndThumb
+              formControlName="foggingUpper"
+              [value]="foggingRange().upper"
+            />
+          </mat-slider>
+          <div class="range-display">
+            {{ formatDecimal(foggingRange().lower) }} - {{ formatDecimal(foggingRange().upper) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Solar Radiation Management (SRM) -->
+      <div class="parameter-section">
+        <h3>Solar Radiation Management (SRM)</h3>
+        <div class="parameter-description">
+          Reduction in Degree Heating Weeks (DHWs) due to shading
+        </div>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="0"
+            [max]="20"
+            [step]="0.1"
+            [displayWith]="formatDecimal"
+            [discrete]="false"
+          >
+            <input matSliderStartThumb formControlName="srmLower" [value]="srmRange().lower" />
+            <input matSliderEndThumb formControlName="srmUpper" [value]="srmRange().upper" />
+          </mat-slider>
+          <div class="range-display">
+            {{ formatDecimal(srmRange().lower) }} - {{ formatDecimal(srmRange().upper) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Assisted Adaptation -->
+      <div class="parameter-section">
+        <h3>Assisted Adaptation</h3>
+        <div class="parameter-description">Enhanced DHW resistance through assisted adaptation</div>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="0"
+            [max]="30"
+            [step]="0.5"
+            [displayWith]="formatDecimal"
+            [discrete]="false"
+          >
+            <input
+              matSliderStartThumb
+              formControlName="assistedAdaptationLower"
+              [value]="assistedAdaptationRange().lower"
+            />
+            <input
+              matSliderEndThumb
+              formControlName="assistedAdaptationUpper"
+              [value]="assistedAdaptationRange().upper"
+            />
+          </mat-slider>
+          <div class="range-display">
+            {{ formatDecimal(assistedAdaptationRange().lower) }} -
+            {{ formatDecimal(assistedAdaptationRange().upper) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Seeding Duration (Years) -->
+      <div class="parameter-section">
+        <h3>Seeding Duration (Years)</h3>
+        <div class="parameter-description">Number of years to conduct seeding activities</div>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="1"
+            [max]="100"
+            [step]="1"
+            [displayWith]="formatNumber"
+            [discrete]="true"
+          >
+            <input
+              matSliderStartThumb
+              formControlName="seedYearsLower"
+              [value]="seedYearsRange().lower"
+            />
+            <input
+              matSliderEndThumb
+              formControlName="seedYearsUpper"
+              [value]="seedYearsRange().upper"
+            />
+          </mat-slider>
+          <div class="range-display">
+            {{ formatNumber(seedYearsRange().lower) }} -
+            {{ formatNumber(seedYearsRange().upper) }} years
+          </div>
+        </div>
+      </div>
+
+      <!-- Shading Duration (Years) -->
+      <div class="parameter-section">
+        <h3>Shading Duration (Years)</h3>
+        <div class="parameter-description">Number of years to conduct shading activities</div>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="1"
+            [max]="100"
+            [step]="1"
+            [displayWith]="formatNumber"
+            [discrete]="true"
+          >
+            <input
+              matSliderStartThumb
+              formControlName="shadeYearsLower"
+              [value]="shadeYearsRange().lower"
+            />
+            <input
+              matSliderEndThumb
+              formControlName="shadeYearsUpper"
+              [value]="shadeYearsRange().upper"
+            />
+          </mat-slider>
+          <div class="range-display">
+            {{ formatNumber(shadeYearsRange().lower) }} -
+            {{ formatNumber(shadeYearsRange().upper) }} years
+          </div>
+        </div>
+      </div>
+
+      <!-- Fogging Duration (Years) -->
+      <div class="parameter-section">
+        <h3>Fogging Duration (Years)</h3>
+        <div class="parameter-description">Number of years to conduct fogging activities</div>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="1"
+            [max]="100"
+            [step]="1"
+            [displayWith]="formatNumber"
+            [discrete]="true"
+          >
+            <input
+              matSliderStartThumb
+              formControlName="fogYearsLower"
+              [value]="fogYearsRange().lower"
+            />
+            <input
+              matSliderEndThumb
+              formControlName="fogYearsUpper"
+              [value]="fogYearsRange().upper"
+            />
+          </mat-slider>
+          <div class="range-display">
+            {{ formatNumber(fogYearsRange().lower) }} -
+            {{ formatNumber(fogYearsRange().upper) }} years
+          </div>
+        </div>
+      </div>
+
+      <!-- Planning Horizon -->
+      <div class="parameter-section">
+        <h3>Planning Horizon</h3>
+        <div class="parameter-description">
+          Years of projected data to consider when selecting intervention locations (0 = current
+          year only)
+        </div>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="0"
+            [max]="50"
+            [step]="1"
+            [displayWith]="formatNumber"
+            [discrete]="true"
+          >
+            <input
+              matSliderStartThumb
+              formControlName="planHorizonLower"
+              [value]="planHorizonRange().lower"
+            />
+            <input
+              matSliderEndThumb
+              formControlName="planHorizonUpper"
+              [value]="planHorizonRange().upper"
+            />
+          </mat-slider>
+          <div class="range-display">
+            {{ formatNumber(planHorizonRange().lower) }} -
+            {{ formatNumber(planHorizonRange().upper) }} years
+          </div>
+        </div>
+      </div>
+
+      <!-- Seeding Deployment Frequency -->
+      <div class="parameter-section">
+        <h3>Seeding Deployment Frequency</h3>
+        <div class="parameter-description">Frequency of seeding deployments (0 = deploy once)</div>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="0"
+            [max]="30"
+            [step]="1"
+            [displayWith]="formatNumber"
+            [discrete]="true"
+          >
+            <input
+              matSliderStartThumb
+              formControlName="seedDeploymentFreqLower"
+              [value]="seedDeploymentFreqRange().lower"
+            />
+            <input
+              matSliderEndThumb
+              formControlName="seedDeploymentFreqUpper"
+              [value]="seedDeploymentFreqRange().upper"
+            />
+          </mat-slider>
+          <div class="range-display">
+            {{ formatNumber(seedDeploymentFreqRange().lower) }} -
+            {{ formatNumber(seedDeploymentFreqRange().upper) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Fogging Deployment Frequency -->
+      <div class="parameter-section">
+        <h3>Fogging Deployment Frequency</h3>
+        <div class="parameter-description">Frequency of fogging deployments (0 = deploy once)</div>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="0"
+            [max]="30"
+            [step]="1"
+            [displayWith]="formatNumber"
+            [discrete]="true"
+          >
+            <input
+              matSliderStartThumb
+              formControlName="fogDeploymentFreqLower"
+              [value]="fogDeploymentFreqRange().lower"
+            />
+            <input
+              matSliderEndThumb
+              formControlName="fogDeploymentFreqUpper"
+              [value]="fogDeploymentFreqRange().upper"
+            />
+          </mat-slider>
+          <div class="range-display">
+            {{ formatNumber(fogDeploymentFreqRange().lower) }} -
+            {{ formatNumber(fogDeploymentFreqRange().upper) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Shading Deployment Frequency -->
+      <div class="parameter-section">
+        <h3>Shading Deployment Frequency</h3>
+        <div class="parameter-description">Frequency of shading deployments</div>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="1"
+            [max]="30"
+            [step]="1"
+            [displayWith]="formatNumber"
+            [discrete]="true"
+          >
+            <input
+              matSliderStartThumb
+              formControlName="shadeDeploymentFreqLower"
+              [value]="shadeDeploymentFreqRange().lower"
+            />
+            <input
+              matSliderEndThumb
+              formControlName="shadeDeploymentFreqUpper"
+              [value]="shadeDeploymentFreqRange().upper"
+            />
+          </mat-slider>
+          <div class="range-display">
+            {{ formatNumber(shadeDeploymentFreqRange().lower) }} -
+            {{ formatNumber(shadeDeploymentFreqRange().upper) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Seeding Start Year -->
+      <div class="parameter-section">
+        <h3>Seeding Start Year</h3>
+        <div class="parameter-description">Years to wait before starting seeding deployments</div>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="0"
+            [max]="50"
+            [step]="1"
+            [displayWith]="formatNumber"
+            [discrete]="true"
+          >
+            <input
+              matSliderStartThumb
+              formControlName="seedYearStartLower"
+              [value]="seedYearStartRange().lower"
+            />
+            <input
+              matSliderEndThumb
+              formControlName="seedYearStartUpper"
+              [value]="seedYearStartRange().upper"
+            />
+          </mat-slider>
+          <div class="range-display">
+            {{ formatNumber(seedYearStartRange().lower) }} -
+            {{ formatNumber(seedYearStartRange().upper) }} years
+          </div>
+        </div>
+      </div>
+
+      <!-- Shading Start Year -->
+      <div class="parameter-section">
+        <h3>Shading Start Year</h3>
+        <div class="parameter-description">Years to wait before starting shading deployments</div>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="1"
+            [max]="50"
+            [step]="1"
+            [displayWith]="formatNumber"
+            [discrete]="true"
+          >
+            <input
+              matSliderStartThumb
+              formControlName="shadeYearStartLower"
+              [value]="shadeYearStartRange().lower"
+            />
+            <input
+              matSliderEndThumb
+              formControlName="shadeYearStartUpper"
+              [value]="shadeYearStartRange().upper"
+            />
+          </mat-slider>
+          <div class="range-display">
+            {{ formatNumber(shadeYearStartRange().lower) }} -
+            {{ formatNumber(shadeYearStartRange().upper) }} years
+          </div>
+        </div>
+      </div>
+
+      <!-- Fogging Start Year -->
+      <div class="parameter-section">
+        <h3>Fogging Start Year</h3>
+        <div class="parameter-description">Years to wait before starting fogging deployments</div>
+        <div class="slider-container">
+          <mat-slider
+            class="parameter-slider"
+            [min]="1"
+            [max]="50"
+            [step]="1"
+            [displayWith]="formatNumber"
+            [discrete]="true"
+          >
+            <input
+              matSliderStartThumb
+              formControlName="fogYearStartLower"
+              [value]="fogYearStartRange().lower"
+            />
+            <input
+              matSliderEndThumb
+              formControlName="fogYearStartUpper"
+              [value]="fogYearStartRange().upper"
+            />
+          </mat-slider>
+          <div class="range-display">
+            {{ formatNumber(fogYearStartRange().lower) }} -
+            {{ formatNumber(fogYearStartRange().upper) }} years
           </div>
         </div>
       </div>
