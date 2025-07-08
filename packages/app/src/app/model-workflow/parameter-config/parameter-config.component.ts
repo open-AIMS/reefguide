@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatButtonModule } from '@angular/material/button';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { CommonModule } from '@angular/common';
 import { AdriaModelRunInput } from '@reefguide/types';
 
@@ -18,19 +19,21 @@ interface ParameterRange {
 export interface ModelParameters {
   runName: string;
   numScenarios: number;
-  // Coral seeding parameters (existing)
+  // Coral seeding parameters
   tabularAcropora: ParameterRange;
   corymboseAcropora: ParameterRange;
   smallMassives: ParameterRange;
-  // New intervention parameters
+  // Intervention parameters
   minIvLocations: ParameterRange;
   fogging: ParameterRange;
   srm: ParameterRange;
   assistedAdaptation: ParameterRange;
+  // Timing parameters
   seedYears: ParameterRange;
   shadeYears: ParameterRange;
   fogYears: ParameterRange;
   planHorizon: ParameterRange;
+  // Deployment strategy parameters
   seedDeploymentFreq: ParameterRange;
   fogDeploymentFreq: ParameterRange;
   shadeDeploymentFreq: ParameterRange;
@@ -38,6 +41,221 @@ export interface ModelParameters {
   shadeYearStart: ParameterRange;
   fogYearStart: ParameterRange;
 }
+
+// Parameter configuration organized by category
+interface ParameterConfig {
+  min: number;
+  max: number;
+  step: number;
+  format: 'millions' | 'decimal' | 'number';
+  discrete: boolean;
+  displayWith?: string;
+  description: string;
+  units?: string;
+}
+
+interface ParameterCategory {
+  title: string;
+  subtitle: string;
+  parameters: { [key: string]: ParameterConfig };
+}
+
+const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
+  coralSeeding: {
+    title: 'Coral Seeding',
+    subtitle: 'Number of coral larvae to deploy per intervention event',
+    parameters: {
+      tabularAcropora: {
+        min: 0,
+        max: 10000000,
+        step: 50000,
+        format: 'millions',
+        discrete: false,
+        displayWith: 'formatMillions',
+        description: 'Seeded Tabular Acropora (per deployment)',
+        units: 'larvae'
+      },
+      corymboseAcropora: {
+        min: 0,
+        max: 10000000,
+        step: 50000,
+        format: 'millions',
+        discrete: false,
+        displayWith: 'formatMillions',
+        description: 'Seeded Corymbose Acropora (per deployment)',
+        units: 'larvae'
+      },
+      smallMassives: {
+        min: 0,
+        max: 10000000,
+        step: 50000,
+        format: 'millions',
+        discrete: false,
+        displayWith: 'formatMillions',
+        description: 'Seeded Small Massives (per deployment)',
+        units: 'larvae'
+      }
+    }
+  },
+  environmentalInterventions: {
+    title: 'Environmental Interventions',
+    subtitle: 'Active interventions to protect corals from environmental stressors',
+    parameters: {
+      minIvLocations: {
+        min: 1,
+        max: 50,
+        step: 1,
+        format: 'number',
+        discrete: true,
+        displayWith: 'formatNumber',
+        description: 'Minimum Intervention Locations',
+        units: 'sites'
+      },
+      fogging: {
+        min: 0,
+        max: 1.0,
+        step: 0.01,
+        format: 'decimal',
+        discrete: false,
+        displayWith: 'formatDecimal',
+        description: 'Fogging Effectiveness (0.0 = no effect, 1.0 = complete protection)',
+        units: 'effectiveness'
+      },
+      srm: {
+        min: 0,
+        max: 20,
+        step: 0.1,
+        format: 'decimal',
+        discrete: false,
+        displayWith: 'formatDecimal',
+        description: 'Solar Radiation Management - DHW reduction due to shading',
+        units: 'DHW reduction'
+      },
+      assistedAdaptation: {
+        min: 0,
+        max: 30,
+        step: 0.5,
+        format: 'decimal',
+        discrete: false,
+        displayWith: 'formatDecimal',
+        description: 'Assisted Adaptation - Enhanced DHW resistance',
+        units: 'DHW enhancement'
+      }
+    }
+  },
+  interventionTiming: {
+    title: 'Intervention Duration',
+    subtitle: 'How long each type of intervention should be conducted',
+    parameters: {
+      seedYears: {
+        min: 1,
+        max: 100,
+        step: 1,
+        format: 'number',
+        discrete: true,
+        displayWith: 'formatNumber',
+        description: 'Seeding Duration',
+        units: 'years'
+      },
+      shadeYears: {
+        min: 1,
+        max: 100,
+        step: 1,
+        format: 'number',
+        discrete: true,
+        displayWith: 'formatNumber',
+        description: 'Shading Duration',
+        units: 'years'
+      },
+      fogYears: {
+        min: 1,
+        max: 100,
+        step: 1,
+        format: 'number',
+        discrete: true,
+        displayWith: 'formatNumber',
+        description: 'Fogging Duration',
+        units: 'years'
+      },
+      planHorizon: {
+        min: 0,
+        max: 50,
+        step: 1,
+        format: 'number',
+        discrete: true,
+        displayWith: 'formatNumber',
+        description: 'Planning Horizon (0 = current year only)',
+        units: 'years'
+      }
+    }
+  },
+  deploymentStrategy: {
+    title: 'Deployment Strategy',
+    subtitle: 'Frequency and timing of intervention deployments',
+    parameters: {
+      seedDeploymentFreq: {
+        min: 0,
+        max: 30,
+        step: 1,
+        format: 'number',
+        discrete: true,
+        displayWith: 'formatNumber',
+        description: 'Seeding Deployment Frequency (0 = deploy once)',
+        units: 'frequency'
+      },
+      fogDeploymentFreq: {
+        min: 0,
+        max: 30,
+        step: 1,
+        format: 'number',
+        discrete: true,
+        displayWith: 'formatNumber',
+        description: 'Fogging Deployment Frequency (0 = deploy once)',
+        units: 'frequency'
+      },
+      shadeDeploymentFreq: {
+        min: 1,
+        max: 30,
+        step: 1,
+        format: 'number',
+        discrete: true,
+        displayWith: 'formatNumber',
+        description: 'Shading Deployment Frequency',
+        units: 'frequency'
+      },
+      seedYearStart: {
+        min: 0,
+        max: 50,
+        step: 1,
+        format: 'number',
+        discrete: true,
+        displayWith: 'formatNumber',
+        description: 'Seeding Start Year - Years to wait before starting',
+        units: 'years'
+      },
+      shadeYearStart: {
+        min: 1,
+        max: 50,
+        step: 1,
+        format: 'number',
+        discrete: true,
+        displayWith: 'formatNumber',
+        description: 'Shading Start Year - Years to wait before starting',
+        units: 'years'
+      },
+      fogYearStart: {
+        min: 1,
+        max: 50,
+        step: 1,
+        format: 'number',
+        discrete: true,
+        displayWith: 'formatNumber',
+        description: 'Fogging Start Year - Years to wait before starting',
+        units: 'years'
+      }
+    }
+  }
+};
 
 @Component({
   selector: 'app-parameter-config',
@@ -50,7 +268,8 @@ export interface ModelParameters {
     MatInputModule,
     MatSelectModule,
     MatSliderModule,
-    MatButtonModule
+    MatButtonModule,
+    MatExpansionModule
   ],
   templateUrl: './parameter-config.component.html',
   styleUrl: './parameter-config.component.scss'
@@ -61,6 +280,10 @@ export class ParameterConfigComponent {
 
   // Available scenario options (powers of 2)
   scenarioOptions = [1, 2, 4, 8, 16, 32, 64, 128, 256];
+
+  // Expose parameter categories to template
+  parameterCategories = PARAMETER_CATEGORIES;
+  categoryKeys = Object.keys(PARAMETER_CATEGORIES);
 
   configForm = new FormGroup({
     runName: new FormControl('example_run', [Validators.required]),
@@ -74,7 +297,7 @@ export class ParameterConfigComponent {
     smLower: new FormControl(0, [Validators.required, Validators.min(0)]),
     smUpper: new FormControl(1000000, [Validators.required, Validators.min(0)]),
 
-    // New intervention parameters
+    // Environmental intervention parameters
     minIvLocationsLower: new FormControl(5, [Validators.required, Validators.min(1)]),
     minIvLocationsUpper: new FormControl(20, [Validators.required, Validators.min(1)]),
     foggingLower: new FormControl(0, [Validators.required, Validators.min(0)]),
@@ -83,6 +306,8 @@ export class ParameterConfigComponent {
     srmUpper: new FormControl(7, [Validators.required, Validators.min(0)]),
     assistedAdaptationLower: new FormControl(0, [Validators.required, Validators.min(0)]),
     assistedAdaptationUpper: new FormControl(15, [Validators.required, Validators.min(0)]),
+
+    // Timing parameters
     seedYearsLower: new FormControl(5, [Validators.required, Validators.min(1)]),
     seedYearsUpper: new FormControl(75, [Validators.required, Validators.min(1)]),
     shadeYearsLower: new FormControl(5, [Validators.required, Validators.min(1)]),
@@ -91,6 +316,8 @@ export class ParameterConfigComponent {
     fogYearsUpper: new FormControl(75, [Validators.required, Validators.min(1)]),
     planHorizonLower: new FormControl(0, [Validators.required, Validators.min(0)]),
     planHorizonUpper: new FormControl(20, [Validators.required, Validators.min(0)]),
+
+    // Deployment strategy parameters
     seedDeploymentFreqLower: new FormControl(0, [Validators.required, Validators.min(0)]),
     seedDeploymentFreqUpper: new FormControl(15, [Validators.required, Validators.min(0)]),
     fogDeploymentFreqLower: new FormControl(0, [Validators.required, Validators.min(0)]),
@@ -148,6 +375,114 @@ export class ParameterConfigComponent {
     return value.toString();
   }
 
+  // Helper method to get parameter config by key
+  getParameterConfig(paramKey: string): ParameterConfig | null {
+    for (const category of Object.values(PARAMETER_CATEGORIES)) {
+      if (category.parameters[paramKey]) {
+        return category.parameters[paramKey];
+      }
+    }
+    return null;
+  }
+
+  // Helper method to get range signal by parameter key
+  getRangeSignal(paramKey: string): any {
+    const signalMap: { [key: string]: any } = {
+      tabularAcropora: this.taRange,
+      corymboseAcropora: this.caRange,
+      smallMassives: this.smRange,
+      minIvLocations: this.minIvLocationsRange,
+      fogging: this.foggingRange,
+      srm: this.srmRange,
+      assistedAdaptation: this.assistedAdaptationRange,
+      seedYears: this.seedYearsRange,
+      shadeYears: this.shadeYearsRange,
+      fogYears: this.fogYearsRange,
+      planHorizon: this.planHorizonRange,
+      seedDeploymentFreq: this.seedDeploymentFreqRange,
+      fogDeploymentFreq: this.fogDeploymentFreqRange,
+      shadeDeploymentFreq: this.shadeDeploymentFreqRange,
+      seedYearStart: this.seedYearStartRange,
+      shadeYearStart: this.shadeYearStartRange,
+      fogYearStart: this.fogYearStartRange
+    };
+    return signalMap[paramKey];
+  }
+
+  // Helper method to get form control names by parameter key
+  getFormControlNames(paramKey: string): { lower: string; upper: string } {
+    const controlMap: { [key: string]: { lower: string; upper: string } } = {
+      tabularAcropora: { lower: 'taLower', upper: 'taUpper' },
+      corymboseAcropora: { lower: 'caLower', upper: 'caUpper' },
+      smallMassives: { lower: 'smLower', upper: 'smUpper' },
+      minIvLocations: { lower: 'minIvLocationsLower', upper: 'minIvLocationsUpper' },
+      fogging: { lower: 'foggingLower', upper: 'foggingUpper' },
+      srm: { lower: 'srmLower', upper: 'srmUpper' },
+      assistedAdaptation: { lower: 'assistedAdaptationLower', upper: 'assistedAdaptationUpper' },
+      seedYears: { lower: 'seedYearsLower', upper: 'seedYearsUpper' },
+      shadeYears: { lower: 'shadeYearsLower', upper: 'shadeYearsUpper' },
+      fogYears: { lower: 'fogYearsLower', upper: 'fogYearsUpper' },
+      planHorizon: { lower: 'planHorizonLower', upper: 'planHorizonUpper' },
+      seedDeploymentFreq: { lower: 'seedDeploymentFreqLower', upper: 'seedDeploymentFreqUpper' },
+      fogDeploymentFreq: { lower: 'fogDeploymentFreqLower', upper: 'fogDeploymentFreqUpper' },
+      shadeDeploymentFreq: { lower: 'shadeDeploymentFreqLower', upper: 'shadeDeploymentFreqUpper' },
+      seedYearStart: { lower: 'seedYearStartLower', upper: 'seedYearStartUpper' },
+      shadeYearStart: { lower: 'shadeYearStartLower', upper: 'shadeYearStartUpper' },
+      fogYearStart: { lower: 'fogYearStartLower', upper: 'fogYearStartUpper' }
+    };
+    return controlMap[paramKey];
+  }
+
+  // Helper methods for template
+  trackByCategory(index: number, categoryKey: string): string {
+    return categoryKey;
+  }
+
+  trackByParameter(index: number, paramKey: string): string {
+    return paramKey;
+  }
+
+  getParameterKeys(categoryKey: string): string[] {
+    return Object.keys(PARAMETER_CATEGORIES[categoryKey].parameters);
+  }
+
+  getDisplayWithFunction(paramKey: string): (value: number) => string {
+    const config = this.getParameterConfig(paramKey);
+    if (!config?.displayWith) {
+      return this.formatNumber.bind(this); // Default fallback
+    }
+
+    // Return the appropriate formatting function
+    switch (config.displayWith) {
+      case 'formatMillions':
+        return this.formatMillions.bind(this);
+      case 'formatDecimal':
+        return this.formatDecimal.bind(this);
+      case 'formatNumber':
+        return this.formatNumber.bind(this);
+      default:
+        return this.formatNumber.bind(this); // Default fallback
+    }
+  }
+
+  // Format value based on format type
+  formatValue(value: number, format: string, units?: string): string {
+    let formatted: string;
+    switch (format) {
+      case 'millions':
+        formatted = this.formatMillions(value);
+        break;
+      case 'decimal':
+        formatted = this.formatDecimal(value);
+        break;
+      case 'number':
+      default:
+        formatted = this.formatNumber(value);
+        break;
+    }
+    return units ? `${formatted} ${units}` : formatted;
+  }
+
   canSubmit(): boolean {
     return this.configForm.valid && this.validateRanges();
   }
@@ -184,50 +519,20 @@ export class ParameterConfigComponent {
     this.smRange.set({ lower: form.smLower || 0, upper: form.smUpper || 1000000 });
 
     // New range updates following the same pattern
-    this.minIvLocationsRange.set({
-      lower: form.minIvLocationsLower || 5,
-      upper: form.minIvLocationsUpper || 20
-    });
+    this.minIvLocationsRange.set({ lower: form.minIvLocationsLower || 5, upper: form.minIvLocationsUpper || 20 });
     this.foggingRange.set({ lower: form.foggingLower || 0, upper: form.foggingUpper || 0.3 });
     this.srmRange.set({ lower: form.srmLower || 0, upper: form.srmUpper || 7 });
-    this.assistedAdaptationRange.set({
-      lower: form.assistedAdaptationLower || 0,
-      upper: form.assistedAdaptationUpper || 15
-    });
+    this.assistedAdaptationRange.set({ lower: form.assistedAdaptationLower || 0, upper: form.assistedAdaptationUpper || 15 });
     this.seedYearsRange.set({ lower: form.seedYearsLower || 5, upper: form.seedYearsUpper || 75 });
-    this.shadeYearsRange.set({
-      lower: form.shadeYearsLower || 5,
-      upper: form.shadeYearsUpper || 75
-    });
+    this.shadeYearsRange.set({ lower: form.shadeYearsLower || 5, upper: form.shadeYearsUpper || 75 });
     this.fogYearsRange.set({ lower: form.fogYearsLower || 5, upper: form.fogYearsUpper || 75 });
-    this.planHorizonRange.set({
-      lower: form.planHorizonLower || 0,
-      upper: form.planHorizonUpper || 20
-    });
-    this.seedDeploymentFreqRange.set({
-      lower: form.seedDeploymentFreqLower || 0,
-      upper: form.seedDeploymentFreqUpper || 15
-    });
-    this.fogDeploymentFreqRange.set({
-      lower: form.fogDeploymentFreqLower || 0,
-      upper: form.fogDeploymentFreqUpper || 15
-    });
-    this.shadeDeploymentFreqRange.set({
-      lower: form.shadeDeploymentFreqLower || 1,
-      upper: form.shadeDeploymentFreqUpper || 15
-    });
-    this.seedYearStartRange.set({
-      lower: form.seedYearStartLower || 0,
-      upper: form.seedYearStartUpper || 25
-    });
-    this.shadeYearStartRange.set({
-      lower: form.shadeYearStartLower || 2,
-      upper: form.shadeYearStartUpper || 25
-    });
-    this.fogYearStartRange.set({
-      lower: form.fogYearStartLower || 2,
-      upper: form.fogYearStartUpper || 25
-    });
+    this.planHorizonRange.set({ lower: form.planHorizonLower || 0, upper: form.planHorizonUpper || 20 });
+    this.seedDeploymentFreqRange.set({ lower: form.seedDeploymentFreqLower || 0, upper: form.seedDeploymentFreqUpper || 15 });
+    this.fogDeploymentFreqRange.set({ lower: form.fogDeploymentFreqLower || 0, upper: form.fogDeploymentFreqUpper || 15 });
+    this.shadeDeploymentFreqRange.set({ lower: form.shadeDeploymentFreqLower || 1, upper: form.shadeDeploymentFreqUpper || 15 });
+    this.seedYearStartRange.set({ lower: form.seedYearStartLower || 0, upper: form.seedYearStartUpper || 25 });
+    this.shadeYearStartRange.set({ lower: form.shadeYearStartLower || 2, upper: form.shadeYearStartUpper || 25 });
+    this.fogYearStartRange.set({ lower: form.fogYearStartLower || 2, upper: form.fogYearStartUpper || 25 });
   }
 
   onSubmit(): void {
@@ -356,14 +661,14 @@ export class ParameterConfigComponent {
           third_param_flag: true,
           lower: params.fogging.lower,
           upper: params.fogging.upper,
-          optional_third: 0.0 // Third parameter for triangular distribution (mode)
+          optional_third: params.fogging.lower // Mode set to lower bound for triangular distribution
         },
         {
           param_name: 'SRM',
           third_param_flag: true,
           lower: params.srm.lower,
           upper: params.srm.upper,
-          optional_third: 0.0 // Third parameter for triangular distribution (mode)
+          optional_third: params.srm.lower // Mode set to lower bound for triangular distribution
         },
 
         // DiscreteUniform - should NOT have third parameter
