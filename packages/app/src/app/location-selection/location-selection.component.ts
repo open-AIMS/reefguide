@@ -1,5 +1,5 @@
 import { AsyncPipe, CommonModule } from '@angular/common';
-import { Component, inject, signal, ViewChild } from '@angular/core';
+import { Component, effect, inject, signal, viewChild, ViewChild } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -26,6 +26,7 @@ import { WebApiService } from '../../api/web-api.service';
 import { RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
 import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
 import { ReefMapComponent } from '../reef-map/reef-map.component';
+import { fromLonLat } from 'ol/proj';
 
 type DrawerModes = 'criteria' | 'style';
 
@@ -66,6 +67,8 @@ export class LocationSelectionComponent {
   readonly dialog = inject(MatDialog);
   readonly mapService = inject(ReefGuideMapService);
 
+  map = viewChild.required(ReefMapComponent);
+
   drawerMode = signal<DrawerModes>('criteria');
 
   /**
@@ -84,6 +87,19 @@ export class LocationSelectionComponent {
     ]).pipe(
       // any loading=true indicates busy
       map(vals => vals.includes(true))
+    );
+
+    // Note: this executes before ReefMapComponent.ngAfterViewInit, execute once
+    const effectRef = effect(
+      () => {
+        effectRef.destroy();
+        console.log('map effect');
+        const map = this.map();
+        console.log('map', map);
+        map.view.setCenter(fromLonLat([147.6419, -17.1427]));
+        map.view.setZoom(8);
+      },
+      { manualCleanup: true }
     );
   }
 
@@ -125,7 +141,8 @@ export class LocationSelectionComponent {
 
     this.mapService.clearAssessedLayers();
 
-    this.drawer.close();
+    // no need to await
+    void this.drawer.close();
 
     // convert criteria to job payload and start job
     const raPartialPayload = criteriaToJobPayload(criteria);

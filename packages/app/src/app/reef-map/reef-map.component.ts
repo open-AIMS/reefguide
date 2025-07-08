@@ -4,6 +4,7 @@ import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
+import { fromLonLat } from 'ol/proj';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -29,15 +30,21 @@ export class ReefMapComponent implements AfterViewInit {
   // will be defined after view init
   map!: Map;
 
+  /**
+   * View that is associated with OpenLayers Map.
+   */
+  view: View = new View({
+    center: [0, 0],
+    zoom: 2
+  });
+
   constructor() {}
 
   ngAfterViewInit() {
+    console.log('ngAfterViewInit');
     this.map = new Map({
       target: this.hostEl.nativeElement,
-      view: new View({
-        center: [0, 0],
-        zoom: 1
-      }),
+      view: this.view,
       layers: [
         new TileLayer({
           source: new OSM()
@@ -45,9 +52,12 @@ export class ReefMapComponent implements AfterViewInit {
       ]
     });
 
+    // TODO better design for this component to only listen to service
     this.mapService?.setMap(this.map);
 
-    console.log('here', this.hostEl);
+    this.map.on('click', event => {
+      console.log('click', event);
+    });
   }
 
   /**
