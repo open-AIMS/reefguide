@@ -1,6 +1,9 @@
 <mat-card class="parameter-config-card">
   <mat-card-header>
     <mat-card-title>Model Configuration</mat-card-title>
+    <mat-card-subtitle>
+      Configure parameters for coral reef model simulation
+    </mat-card-subtitle>
   </mat-card-header>
 
   <mat-card-content>
@@ -20,6 +23,21 @@
           </mat-option>
         </mat-select>
       </mat-form-field>
+
+      <!-- Reset to Defaults Button -->
+      <div class="reset-defaults-container">
+        <button
+          mat-stroked-button
+          color="accent"
+          class="reset-defaults-button"
+          type="button"
+          matTooltip="Reset all parameters to their default values"
+          (click)="resetToDefaults()"
+        >
+          <mat-icon>restore</mat-icon>
+          Reset to Defaults
+        </button>
+      </div>
 
       <!-- Parameter Categories in Accordion -->
       <mat-accordion class="parameter-accordion">

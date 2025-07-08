@@ -17,6 +17,32 @@
   width: 100%;
 }
 
+// Reset to defaults button styling
+.reset-defaults-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.reset-defaults-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+
+  &:hover {
+    background-color: rgba(255, 193, 7, 0.1); // Light accent color background on hover
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
 // Accordion styling
 .parameter-accordion {
   width: 100%;
@@ -184,5 +210,20 @@ mat-card-actions {
   .category-content {
     padding: 0 4px 12px 4px;
     gap: 16px;
+  }
+
+  .reset-defaults-container {
+    justify-content: center;
+  }
+
+  .reset-defaults-button {
+    font-size: 13px;
+    padding: 6px 12px;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
   }
 }

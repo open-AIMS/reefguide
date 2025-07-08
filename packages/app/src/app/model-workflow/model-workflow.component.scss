@@ -18,20 +18,55 @@
 }
 
 .workspace-tabs {
-  flex: 1;
+  flex: 0 0 auto; // Don't expand to fill width
+  max-width: calc(100% - 60px); // Leave space for the new workspace button
 
-  // Override Material tabs to remove extra padding
+  // Override Material tabs styling
   :deep(.mat-mdc-tab-group) {
-    --mdc-secondary-navigation-tab-container-height: 56px;
+    --mdc-secondary-navigation-tab-container-height: 48px;
+    width: auto; // Let tabs determine their own width
   }
 
   :deep(.mat-mdc-tab-header) {
     border-bottom: none;
+    width: auto;
+  }
+
+  :deep(.mat-mdc-tab-header-pagination) {
+    display: none; // Hide pagination arrows for cleaner look
   }
 
   :deep(.mat-mdc-tab) {
-    min-width: 120px;
+    min-width: 160px;
+    max-width: 240px;
+    width: auto;
+    flex: 0 1 200px; // Preferred width of 200px, can shrink
+    padding: 0 8px;
+  }
+
+  :deep(.mat-mdc-tab .mdc-tab__content) {
+    padding: 0;
+  }
+
+  :deep(.mat-mdc-tab .mdc-tab__text-label) {
+    padding: 0;
+    width: 100%;
+  }
+
+  // When there are multiple tabs, make them shrink proportionally like Chrome
+  &:has(:deep(.mat-mdc-tab:nth-child(4))) :deep(.mat-mdc-tab) {
+    flex: 1 1 180px;
     max-width: 200px;
+  }
+
+  &:has(:deep(.mat-mdc-tab:nth-child(6))) :deep(.mat-mdc-tab) {
+    flex: 1 1 160px;
+    max-width: 180px;
+  }
+
+  &:has(:deep(.mat-mdc-tab:nth-child(8))) :deep(.mat-mdc-tab) {
+    flex: 1 1 140px;
+    max-width: 160px;
   }
 
   // Hide the tab content since we're managing it separately
@@ -43,9 +78,11 @@
 .tab-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
   width: 100%;
-  max-width: 180px;
+  height: 32px;
+  padding: 0 8px 0 12px; // More padding on left, less on right to push close button right
+  gap: 12px; // Increased gap between text and close button
 }
 
 .tab-name {
@@ -53,28 +90,60 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: 14px; // Increased from 13px
+  font-weight: 500;
+  min-width: 0; // Important for text truncation
 }
 
 .close-button {
-  width: 20px;
-  height: 20px;
-  line-height: 20px;
+  width: 20px !important; // Reduced from 24px
+  height: 20px !important; // Reduced from 24px
+  min-width: 20px !important;
+  max-width: 20px !important;
   flex-shrink: 0;
+  border-radius: 50%;
+  padding: 0 !important;
+  margin: 0;
+  margin-left: auto; // Push to the right side
 
-  :deep(.mat-icon) {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
+  // Override all Material button styling
+  :deep(.mat-mdc-button-base) {
+    width: 20px !important; // Reduced from 24px
+    height: 20px !important; // Reduced from 24px
+    padding: 0 !important;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.1);
+  :deep(.mat-mdc-button-touch-target) {
+    display: none !important;
+  }
+
+  :deep(.mat-mdc-button-ripple),
+  :deep(.mat-mdc-button-persistent-ripple) {
+    border-radius: 50%;
+  }
+
+  :deep(.mat-icon) {
+    font-size: 12px !important; // Reduced from 14px
+    width: 12px !important; // Reduced from 14px
+    height: 12px !important; // Reduced from 14px
+    line-height: 12px !important;
+  }
+
+  &:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.08);
   }
 
   &:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
+
+    &:hover {
+      background-color: transparent;
+    }
   }
 }
 
@@ -230,23 +299,52 @@
     }
   }
 
+  .workspace-tabs {
+    max-width: calc(100% - 50px); // Adjust for smaller new workspace button
+
+    :deep(.mat-mdc-tab) {
+      min-width: 120px;
+      max-width: 160px;
+      flex: 0 1 140px;
+    }
+
+    // Adjust shrinking behavior for mobile
+    &:has(:deep(.mat-mdc-tab:nth-child(3))) :deep(.mat-mdc-tab) {
+      flex: 1 1 100px;
+      max-width: 120px;
+    }
+
+    &:has(:deep(.mat-mdc-tab:nth-child(4))) :deep(.mat-mdc-tab) {
+      flex: 1 1 90px;
+      max-width: 110px;
+    }
+  }
+
   .tab-label {
-    gap: 4px;
-    max-width: 120px;
+    gap: 8px; // Reduced gap for mobile
+    padding: 0 6px 0 8px; // Adjusted mobile padding
   }
 
   .tab-name {
-    font-size: 13px;
+    font-size: 13px; // Slightly smaller on mobile but still larger than before
   }
 
   .close-button {
-    width: 18px;
-    height: 18px;
+    width: 18px !important; // Smaller on mobile
+    height: 18px !important;
+    min-width: 18px !important;
+    max-width: 18px !important;
+
+    :deep(.mat-mdc-button-base) {
+      width: 18px !important;
+      height: 18px !important;
+    }
 
     :deep(.mat-icon) {
-      font-size: 14px;
-      width: 14px;
-      height: 14px;
+      font-size: 10px !important; // Smaller icon on mobile
+      width: 10px !important;
+      height: 10px !important;
+      line-height: 10px !important;
     }
   }
 }

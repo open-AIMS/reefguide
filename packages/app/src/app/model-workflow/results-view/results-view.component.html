@@ -4,10 +4,6 @@
   <mat-card class="vega-card" *ngIf="job()?.status === 'SUCCEEDED'">
     <mat-card-header>
       <mat-card-title>Relative Cover Over Time</mat-card-title>
-      <mat-card-subtitle>
-        Interactive visualization
-        <span *ngIf="workspaceId()" class="workspace-indicator"> • {{ workspaceId() }}</span>
-      </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content class="vega-content">
       <div #vegaChart class="vega-chart-container"></div>

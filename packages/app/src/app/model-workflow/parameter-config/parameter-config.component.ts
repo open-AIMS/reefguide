@@ -8,6 +8,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CommonModule } from '@angular/common';
 import { AdriaModelRunInput } from '@reefguide/types';
 import { debounceTime } from 'rxjs/operators';
@@ -53,6 +55,8 @@ interface ParameterConfig {
   displayWith?: string;
   description: string;
   units?: string;
+  defaultLower: number;
+  defaultUpper: number;
 }
 
 interface ParameterCategory {
@@ -74,7 +78,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: false,
         displayWith: 'formatMillions',
         description: 'Seeded Tabular Acropora (per deployment)',
-        units: 'larvae'
+        units: 'larvae',
+        defaultLower: 0,
+        defaultUpper: 1000000
       },
       corymboseAcropora: {
         min: 0,
@@ -84,7 +90,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: false,
         displayWith: 'formatMillions',
         description: 'Seeded Corymbose Acropora (per deployment)',
-        units: 'larvae'
+        units: 'larvae',
+        defaultLower: 0,
+        defaultUpper: 1000000
       },
       smallMassives: {
         min: 0,
@@ -94,7 +102,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: false,
         displayWith: 'formatMillions',
         description: 'Seeded Small Massives (per deployment)',
-        units: 'larvae'
+        units: 'larvae',
+        defaultLower: 0,
+        defaultUpper: 1000000
       }
     }
   },
@@ -110,7 +120,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: true,
         displayWith: 'formatNumber',
         description: 'Minimum Intervention Locations',
-        units: 'sites'
+        units: 'sites',
+        defaultLower: 5,
+        defaultUpper: 20
       },
       fogging: {
         min: 0,
@@ -120,7 +132,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: false,
         displayWith: 'formatDecimal',
         description: 'Fogging Effectiveness (0.0 = no effect, 1.0 = complete protection)',
-        units: 'effectiveness'
+        units: 'effectiveness',
+        defaultLower: 0,
+        defaultUpper: 0.3
       },
       srm: {
         min: 0,
@@ -130,7 +144,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: false,
         displayWith: 'formatDecimal',
         description: 'Solar Radiation Management - DHW reduction due to shading',
-        units: 'DHW reduction'
+        units: 'DHW reduction',
+        defaultLower: 0,
+        defaultUpper: 7
       },
       assistedAdaptation: {
         min: 0,
@@ -140,7 +156,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: false,
         displayWith: 'formatDecimal',
         description: 'Assisted Adaptation - Enhanced DHW resistance',
-        units: 'DHW enhancement'
+        units: 'DHW enhancement',
+        defaultLower: 0,
+        defaultUpper: 15
       }
     }
   },
@@ -156,7 +174,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: true,
         displayWith: 'formatNumber',
         description: 'Seeding Duration',
-        units: 'years'
+        units: 'years',
+        defaultLower: 5,
+        defaultUpper: 75
       },
       shadeYears: {
         min: 1,
@@ -166,7 +186,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: true,
         displayWith: 'formatNumber',
         description: 'Shading Duration',
-        units: 'years'
+        units: 'years',
+        defaultLower: 5,
+        defaultUpper: 75
       },
       fogYears: {
         min: 1,
@@ -176,7 +198,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: true,
         displayWith: 'formatNumber',
         description: 'Fogging Duration',
-        units: 'years'
+        units: 'years',
+        defaultLower: 5,
+        defaultUpper: 75
       },
       planHorizon: {
         min: 0,
@@ -186,7 +210,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: true,
         displayWith: 'formatNumber',
         description: 'Planning Horizon (0 = current year only)',
-        units: 'years'
+        units: 'years',
+        defaultLower: 0,
+        defaultUpper: 20
       }
     }
   },
@@ -202,7 +228,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: true,
         displayWith: 'formatNumber',
         description: 'Seeding Deployment Frequency (0 = deploy once)',
-        units: 'frequency'
+        units: 'frequency',
+        defaultLower: 0,
+        defaultUpper: 15
       },
       fogDeploymentFreq: {
         min: 0,
@@ -212,7 +240,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: true,
         displayWith: 'formatNumber',
         description: 'Fogging Deployment Frequency (0 = deploy once)',
-        units: 'frequency'
+        units: 'frequency',
+        defaultLower: 0,
+        defaultUpper: 15
       },
       shadeDeploymentFreq: {
         min: 1,
@@ -222,7 +252,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: true,
         displayWith: 'formatNumber',
         description: 'Shading Deployment Frequency',
-        units: 'frequency'
+        units: 'frequency',
+        defaultLower: 1,
+        defaultUpper: 15
       },
       seedYearStart: {
         min: 0,
@@ -232,7 +264,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: true,
         displayWith: 'formatNumber',
         description: 'Seeding Start Year - Years to wait before starting',
-        units: 'years'
+        units: 'years',
+        defaultLower: 0,
+        defaultUpper: 25
       },
       shadeYearStart: {
         min: 1,
@@ -242,7 +276,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: true,
         displayWith: 'formatNumber',
         description: 'Shading Start Year - Years to wait before starting',
-        units: 'years'
+        units: 'years',
+        defaultLower: 2,
+        defaultUpper: 25
       },
       fogYearStart: {
         min: 1,
@@ -252,7 +288,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         discrete: true,
         displayWith: 'formatNumber',
         description: 'Fogging Start Year - Years to wait before starting',
-        units: 'years'
+        units: 'years',
+        defaultLower: 2,
+        defaultUpper: 25
       }
     }
   }
@@ -270,7 +308,9 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
     MatSelectModule,
     MatSliderModule,
     MatButtonModule,
-    MatExpansionModule
+    MatExpansionModule,
+    MatIconModule,
+    MatTooltipModule
   ],
   templateUrl: './parameter-config.component.html',
   styleUrl: './parameter-config.component.scss'
@@ -507,6 +547,35 @@ export class ParameterConfigComponent {
         break;
     }
     return units ? `${formatted} ${units}` : formatted;
+  }
+
+  // Reset all parameters to their default values
+  resetToDefaults(): void {
+    // Build default values from the parameter configuration
+    const defaultValues: any = {
+      runName: 'example_run',
+      numScenarios: 64
+    };
+
+    // Add default values for all parameters
+    for (const categoryKey of Object.keys(PARAMETER_CATEGORIES)) {
+      const category = PARAMETER_CATEGORIES[categoryKey];
+      for (const paramKey of Object.keys(category.parameters)) {
+        const config = category.parameters[paramKey];
+        const controlNames = this.getFormControlNames(paramKey);
+
+        defaultValues[controlNames.lower] = config.defaultLower;
+        defaultValues[controlNames.upper] = config.defaultUpper;
+      }
+    }
+
+    // Update the form with default values
+    this.configForm.patchValue(defaultValues);
+
+    // Update range signals
+    this.updateRangeSignals();
+
+    console.log('Parameters reset to defaults');
   }
 
   // Build ModelParameters from current form values (for auto-save)
