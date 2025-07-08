@@ -184,20 +184,50 @@ export class ParameterConfigComponent {
     this.smRange.set({ lower: form.smLower || 0, upper: form.smUpper || 1000000 });
 
     // New range updates following the same pattern
-    this.minIvLocationsRange.set({ lower: form.minIvLocationsLower || 5, upper: form.minIvLocationsUpper || 20 });
+    this.minIvLocationsRange.set({
+      lower: form.minIvLocationsLower || 5,
+      upper: form.minIvLocationsUpper || 20
+    });
     this.foggingRange.set({ lower: form.foggingLower || 0, upper: form.foggingUpper || 0.3 });
     this.srmRange.set({ lower: form.srmLower || 0, upper: form.srmUpper || 7 });
-    this.assistedAdaptationRange.set({ lower: form.assistedAdaptationLower || 0, upper: form.assistedAdaptationUpper || 15 });
+    this.assistedAdaptationRange.set({
+      lower: form.assistedAdaptationLower || 0,
+      upper: form.assistedAdaptationUpper || 15
+    });
     this.seedYearsRange.set({ lower: form.seedYearsLower || 5, upper: form.seedYearsUpper || 75 });
-    this.shadeYearsRange.set({ lower: form.shadeYearsLower || 5, upper: form.shadeYearsUpper || 75 });
+    this.shadeYearsRange.set({
+      lower: form.shadeYearsLower || 5,
+      upper: form.shadeYearsUpper || 75
+    });
     this.fogYearsRange.set({ lower: form.fogYearsLower || 5, upper: form.fogYearsUpper || 75 });
-    this.planHorizonRange.set({ lower: form.planHorizonLower || 0, upper: form.planHorizonUpper || 20 });
-    this.seedDeploymentFreqRange.set({ lower: form.seedDeploymentFreqLower || 0, upper: form.seedDeploymentFreqUpper || 15 });
-    this.fogDeploymentFreqRange.set({ lower: form.fogDeploymentFreqLower || 0, upper: form.fogDeploymentFreqUpper || 15 });
-    this.shadeDeploymentFreqRange.set({ lower: form.shadeDeploymentFreqLower || 1, upper: form.shadeDeploymentFreqUpper || 15 });
-    this.seedYearStartRange.set({ lower: form.seedYearStartLower || 0, upper: form.seedYearStartUpper || 25 });
-    this.shadeYearStartRange.set({ lower: form.shadeYearStartLower || 2, upper: form.shadeYearStartUpper || 25 });
-    this.fogYearStartRange.set({ lower: form.fogYearStartLower || 2, upper: form.fogYearStartUpper || 25 });
+    this.planHorizonRange.set({
+      lower: form.planHorizonLower || 0,
+      upper: form.planHorizonUpper || 20
+    });
+    this.seedDeploymentFreqRange.set({
+      lower: form.seedDeploymentFreqLower || 0,
+      upper: form.seedDeploymentFreqUpper || 15
+    });
+    this.fogDeploymentFreqRange.set({
+      lower: form.fogDeploymentFreqLower || 0,
+      upper: form.fogDeploymentFreqUpper || 15
+    });
+    this.shadeDeploymentFreqRange.set({
+      lower: form.shadeDeploymentFreqLower || 1,
+      upper: form.shadeDeploymentFreqUpper || 15
+    });
+    this.seedYearStartRange.set({
+      lower: form.seedYearStartLower || 0,
+      upper: form.seedYearStartUpper || 25
+    });
+    this.shadeYearStartRange.set({
+      lower: form.shadeYearStartLower || 2,
+      upper: form.shadeYearStartUpper || 25
+    });
+    this.fogYearStartRange.set({
+      lower: form.fogYearStartLower || 2,
+      upper: form.fogYearStartUpper || 25
+    });
   }
 
   onSubmit(): void {
@@ -290,6 +320,7 @@ export class ParameterConfigComponent {
       num_scenarios: params.numScenarios,
       rcp_scenario: '45', // Hardcoded for now
       model_params: [
+        // DiscreteOrderedUniformDist - SHOULD have third parameter (step size)
         {
           param_name: 'N_seed_TA',
           third_param_flag: true,
@@ -312,102 +343,100 @@ export class ParameterConfigComponent {
           optional_third: 50000
         },
         {
-          param_name: 'min_iv_locations',
-          third_param_flag: true,
-          lower: params.minIvLocations.lower,
-          upper: params.minIvLocations.upper,
-          optional_third: 1
-        },
-        {
-          param_name: 'fogging',
-          third_param_flag: true,
-          lower: params.fogging.lower,
-          upper: params.fogging.upper,
-          optional_third: 0.01
-        },
-        {
-          param_name: 'SRM',
-          third_param_flag: true,
-          lower: params.srm.lower,
-          upper: params.srm.upper,
-          optional_third: 0.1
-        },
-        {
           param_name: 'a_adapt',
           third_param_flag: true,
           lower: params.assistedAdaptation.lower,
           upper: params.assistedAdaptation.upper,
           optional_third: 0.5
         },
+
+        // TriangularDist - SHOULD have third parameter
+        {
+          param_name: 'fogging',
+          third_param_flag: true,
+          lower: params.fogging.lower,
+          upper: params.fogging.upper,
+          optional_third: 0.0 // Third parameter for triangular distribution (mode)
+        },
+        {
+          param_name: 'SRM',
+          third_param_flag: true,
+          lower: params.srm.lower,
+          upper: params.srm.upper,
+          optional_third: 0.0 // Third parameter for triangular distribution (mode)
+        },
+
+        // DiscreteUniform - should NOT have third parameter
+        {
+          param_name: 'min_iv_locations',
+          third_param_flag: false,
+          lower: params.minIvLocations.lower,
+          upper: params.minIvLocations.upper
+        },
+        {
+          param_name: 'plan_horizon',
+          third_param_flag: false,
+          lower: params.planHorizon.lower,
+          upper: params.planHorizon.upper
+        },
+        {
+          param_name: 'seed_deployment_freq',
+          third_param_flag: false,
+          lower: params.seedDeploymentFreq.lower,
+          upper: params.seedDeploymentFreq.upper
+        },
+        {
+          param_name: 'fog_deployment_freq',
+          third_param_flag: false,
+          lower: params.fogDeploymentFreq.lower,
+          upper: params.fogDeploymentFreq.upper
+        },
+        {
+          param_name: 'shade_deployment_freq',
+          third_param_flag: false,
+          lower: params.shadeDeploymentFreq.lower,
+          upper: params.shadeDeploymentFreq.upper
+        },
+        {
+          param_name: 'seed_year_start',
+          third_param_flag: false,
+          lower: params.seedYearStart.lower,
+          upper: params.seedYearStart.upper
+        },
+        {
+          param_name: 'shade_year_start',
+          third_param_flag: false,
+          lower: params.shadeYearStart.lower,
+          upper: params.shadeYearStart.upper
+        },
+        {
+          param_name: 'fog_year_start',
+          third_param_flag: false,
+          lower: params.fogYearStart.lower,
+          upper: params.fogYearStart.upper
+        },
+
+        // DiscreteTriangularDist - These use triangular but are discrete, keeping third param
         {
           param_name: 'seed_years',
           third_param_flag: true,
           lower: params.seedYears.lower,
           upper: params.seedYears.upper,
-          optional_third: 1
+          optional_third: 5.0 // Mode for triangular distribution
         },
         {
           param_name: 'shade_years',
           third_param_flag: true,
           lower: params.shadeYears.lower,
           upper: params.shadeYears.upper,
-          optional_third: 1
+          optional_third: 5.0 // Mode for triangular distribution
         },
         {
           param_name: 'fog_years',
           third_param_flag: true,
           lower: params.fogYears.lower,
           upper: params.fogYears.upper,
-          optional_third: 1
-        },
-        {
-          param_name: 'plan_horizon',
-          third_param_flag: true,
-          lower: params.planHorizon.lower,
-          upper: params.planHorizon.upper,
-          optional_third: 1
-        },
-        {
-          param_name: 'seed_deployment_freq',
-          third_param_flag: true,
-          lower: params.seedDeploymentFreq.lower,
-          upper: params.seedDeploymentFreq.upper,
-          optional_third: 1
-        },
-        {
-          param_name: 'fog_deployment_freq',
-          third_param_flag: true,
-          lower: params.fogDeploymentFreq.lower,
-          upper: params.fogDeploymentFreq.upper,
-          optional_third: 1
-        },
-        {
-          param_name: 'shade_deployment_freq',
-          third_param_flag: true,
-          lower: params.shadeDeploymentFreq.lower,
-          upper: params.shadeDeploymentFreq.upper,
-          optional_third: 1
-        },
-        {
-          param_name: 'seed_year_start',
-          third_param_flag: true,
-          lower: params.seedYearStart.lower,
-          upper: params.seedYearStart.upper,
-          optional_third: 1
-        },
-        {
-          param_name: 'shade_year_start',
-          third_param_flag: true,
-          lower: params.shadeYearStart.lower,
-          upper: params.shadeYearStart.upper,
-          optional_third: 1
-        },
-        {
-          param_name: 'fog_year_start',
-          third_param_flag: true,
-          lower: params.fogYearStart.lower,
-          upper: params.fogYearStart.upper,
-          optional_third: 1
+          optional_third: 5.0 // Mode for triangular distribution
         }
       ]
     };
