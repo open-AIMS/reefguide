@@ -272,21 +272,27 @@ export class ReefguideStack extends cdk.Stack {
         {
           jobTypes: [JobType.ADRIA_MODEL_RUN],
           workerImage: 'ghcr.io/open-aims/adriareefguideworker.jl/adria-reefguide-worker:latest',
+          // 8CPU
+          cpu: 8192,
+          // 32GB
+          memoryLimitMiB: 32768,
+          /* Older config 4CPU
           // 4CPU
           cpu: 4096,
           // 16GB
           memoryLimitMiB: 16384,
+          */
           serverPort: 3000,
           command: ['using ADRIAReefGuideWorker; ADRIAReefGuideWorker.start_worker()'],
           desiredMinCapacity: 0,
           desiredMaxCapacity: 5,
           scalingFactor: 3.3,
-          scalingSensitivity: 2.6,
+          scalingSensitivity: 2.1,
           cooldownSeconds: 60,
           env: {
             // ADRIA PARAMS
             ADRIA_OUTPUT_DIR: '/tmp/reefguide',
-            ADRIA_NUM_CORES: '2',
+            ADRIA_NUM_CORES: '4',
             ADRIA_DEBUG: 'false',
             ADRIA_THRESHOLD: '1e-8',
 
