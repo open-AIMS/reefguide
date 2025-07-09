@@ -61,7 +61,7 @@ import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { GeoJSON } from 'ol/format';
 import { Fill, Stroke, Style } from 'ol/style';
-import { onLayerDispose } from '../map/openlayers-util';
+import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
 
 interface CriteriaLayer {
   layer: TileLayer;
@@ -473,16 +473,16 @@ export class ReefGuideMapService {
     // cancel current request if any
     this.cancelAssess();
 
-    this.cogAssessRegionsLayerGroup()
-      ?.getLayers()
-      .forEach(layer => {
-        layer.dispose();
-      });
-
-    this.cogAssessRegionsLayerGroup()?.dispose();
+    const regionsLayerGroup = this.cogAssessRegionsLayerGroup();
+    if (regionsLayerGroup) {
+      disposeLayerGroup(regionsLayerGroup);
+    }
     this.cogAssessRegionsLayerGroup.set(undefined);
 
-    this.siteSuitabilityLayerGroup()?.dispose();
+    const sitesLayerGroup = this.siteSuitabilityLayerGroup();
+    if (sitesLayerGroup) {
+      disposeLayerGroup(sitesLayerGroup);
+    }
     this.siteSuitabilityLayerGroup.set(undefined);
   }
 

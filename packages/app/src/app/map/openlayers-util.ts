@@ -1,4 +1,5 @@
 import Layer from 'ol/layer/Layer';
+import LayerGroup from 'ol/layer/Group';
 
 /**
  * Call the function when the layer is disposed.
@@ -15,4 +16,26 @@ export function onLayerDispose(layer: Layer, callback: () => void): void {
       callback();
     }
   });
+}
+
+/**
+ * Recursively dispose and remove layers.
+ *
+ * OpenLayers does not seem to do this automatically, or there's a bug with the
+ * site suitability vector layer automatic dispose.
+ *
+ * @param layerGroup
+ */
+export function disposeLayerGroup(layerGroup: LayerGroup): void {
+  const childLayers = layerGroup.getLayers();
+  childLayers.forEach(layer => {
+    if (layer instanceof LayerGroup) {
+      disposeLayerGroup(layer);
+    } else {
+      layer.dispose();
+    }
+  });
+
+  childLayers.clear();
+  layerGroup.dispose();
 }
