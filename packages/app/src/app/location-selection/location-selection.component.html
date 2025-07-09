@@ -49,14 +49,16 @@
         </mat-toolbar>
         <div class="styling-content">
           <mat-accordion>
-            @for (layer of mapService.styledLayers(); track layer.id) {
-              <mat-expansion-panel>
-                <mat-expansion-panel-header>{{ layer.title }}</mat-expansion-panel-header>
-                <ng-template matExpansionPanelContent>
-                  <app-layer-style-editor [layer]="layer"></app-layer-style-editor>
-                </ng-template>
-              </mat-expansion-panel>
-            }
+            <p>TODO OpenLayers styling</p>
+<!--            FIXME OpenLayers styling -->
+<!--            @for (layer of mapService.styledLayers(); track layer.id) {-->
+<!--              <mat-expansion-panel>-->
+<!--                <mat-expansion-panel-header>{{ layer.title }}</mat-expansion-panel-header>-->
+<!--                <ng-template matExpansionPanelContent>-->
+<!--                  <app-layer-style-editor [layer]="layer"></app-layer-style-editor>-->
+<!--                </ng-template>-->
+<!--              </mat-expansion-panel>-->
+<!--            }-->
           </mat-accordion>
         </div>
       }

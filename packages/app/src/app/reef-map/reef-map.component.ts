@@ -4,7 +4,6 @@ import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
-import { fromLonLat } from 'ol/proj';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -12,10 +11,6 @@ import { fromLonLat } from 'ol/proj';
  * This component is primarily concerned with UI. Layer management is done with ReefGuideMapService;
  * this component reflects the state of that service. This design enables external components
  * to manipulate map layers.
- *
- * Note: year and timestamp stuff is related to old prototype that would update reef polygons
- * with relative cover values from ADRIA. Leaving it here for now.
- * TODO review timestep/year and relative_cover code
  */
 @Component({
   selector: 'app-reef-map',
@@ -27,9 +22,6 @@ export class ReefMapComponent implements AfterViewInit {
 
   readonly mapService = inject(ReefGuideMapService, { optional: true });
 
-  // will be defined after view init
-  map!: Map;
-
   /**
    * View that is associated with OpenLayers Map.
    */
@@ -38,8 +30,14 @@ export class ReefMapComponent implements AfterViewInit {
     zoom: 2
   });
 
+  // will be defined after view init
+  private map!: Map;
+
   constructor() {}
 
+  /**
+   * Create OpenLayers Map and hookup everything.
+   */
   ngAfterViewInit() {
     console.log('ngAfterViewInit');
     this.map = new Map({
@@ -52,12 +50,10 @@ export class ReefMapComponent implements AfterViewInit {
       ]
     });
 
-    // TODO better design for this component to only listen to service
+    // REVIEW better design for this component to only listen to service
+    //  maybe move View to service
     this.mapService?.setMap(this.map);
-
-    this.map.on('click', event => {
-      console.log('click', event);
-    });
+    this.hookEvents(this.map);
   }
 
   /**
@@ -65,5 +61,12 @@ export class ReefMapComponent implements AfterViewInit {
    */
   public async zoomToExtent(layer: unknown) {
     throw new Error('Not implemented!');
+  }
+
+  private hookEvents(map: Map) {
+    // REVIEW maybe use signals or RxJS to handle events
+    map.on('click', event => {
+      console.log('Map click', event);
+    });
   }
 }

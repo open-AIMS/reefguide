@@ -16,7 +16,6 @@ import { AdminPanelComponent } from '../admin/user-panel/user-panel.component';
 import { AuthService } from '../auth/auth.service';
 import { LoginDialogComponent } from '../auth/login-dialog/login-dialog.component';
 import { ClusterAdminDialogComponent } from '../admin/cluster/ClusterAdminDialog.component';
-import { LayerStyleEditorComponent } from '../widgets/layer-style-editor/layer-style-editor.component';
 import { ConfigDialogComponent } from './config-dialog/config-dialog.component';
 import { CriteriaAssessment, criteriaToJobPayload } from './reef-guide-api.types';
 import { ReefGuideConfigService } from './reef-guide-config.service';
@@ -47,7 +46,6 @@ type DrawerModes = 'criteria' | 'style';
     MatTooltip,
     AsyncPipe,
     MatProgressSpinner,
-    LayerStyleEditorComponent,
     MatAccordion,
     MatExpansionModule,
     CommonModule,
@@ -93,14 +91,20 @@ export class LocationSelectionComponent {
     const effectRef = effect(
       () => {
         effectRef.destroy();
-        console.log('map effect');
-        const map = this.map();
-        console.log('map', map);
-        map.view.setCenter(fromLonLat([147.6419, -17.1427]));
-        map.view.setZoom(8);
+        this.setupMap(this.map());
       },
       { manualCleanup: true }
     );
+  }
+
+  /**
+   * One-time setup of Map
+   */
+  private setupMap(map: ReefMapComponent) {
+    map.view.setCenter(fromLonLat([147.6419, -17.1427]));
+    map.view.setZoom(8);
+    map.view.setMinZoom(4);
+    map.view.setMaxZoom(19);
   }
 
   openDrawer(mode: DrawerModes) {

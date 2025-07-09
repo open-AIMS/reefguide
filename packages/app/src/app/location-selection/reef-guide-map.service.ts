@@ -13,10 +13,6 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import Map from 'ol/Map';
-import GroupLayer from '@arcgis/core/layers/GroupLayer';
-import ImageryTileLayer from '@arcgis/core/layers/ImageryTileLayer';
-import TileLayer from '@arcgis/core/layers/TileLayer';
-import Editor from '@arcgis/core/widgets/Editor';
 import { JobType } from '@reefguide/db';
 import {
   BehaviorSubject,
@@ -37,8 +33,8 @@ import {
 import { WebApiService } from '../../api/web-api.service';
 import { environment } from '../../environments/environment';
 import { getFirstFileFromResults } from '../../util/api-util';
-import { ColorRGBA, createSingleColorRasterFunction } from '../../util/arcgis/arcgis-layer-util';
-import { seperateHttpParams, urlToBlobObjectURL } from '../../util/http-util';
+import { ColorRGBA } from '../../util/arcgis/arcgis-layer-util';
+import { urlToBlobObjectURL } from '../../util/http-util';
 import { isDefined } from '../../util/js-util';
 import { AuthService } from '../auth/auth.service';
 import { StylableLayer } from '../widgets/layer-style-editor/layer-style-editor.component';
@@ -56,6 +52,16 @@ import {
 } from './selection-criteria/region-jobs-manager';
 import { SuitabilityAssessmentInput } from '@reefguide/types';
 import { JobsManagerService } from '../jobs/jobs-manager.service';
+import { fromLonLat } from 'ol/proj';
+import LayerGroup from 'ol/layer/Group';
+import { GeoTIFF } from 'ol/source';
+import TileLayer from 'ol/layer/WebGLTile';
+import { openlayersRegisterEPSG7844 } from '../map/openlayers-config';
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
+import { GeoJSON } from 'ol/format';
+import { Fill, Stroke, Style } from 'ol/style';
+import { onLayerDispose } from '../map/openlayers-util';
 
 interface CriteriaLayer {
   layer: TileLayer;
@@ -78,8 +84,7 @@ export class ReefGuideMapService {
   private readonly jobsManager = inject(JobsManagerService);
 
   // map is set shortly after construction
-  // TODO any for now during migration
-  private map!: any; // Map
+  private map!: Map;
 
   assessColor: ColorRGBA = [241, 192, 12, 1];
 
@@ -87,6 +92,7 @@ export class ReefGuideMapService {
 
   /**
    * HTTP errors encounter by map layers.
+   * TODO hookup OpenLayers error reporting
    */
   httpErrors: Subject<__esri.Error> = new Subject<__esri.Error>();
 
@@ -117,34 +123,35 @@ export class ReefGuideMapService {
   private pendingHighPoint: number = 0;
 
   // criteria data layers
-  private readonly criteriaGroupLayer = signal<GroupLayer | undefined>(undefined);
+  private readonly criteriaLayerGroup = signal<LayerGroup | undefined>(undefined);
 
   // region assessment raster layers. COG vs Tile depends on app config.
-  private readonly cogAssessRegionsGroupLayer = signal<GroupLayer | undefined>(undefined);
+  private readonly cogAssessRegionsLayerGroup = signal<LayerGroup | undefined>(undefined);
 
   // suitable sites polygons group layer
-  private readonly siteSuitabilityGroupLayer = signal<GroupLayer | undefined>(undefined);
+  private readonly siteSuitabilityLayerGroup = signal<LayerGroup | undefined>(undefined);
 
   // current region assessment in progress
   criteriaRequest = signal<CriteriaRequest | undefined>(undefined);
 
   // whether to show the clear layers button
   showClear = computed(() => {
-    return this.cogAssessRegionsGroupLayer() !== undefined;
+    return this.cogAssessRegionsLayerGroup() !== undefined;
   });
 
   /**
    * Layers the user may style
    */
-  styledLayers: Signal<Array<StylableLayer>> = computed(() => {
+  styledLayers: Signal<Array<LayerGroup>> = computed(() => {
     return [
-      this.cogAssessRegionsGroupLayer(),
-      this.criteriaGroupLayer(),
-      this.siteSuitabilityGroupLayer()
+      this.cogAssessRegionsLayerGroup(),
+      this.criteriaLayerGroup(),
+      this.siteSuitabilityLayerGroup()
     ].filter(isDefined);
   });
 
   constructor() {
+    this.setupOpenLayers();
     this.setupRequestInterceptor();
 
     this.httpErrors
@@ -154,6 +161,11 @@ export class ReefGuideMapService {
         // err.details.url
         this.snackbar.open(`Map layer error (HTTP ${status})`, 'OK');
       });
+  }
+
+  private setupOpenLayers() {
+    // region assessment COGs are 7844
+    openlayersRegisterEPSG7844();
   }
 
   private setupRequestInterceptor() {
@@ -178,16 +190,22 @@ export class ReefGuideMapService {
     };
   }
 
+  /**
+   * Map provided by ReefGuideMapComponent
+   * @param map
+   */
   setMap(map: Map) {
     this.map = map;
 
-    // TODO OpenLayers equivalent?
-    // map.arcgisViewReadyChange.subscribe(() => this.onMapReady());
+    void this.addCriteriaLayers();
   }
 
+  /**
+   * Reset to default home view with animation.
+   */
   goHome() {
-    this.map.goTo({
-      target: [146.1979986145376, -16.865253472483754],
+    this.map.getView().animate({
+      center: fromLonLat([146.1979986145376, -16.865253472483754]),
       zoom: 10
     });
   }
@@ -217,7 +235,7 @@ export class ReefGuideMapService {
     // FIXME refactor, thinking the job/data manager should be outside map service
     // this.criteriaRequest.set(criteriaRequest);
 
-    const groupLayer = this.setupCOGAssessRegionsGroupLayer();
+    const layerGroup = this.setupCOGAssessRegionsLayerGroup();
 
     jobManager.regionError$.subscribe(region => this.handleRegionError(region));
 
@@ -231,7 +249,7 @@ export class ReefGuideMapService {
       )
       .subscribe({
         next: readyRegion => {
-          this.addRegionLayer(readyRegion, groupLayer);
+          this.addRegionLayer(readyRegion, layerGroup);
         },
         complete: () => {
           this.regionAssessmentLoading.set(false);
@@ -255,7 +273,7 @@ export class ReefGuideMapService {
    * @param jobId
    */
   loadLayerFromJobResults(jobId: number, region?: string) {
-    const groupLayer = this.setupCOGAssessRegionsGroupLayer();
+    const layerGroup = this.setupCOGAssessRegionsLayerGroup();
 
     // standardize getting region as an Observable
     let region$: Observable<string>;
@@ -268,7 +286,7 @@ export class ReefGuideMapService {
     forkJoin([region$, this.api.downloadJobResults(jobId)]).subscribe(([region, results]) => {
       const regionResults = { ...results, region };
       this.jobResultsToReadyRegion(regionResults).subscribe(readyRegion => {
-        this.addRegionLayer(readyRegion, groupLayer);
+        this.addRegionLayer(readyRegion, layerGroup);
       });
     });
   }
@@ -298,34 +316,36 @@ export class ReefGuideMapService {
     }
   }
 
-  private setupCOGAssessRegionsGroupLayer() {
-    const currentGroupLayer = this.cogAssessRegionsGroupLayer();
-    if (currentGroupLayer) {
-      return currentGroupLayer;
+  private setupCOGAssessRegionsLayerGroup() {
+    const existingLayerGroup = this.cogAssessRegionsLayerGroup();
+    if (existingLayerGroup) {
+      return existingLayerGroup;
     }
 
-    const groupLayer = new GroupLayer({
-      title: 'Assessed Regions',
-      listMode: 'hide-children'
+    const layerGroup = new LayerGroup({
+      properties: {
+        title: 'Assessed Regions'
+      }
     });
-    this.cogAssessRegionsGroupLayer.set(groupLayer);
-    this.map.addLayer(groupLayer);
-    return groupLayer;
+    this.cogAssessRegionsLayerGroup.set(layerGroup);
+    this.map.addLayer(layerGroup);
+    return layerGroup;
   }
 
-  private setupSiteSuitabilityGroupLayer() {
-    const currentGroupLayer = this.siteSuitabilityGroupLayer();
-    if (currentGroupLayer) {
-      return currentGroupLayer;
+  private setupSiteSuitabilityLayerGroup() {
+    const existingLayerGroup = this.siteSuitabilityLayerGroup();
+    if (existingLayerGroup) {
+      return existingLayerGroup;
     }
 
-    const groupLayer = new GroupLayer({
-      title: 'Site Suitability',
-      listMode: 'hide-children'
+    const layerGroup = new LayerGroup({
+      properties: {
+        title: 'Site Suitability'
+      }
     });
-    this.siteSuitabilityGroupLayer.set(groupLayer);
-    this.map.addLayer(groupLayer);
-    return groupLayer;
+    this.siteSuitabilityLayerGroup.set(layerGroup);
+    this.map.addLayer(layerGroup);
+    return layerGroup;
   }
 
   addCOGLayers(criteria: SelectionCriteria) {
@@ -341,14 +361,14 @@ export class ReefGuideMapService {
     );
     this.criteriaRequest.set(criteriaRequest);
 
-    const groupLayer = this.setupCOGAssessRegionsGroupLayer();
+    const layerGroup = this.setupCOGAssessRegionsLayerGroup();
 
     criteriaRequest.regionError$.subscribe(region => this.handleRegionError(region));
 
     criteriaRequest.regionReady$
       // unsubscribe when this component is destroyed
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(region => this.addRegionLayer(region, groupLayer));
+      .subscribe(region => this.addRegionLayer(region, layerGroup));
   }
 
   /**
@@ -369,14 +389,13 @@ export class ReefGuideMapService {
   /**
    * Start job, add map layer based on result
    * @param payload
-   * @param groupLayer
    */
   addSiteSuitabilityLayer(payload: SuitabilityAssessmentInput) {
     // TODO[OpenLayers] site suitability loading indicator
     // TODO:region rework multi-request progress tracking, review RegionJobsManager
     // this works, but is bespoke for this kind of request, will refactor job requests
     // to share same region job-dispatch code in user-selected region PR.
-    const groupLayer = this.setupSiteSuitabilityGroupLayer();
+    const layerGroup = this.setupSiteSuitabilityLayerGroup();
     const region = payload.region;
     this.siteSuitabilityLoading.set(true);
     this.activeSiteSuitabilityRegions.add(region);
@@ -395,13 +414,31 @@ export class ReefGuideMapService {
       .subscribe(jobResults => {
         this.removeActiveSiteSuitabilityRegion(region);
         const url = getFirstFileFromResults(jobResults);
-        // NOW openlayers
-        // const layer = new GeoJSONLayer({
-        //   title: `Site Suitability (${region})`,
-        //   url
-        // });
 
-        // groupLayer.add(layer);
+        const style = new Style({
+          stroke: new Stroke({
+            color: 'rgba(241, 192, 12, 0.7)',
+            width: 1
+          }),
+          fill: new Fill({
+            color: 'rgba(241, 192, 12, 0.5)' // semi-transparent gold
+          })
+        });
+
+        const source = new VectorSource({
+          url,
+          format: new GeoJSON()
+        });
+
+        const layer = new VectorLayer({
+          properties: {
+            title: `Site Suitability (${region})`
+          },
+          source,
+          style
+        });
+
+        layerGroup.getLayers().push(layer);
       });
   }
 
@@ -436,25 +473,17 @@ export class ReefGuideMapService {
     // cancel current request if any
     this.cancelAssess();
 
-    const groupLayer = this.cogAssessRegionsGroupLayer();
-    if (groupLayer) {
-      for (const layer of groupLayer.layers) {
-        if (layer instanceof ImageryTileLayer && layer.url.startsWith('blob:')) {
-          // remove resources after destroy
-          setTimeout(() => {
-            console.log('revokeObjectURL', layer.url);
-            URL.revokeObjectURL(layer.url);
-          });
-        }
-        layer.destroy();
-      }
-    }
+    this.cogAssessRegionsLayerGroup()
+      ?.getLayers()
+      .forEach(layer => {
+        layer.dispose();
+      });
 
-    groupLayer?.destroy();
-    this.cogAssessRegionsGroupLayer.set(undefined);
+    this.cogAssessRegionsLayerGroup()?.dispose();
+    this.cogAssessRegionsLayerGroup.set(undefined);
 
-    this.siteSuitabilityGroupLayer()?.destroy();
-    this.siteSuitabilityGroupLayer.set(undefined);
+    this.siteSuitabilityLayerGroup()?.dispose();
+    this.siteSuitabilityLayerGroup.set(undefined);
   }
 
   /**
@@ -463,9 +492,9 @@ export class ReefGuideMapService {
    * @param show show/hide layer
    */
   showCriteriaLayer(criteria: string, show = true) {
-    const criteriaGroupLayer = this.criteriaGroupLayer();
-    if (criteriaGroupLayer) {
-      criteriaGroupLayer.visible = true;
+    const criteriaLayerGroup = this.criteriaLayerGroup();
+    if (criteriaLayerGroup) {
+      criteriaLayerGroup.setVisible(true);
       for (let id in this.criteriaLayers) {
         const criteriaLayer = this.criteriaLayers[id];
         criteriaLayer.visible.set(id === criteria && show);
@@ -478,91 +507,102 @@ export class ReefGuideMapService {
   }
 
   /**
-   * Update criteria layers signals based on ArcGIS state.
+   * Update criteria layers signals to reflect current layer state.
    * Note: ideally would subscribe to layer event, but doesn't seem to exist.
+   * REVIEW was created for ArcGIS, OpenLayers seems to have own state management, maybe use instead
    */
   updateCriteriaLayerStates() {
-    const criteriaGroupLayer = this.criteriaGroupLayer();
-    if (criteriaGroupLayer) {
-      criteriaGroupLayer.visible = true;
+    const criteriaLayerGroup = this.criteriaLayerGroup();
+    if (criteriaLayerGroup) {
+      criteriaLayerGroup.setVisible(true);
       for (let id in this.criteriaLayers) {
         const criteriaLayer = this.criteriaLayers[id];
-        criteriaLayer.visible.set(criteriaLayer.layer.visible);
+        criteriaLayer.visible.set(criteriaLayer.layer.isVisible());
       }
     }
   }
 
-  private async addRegionLayer(region: ReadyRegion, groupLayer: GroupLayer) {
+  private async addRegionLayer(region: ReadyRegion, layerGroup: LayerGroup) {
     console.log('addRegionLayer', region.region, region.originalUrl);
 
-    // ArcGIS will not maintain URL integrity unless we use its customParameters system.
-    const { cleanUrl, params } = seperateHttpParams(region.cogUrl);
+    // NOW openlayers styling
+    // const layer = new ImageryTileLayer({
+    //   title: region.region,
+    //   url: cleanUrl,
+    //   customParameters: params,
+    //   opacity: 0.9,
+    //   // gold color
+    //   // Note: this only works with binary color COG, it broke with the greyscale raster.
+    //   // TODO heatmap in OpenLayers
+    //   rasterFunction: createSingleColorRasterFunction(this.assessColor)
+    // });
 
-    const layer = new ImageryTileLayer({
-      title: region.region,
-      url: cleanUrl,
-      customParameters: params,
-      opacity: 0.9,
-      // gold color
-      // Note: this only works with binary color COG, it broke with the greyscale raster.
-      // TODO heatmap in OpenLayers
-      rasterFunction: createSingleColorRasterFunction(this.assessColor)
+    const layer = new TileLayer({
+      properties: {
+        title: region.region
+      },
+      source: new GeoTIFF({
+        sources: [
+          {
+            url: region.cogUrl
+          }
+        ]
+      })
     });
-    groupLayer.add(layer);
-  }
 
-  private onMapReady() {
-    console.log('ReefGuideMapService.onMapReady');
+    // free ObjectURL memory after layer disposed
+    if (region.cogUrl.startsWith('blob:')) {
+      onLayerDispose(layer, () => {
+        setTimeout(() => {
+          console.log(`layer disposed for ${region.region}, revokeObjectURL `, region.cogUrl);
+          URL.revokeObjectURL(region.cogUrl);
+        });
+      });
+    }
 
-    // limit how far map can zoom.
-    this.map.constraints = {
-      minZoom: 4,
-      maxZoom: 19
-    };
-
-    // TODO better to set initial map extent
-    this.goHome();
-
-    this.addCriteriaLayers();
+    layerGroup.getLayers().push(layer);
   }
 
   private async addCriteriaLayers() {
     const { injector } = this;
     const layers = this.reefGuideApi.getCriteriaLayers();
 
-    const groupLayer = new GroupLayer({
-      title: 'Criteria'
+    const layerGroup = new LayerGroup({
+      properties: {
+        title: 'Criteria'
+      }
     });
 
+    // NOW OpenLayers
     for (let criteria in layers) {
-      const url = layers[criteria];
-
-      const layer = new TileLayer({
-        id: `criteria_${criteria}`,
-        // TODO user-friendly title
-        // title:
-        url,
-        visible: false
-      });
-      groupLayer.add(layer);
-
-      const visible = signal(false);
-
-      this.criteriaLayers[criteria] = {
-        layer,
-        visible
-      };
-
-      effect(
-        () => {
-          layer.visible = visible();
-        },
-        { injector }
-      );
+      // const url = layers[criteria];
+      //
+      // const layer = new TileLayer({
+      //   id: `criteria_${criteria}`,
+      //   // TODO user-friendly title
+      //   // title:
+      //   url,
+      //   visible: false
+      // });
+      // groupLayer.add(layer);
+      //
+      // const visible = signal(false);
+      //
+      // this.criteriaLayers[criteria] = {
+      //   layer,
+      //   visible
+      // };
+      //
+      // effect(
+      //   () => {
+      //     layer.visible = visible();
+      //   },
+      //   { injector }
+      // );
     }
 
-    this.map.addLayer(groupLayer);
-    this.criteriaGroupLayer.set(groupLayer);
+    // this.map.addLayer(groupLayer);
+    // this.criteriaLayerGroup.set(groupLayer);
   }
 
   private handleRegionError(region: string) {
