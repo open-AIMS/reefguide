@@ -89,6 +89,9 @@ export class ResultsViewComponent implements AfterViewInit, OnDestroy {
   private lastRenderedJobId: number | null = null;
   private lastRenderedWorkspaceId: string | null = null;
 
+  /** Flag to prevent duplicate renders during chart addition */
+  private isAddingChart = false;
+
   /** Computed job ID for reactive streams */
   private readonly jobId = computed(() => {
     const job = this.job();
@@ -130,13 +133,14 @@ export class ResultsViewComponent implements AfterViewInit, OnDestroy {
 
     /**
      * Effect to render active charts when they change
+     * Only re-render all charts if we're not in the middle of adding a single chart
      */
     effect(() => {
       const charts = this.activeCharts();
       const workspaceId = this.currentWorkspaceId();
       const jobId = this.jobId();
 
-      if (charts.length > 0 && this.vegaChartRef && workspaceId && jobId) {
+      if (charts.length > 0 && this.vegaChartRef && workspaceId && jobId && !this.isAddingChart) {
         this.renderActiveCharts(jobId, workspaceId);
       }
     });
@@ -200,7 +204,7 @@ export class ResultsViewComponent implements AfterViewInit, OnDestroy {
   /**
    * Add a chart to the active charts list
    */
-  addChart(): void {
+  async addChart(): Promise<void> {
     const selectedTitle = this.selectedChart();
     if (!selectedTitle) return;
 
@@ -213,18 +217,26 @@ export class ResultsViewComponent implements AfterViewInit, OnDestroy {
       return; // Already active
     }
 
-    // Add to active charts
-    const newActiveChart = { ...availableChart, isActive: true };
-    this.activeCharts.set([...currentActive, newActiveChart]);
+    // Set flag to prevent the effect from re-rendering all charts
+    this.isAddingChart = true;
 
-    // Reset dropdown selection
-    this.selectedChart.set(null);
+    try {
+      // Add to active charts
+      const newActiveChart = { ...availableChart, isActive: true };
+      this.activeCharts.set([...currentActive, newActiveChart]);
 
-    // Render only the new chart instead of re-rendering all
-    const jobId = this.jobId();
-    const workspaceId = this.currentWorkspaceId();
-    if (jobId && workspaceId) {
-      this.renderSingleChart(jobId, newActiveChart, workspaceId);
+      // Reset dropdown selection
+      this.selectedChart.set(null);
+
+      // Render only the new chart
+      const jobId = this.jobId();
+      const workspaceId = this.currentWorkspaceId();
+      if (jobId && workspaceId) {
+        await this.renderSingleChart(jobId, newActiveChart, workspaceId);
+      }
+    } finally {
+      // Reset flag after chart is added and rendered
+      this.isAddingChart = false;
     }
   }
 
@@ -347,6 +359,15 @@ export class ResultsViewComponent implements AfterViewInit, OnDestroy {
     workspaceId: string
   ): Promise<void> {
     try {
+      // Check if chart already exists in DOM to prevent duplicates
+      const existingChart = this.vegaChartRef?.nativeElement?.querySelector(
+        `[data-chart-title="${chart.title}"]`
+      );
+      if (existingChart) {
+        console.log(`[${workspaceId}] Chart already exists, skipping render: ${chart.title}`);
+        return;
+      }
+
       // Get chart specification (from cache or download)
       const spec = await this.getChartSpec(jobId, chart, workspaceId);
 
