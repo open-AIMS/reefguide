@@ -11,7 +11,22 @@
       <mat-tab *ngFor="let workspace of allWorkspaces(); trackBy: trackByWorkspace">
         <ng-template mat-tab-label>
           <div class="tab-label">
+            <!-- Context Menu Button (Three Dots) -->
+            <button
+              mat-icon-button
+              class="context-menu-button"
+              [matMenuTriggerFor]="contextMenu"
+              [matMenuTriggerData]="{ workspace: workspace }"
+              (click)="$event.stopPropagation()"
+              matTooltip="Workspace options"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+
+            <!-- Workspace Name -->
             <span class="tab-name">{{ getWorkspaceDisplayName(workspace) }}</span>
+
+            <!-- Close Button -->
             <button
               mat-icon-button
               class="close-button"
@@ -26,6 +41,23 @@
         </ng-template>
       </mat-tab>
     </mat-tab-group>
+
+    <!-- Context Menu -->
+    <mat-menu #contextMenu="matMenu">
+      <ng-template matMenuContent let-workspace="workspace">
+        <button mat-menu-item (click)="renameWorkspace(workspace.id)">
+          <mat-icon>edit</mat-icon>
+          <span>Rename</span>
+        </button>
+        <button
+          mat-menu-item
+          (click)="copyParametersToNewWorkspace(workspace.id)"
+          [disabled]="!workspace.parameters">
+          <mat-icon>content_copy</mat-icon>
+          <span>Copy parameters to new workspace</span>
+        </button>
+      </ng-template>
+    </mat-menu>
 
     <!-- New Workspace Button -->
     <button

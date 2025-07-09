@@ -8,6 +8,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { JobDetailsResponse } from '@reefguide/types';
 import { WebApiService } from '../../api/web-api.service';
 import { JobStatusComponent } from '../jobs/job-status/job-status.component';
@@ -17,6 +19,9 @@ import {
   ModelParameters
 } from './parameter-config/parameter-config.component';
 import { ResultsViewComponent } from './results-view/results-view.component';
+import { WorkspaceNameDialogComponent } from './workspace-name-dialog/workspace-name-dialog.component';
+import { WorkspacePersistenceService, WorkspaceState } from './services/workspace-persistence.service';
+import { toPersistedWorkspace, toRuntimeWorkspace, RuntimeWorkspace } from './services/workspace-persistence.types';
 
 type WorkflowState = 'configuring' | 'submitting' | 'monitoring' | 'viewing';
 
@@ -128,6 +133,8 @@ class WorkspaceService {
     MatCardModule,
     MatTabsModule,
     MatTooltipModule,
+    MatMenuModule,
+    MatDialogModule,
     ParameterConfigComponent,
     JobStatusComponent,
     ResultsViewComponent
@@ -138,6 +145,8 @@ class WorkspaceService {
 export class ModelWorkflowComponent {
   private readonly api = inject(WebApiService);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
+  private readonly persistenceService = inject(WorkspacePersistenceService);
 
   // Workspace management
   private workspaceCounter = signal(0);
@@ -162,11 +171,76 @@ export class ModelWorkflowComponent {
   });
 
   constructor() {
-    // Create the first workspace automatically
-    this.createNewWorkspace();
+    // Try to restore from persistence first
+    this.loadWorkspacesFromPersistence();
+
+    // Set up auto-save effect
+    effect(() => {
+      const workspaces = this.workspaces();
+      const activeId = this.activeWorkspaceId();
+      const counter = this.workspaceCounter();
+
+      // Only save if we have workspaces (avoid saving empty state during initialization)
+      if (workspaces.length > 0) {
+        this.saveWorkspacesToPersistence();
+      }
+    });
   }
 
-  // Get or create workspace service
+  // Load workspaces from persistence
+  private loadWorkspacesFromPersistence(): void {
+    if (!this.persistenceService.isStorageAvailable()) {
+      console.warn('Local storage not available, creating default workspace');
+      this.createWorkspaceWithName('Workspace 1');
+      return;
+    }
+
+    const savedState = this.persistenceService.loadWorkspaceState();
+
+    if (savedState && savedState.workspaces.length > 0) {
+      // Restore from saved state
+      this.workspaceCounter.set(savedState.workspaceCounter);
+
+      const runtimeWorkspaces = savedState.workspaces.map(pw => toRuntimeWorkspace(pw));
+      this.workspaces.set(runtimeWorkspaces);
+
+      // Restore active workspace (with fallback)
+      const activeId = savedState.activeWorkspaceId &&
+        runtimeWorkspaces.find(w => w.id === savedState.activeWorkspaceId)
+        ? savedState.activeWorkspaceId
+        : runtimeWorkspaces[0].id;
+
+      this.activeWorkspaceId.set(activeId);
+
+      // Initialize services for restored workspaces
+      runtimeWorkspaces.forEach(workspace => {
+        this.getWorkspaceService(workspace.id);
+      });
+
+      console.log(`Restored ${runtimeWorkspaces.length} workspaces from storage`);
+    } else {
+      // No saved state, create default workspace
+      this.createWorkspaceWithName('Workspace 1');
+    }
+  }
+
+  // Save workspaces to persistence
+  private saveWorkspacesToPersistence(): void {
+    if (!this.persistenceService.isStorageAvailable()) {
+      return;
+    }
+
+    const workspaces = this.workspaces();
+    const persistedWorkspaces = workspaces.map(w => toPersistedWorkspace(w));
+
+    const state: WorkspaceState = {
+      workspaces: persistedWorkspaces,
+      activeWorkspaceId: this.activeWorkspaceId(),
+      workspaceCounter: this.workspaceCounter()
+    };
+
+    this.persistenceService.saveWorkspaceState(state);
+  }
   getWorkspaceService(workspaceId: string): WorkspaceService | null {
     if (!this.workspaceServices.has(workspaceId)) {
       this.workspaceServices.set(workspaceId, new WorkspaceService(this.api, workspaceId));
@@ -174,12 +248,34 @@ export class ModelWorkflowComponent {
     return this.workspaceServices.get(workspaceId) || null;
   }
 
-  // Create a new workspace
+  // Create a new workspace with name dialog (for user-initiated creation)
   createNewWorkspace(): void {
+    const dialogRef = this.dialog.open(WorkspaceNameDialogComponent, {
+      width: '400px'
+    });
+
+    // Set default name and focus
+    dialogRef.componentInstance.workspaceName = `Workspace ${this.workspaceCounter() + 1}`;
+    dialogRef.componentInstance.isRename = false;
+
+    dialogRef.afterOpened().subscribe(() => {
+      // Focus handled by the dialog component itself
+    });
+
+    dialogRef.afterClosed().subscribe((workspaceName: string) => {
+      if (workspaceName) {
+        this.createWorkspaceWithName(workspaceName);
+      }
+      // If user cancels, don't create a workspace
+    });
+  }
+
+  // Create workspace with given name
+  private createWorkspaceWithName(name: string): void {
     const counter = this.workspaceCounter();
     const newWorkspace: Workspace = {
       id: `workspace-${counter}`,
-      name: `Workspace ${counter + 1}`,
+      name: name,
       parameters: null,
       job: null,
       workflowState: 'configuring',
@@ -196,7 +292,85 @@ export class ModelWorkflowComponent {
     this.getWorkspaceService(newWorkspace.id);
   }
 
-  // Close a workspace
+  // Rename workspace
+  renameWorkspace(workspaceId: string, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+
+    const workspace = this.workspaces().find(w => w.id === workspaceId);
+    if (!workspace) return;
+
+    const dialogRef = this.dialog.open(WorkspaceNameDialogComponent, {
+      width: '400px'
+    });
+
+    // Set current name and focus
+    dialogRef.componentInstance.workspaceName = workspace.name;
+    dialogRef.componentInstance.isRename = true;
+
+    dialogRef.afterOpened().subscribe(() => {
+      // Focus handled by the dialog component itself
+    });
+
+    dialogRef.afterClosed().subscribe((newName: string) => {
+      if (newName && newName !== workspace.name) {
+        this.updateWorkspace(workspaceId, {
+          name: newName,
+          lastModified: new Date()
+        });
+      }
+    });
+  }
+
+  // Copy parameters from one workspace to a new workspace
+  copyParametersToNewWorkspace(sourceWorkspaceId: string): void {
+    const sourceWorkspace = this.workspaces().find(w => w.id === sourceWorkspaceId);
+    if (!sourceWorkspace || !sourceWorkspace.parameters) {
+      console.warn('Source workspace not found or has no parameters');
+      return;
+    }
+
+    const dialogRef = this.dialog.open(WorkspaceNameDialogComponent, {
+      width: '400px'
+    });
+
+    // Set default name and focus
+    dialogRef.componentInstance.workspaceName = `${sourceWorkspace.name} (Copy)`;
+    dialogRef.componentInstance.isRename = false;
+
+    dialogRef.afterOpened().subscribe(() => {
+      // Focus handled by the dialog component itself
+    });
+
+    dialogRef.afterClosed().subscribe((workspaceName: string) => {
+      if (workspaceName) {
+        this.createWorkspaceWithParameters(workspaceName, sourceWorkspace.parameters!);
+      }
+    });
+  }
+
+  // Create workspace with given name and parameters
+  private createWorkspaceWithParameters(name: string, parameters: ModelParameters): void {
+    const counter = this.workspaceCounter();
+    const newWorkspace: Workspace = {
+      id: `workspace-${counter}`,
+      name: name,
+      parameters: { ...parameters }, // Deep copy the parameters
+      job: null,
+      workflowState: 'configuring',
+      createdAt: new Date(),
+      lastModified: new Date()
+    };
+
+    this.workspaceCounter.set(counter + 1);
+    const currentWorkspaces = this.workspaces();
+    this.workspaces.set([...currentWorkspaces, newWorkspace]);
+    this.activeWorkspaceId.set(newWorkspace.id);
+
+    // Create service for new workspace
+    this.getWorkspaceService(newWorkspace.id);
+  }
   closeWorkspace(workspaceId: string, event?: Event): void {
     if (event) {
       event.stopPropagation();

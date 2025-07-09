@@ -1,0 +1,106 @@
+/* src/app/model-workflow/workspace-name-dialog/workspace-name-dialog.component.scss */
+
+:host {
+  display: block;
+}
+
+// Dialog title styling
+h2[mat-dialog-title] {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+// Dialog content
+mat-dialog-content {
+  padding: 0 24px 20px 24px;
+  min-width: 350px;
+  margin: 0;
+  overflow: visible;
+}
+
+.full-width {
+  width: 100%;
+}
+
+mat-form-field {
+  width: 100%;
+  margin: 0;
+
+  // Remove extra spacing from Material form field
+  :deep(.mat-mdc-form-field-wrapper) {
+    padding-bottom: 0;
+  }
+
+  :deep(.mat-mdc-form-field-subscript-wrapper) {
+    display: none; // Hide hint/error area when not needed
+  }
+
+  // Input styling
+  :deep(.mat-mdc-input-element) {
+    font-size: 16px;
+    line-height: 1.4;
+  }
+
+  // Label styling
+  :deep(.mat-mdc-floating-label) {
+    font-size: 16px;
+  }
+}
+
+// Dialog actions (buttons)
+mat-dialog-actions {
+  padding: 16px 24px 24px 24px;
+  margin: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  min-height: auto;
+
+  // Button styling
+  button {
+    margin: 0;
+    min-width: 80px;
+    height: 36px;
+    font-size: 14px;
+    font-weight: 500;
+    text-transform: none;
+
+    &[mat-button] {
+      color: rgba(0, 0, 0, 0.6);
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.04);
+      }
+    }
+
+    &[mat-raised-button] {
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+      &:disabled {
+        background-color: rgba(0, 0, 0, 0.12);
+        color: rgba(0, 0, 0, 0.26);
+        box-shadow: none;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 480px) {
+  mat-dialog-content {
+    min-width: 280px;
+    padding: 0 20px 16px 20px;
+  }
+
+  mat-dialog-actions {
+    padding: 12px 20px 20px 20px;
+    gap: 8px;
+  }
+
+  h2[mat-dialog-title] {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+}

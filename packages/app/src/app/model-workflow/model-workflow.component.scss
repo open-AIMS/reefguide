@@ -23,7 +23,7 @@
 
   // Override Material tabs styling
   :deep(.mat-mdc-tab-group) {
-    --mdc-secondary-navigation-tab-container-height: 48px;
+    --mdc-secondary-navigation-tab-container-height: 56px; // Increased from 48px
     width: auto; // Let tabs determine their own width
   }
 
@@ -37,11 +37,27 @@
   }
 
   :deep(.mat-mdc-tab) {
-    min-width: 160px;
-    max-width: 240px;
+    min-width: 180px; // Increased from 160px
+    max-width: 280px; // Increased from 240px
     width: auto;
-    flex: 0 1 200px; // Preferred width of 200px, can shrink
-    padding: 0 8px;
+    flex: 0 1 220px; // Increased preferred width from 200px
+    padding: 0 12px; // Increased from 8px
+    border-right: 1px solid rgba(0, 0, 0, 0.12); // Add border between tabs
+    position: relative;
+
+    &:last-child {
+      border-right: none; // Remove border from last tab
+    }
+
+    // Add subtle background on hover
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.04);
+    }
+
+    // Active tab styling
+    &.mat-mdc-tab-active {
+      background-color: rgba(25, 118, 210, 0.04);
+    }
   }
 
   :deep(.mat-mdc-tab .mdc-tab__content) {
@@ -55,18 +71,18 @@
 
   // When there are multiple tabs, make them shrink proportionally like Chrome
   &:has(:deep(.mat-mdc-tab:nth-child(4))) :deep(.mat-mdc-tab) {
-    flex: 1 1 180px;
-    max-width: 200px;
+    flex: 1 1 200px; // Increased from 180px
+    max-width: 240px; // Increased from 200px
   }
 
   &:has(:deep(.mat-mdc-tab:nth-child(6))) :deep(.mat-mdc-tab) {
-    flex: 1 1 160px;
-    max-width: 180px;
+    flex: 1 1 180px; // Increased from 160px
+    max-width: 220px; // Increased from 180px
   }
 
   &:has(:deep(.mat-mdc-tab:nth-child(8))) :deep(.mat-mdc-tab) {
-    flex: 1 1 140px;
-    max-width: 160px;
+    flex: 1 1 160px; // Increased from 140px
+    max-width: 200px; // Increased from 160px
   }
 
   // Hide the tab content since we're managing it separately
@@ -78,38 +94,28 @@
 .tab-label {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
-  height: 32px;
-  padding: 0 8px 0 12px; // More padding on left, less on right to push close button right
-  gap: 12px; // Increased gap between text and close button
+  height: 40px; // Increased from 32px
+  padding: 0 4px; // Increased from 0 8px 0 4px
+  gap: 30px; // Increased from 8px
 }
 
-.tab-name {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 14px; // Increased from 13px
-  font-weight: 500;
-  min-width: 0; // Important for text truncation
-}
-
-.close-button {
-  width: 20px !important; // Reduced from 24px
-  height: 20px !important; // Reduced from 24px
+.context-menu-button {
+  width: 20px !important; // Increased from 18px
+  height: 20px !important; // Increased from 18px
   min-width: 20px !important;
   max-width: 20px !important;
   flex-shrink: 0;
   border-radius: 50%;
   padding: 0 !important;
   margin: 0;
-  margin-left: auto; // Push to the right side
+  margin-left: 0; // Align to left edge
+  order: 1; // Show first
 
   // Override all Material button styling
   :deep(.mat-mdc-button-base) {
-    width: 20px !important; // Reduced from 24px
-    height: 20px !important; // Reduced from 24px
+    width: 20px !important;
+    height: 20px !important;
     padding: 0 !important;
     border-radius: 50%;
     display: flex;
@@ -127,10 +133,79 @@
   }
 
   :deep(.mat-icon) {
-    font-size: 12px !important; // Reduced from 14px
-    width: 12px !important; // Reduced from 14px
-    height: 12px !important; // Reduced from 14px
-    line-height: 12px !important;
+    font-size: 14px !important; // Increased from 12px
+    width: 14px !important; // Increased from 12px
+    height: 14px !important; // Increased from 12px
+    line-height: 14px !important;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  &:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.08);
+
+    :deep(.mat-icon) {
+      color: rgba(0, 0, 0, 0.87);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+
+    &:hover {
+      background-color: transparent;
+    }
+  }
+}
+
+.tab-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px; // Increased from 13px
+  font-weight: 500;
+  min-width: 0; // Important for text truncation
+  order: 2; // Show second
+}
+
+.close-button {
+  width: 22px !important; // Increased from 20px
+  height: 22px !important; // Increased from 20px
+  min-width: 22px !important;
+  max-width: 22px !important;
+  flex-shrink: 0;
+  border-radius: 50%;
+  padding: 0 !important;
+  margin: 0;
+  margin-left: auto; // Push to right edge
+  order: 3; // Show last
+
+  // Override all Material button styling
+  :deep(.mat-mdc-button-base) {
+    width: 22px !important;
+    height: 22px !important;
+    padding: 0 !important;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  :deep(.mat-mdc-button-touch-target) {
+    display: none !important;
+  }
+
+  :deep(.mat-mdc-button-ripple),
+  :deep(.mat-mdc-button-persistent-ripple) {
+    border-radius: 50%;
+  }
+
+  :deep(.mat-icon) {
+    font-size: 14px !important; // Increased from 12px
+    width: 14px !important; // Increased from 12px
+    height: 14px !important; // Increased from 12px
+    line-height: 14px !important;
   }
 
   &:hover:not(:disabled) {
@@ -321,12 +396,31 @@
   }
 
   .tab-label {
-    gap: 8px; // Reduced gap for mobile
-    padding: 0 6px 0 8px; // Adjusted mobile padding
+    gap: 6px; // Further reduced gap for mobile
+    padding: 0 6px 0 2px; // Adjusted mobile padding for context menu
   }
 
   .tab-name {
     font-size: 13px; // Slightly smaller on mobile but still larger than before
+  }
+
+  .context-menu-button {
+    width: 16px !important; // Smaller on mobile
+    height: 16px !important;
+    min-width: 16px !important;
+    max-width: 16px !important;
+
+    :deep(.mat-mdc-button-base) {
+      width: 16px !important;
+      height: 16px !important;
+    }
+
+    :deep(.mat-icon) {
+      font-size: 10px !important; // Smaller icon on mobile
+      width: 10px !important;
+      height: 10px !important;
+      line-height: 10px !important;
+    }
   }
 
   .close-button {
