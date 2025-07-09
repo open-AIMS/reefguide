@@ -161,7 +161,8 @@ export const jobResultSchema = z.object({
   result_payload: z.any().nullable(),
   storage_scheme: z.nativeEnum(StorageScheme),
   storage_uri: z.string(),
-  metadata: z.any().nullable()
+  metadata: z.any().nullable(),
+  cache_valid: z.boolean()
 });
 export type JobResult = z.infer<typeof jobResultSchema>;
 
@@ -441,3 +442,19 @@ export type BulkCreatePreApprovedUsersResponse = {
 };
 
 export type DeletePreApprovedUserResponse = { message: string };
+
+// Cache Invalidation Request
+export const invalidateCacheSchema = z.object({
+  jobType: z.nativeEnum(JobType)
+});
+export type InvalidateCacheRequest = z.infer<typeof invalidateCacheSchema>;
+
+// Cache Invalidation Response
+export const invalidateCacheResponseSchema = z.object({
+  message: z.string(),
+  invalidated: z.object({
+    jobType: z.nativeEnum(JobType),
+    affectedResults: z.number()
+  })
+});
+export type InvalidateCacheResponse = z.infer<typeof invalidateCacheResponseSchema>;

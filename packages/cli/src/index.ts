@@ -5,6 +5,7 @@ import * as dotenv from 'dotenv';
 import { createDataSpecCommands } from './commands/data-spec';
 import { createPreapprovalCommands } from './commands/pre-approval';
 import { createUserAuditCommands } from './commands/user-audit';
+import { createCacheManagementCommands } from './commands/cache-management';
 
 // Load environment variables
 dotenv.config();
@@ -18,6 +19,7 @@ program.name('reefguide-cli').description('ReefGuide Admin CLI Tool').version('0
 createDataSpecCommands(program);
 createPreapprovalCommands(program);
 createUserAuditCommands(program);
+createCacheManagementCommands(program);
 
 // Parse command line arguments
 program.parse();

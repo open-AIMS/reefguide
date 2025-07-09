@@ -4,6 +4,9 @@ import {
   assignJobSchema,
   createJobResponseSchema,
   createJobSchema,
+  InvalidateCacheResponse,
+  invalidateCacheResponseSchema,
+  invalidateCacheSchema,
   JobDetailsResponse,
   ListJobsResponse,
   listJobsSchema,
@@ -15,7 +18,11 @@ import express, { Response, Router } from 'express';
 import { z } from 'zod';
 import { processRequest } from 'zod-express-middleware';
 import { passport } from '../auth/passportConfig';
-import { assertUserHasRoleMiddleware, userIsAdmin } from '../auth/utils';
+import {
+  assertUserHasRoleMiddleware,
+  assertUserIsAdminMiddleware,
+  userIsAdmin
+} from '../auth/utils';
 import { config } from '../config';
 import { BadRequestException, UnauthorizedException } from '../exceptions';
 import { JobService } from '../services/jobs';
@@ -218,6 +225,30 @@ router.get(
         status: job.status
       },
       files: urlMap
+    });
+  }
+);
+// Add this route to your jobs router (paste.txt)
+
+router.post(
+  '/invalidate-cache',
+  processRequest({
+    body: invalidateCacheSchema
+  }),
+  passport.authenticate('jwt', { session: false }),
+  assertUserIsAdminMiddleware,
+  async (req, res: Response<InvalidateCacheResponse>) => {
+    if (!req.user) throw new UnauthorizedException();
+
+    const { jobType } = req.body;
+    const affectedResults = await jobService.invalidateCache(jobType);
+
+    res.status(200).json({
+      message: `Cache invalidated for job type ${jobType}`,
+      invalidated: {
+        jobType,
+        affectedResults
+      }
     });
   }
 );

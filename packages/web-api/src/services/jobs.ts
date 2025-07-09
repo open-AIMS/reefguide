@@ -72,26 +72,46 @@ export class JobService {
 
   /**
    * Checks the job cache for an existing job matching the given payload and type.
+   * Only returns jobs with valid cache results.
    *
    * Priority order for job selection:
-   * 1. SUCCEEDED jobs (newest first)
+   * 1. SUCCEEDED jobs with valid cache (newest first)
    * 2. IN_PROGRESS jobs (newest first)
    * 3. PENDING jobs (newest first)
    * 4. FAILED,CANCELLED,TIMED_OUT jobs are never returned
+   * 5. SUCCEEDED jobs with invalid cache are never returned
    *
-   * @param jobPaylod - The job payload to match against (note: contains typo in parameter name)
+   * @param jobPayload - The job payload to match against
    * @param jobType - The type of job to search for
    * @returns Promise<Job | undefined> - The best matching job or undefined if no suitable job found
    */
-  public async checkJobCache(jobPaylod: any, jobType: JobType): Promise<Job | undefined> {
+  public async checkJobCache(jobPayload: any, jobType: JobType): Promise<Job | undefined> {
     // Calculate job hash
-    const hash = await this.generateJobHash({ jobType, payload: jobPaylod });
+    const hash = await this.generateJobHash({ jobType, payload: jobPayload });
 
     // Find jobs with a matching hash
-    const existingJobs = await prisma.job.findMany({ where: { hash } });
+    const existingJobs = await prisma.job.findMany({
+      where: { hash },
+      include: {
+        results: true // Include results to check cache validity
+      }
+    });
 
     // Filter out invalid jobs immediately - we never want to return them
-    const validJobs = existingJobs.filter(job => validCachedJobStatus.has(job.status));
+    const validJobs = existingJobs.filter(job => {
+      // Must be in a valid cached status
+      if (!validCachedJobStatus.has(job.status)) {
+        return false;
+      }
+
+      // If the job is SUCCEEDED, it must have valid cache results
+      if (job.status === 'SUCCEEDED') {
+        return job.results.some(result => result.cache_valid === true);
+      }
+
+      // For IN_PROGRESS and PENDING jobs, cache validity doesn't matter yet
+      return true;
+    });
 
     if (validJobs.length === 0) {
       return undefined;
@@ -110,7 +130,7 @@ export class JobService {
           case 'PENDING':
             return 3;
           default:
-            return 4; // Should not happen since we filtered FAILED
+            return 4; // Should not happen since we filtered
         }
       };
 
@@ -449,5 +469,27 @@ export class JobService {
   public async generateJobHash({ payload, jobType }: { payload: any; jobType: JobType }) {
     const payloadHash = hashObject(payload);
     return crypto.createHash('sha256').update(payloadHash).update(jobType).digest('hex');
+  }
+
+  /**
+   * Invalidates the cache for all job results of a specific job type
+   * by setting cache_valid to false
+   * @param jobType - The job type to invalidate cache for
+   * @returns Number of affected job results
+   */
+  async invalidateCache(jobType: JobType): Promise<number> {
+    const result = await prisma.jobResult.updateMany({
+      where: {
+        job: {
+          type: jobType
+        },
+        cache_valid: true // Only update results that are currently valid
+      },
+      data: {
+        cache_valid: false
+      }
+    });
+
+    return result.count;
   }
 }

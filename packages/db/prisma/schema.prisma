@@ -231,6 +231,8 @@ model JobResult {
     storage_uri    String
     // Optional metadata about the results
     metadata       Json?
+    // Cache validity - defaults to true
+    cache_valid    Boolean       @default(true)
 }
 
 // Criteria for regional and suitability assessments
