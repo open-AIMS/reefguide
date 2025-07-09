@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { ApiClientService } from '../services/api-client';
-import { InvalidateCacheResponse  } from '@reefguide/types';
+import { InvalidateCacheResponse } from '@reefguide/types';
 import { JobType } from '@reefguide/db';
 
 /**

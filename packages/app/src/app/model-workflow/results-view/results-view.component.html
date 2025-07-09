@@ -1,7 +1,10 @@
 <!-- results-view.component.html -->
 <div class="results-container">
   <!-- Chart Selector and Management -->
-  <mat-card class="chart-controls" *ngIf="job()?.status === 'SUCCEEDED' && availableCharts().length > 0">
+  <mat-card
+    class="chart-controls"
+    *ngIf="job()?.status === 'SUCCEEDED' && availableCharts().length > 0"
+  >
     <mat-card-header>
       <mat-card-title>Available Visualizations</mat-card-title>
       <mat-card-subtitle>Select charts to display from available metrics</mat-card-subtitle>
@@ -13,10 +16,9 @@
           <mat-select
             [value]="selectedChart()"
             (selectionChange)="selectedChart.set($event.value)"
-            [disabled]="getInactiveCharts().length === 0">
-            <mat-option
-              *ngFor="let chart of getInactiveCharts()"
-              [value]="chart.title">
+            [disabled]="getInactiveCharts().length === 0"
+          >
+            <mat-option *ngFor="let chart of getInactiveCharts()" [value]="chart.title">
               {{ chart.title }}
             </mat-option>
           </mat-select>
@@ -26,7 +28,8 @@
           mat-raised-button
           color="primary"
           (click)="addChart()"
-          [disabled]="!selectedChart()">
+          [disabled]="!selectedChart()"
+        >
           <mat-icon>add</mat-icon>
           Add Chart
         </button>
@@ -36,15 +39,14 @@
       <div class="active-charts-summary" *ngIf="activeCharts().length > 0">
         <h4>Active Charts ({{ activeCharts().length }})</h4>
         <div class="chart-chips">
-          <div
-            class="chart-chip"
-            *ngFor="let chart of activeCharts()">
+          <div class="chart-chip" *ngFor="let chart of activeCharts()">
             <span>{{ chart.title }}</span>
             <button
               mat-icon-button
               (click)="removeChart(chart.title)"
               class="remove-chart-btn"
-              [attr.aria-label]="'Remove ' + chart.title">
+              [attr.aria-label]="'Remove ' + chart.title"
+            >
               <mat-icon>close</mat-icon>
             </button>
           </div>
@@ -54,24 +56,26 @@
   </mat-card>
 
   <!-- Charts Display Area -->
-  <mat-card class="charts-display" *ngIf="job()?.status === 'SUCCEEDED' && activeCharts().length > 0">
+  <mat-card
+    class="charts-display"
+    *ngIf="job()?.status === 'SUCCEEDED' && activeCharts().length > 0"
+  >
     <mat-card-content class="charts-content">
       <div #vegaChart class="charts-container"></div>
     </mat-card-content>
   </mat-card>
 
   <!-- No Charts Message -->
-  <mat-card class="no-charts-card" *ngIf="job()?.status === 'SUCCEEDED' && activeCharts().length === 0">
+  <mat-card
+    class="no-charts-card"
+    *ngIf="job()?.status === 'SUCCEEDED' && activeCharts().length === 0"
+  >
     <mat-card-content>
       <div class="no-charts-message">
         <mat-icon class="large-icon">show_chart</mat-icon>
         <p>No charts are currently displayed.</p>
-        <p *ngIf="availableCharts().length > 0">
-          Use the dropdown above to add visualizations.
-        </p>
-        <p *ngIf="availableCharts().length === 0">
-          No charts are available for this job.
-        </p>
+        <p *ngIf="availableCharts().length > 0">Use the dropdown above to add visualizations.</p>
+        <p *ngIf="availableCharts().length === 0">No charts are available for this job.</p>
       </div>
     </mat-card-content>
   </mat-card>

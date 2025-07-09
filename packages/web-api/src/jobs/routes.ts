@@ -5,7 +5,6 @@ import {
   createJobResponseSchema,
   createJobSchema,
   InvalidateCacheResponse,
-  invalidateCacheResponseSchema,
   invalidateCacheSchema,
   JobDetailsResponse,
   ListJobsResponse,

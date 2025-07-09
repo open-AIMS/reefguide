@@ -70,14 +70,20 @@
       <!-- Right Panel: Dynamic Content Based on State -->
       <div class="right-panel">
         <!-- Configuring State: Instructions -->
-        <mat-card class="instructions-card" *ngIf="getWorkspaceService(workspace.id)?.isConfiguring()">
+        <mat-card
+          class="instructions-card"
+          *ngIf="getWorkspaceService(workspace.id)?.isConfiguring()"
+        >
           <mat-card-header>
             <mat-card-title>Ready to Run</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             <div class="instructions-content">
               <mat-icon class="instructions-icon">science</mat-icon>
-              <p>Configure your model parameters on the left and click Submit to start your simulation.</p>
+              <p>
+                Configure your model parameters on the left and click Submit to start your
+                simulation.
+              </p>
             </div>
           </mat-card-content>
         </mat-card>

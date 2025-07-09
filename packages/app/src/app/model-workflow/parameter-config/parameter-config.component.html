@@ -1,9 +1,7 @@
 <mat-card class="parameter-config-card">
   <mat-card-header>
     <mat-card-title>Model Configuration</mat-card-title>
-    <mat-card-subtitle>
-      Configure parameters for coral reef model simulation
-    </mat-card-subtitle>
+    <mat-card-subtitle> Configure parameters for coral reef model simulation </mat-card-subtitle>
   </mat-card-header>
 
   <mat-card-content>
@@ -91,7 +89,8 @@
                       getParameterConfig(paramKey)?.format || 'number',
                       getParameterConfig(paramKey)?.units
                     )
-                  }} -
+                  }}
+                  -
                   {{
                     formatValue(
                       getRangeSignal(paramKey)().upper,
