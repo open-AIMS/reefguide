@@ -57,6 +57,7 @@ interface ParameterConfig {
   units?: string;
   defaultLower: number;
   defaultUpper: number;
+  triangular?: boolean;
 }
 
 interface ParameterCategory {
@@ -134,7 +135,8 @@ const PARAMETER_CATEGORIES: { [key: string]: ParameterCategory } = {
         description: 'Fogging Effectiveness (0.0 = no effect, 1.0 = complete protection)',
         units: 'effectiveness',
         defaultLower: 0,
-        defaultUpper: 0.3
+        defaultUpper: 0.3,
+        triangular: true
       },
       srm: {
         min: 0,
@@ -689,13 +691,9 @@ export class ParameterConfigComponent {
 
   updateRangeSignals(): void {
     const form = this.configForm.value;
-
-    // Original working updates
     this.taRange.set({ lower: form.taLower || 0, upper: form.taUpper || 1000000 });
     this.caRange.set({ lower: form.caLower || 0, upper: form.caUpper || 1000000 });
     this.smRange.set({ lower: form.smLower || 0, upper: form.smUpper || 1000000 });
-
-    // New range updates following the same pattern
     this.minIvLocationsRange.set({
       lower: form.minIvLocationsLower || 5,
       upper: form.minIvLocationsUpper || 20
@@ -982,27 +980,28 @@ export class ParameterConfigComponent {
           upper: params.fogYearStart.upper
         },
 
-        // DiscreteTriangularDist - These use triangular but are discrete, keeping third param
+        // DiscreteTriangularDist - These use triangular but are discrete,
+        // keeping third param
         {
           param_name: 'seed_years',
           third_param_flag: true,
           lower: params.seedYears.lower,
           upper: params.seedYears.upper,
-          optional_third: 5.0 // Mode for triangular distribution
+          optional_third: params.seedYears.lower // Mode for triangular distribution
         },
         {
           param_name: 'shade_years',
           third_param_flag: true,
           lower: params.shadeYears.lower,
           upper: params.shadeYears.upper,
-          optional_third: 5.0 // Mode for triangular distribution
+          optional_third: params.shadeYears.lower // Mode for triangular distribution
         },
         {
           param_name: 'fog_years',
           third_param_flag: true,
           lower: params.fogYears.lower,
           upper: params.fogYears.upper,
-          optional_third: 5.0 // Mode for triangular distribution
+          optional_third: params.fogYears.lower // Mode for triangular distribution
         }
       ]
     };
