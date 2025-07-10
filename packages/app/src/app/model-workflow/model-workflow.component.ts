@@ -1,5 +1,5 @@
 // src/app/model-workflow/model-workflow.component.ts
-import { Component, computed, inject, signal, effect } from '@angular/core';
+import { Component, computed, inject, signal, effect, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -147,11 +147,19 @@ export class ModelWorkflowComponent {
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly persistenceService = inject(WorkspacePersistenceService);
+  private readonly elementRef = inject(ElementRef);
 
   // Workspace management
   private workspaceCounter = signal(0);
   private workspaces = signal<Workspace[]>([]);
   private activeWorkspaceId = signal<string | null>(null);
+
+  // Panel state management
+  public parameterPanelCollapsed = signal(false);
+  private leftPanelWidth = signal(600); // Default width in pixels
+  private isDragging = signal(false);
+  private dragStartX = 0;
+  private dragStartWidth = 0;
 
   // Workspace services - one per workspace for complete isolation
   private workspaceServices = new Map<string, WorkspaceService>();
@@ -185,6 +193,47 @@ export class ModelWorkflowComponent {
         this.saveWorkspacesToPersistence();
       }
     });
+
+    // Set up CSS custom property for left panel width
+    effect(() => {
+      const width = this.leftPanelWidth();
+      const element = this.elementRef.nativeElement as HTMLElement;
+      element.style.setProperty('--left-panel-width', `${width}px`);
+    });
+  }
+
+  // Panel management methods
+  toggleParameterPanel(): void {
+    this.parameterPanelCollapsed.update(collapsed => !collapsed);
+  }
+
+  // Dragging methods
+  startDragging(event: MouseEvent): void {
+    event.preventDefault();
+    this.isDragging.set(true);
+    this.dragStartX = event.clientX;
+    this.dragStartWidth = this.leftPanelWidth();
+
+    // Add dragging class to body for global cursor
+    document.body.classList.add('dragging-active');
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onMouseMove(event: MouseEvent): void {
+    if (!this.isDragging()) return;
+
+    event.preventDefault();
+    const deltaX = event.clientX - this.dragStartX;
+    const newWidth = Math.max(250, Math.min(1200, this.dragStartWidth + deltaX));
+    this.leftPanelWidth.set(newWidth);
+  }
+
+  @HostListener('document:mouseup', ['$event'])
+  onMouseUp(event: MouseEvent): void {
+    if (!this.isDragging()) return;
+
+    this.isDragging.set(false);
+    document.body.classList.remove('dragging-active');
   }
 
   // Load workspaces from persistence
@@ -241,6 +290,7 @@ export class ModelWorkflowComponent {
 
     this.persistenceService.saveWorkspaceState(state);
   }
+
   getWorkspaceService(workspaceId: string): WorkspaceService | null {
     if (!this.workspaceServices.has(workspaceId)) {
       this.workspaceServices.set(workspaceId, new WorkspaceService(this.api, workspaceId));
@@ -371,6 +421,7 @@ export class ModelWorkflowComponent {
     // Create service for new workspace
     this.getWorkspaceService(newWorkspace.id);
   }
+
   closeWorkspace(workspaceId: string, event?: Event): void {
     if (event) {
       event.stopPropagation();

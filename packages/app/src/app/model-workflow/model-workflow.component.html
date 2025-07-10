@@ -75,7 +75,20 @@
   <div class="workspace-content" *ngIf="activeWorkspace() as workspace">
     <!-- Simple Header -->
     <div class="workflow-header">
-      <h1>{{ getWorkflowTitle(workspace) }}</h1>
+      <div class="header-left">
+        <!-- Panel Toggle Button -->
+        <button
+          mat-icon-button
+          class="panel-toggle-button"
+          [matTooltip]="parameterPanelCollapsed() ? 'Show parameters' : 'Hide parameters'"
+          (click)="toggleParameterPanel()"
+        >
+          <mat-icon>{{ parameterPanelCollapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+        </button>
+
+        <h1>{{ getWorkflowTitle(workspace) }}</h1>
+      </div>
+
       <button
         mat-button
         *ngIf="!getWorkspaceService(workspace.id)?.isConfiguring()"
@@ -88,15 +101,26 @@
     </div>
 
     <!-- Main Content Area -->
-    <div class="workflow-content-grid">
+    <div class="workflow-content-grid" [class.panel-collapsed]="parameterPanelCollapsed()">
       <!-- Left Panel: Parameter Configuration -->
-      <div class="left-panel">
+      <div class="left-panel" [class.collapsed]="parameterPanelCollapsed()">
         <app-parameter-config
           [initialParameters]="workspace.parameters"
           (parametersChanged)="onParametersChanged(workspace.id, $event)"
           (parametersSubmitted)="onParametersSubmitted(workspace.id, $event)"
         >
         </app-parameter-config>
+      </div>
+
+      <!-- Draggable Divider -->
+      <div
+        class="panel-divider"
+        [class.hidden]="parameterPanelCollapsed()"
+        (mousedown)="startDragging($event)"
+      >
+        <div class="divider-handle">
+          <div class="divider-line"></div>
+        </div>
       </div>
 
       <!-- Right Panel: Dynamic Content Based on State -->
@@ -113,7 +137,7 @@
             <div class="instructions-content">
               <mat-icon class="instructions-icon">science</mat-icon>
               <p>
-                Configure your model parameters on the left and click Submit to start your
+                Configure your model parameters {{ parameterPanelCollapsed() ? 'by showing the parameter panel' : 'on the left' }} and click Submit to start your
                 simulation.
               </p>
             </div>

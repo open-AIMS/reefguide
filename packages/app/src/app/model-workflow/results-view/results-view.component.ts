@@ -399,8 +399,7 @@ export class ResultsViewComponent implements AfterViewInit, OnDestroy {
       await embed(contentContainer, spec, {
         actions: true,
         theme: 'vox',
-        width: 1400,
-        height: 500
+        width: Math.max(500, this.vegaChartRef.nativeElement.clientWidth - 275)
       });
 
       console.log(`[${workspaceId}] Successfully rendered chart: ${chart.title}`);
