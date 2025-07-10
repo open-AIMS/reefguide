@@ -5,7 +5,9 @@ import {
   PreApprovedUser,
   StorageScheme,
   UserAction,
-  UserRole
+  UserRole,
+  ProjectType,
+  Project
 } from '@reefguide/db';
 
 // Auth schemas
@@ -458,3 +460,80 @@ export const invalidateCacheResponseSchema = z.object({
   })
 });
 export type InvalidateCacheResponse = z.infer<typeof invalidateCacheResponseSchema>;
+
+// ==================
+// Project Types and Schemas
+// ==================
+
+// Project Input Schemas
+export const CreateProjectInputSchema = z.object({
+  name: z.string().min(1, 'Project name is required'),
+  description: z.string().optional(),
+  type: z.nativeEnum(ProjectType),
+  project_state: z.any()
+});
+export type CreateProjectInput = z.infer<typeof CreateProjectInputSchema>;
+
+export const UpdateProjectInputSchema = z.object({
+  name: z.string().min(1, 'Project name is required').optional(),
+  description: z.string().optional(),
+  project_state: z.any().optional()
+});
+export type UpdateProjectInput = z.infer<typeof UpdateProjectInputSchema>;
+
+export const BulkCreateProjectsInputSchema = z.object({
+  projects: z.array(CreateProjectInputSchema).min(1, 'At least one project must be provided'),
+  userId: z.number().min(1, 'User ID is required')
+});
+export type BulkCreateProjectsInput = z.infer<typeof BulkCreateProjectsInputSchema>;
+
+// Query Schemas
+export const GetProjectsQuerySchema = z.object({
+  type: z.nativeEnum(ProjectType).optional(),
+  name: z.string().optional(),
+  userId: z.number().optional(),
+  limit: z.number().optional(),
+  offset: z.number().optional()
+});
+export type GetProjectsQuery = z.infer<typeof GetProjectsQuerySchema>;
+
+export const ProjectParamsSchema = z.object({
+  id: z.string().regex(/^\d+$/, 'Project ID must be a number')
+});
+export type ProjectParams = z.infer<typeof ProjectParamsSchema>;
+
+// Response Types
+export type CreateProjectResponse = {
+  project: Project;
+};
+
+export type UpdateProjectResponse = {
+  project: Project;
+};
+
+export type GetProjectResponse = {
+  project: Project;
+};
+
+export type GetProjectsResponse = {
+  projects: Project[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+};
+
+export type DeleteProjectResponse = {
+  message: string;
+};
+
+export type BulkCreateProjectsResponse = {
+  created: Project[];
+  errors: Array<{ name: string; error: string }>;
+  summary: {
+    totalRequested: number;
+    totalCreated: number;
+    totalErrors: number;
+  };
+};

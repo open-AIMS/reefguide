@@ -15,6 +15,11 @@ enum UserRole {
     DEFAULT
 }
 
+enum ProjectType {
+    SITE_SELECTION
+    ADRIA_ANALYSIS
+}
+
 // User - linked to passport js
 model User {
     id              Int               @id @default(autoincrement())
@@ -29,6 +34,7 @@ model User {
     jobRequests     JobRequest[]
     log             UserLog[]
     PreApprovedUser PreApprovedUser[]
+    projects        Project[]
 }
 
 enum UserAction {
@@ -72,6 +78,24 @@ model PreApprovedUser {
     used_at            DateTime?
 
     @@map("pre_approved_users")
+}
+
+// Project model - users can have multiple projects
+model Project {
+    id            Int         @id @default(autoincrement())
+    name          String
+    description   String?
+    type          ProjectType
+    // JSON field for project state - will be typed with Zod in application layer
+    project_state Json
+    created_at    DateTime    @default(now())
+    updated_at    DateTime    @updatedAt
+
+    // Relations
+    user    User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    user_id Int
+
+    @@map("projects")
 }
 
 // User submitted polygon - has notes

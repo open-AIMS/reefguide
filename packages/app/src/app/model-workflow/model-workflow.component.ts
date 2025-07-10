@@ -1,27 +1,41 @@
 // src/app/model-workflow/model-workflow.component.ts
-import { Component, computed, inject, signal, effect, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { MatToolbarModule } from '@angular/material/toolbar';
+import {
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  HostListener,
+  inject,
+  OnInit,
+  signal
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Project } from '@reefguide/db';
 import { JobDetailsResponse } from '@reefguide/types';
 import { WebApiService } from '../../api/web-api.service';
 import { JobStatusComponent } from '../jobs/job-status/job-status.component';
 import { JobStatusConfig, mergeJobConfig } from '../jobs/job-status/job-status.types';
 import {
-  ParameterConfigComponent,
-  ModelParameters
+  ModelParameters,
+  ParameterConfigComponent
 } from './parameter-config/parameter-config.component';
 import { ResultsViewComponent } from './results-view/results-view.component';
+import {
+  WorkspacePersistenceService,
+  WorkspaceState
+} from './services/workspace-persistence.service';
+import { toPersistedWorkspace, toRuntimeWorkspace } from './services/workspace-persistence.types';
 import { WorkspaceNameDialogComponent } from './workspace-name-dialog/workspace-name-dialog.component';
-import { WorkspacePersistenceService, WorkspaceState } from './services/workspace-persistence.service';
-import { toPersistedWorkspace, toRuntimeWorkspace, RuntimeWorkspace } from './services/workspace-persistence.types';
 
 type WorkflowState = 'configuring' | 'submitting' | 'monitoring' | 'viewing';
 
@@ -142,17 +156,21 @@ class WorkspaceService {
   templateUrl: './model-workflow.component.html',
   styleUrl: './model-workflow.component.scss'
 })
-export class ModelWorkflowComponent {
+export class ModelWorkflowComponent implements OnInit {
   private readonly api = inject(WebApiService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly persistenceService = inject(WorkspacePersistenceService);
   private readonly elementRef = inject(ElementRef);
 
-  // Workspace management
+  // Project and workspace management
+  private currentProject = signal<Project | null>(null);
   private workspaceCounter = signal(0);
   private workspaces = signal<Workspace[]>([]);
   private activeWorkspaceId = signal<string | null>(null);
+  private isLoading = signal(true);
 
   // Panel state management
   public parameterPanelCollapsed = signal(false);
@@ -179,18 +197,15 @@ export class ModelWorkflowComponent {
   });
 
   constructor() {
-    // Try to restore from persistence first
-    this.loadWorkspacesFromPersistence();
-
-    // Set up auto-save effect
+    // Set up auto-save effect - save to project_state whenever workspaces change
     effect(() => {
       const workspaces = this.workspaces();
       const activeId = this.activeWorkspaceId();
       const counter = this.workspaceCounter();
 
-      // Only save if we have workspaces (avoid saving empty state during initialization)
-      if (workspaces.length > 0) {
-        this.saveWorkspacesToPersistence();
+      // Only save if we have workspaces and a project loaded
+      if (workspaces.length > 0 && this.currentProject() && !this.isLoading()) {
+        this.saveWorkspacesToProject();
       }
     });
 
@@ -200,6 +215,132 @@ export class ModelWorkflowComponent {
       const element = this.elementRef.nativeElement as HTMLElement;
       element.style.setProperty('--left-panel-width', `${width}px`);
     });
+  }
+
+  ngOnInit(): void {
+    // Check for project ID in route
+    const projectIdParam = this.route.snapshot.paramMap.get('projectId');
+
+    if (projectIdParam) {
+      const projectId = parseInt(projectIdParam, 10);
+      if (isNaN(projectId)) {
+        this.handleError('Invalid project ID');
+        return;
+      }
+      this.loadExistingProject(projectId);
+    } else {
+      // No project ID, create new project
+      this.createNewProject();
+    }
+  }
+
+  // Load existing project and its workspaces from project_state
+  private loadExistingProject(projectId: number): void {
+    this.isLoading.set(true);
+
+    this.persistenceService.loadProject(projectId).subscribe({
+      next: project => {
+        this.currentProject.set(project);
+        this.loadWorkspacesFromProject();
+      },
+      error: error => {
+        console.error('Failed to load project:', error);
+        this.handleError('Failed to load project');
+      }
+    });
+  }
+
+  // Create a new project
+  private createNewProject(): void {
+    const projectName = `Coral Reef Analysis ${new Date().toLocaleDateString()}`;
+
+    this.persistenceService.createProject(projectName, 'Coral reef simulation project').subscribe({
+      next: project => {
+        this.currentProject.set(project);
+        // Update URL to include project ID
+        this.router.navigate(['/projects', project.id, 'adria'], { replaceUrl: true });
+        this.createDefaultWorkspace();
+        this.isLoading.set(false);
+      },
+      error: error => {
+        console.error('Failed to create project:', error);
+        this.handleError('Failed to create project');
+      }
+    });
+  }
+
+  // Load workspaces from the current project's project_state
+  private loadWorkspacesFromProject(): void {
+    this.persistenceService.loadWorkspaceState().subscribe({
+      next: savedState => {
+        if (savedState && savedState.workspaces.length > 0) {
+          // Restore from saved state
+          this.workspaceCounter.set(savedState.workspaceCounter);
+
+          const runtimeWorkspaces = savedState.workspaces.map(pw => toRuntimeWorkspace(pw));
+          this.workspaces.set(runtimeWorkspaces);
+
+          // Restore active workspace (with fallback)
+          const activeId =
+            savedState.activeWorkspaceId &&
+            runtimeWorkspaces.find(w => w.id === savedState.activeWorkspaceId)
+              ? savedState.activeWorkspaceId
+              : runtimeWorkspaces[0].id;
+
+          this.activeWorkspaceId.set(activeId);
+
+          // Initialize services for restored workspaces
+          runtimeWorkspaces.forEach(workspace => {
+            this.getWorkspaceService(workspace.id);
+          });
+
+          console.log(`Restored ${runtimeWorkspaces.length} workspaces from project`);
+        } else {
+          // No saved state, create default workspace
+          this.createDefaultWorkspace();
+        }
+        this.isLoading.set(false);
+      },
+      error: error => {
+        console.error('Failed to load workspace state:', error);
+        this.createDefaultWorkspace();
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  // Create default workspace
+  private createDefaultWorkspace(): void {
+    this.createWorkspaceWithName('Workspace 1');
+  }
+
+  // Save all workspaces to the project's project_state field
+  private saveWorkspacesToProject(): void {
+    if (!this.persistenceService.isProjectAvailable()) {
+      return;
+    }
+
+    const workspaces = this.workspaces();
+    const persistedWorkspaces = workspaces.map(w => toPersistedWorkspace(w));
+
+    const state: WorkspaceState = {
+      workspaces: persistedWorkspaces,
+      activeWorkspaceId: this.activeWorkspaceId(),
+      workspaceCounter: this.workspaceCounter()
+    };
+
+    this.persistenceService.saveWorkspaceState(state).subscribe({
+      error: error => {
+        console.error('Failed to save workspace state:', error);
+        this.snackBar.open('Failed to save workspace state', 'Dismiss', { duration: 3000 });
+      }
+    });
+  }
+
+  // Handle errors
+  private handleError(message: string): void {
+    this.snackBar.open(message, 'Dismiss', { duration: 5000 });
+    this.router.navigate(['/projects']);
   }
 
   // Panel management methods
@@ -234,61 +375,6 @@ export class ModelWorkflowComponent {
 
     this.isDragging.set(false);
     document.body.classList.remove('dragging-active');
-  }
-
-  // Load workspaces from persistence
-  private loadWorkspacesFromPersistence(): void {
-    if (!this.persistenceService.isStorageAvailable()) {
-      console.warn('Local storage not available, creating default workspace');
-      this.createWorkspaceWithName('Workspace 1');
-      return;
-    }
-
-    const savedState = this.persistenceService.loadWorkspaceState();
-
-    if (savedState && savedState.workspaces.length > 0) {
-      // Restore from saved state
-      this.workspaceCounter.set(savedState.workspaceCounter);
-
-      const runtimeWorkspaces = savedState.workspaces.map(pw => toRuntimeWorkspace(pw));
-      this.workspaces.set(runtimeWorkspaces);
-
-      // Restore active workspace (with fallback)
-      const activeId = savedState.activeWorkspaceId &&
-        runtimeWorkspaces.find(w => w.id === savedState.activeWorkspaceId)
-        ? savedState.activeWorkspaceId
-        : runtimeWorkspaces[0].id;
-
-      this.activeWorkspaceId.set(activeId);
-
-      // Initialize services for restored workspaces
-      runtimeWorkspaces.forEach(workspace => {
-        this.getWorkspaceService(workspace.id);
-      });
-
-      console.log(`Restored ${runtimeWorkspaces.length} workspaces from storage`);
-    } else {
-      // No saved state, create default workspace
-      this.createWorkspaceWithName('Workspace 1');
-    }
-  }
-
-  // Save workspaces to persistence
-  private saveWorkspacesToPersistence(): void {
-    if (!this.persistenceService.isStorageAvailable()) {
-      return;
-    }
-
-    const workspaces = this.workspaces();
-    const persistedWorkspaces = workspaces.map(w => toPersistedWorkspace(w));
-
-    const state: WorkspaceState = {
-      workspaces: persistedWorkspaces,
-      activeWorkspaceId: this.activeWorkspaceId(),
-      workspaceCounter: this.workspaceCounter()
-    };
-
-    this.persistenceService.saveWorkspaceState(state);
   }
 
   getWorkspaceService(workspaceId: string): WorkspaceService | null {

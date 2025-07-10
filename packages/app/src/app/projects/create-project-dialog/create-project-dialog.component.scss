@@ -1,0 +1,278 @@
+.dialog-subtitle {
+  margin: 8px 0 0 0;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.dialog-content {
+  padding: 24px !important;
+  margin: 0;
+  max-width: none;
+  min-height: 450px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.form-section {
+  margin-bottom: 32px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  h3 {
+    margin: 0 0 20px 0;
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.87);
+    padding-left: 0; // Ensure headings align with content
+  }
+}
+
+.project-type-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.project-type-option {
+  position: relative;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  transition: all 0.2s ease-in-out;
+  background-color: #fafafa;
+  overflow: hidden;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #1976d2;
+    background-color: #f5f5f5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &.selected {
+    border-color: #1976d2;
+    background-color: rgba(25, 118, 210, 0.05);
+    box-shadow: 0 2px 12px rgba(25, 118, 210, 0.2);
+
+    .project-type-content {
+      background-color: transparent;
+    }
+
+    .project-type-icon {
+      background-color: #1976d2;
+
+      mat-icon {
+        color: white;
+      }
+    }
+  }
+}
+
+.project-type-radio {
+  width: 100%;
+  margin: 0;
+
+  ::ng-deep .mat-radio-container {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 2;
+  }
+
+  ::ng-deep .mat-radio-outer-circle {
+    border-color: #1976d2;
+    border-width: 2px;
+  }
+
+  ::ng-deep .mat-radio-inner-circle {
+    background-color: #1976d2;
+  }
+
+  ::ng-deep .mat-radio-label {
+    width: 100%;
+    padding: 0;
+    align-items: stretch;
+  }
+
+  ::ng-deep .mat-radio-label-content {
+    width: 100%;
+    padding: 0;
+  }
+}
+
+.project-type-content {
+  padding: 24px;
+  padding-right: 72px; // Increased space for radio button + margin
+  width: 100%;
+  background-color: white;
+  border-radius: 10px;
+  margin: 2px;
+  box-sizing: border-box; // Ensure padding is included in width calculations
+}
+
+.project-type-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.project-type-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background-color: rgba(25, 118, 210, 0.1);
+  flex-shrink: 0;
+  transition: all 0.2s ease-in-out;
+
+  mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    color: #1976d2;
+    transition: all 0.2s ease-in-out;
+  }
+}
+
+.project-type-info {
+  flex: 1;
+  min-width: 0; // Allow text to wrap properly
+  max-width: 100%; // Prevent overflow
+  overflow-wrap: break-word; // Break long words if needed
+  word-wrap: break-word; // Legacy support
+
+  h4 {
+    margin: 0 0 8px 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.87);
+    line-height: 1.3;
+    overflow-wrap: break-word;
+  }
+}
+
+.project-type-description {
+  margin: 0;
+  color: rgba(0, 0, 0, 0.65);
+  line-height: 1.5;
+  font-size: 0.9rem;
+  font-weight: 400;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto; // Allow hyphenation for better text flow
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 16px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.field-error {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: #f44336;
+}
+
+.dialog-actions {
+  padding: 24px !important;
+  margin: 0;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #e0e0e0;
+
+  button {
+    min-width: 80px;
+    height: 40px;
+
+    &[mat-raised-button] {
+      min-width: 140px;
+    }
+  }
+}
+
+.button-spinner {
+  margin-right: 8px;
+
+  ::ng-deep circle {
+    stroke: white;
+  }
+}
+
+// Dialog title styling to ensure proper padding
+::ng-deep .mat-mdc-dialog-title {
+  padding: 16px 24px 0 24px !important;
+  margin: 0 !important;
+}
+
+// Ensure dialog container can grow
+::ng-deep .mat-mdc-dialog-container {
+  max-height: 80vh !important;
+  height: auto !important;
+}
+
+// Success and error snackbar styles
+::ng-deep .success-snackbar {
+  background-color: #4caf50 !important;
+  color: white !important;
+}
+
+::ng-deep .error-snackbar {
+  background-color: #f44336 !important;
+  color: white !important;
+}
+
+// Responsive adjustments
+@media (max-width: 600px) {
+  .dialog-content {
+    padding: 16px !important;
+    min-height: 400px;
+    max-height: 85vh; // Slightly more space on mobile
+  }
+
+  ::ng-deep .mat-mdc-dialog-title {
+    padding: 12px 16px 0 16px !important;
+  }
+
+  .dialog-actions {
+    padding: 16px !important;
+  }
+
+  .project-type-content {
+    padding: 20px;
+    padding-right: 64px; // Adjusted for mobile radio button space
+  }
+
+  .project-type-header {
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .project-type-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+
+    mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .project-type-info h4 {
+    font-size: 1.125rem;
+  }
+
+  .project-type-description {
+    font-size: 0.875rem;
+  }
+}

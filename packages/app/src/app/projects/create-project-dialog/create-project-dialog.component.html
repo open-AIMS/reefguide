@@ -1,0 +1,105 @@
+<form [formGroup]="createForm" (ngSubmit)="onSubmit()">
+  <div mat-dialog-title>
+    <h2>Create New Project</h2>
+    <p class="dialog-subtitle">Choose a project type and provide basic information to get started.</p>
+  </div>
+
+  <div mat-dialog-content class="dialog-content">
+
+    <!-- Project Type Selection -->
+    <div class="form-section">
+      <h3>Project Type</h3>
+      <mat-radio-group formControlName="type" class="project-type-group">
+        <div
+          *ngFor="let projectType of projectTypes"
+          class="project-type-option"
+          [class.selected]="createForm.get('type')?.value === projectType.value"
+        >
+          <mat-radio-button [value]="projectType.value" class="project-type-radio">
+            <div class="project-type-content">
+              <div class="project-type-header">
+                <div class="project-type-icon">
+                  <mat-icon>{{ projectType.icon }}</mat-icon>
+                </div>
+                <div class="project-type-info">
+                  <h4>{{ projectType.label }}</h4>
+                  <p class="project-type-description">
+                    {{ projectType.description }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </mat-radio-button>
+        </div>
+      </mat-radio-group>
+
+      <mat-error *ngIf="isFieldInvalid('type')" class="field-error">
+        {{ getFieldError('type') }}
+      </mat-error>
+    </div>
+
+    <!-- Project Details -->
+    <div class="form-section">
+      <h3>Project Details</h3>
+
+      <!-- Project Name -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Project Name</mat-label>
+        <input
+          matInput
+          formControlName="name"
+          placeholder="Enter a descriptive name for your project"
+          maxlength="255"
+          required
+        />
+        <mat-hint align="end">{{ createForm.get('name')?.value?.length || 0 }}/255</mat-hint>
+        <mat-error *ngIf="isFieldInvalid('name')">
+          {{ getFieldError('name') }}
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Project Description -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Description (Optional)</mat-label>
+        <textarea
+          matInput
+          formControlName="description"
+          placeholder="Provide additional details about your project goals and scope"
+          rows="4"
+          maxlength="1000"
+        ></textarea>
+        <mat-hint align="end">{{ createForm.get('description')?.value?.length || 0 }}/1000</mat-hint>
+        <mat-error *ngIf="isFieldInvalid('description')">
+          {{ getFieldError('description') }}
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+  </div>
+
+  <div mat-dialog-actions class="dialog-actions">
+    <button
+      mat-button
+      type="button"
+      (click)="onCancel()"
+      [disabled]="isLoading$ | async"
+    >
+      Cancel
+    </button>
+
+    <button
+      mat-raised-button
+      color="primary"
+      type="submit"
+      [disabled]="createForm.invalid || (isLoading$ | async)"
+    >
+      <mat-spinner
+        *ngIf="isLoading$ | async"
+        diameter="20"
+        class="button-spinner"
+      ></mat-spinner>
+      <span *ngIf="!(isLoading$ | async)">Create Project</span>
+      <span *ngIf="isLoading$ | async">Creating...</span>
+    </button>
+  </div>
+</form>
