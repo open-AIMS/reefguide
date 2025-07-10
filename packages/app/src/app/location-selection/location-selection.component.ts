@@ -101,8 +101,22 @@ export class LocationSelectionComponent {
    * One-time setup of Map
    */
   private setupMap(map: ReefMapComponent) {
-    map.view.setCenter(fromLonLat([147.6419, -17.1427]));
-    map.view.setZoom(8);
+    // Note: cannot View.setProjection, need to set at View construction
+    const projection = map.view.getProjection();
+    console.log('Map View projection', projection);
+    const units = projection.getUnits();
+    // TODO does OpenLayers have higher-level coord API to do equivalent?
+    const point = [148, -18];
+    if (units === 'm') {
+      // convert to Web Mercator meter coords from lon/lat
+      map.view.setCenter(fromLonLat(point));
+    } else {
+      map.view.setCenter(point);
+    }
+
+    // Note: zoom values differ between projections
+    // TODO how to normalize zoom values?
+    map.view.setZoom(units === 'm' ? 8 : 6);
     map.view.setMinZoom(4);
     map.view.setMaxZoom(19);
   }

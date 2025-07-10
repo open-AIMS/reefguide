@@ -1,4 +1,5 @@
 import proj4 from 'proj4';
+import { get as getProjection } from 'ol/proj.js';
 import { register } from 'ol/proj/proj4';
 
 /**
@@ -9,11 +10,20 @@ import { register } from 'ol/proj/proj4';
  *
  * https://openlayers.org/doc/tutorials/raster-reprojection.html
  * https://epsg.io/7844
+ * https://spatialreference.org/ref/epsg/7844/
  */
 export function openlayersRegisterEPSG7844() {
-  proj4.defs('EPSG:7844', '+proj=longlat +ellps=GRS80 +no_defs +type=crs');
+  const projId = 'EPSG:7844';
+  proj4.defs(projId, '+proj=longlat +ellps=GRS80 +no_defs +type=crs');
   register(proj4);
-  // REVIEW docs then setExtent, but this is not listed at epsg.io
-  // const proj27700 = getProjection('EPSG:27700');
-  // proj27700.setExtent([0, 0, 700000, 1300000]);
+  // Important: the WKT 2 BBOX value is incorrect for setExtent [-60.55, 93.41, -8.47, 173.34];
+  // Instead, we want WGS84 Bounds: 93.41, -60.55, 173.34, -8.47 listed at spatialreference.org
+  // lat/lon pairs are flipped between these formats
+  const bounds = [93.41, -60.55, 173.34, -8.47];
+  const proj7844 = getProjection(projId);
+  proj7844!.setExtent(bounds);
+
+  // For reference, if the extent were in other coords you would transform like this:
+  // convert from EPSG:4326 coords to EPSG:7844
+  // const extent = transformExtent(bounds, 'EPSG:4326', projId);
 }

@@ -28,6 +28,10 @@ export class ReefMapComponent implements AfterViewInit {
   view: View = new View({
     center: [0, 0],
     zoom: 2
+    // projection needs to be set at View construction time
+    // this does adjust basemap tiles, which makes text a bit ugly
+    // ideally would have basemap native to projection
+    // projection: 'EPSG:7844'
   });
 
   // will be defined after view init
