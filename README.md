@@ -2,6 +2,8 @@
 
 ReefGuide is a Reef decision support platform which integrates a collection of capabilities aimed to help Reef managers and researchers make informed decision about Reef intervention.
 
+## View the [Docs](https://open-aims.github.io/reefguide)
+
 ## Site Selection (ReefGuide)
 
 ReefGuide brings together multiple data layers to provide an ecologically informed site selection capability. Reef manager's and researchers can provide suitable boundaries for key ecological and bathymetric factors over the entire GBR, and see suggested deployment locations which maximise these factors on a high resolution map.
