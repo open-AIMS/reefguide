@@ -164,3 +164,7 @@ VSCode _launch.json_ has a few debugging configurations:
 - "Debug app in Chrome" - launch Chrome and attach debugger
 - "Debug web-api:dev" - launch node debugger targeting web-api `pnpm run dev`
   - Before launching, open a terminal and run: `pnpm run dev-no-web-api`
+
+## Migrating production DB
+
+See [migrating DBs](./docs/migrating-production-db.md).
