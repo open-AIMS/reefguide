@@ -1,11 +1,6 @@
 // src/app/model-workflow/services/workspace-persistence.service.ts
-import { Injectable, inject } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { Injectable } from '@angular/core';
 import { ModelParameters } from '../parameter-config/parameter-config.component';
-import { CreateProjectInput, UpdateProjectInput } from '@reefguide/types';
-import { Project, ProjectType } from '@reefguide/db';
-import { WebApiService } from '../../../api/web-api.service';
 
 export interface PersistedWorkspace {
   id: string;
@@ -25,148 +20,111 @@ export interface WorkspaceState {
   providedIn: 'root'
 })
 export class WorkspacePersistenceService {
-  private readonly api = inject(WebApiService);
-  private currentProjectId: number | null = null;
+  private readonly STORAGE_KEY = 'reef-guide-workspaces';
+  private readonly VERSION = '1.0';
+  private readonly VERSION_KEY = 'reef-guide-workspaces-version';
 
-  setCurrentProjectId(projectId: number): void {
-    this.currentProjectId = projectId;
+  constructor() {
+    this.migrateIfNeeded();
   }
 
-  getCurrentProjectId(): number | null {
-    return this.currentProjectId;
-  }
-
-  // Save complete workspace state to the project's project_state field
-  saveWorkspaceState(state: WorkspaceState): Observable<void> {
-    if (!this.currentProjectId) {
-      console.warn('No project ID set, cannot save workspace state');
-      return of(void 0);
+  // Save complete workspace state
+  saveWorkspaceState(state: WorkspaceState): void {
+    try {
+      const serializedState = JSON.stringify(state);
+      localStorage.setItem(this.STORAGE_KEY, serializedState);
+      localStorage.setItem(this.VERSION_KEY, this.VERSION);
+    } catch (error) {
+      console.warn('Failed to save workspace state:', error);
     }
-
-    const updateData: UpdateProjectInput = {
-      project_state: state
-    };
-
-    return this.api.updateProject(this.currentProjectId, updateData).pipe(
-      map(() => void 0),
-      catchError(error => {
-        console.warn('Failed to save workspace state:', error);
-        return of(void 0); // Don't throw error to avoid breaking the app
-      })
-    );
   }
 
-  // Load complete workspace state from the project's project_state field
-  loadWorkspaceState(): Observable<WorkspaceState | null> {
-    if (!this.currentProjectId) {
-      return of(null);
+  // Load complete workspace state
+  loadWorkspaceState(): WorkspaceState | null {
+    try {
+      const serializedState = localStorage.getItem(this.STORAGE_KEY);
+      if (!serializedState) {
+        return null;
+      }
+
+      const state: WorkspaceState = JSON.parse(serializedState);
+
+      // Validate the loaded state
+      if (!this.isValidWorkspaceState(state)) {
+        console.warn('Invalid workspace state found, clearing storage');
+        this.clearWorkspaceState();
+        return null;
+      }
+
+      return state;
+    } catch (error) {
+      console.warn('Failed to load workspace state:', error);
+      this.clearWorkspaceState();
+      return null;
     }
-
-    return this.api.getProject(this.currentProjectId).pipe(
-      map(response => {
-        const project = response.project;
-
-        if (!project.project_state) {
-          return null;
-        }
-
-        const state = project.project_state as any as WorkspaceState;
-
-        // Validate the loaded state
-        if (!this.isValidWorkspaceState(state)) {
-          console.warn('Invalid workspace state found in project');
-          return null;
-        }
-
-        return state;
-      }),
-      catchError(error => {
-        console.warn('Failed to load workspace state:', error);
-        return of(null);
-      })
-    );
   }
 
   // Clear all workspace state
-  clearWorkspaceState(): Observable<void> {
-    if (!this.currentProjectId) {
-      return throwError(() => new Error('No project ID set'));
+  clearWorkspaceState(): void {
+    try {
+      localStorage.removeItem(this.STORAGE_KEY);
+      localStorage.removeItem(this.VERSION_KEY);
+    } catch (error) {
+      console.warn('Failed to clear workspace state:', error);
+    }
+  }
+
+  // Save a single workspace
+  saveWorkspace(workspace: PersistedWorkspace): void {
+    const currentState = this.loadWorkspaceState();
+    if (!currentState) return;
+
+    const existingIndex = currentState.workspaces.findIndex(w => w.id === workspace.id);
+    if (existingIndex >= 0) {
+      currentState.workspaces[existingIndex] = workspace;
+    } else {
+      currentState.workspaces.push(workspace);
     }
 
-    const updateData: UpdateProjectInput = {
-      project_state: null
-    };
-
-    return this.api.updateProject(this.currentProjectId, updateData).pipe(
-      map(() => void 0),
-      catchError(error => {
-        console.warn('Failed to clear workspace state:', error);
-        return throwError(() => error);
-      })
-    );
+    this.saveWorkspaceState(currentState);
   }
 
-  // Create a new project for the workflow
-  createProject(name: string, description?: string): Observable<Project> {
-    const projectData: CreateProjectInput = {
-      name,
-      description,
-      type: ProjectType.ADRIA_ANALYSIS,
-      project_state: null
-    };
+  // Remove a workspace
+  removeWorkspace(workspaceId: string): void {
+    const currentState = this.loadWorkspaceState();
+    if (!currentState) return;
 
-    return this.api.createProject(projectData).pipe(
-      map(response => {
-        this.setCurrentProjectId(response.project.id);
-        return response.project;
-      }),
-      catchError(error => {
-        console.error('Failed to create project:', error);
-        return throwError(() => error);
-      })
-    );
-  }
+    currentState.workspaces = currentState.workspaces.filter(w => w.id !== workspaceId);
 
-  // Update project metadata (name, description)
-  updateProject(name?: string, description?: string): Observable<Project> {
-    if (!this.currentProjectId) {
-      return throwError(() => new Error('No project ID set'));
+    // Update active workspace if it was removed
+    if (currentState.activeWorkspaceId === workspaceId) {
+      currentState.activeWorkspaceId = currentState.workspaces.length > 0
+        ? currentState.workspaces[0].id
+        : null;
     }
 
-    const updateData: UpdateProjectInput = {};
-    if (name !== undefined) updateData.name = name;
-    if (description !== undefined) updateData.description = description;
-
-    return this.api.updateProject(this.currentProjectId, updateData).pipe(
-      map(response => response.project),
-      catchError(error => {
-        console.error('Failed to update project:', error);
-        return throwError(() => error);
-      })
-    );
+    this.saveWorkspaceState(currentState);
   }
 
-  // Load project by ID
-  loadProject(projectId: number): Observable<Project> {
-    this.setCurrentProjectId(projectId);
+  // Update active workspace
+  setActiveWorkspace(workspaceId: string): void {
+    const currentState = this.loadWorkspaceState();
+    if (!currentState) return;
 
-    return this.api.getProject(projectId).pipe(
-      map(response => response.project),
-      catchError(error => {
-        console.error('Failed to load project:', error);
-        return throwError(() => error);
-      })
-    );
+    currentState.activeWorkspaceId = workspaceId;
+    this.saveWorkspaceState(currentState);
   }
 
-  // Check if we have a current project
-  isProjectAvailable(): boolean {
-    return this.currentProjectId !== null;
-  }
-
-  // Check if storage is available (always true for DB persistence)
+  // Check if storage is available
   isStorageAvailable(): boolean {
-    return this.isProjectAvailable();
+    try {
+      const testKey = '__storage_test__';
+      localStorage.setItem(testKey, 'test');
+      localStorage.removeItem(testKey);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   // Validate workspace state structure
@@ -192,5 +150,23 @@ export class WorkspacePersistenceService {
       typeof workspace.createdAt === 'string' &&
       typeof workspace.lastModified === 'string'
     );
+  }
+
+  // Handle version migrations
+  private migrateIfNeeded(): void {
+    const currentVersion = localStorage.getItem(this.VERSION_KEY);
+
+    if (!currentVersion) {
+      // First time or old version without versioning
+      const existingData = localStorage.getItem(this.STORAGE_KEY);
+      if (existingData) {
+        console.log('Migrating workspace data to new version');
+        // Could add migration logic here if needed
+      }
+      localStorage.setItem(this.VERSION_KEY, this.VERSION);
+    }
+
+    // Future migrations can be added here
+    // if (currentVersion === '1.0' && this.VERSION === '1.1') { ... }
   }
 }
