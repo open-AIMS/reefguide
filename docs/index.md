@@ -8,7 +8,7 @@ Welcome to the docs, pages are listed below
 - [Migrating production DB](./migrating-production-db.md) - instructions on how to migrate your databases using the Prisma ORM
 - [Deploying CDK app](./deploying-with-cdk.md) - instructions on how to configure and use CDK to deploy the AWS infrastructure
 
-`ReefGuide`, along with [this repo](https://github.com/open-AIMS/reefguide), contains the following repos and components
+`ReefGuide`, along with [this repo](https://github.com/open-AIMS/reefguide), utilises or refers to components in the following repos:
 
 - [ReefGuideWorker.jl](https://github.com/open-AIMS/ReefGuideWorker.jl) - Julia Job Worker to run ReefGuide algorithms
 - [ReefGuide.jl](https://github.com/open-AIMS/ReefGuide.jl) - ReefGuide Julia library code
