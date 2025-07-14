@@ -64,7 +64,9 @@ export class ProjectService {
     });
 
     if (existingProject) {
-      throw new BadRequestException(`Project with name "${input.name}" already exists for this user`);
+      throw new BadRequestException(
+        `Project with name "${input.name}" already exists for this user`
+      );
     }
 
     return await this.prisma.project.create({
@@ -170,7 +172,15 @@ export class ProjectService {
    * @returns Promise<Project> - The updated project
    * @throws Error if project not found or user doesn't have permission
    */
-  async update({ id, input, userId }: { id: number; input: UpdateProjectInput; userId?: number }): Promise<Project> {
+  async update({
+    id,
+    input,
+    userId
+  }: {
+    id: number;
+    input: UpdateProjectInput;
+    userId?: number;
+  }): Promise<Project> {
     // Check if project exists and user has permission
     const existing = await this.prisma.project.findFirst({
       where: {
@@ -180,7 +190,9 @@ export class ProjectService {
     });
 
     if (!existing) {
-      throw new NotFoundException(`Project with ID ${id} not found` + (userId ? ' for this user' : ''));
+      throw new NotFoundException(
+        `Project with ID ${id} not found` + (userId ? ' for this user' : '')
+      );
     }
 
     // If updating name, check for conflicts within the same user
@@ -194,7 +206,9 @@ export class ProjectService {
       });
 
       if (nameConflict) {
-        throw new BadRequestException(`Project with name "${input.name}" already exists for this user`);
+        throw new BadRequestException(
+          `Project with name "${input.name}" already exists for this user`
+        );
       }
     }
 

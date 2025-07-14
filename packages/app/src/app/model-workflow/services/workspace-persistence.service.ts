@@ -108,9 +108,8 @@ export class WorkspacePersistenceService {
 
         // Update active workspace if it was removed
         if (currentState.activeWorkspaceId === workspaceId) {
-          currentState.activeWorkspaceId = currentState.workspaces.length > 0
-            ? currentState.workspaces[0].id
-            : null;
+          currentState.activeWorkspaceId =
+            currentState.workspaces.length > 0 ? currentState.workspaces[0].id : null;
         }
 
         return currentState;
@@ -167,16 +166,18 @@ export class WorkspacePersistenceService {
       workspaces: state
     };
 
-    return this.api.updateProject(this.projectId, {
-      project_state: projectState
-    }).pipe(
-      map(() => void 0),
-      catchError(error => {
-        console.warn('Failed to save workspace state to backend:', error);
-        // Fallback to localStorage
-        return this.saveToLocalStorage(state);
+    return this.api
+      .updateProject(this.projectId, {
+        project_state: projectState
       })
-    );
+      .pipe(
+        map(() => void 0),
+        catchError(error => {
+          console.warn('Failed to save workspace state to backend:', error);
+          // Fallback to localStorage
+          return this.saveToLocalStorage(state);
+        })
+      );
   }
 
   private loadFromBackend(): Observable<WorkspaceState | null> {
@@ -215,16 +216,18 @@ export class WorkspacePersistenceService {
       return throwError(() => new Error('Project ID not set'));
     }
 
-    return this.api.updateProject(this.projectId, {
-      project_state: {}
-    }).pipe(
-      map(() => void 0),
-      catchError(error => {
-        console.warn('Failed to clear workspace state from backend:', error);
-        // Fallback to localStorage
-        return this.clearFromLocalStorage();
+    return this.api
+      .updateProject(this.projectId, {
+        project_state: {}
       })
-    );
+      .pipe(
+        map(() => void 0),
+        catchError(error => {
+          console.warn('Failed to clear workspace state from backend:', error);
+          // Fallback to localStorage
+          return this.clearFromLocalStorage();
+        })
+      );
   }
 
   // ==================

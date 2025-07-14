@@ -1,5 +1,15 @@
 // src/app/model-workflow/model-workflow.component.ts
-import { Component, computed, inject, signal, effect, HostListener, ElementRef, OnInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  signal,
+  effect,
+  HostListener,
+  ElementRef,
+  OnInit,
+  OnDestroy
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -21,8 +31,15 @@ import {
 } from './parameter-config/parameter-config.component';
 import { ResultsViewComponent } from './results-view/results-view.component';
 import { WorkspaceNameDialogComponent } from './workspace-name-dialog/workspace-name-dialog.component';
-import { WorkspacePersistenceService, WorkspaceState } from './services/workspace-persistence.service';
-import { toPersistedWorkspace, toRuntimeWorkspace, RuntimeWorkspace } from './services/workspace-persistence.types';
+import {
+  WorkspacePersistenceService,
+  WorkspaceState
+} from './services/workspace-persistence.service';
+import {
+  toPersistedWorkspace,
+  toRuntimeWorkspace,
+  RuntimeWorkspace
+} from './services/workspace-persistence.types';
 
 type WorkflowState = 'configuring' | 'submitting' | 'monitoring' | 'viewing';
 
@@ -197,29 +214,31 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // Extract project ID from route and initialize workspace state
-    this.route.params.pipe(
-      takeUntil(this.destroy$),
-      tap(params => {
-        const projectId = params['projectId'] ? parseInt(params['projectId'], 10) : null;
-        this.projectId.set(projectId);
+    this.route.params
+      .pipe(
+        takeUntil(this.destroy$),
+        tap(params => {
+          const projectId = params['projectId'] ? parseInt(params['projectId'], 10) : null;
+          this.projectId.set(projectId);
 
-        if (projectId) {
-          this.persistenceService.setProjectId(projectId);
+          if (projectId) {
+            this.persistenceService.setProjectId(projectId);
+          }
+        }),
+        switchMap(() => this.loadWorkspacesFromPersistence())
+      )
+      .subscribe({
+        next: () => {
+          this.isLoading.set(false);
+          console.log('Workspace initialization complete');
+        },
+        error: error => {
+          console.error('Failed to initialize workspaces:', error);
+          this.isLoading.set(false);
+          // Create default workspace as fallback
+          this.createWorkspaceWithName('Workspace 1');
         }
-      }),
-      switchMap(() => this.loadWorkspacesFromPersistence())
-    ).subscribe({
-      next: () => {
-        this.isLoading.set(false);
-        console.log('Workspace initialization complete');
-      },
-      error: (error) => {
-        console.error('Failed to initialize workspaces:', error);
-        this.isLoading.set(false);
-        // Create default workspace as fallback
-        this.createWorkspaceWithName('Workspace 1');
-      }
-    });
+      });
   }
 
   ngOnDestroy(): void {
@@ -278,10 +297,11 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
           this.workspaces.set(runtimeWorkspaces);
 
           // Restore active workspace (with fallback)
-          const activeId = savedState.activeWorkspaceId &&
+          const activeId =
+            savedState.activeWorkspaceId &&
             runtimeWorkspaces.find(w => w.id === savedState.activeWorkspaceId)
-            ? savedState.activeWorkspaceId
-            : runtimeWorkspaces[0].id;
+              ? savedState.activeWorkspaceId
+              : runtimeWorkspaces[0].id;
 
           this.activeWorkspaceId.set(activeId);
 
@@ -317,16 +337,17 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
         workspaceCounter: this.workspaceCounter()
       };
 
-      this.persistenceService.saveWorkspaceState(state).pipe(
-        takeUntil(this.destroy$)
-      ).subscribe({
-        next: () => {
-          console.log('Workspace state saved successfully');
-        },
-        error: (error) => {
-          console.warn('Failed to save workspace state:', error);
-        }
-      });
+      this.persistenceService
+        .saveWorkspaceState(state)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            console.log('Workspace state saved successfully');
+          },
+          error: error => {
+            console.warn('Failed to save workspace state:', error);
+          }
+        });
     }, 500); // 500ms debounce
   }
 

@@ -9,17 +9,14 @@
       [(ngModel)]="workspaceName"
       (keyup.enter)="onSave()"
       placeholder="Enter workspace name"
-      #nameInput>
+      #nameInput
+    />
   </mat-form-field>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
   <button mat-button (click)="onCancel()">Cancel</button>
-  <button
-    mat-raised-button
-    color="primary"
-    [disabled]="!workspaceName.trim()"
-    (click)="onSave()">
+  <button mat-raised-button color="primary" [disabled]="!workspaceName.trim()" (click)="onSave()">
     {{ isRename ? 'Rename' : 'Create' }}
   </button>
 </mat-dialog-actions>

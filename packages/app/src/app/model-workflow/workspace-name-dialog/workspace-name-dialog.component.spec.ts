@@ -9,8 +9,7 @@ describe('WorkspaceNameDialogComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [WorkspaceNameDialogComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(WorkspaceNameDialogComponent);
     component = fixture.componentInstance;

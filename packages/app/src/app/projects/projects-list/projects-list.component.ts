@@ -14,7 +14,18 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { Project } from '@reefguide/db';
-import { BehaviorSubject, combineLatest, debounceTime, distinctUntilChanged, map, Observable, startWith, switchMap, merge, EMPTY } from 'rxjs';
+import {
+  BehaviorSubject,
+  combineLatest,
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  Observable,
+  startWith,
+  switchMap,
+  merge,
+  EMPTY
+} from 'rxjs';
 import { WebApiService } from '../../../api/web-api.service';
 import { CreateProjectDialogComponent } from '../create-project-dialog/create-project-dialog.component';
 
@@ -56,17 +67,12 @@ export class ProjectsListComponent implements OnInit {
   private pageEvent$ = new BehaviorSubject<PageEvent>({ pageIndex: 0, pageSize: 10, length: 0 });
 
   // All projects from the server
-  allProjects$ = this.webApi.getUserProjects().pipe(
-    map(response => response.projects)
-  );
+  allProjects$ = this.webApi.getUserProjects().pipe(map(response => response.projects));
 
   // Filtered projects based on search
   filteredProjects$: Observable<Project[]> = combineLatest([
     this.allProjects$,
-    this.searchQuery$.pipe(
-      debounceTime(300),
-      distinctUntilChanged()
-    )
+    this.searchQuery$.pipe(debounceTime(300), distinctUntilChanged())
   ]).pipe(
     map(([projects, searchQuery]) => {
       if (!searchQuery.trim()) {
@@ -74,10 +80,11 @@ export class ProjectsListComponent implements OnInit {
       }
 
       const query = searchQuery.toLowerCase().trim();
-      return projects.filter(project =>
-        project.name.toLowerCase().includes(query) ||
-        (project.description && project.description.toLowerCase().includes(query)) ||
-        project.type.toLowerCase().includes(query)
+      return projects.filter(
+        project =>
+          project.name.toLowerCase().includes(query) ||
+          (project.description && project.description.toLowerCase().includes(query)) ||
+          project.type.toLowerCase().includes(query)
       );
     })
   );
@@ -104,10 +111,7 @@ export class ProjectsListComponent implements OnInit {
     });
 
     // Reset to first page when search changes
-    this.searchQuery$.pipe(
-      debounceTime(300),
-      distinctUntilChanged()
-    ).subscribe(() => {
+    this.searchQuery$.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => {
       this.pageEvent$.next({ pageIndex: 0, pageSize: this.pageSize, length: 0 });
     });
   }
@@ -155,12 +159,12 @@ export class ProjectsListComponent implements OnInit {
     switch (project.type) {
       case 'ADRIA_ANALYSIS':
         this.router.navigate(['/adria', project.id]);
-        console.log("Ran nav function")
+        console.log('Ran nav function');
         break;
       case 'SITE_SELECTION':
         // Navigate to site selection workflow when available
         this.router.navigate(['/location-selection', project.id]);
-        console.log("Ran nav function")
+        console.log('Ran nav function');
         break;
       default:
         console.warn('Unknown project type:', project.type);
@@ -172,9 +176,7 @@ export class ProjectsListComponent implements OnInit {
 
   refreshProjects() {
     this.isLoading$.next(true);
-    this.allProjects$ = this.webApi.getUserProjects().pipe(
-      map(response => response.projects)
-    );
+    this.allProjects$ = this.webApi.getUserProjects().pipe(map(response => response.projects));
 
     this.allProjects$.subscribe(() => {
       this.isLoading$.next(false);

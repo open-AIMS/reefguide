@@ -411,7 +411,7 @@ export class ParameterConfigComponent {
         }),
         debounceTime(500), // Debounce only the auto-save, not the UI updates
         distinctUntilChanged((prev, curr) => {
-          console.log("Debounced param check")
+          console.log('Debounced param check');
           // Only emit if form values actually changed (deep comparison)
           return JSON.stringify(prev) === JSON.stringify(curr);
         })

@@ -62,7 +62,8 @@
         <button
           mat-menu-item
           (click)="copyParametersToNewWorkspace(workspace.id)"
-          [disabled]="!workspace.parameters">
+          [disabled]="!workspace.parameters"
+        >
           <mat-icon>content_copy</mat-icon>
           <span>Copy parameters to new workspace</span>
         </button>
@@ -147,8 +148,11 @@
             <div class="instructions-content">
               <mat-icon class="instructions-icon">science</mat-icon>
               <p>
-                Configure your model parameters {{ parameterPanelCollapsed() ? 'by showing the parameter panel' : 'on the left' }} and click Submit to start your
-                simulation.
+                Configure your model parameters
+                {{
+                  parameterPanelCollapsed() ? 'by showing the parameter panel' : 'on the left'
+                }}
+                and click Submit to start your simulation.
               </p>
             </div>
           </mat-card-content>

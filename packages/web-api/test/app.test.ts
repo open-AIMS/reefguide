@@ -9,7 +9,15 @@ import { BASE_ROLES } from '../src/auth/routes';
 import { decodeRefreshToken, encodeRefreshToken } from '../src/auth/utils';
 import { InvalidRefreshTokenException } from '../src/exceptions';
 import { JobService } from '../src/services/jobs';
-import { adminToken, clearDbs, user1Email, user1Token, user2Email, user2Token, userSetup } from './utils';
+import {
+  adminToken,
+  clearDbs,
+  user1Email,
+  user1Token,
+  user2Email,
+  user2Token,
+  userSetup
+} from './utils';
 
 afterAll(async () => {
   // clear when finished
@@ -2178,7 +2186,7 @@ describe('API', () => {
 
     describe('POST /api/projects/bulk', () => {
       it('should bulk create projects (admin only)', async () => {
-        const user2 = await prisma.user.findUnique({ where: { email: user2Email} });
+        const user2 = await prisma.user.findUnique({ where: { email: user2Email } });
 
         const res = await authRequest(app, 'admin')
           .post('/api/projects/bulk')

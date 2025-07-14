@@ -18,7 +18,7 @@ interface ProjectTypeOption {
   value: ProjectType;
   label: string;
   description: string;
-  icon: string; // Placeholder for icon
+  icon: string;
 }
 
 @Component({
@@ -53,14 +53,14 @@ export class CreateProjectDialogComponent {
       label: 'Site Selection',
       description:
         'Analyze and select optimal sites for reef restoration projects based on environmental criteria and constraints.',
-      icon: 'location_on' // Placeholder - you can replace with your actual icon
+      icon: 'location_on'
     },
     {
       value: 'ADRIA_ANALYSIS',
       label: 'ADRIA Analysis',
       description:
         'Perform comprehensive reef ecosystem modeling and intervention analysis using the ADRIA platform.',
-      icon: 'analytics' // Placeholder - you can replace with your actual icon
+      icon: 'analytics'
     }
   ];
 
