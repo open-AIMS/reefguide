@@ -12,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CommonModule } from '@angular/common';
 import { AdriaModelRunInput } from '@reefguide/types';
-import { debounceTime } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, tap } from 'rxjs/operators';
 
 interface ParameterRange {
   lower: number;
@@ -401,15 +401,23 @@ export class ParameterConfigComponent {
   fogYearStartRange = signal<ParameterRange>({ lower: 2, upper: 25 });
 
   constructor() {
-    // Subscribe to form changes to update range displays immediately (no debounce for UI updates)
-    this.configForm.valueChanges.subscribe(() => {
-      this.updateRangeSignals();
-    });
-
-    // Subscribe to form changes with debounce for auto-save (performance optimization)
+    // Single subscription to form changes with proper handling
     this.configForm.valueChanges
-      .pipe(debounceTime(500)) // Wait 500ms after user stops typing/sliding
-      .subscribe(() => {
+      .pipe(
+        tap(() => {
+          console.log('Tap first change');
+          // Update range signals immediately for UI responsiveness
+          this.updateRangeSignals();
+        }),
+        debounceTime(500), // Debounce only the auto-save, not the UI updates
+        distinctUntilChanged((prev, curr) => {
+          console.log("Debounced param check")
+          // Only emit if form values actually changed (deep comparison)
+          return JSON.stringify(prev) === JSON.stringify(curr);
+        })
+      )
+      .subscribe(formValue => {
+        console.log('Actual change');
         // Auto-save: emit parameters when form changes and is valid
         if (this.configForm.valid && this.validateRanges()) {
           const parameters = this.buildModelParameters();

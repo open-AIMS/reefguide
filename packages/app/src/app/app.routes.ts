@@ -3,12 +3,12 @@ import { Routes } from '@angular/router';
 import { JobsTableComponent } from './jobs/jobs-table/jobs-table.component';
 
 export const routes: Routes = [
-  //{
-  //  path: '',
-  //  loadComponent: () =>
-  //    import('./projects/projects-list/projects-list.component').then(m => m.ProjectsListComponent),
-  //  title: 'My Projects'
-  //},
+  {
+    path: '',
+    loadComponent: () =>
+      import('./projects/projects-list/projects-list.component').then(m => m.ProjectsListComponent),
+    title: 'My Projects'
+  },
   //{
   //  path: 'projects',
   //  loadComponent: () =>
