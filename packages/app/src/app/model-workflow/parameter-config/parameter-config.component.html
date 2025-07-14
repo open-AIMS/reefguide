@@ -12,6 +12,16 @@
         <input matInput formControlName="runName" placeholder="example_run" />
       </mat-form-field>
 
+      <!-- Data Package -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Data Package</mat-label>
+        <mat-select formControlName="dataPackage">
+          <mat-option *ngFor="let option of dataPackageOptions" [value]="option">
+            {{ dataPackageSpec[option].displayName }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
       <!-- Number of Scenarios -->
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Number of scenarios</mat-label>

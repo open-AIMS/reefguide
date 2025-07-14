@@ -1,18 +1,20 @@
 // src/app/model-workflow/parameter-config/parameter-config.component.ts
-import { Component, output, signal, input, effect } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, effect, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
-import { MatButtonModule } from '@angular/material/button';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { CommonModule } from '@angular/common';
 import { AdriaModelRunInput } from '@reefguide/types';
 import { debounceTime, distinctUntilChanged, tap } from 'rxjs/operators';
+
+type DataPackage = 'MOORE' | 'GBR';
 
 interface ParameterRange {
   lower: number;
@@ -21,6 +23,8 @@ interface ParameterRange {
 
 export interface ModelParameters {
   runName: string;
+  // Available data packages
+  dataPackage: DataPackage;
   numScenarios: number;
   // Coral seeding parameters
   tabularAcropora: ParameterRange;
@@ -327,15 +331,22 @@ export class ParameterConfigComponent {
   // Input: Initial parameters to populate the form
   initialParameters = input<ModelParameters | null>(null);
 
-  // Available scenario options (powers of 2)
-  scenarioOptions = [1, 2, 4, 8, 16, 32, 64, 128, 256];
-
   // Expose parameter categories to template
   parameterCategories = PARAMETER_CATEGORIES;
   categoryKeys = Object.keys(PARAMETER_CATEGORIES);
 
+  // Available scenario options (powers of 2)
+  scenarioOptions = [1, 2, 4, 8, 16, 32, 64, 128, 256];
+  dataPackageOptions: DataPackage[] = ['MOORE', 'GBR'];
+  dataPackageSpec: Record<DataPackage, { displayName: string }> = {
+    MOORE: { displayName: 'Moore Reef Cluster' },
+    GBR: { displayName: 'Whole of Great Barrier Reef' }
+  };
+
   configForm = new FormGroup({
     runName: new FormControl('example_run', [Validators.required]),
+    dataPackage: new FormControl<DataPackage>('MOORE', [Validators.required]),
+
     numScenarios: new FormControl(64, [Validators.required]),
 
     // Coral seeding parameters (original working ones)
@@ -381,7 +392,7 @@ export class ParameterConfigComponent {
     fogYearStartUpper: new FormControl(25, [Validators.required, Validators.min(1)])
   });
 
-  // Computed signals for range displays (using the EXACT same pattern as original)
+  // Computed signals for range displays
   taRange = signal<ParameterRange>({ lower: 0, upper: 1000000 });
   caRange = signal<ParameterRange>({ lower: 0, upper: 1000000 });
   smRange = signal<ParameterRange>({ lower: 0, upper: 1000000 });
@@ -564,6 +575,7 @@ export class ParameterConfigComponent {
     // Build default values from the parameter configuration
     const defaultValues: any = {
       runName: 'example_run',
+      dataPackage: 'MOORE',
       numScenarios: 64
     };
 
@@ -594,6 +606,7 @@ export class ParameterConfigComponent {
 
     return {
       runName: formValue.runName!,
+      dataPackage: formValue.dataPackage!,
       numScenarios: formValue.numScenarios!,
 
       // Original coral seeding parameters
@@ -753,6 +766,7 @@ export class ParameterConfigComponent {
     // Update form values without triggering valueChanges initially
     this.configForm.patchValue({
       runName: params.runName,
+      dataPackage: params.dataPackage,
       numScenarios: params.numScenarios,
 
       // Coral seeding parameters
@@ -808,6 +822,7 @@ export class ParameterConfigComponent {
     const formValue = this.configForm.value;
     const parameters: ModelParameters = {
       runName: formValue.runName!,
+      dataPackage: formValue.dataPackage!,
       numScenarios: formValue.numScenarios!,
 
       // Original coral seeding parameters
@@ -890,6 +905,7 @@ export class ParameterConfigComponent {
   static toAdriaModelRunInput(params: ModelParameters): AdriaModelRunInput {
     return {
       num_scenarios: params.numScenarios,
+      data_package: params.dataPackage,
       rcp_scenario: '45', // Hardcoded for now
       model_params: [
         // DiscreteOrderedUniformDist - SHOULD have third parameter (step size)
