@@ -2,6 +2,16 @@
 <div class="workflow-container">
   <!-- Tab Header with Controls -->
   <div class="workspace-header">
+    <!-- Back to Projects Button -->
+    <button
+      mat-icon-button
+      class="back-button"
+      matTooltip="Back to projects"
+      (click)="navigateToProjects()"
+    >
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+
     <mat-tab-group
       class="workspace-tabs"
       [selectedIndex]="selectedTabIndex()"

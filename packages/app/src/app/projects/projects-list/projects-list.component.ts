@@ -151,7 +151,7 @@ export class ProjectsListComponent implements OnInit {
         break;
       case 'SITE_SELECTION':
         // Navigate to site selection workflow when available
-        this.router.navigate(['/projects', project.id, 'site-selection']);
+        this.router.navigate(['/location-selection', project.id]);
         console.log("Ran nav function")
         break;
       default:

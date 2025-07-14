@@ -1,19 +1,18 @@
-import { prisma, ProjectType } from '@reefguide/db';
+import { prisma } from '@reefguide/db';
 import {
-  CreateProjectInputSchema,
-  UpdateProjectInputSchema,
-  CreateProjectResponse,
-  UpdateProjectResponse,
-  GetProjectResponse,
-  GetProjectsResponse,
-  DeleteProjectResponse,
   BulkCreateProjectsInputSchema,
   BulkCreateProjectsResponse,
+  CreateProjectInputSchema,
+  CreateProjectResponse,
+  DeleteProjectResponse,
+  GetProjectResponse,
+  GetProjectsQuerySchema,
+  GetProjectsResponse,
   ProjectParamsSchema,
-  GetProjectsQuerySchema
+  UpdateProjectInputSchema,
+  UpdateProjectResponse
 } from '@reefguide/types';
 import express, { Response, Router } from 'express';
-import { z } from 'zod';
 import { processRequest } from 'zod-express-middleware';
 import { passport } from '../auth/passportConfig';
 import { assertUserHasRoleMiddleware } from '../auth/utils';
