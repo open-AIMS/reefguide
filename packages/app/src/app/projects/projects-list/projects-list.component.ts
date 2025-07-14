@@ -14,7 +14,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { Project } from '@reefguide/db';
-import { BehaviorSubject, combineLatest, debounceTime, distinctUntilChanged, map, Observable, startWith, switchMap } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, distinctUntilChanged, map, Observable, startWith, switchMap, merge, EMPTY } from 'rxjs';
 import { WebApiService } from '../../../api/web-api.service';
 import { CreateProjectDialogComponent } from '../create-project-dialog/create-project-dialog.component';
 
@@ -52,6 +52,9 @@ export class ProjectsListComponent implements OnInit {
   currentPage = 0;
   totalProjects = 0;
 
+  // Manual pagination control
+  private pageEvent$ = new BehaviorSubject<PageEvent>({ pageIndex: 0, pageSize: 10, length: 0 });
+
   // All projects from the server
   allProjects$ = this.webApi.getUserProjects().pipe(
     map(response => response.projects)
@@ -82,8 +85,7 @@ export class ProjectsListComponent implements OnInit {
   // Paginated projects
   paginatedProjects$: Observable<Project[]> = combineLatest([
     this.filteredProjects$,
-    this.paginator ? this.paginator.page.pipe(startWith({ pageIndex: 0, pageSize: this.pageSize })) :
-      new BehaviorSubject({ pageIndex: 0, pageSize: this.pageSize })
+    this.pageEvent$
   ]).pipe(
     map(([projects, pageEvent]) => {
       this.totalProjects = projects.length;
@@ -100,20 +102,26 @@ export class ProjectsListComponent implements OnInit {
     this.allProjects$.subscribe(() => {
       this.isLoading$.next(false);
     });
+
+    // Reset to first page when search changes
+    this.searchQuery$.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(() => {
+      this.pageEvent$.next({ pageIndex: 0, pageSize: this.pageSize, length: 0 });
+    });
   }
 
   onSearchChange(event: Event) {
     const target = event.target as HTMLInputElement;
     this.searchQuery$.next(target.value);
-    // Reset to first page when searching
-    if (this.paginator) {
-      this.paginator.firstPage();
-    }
+    // Reset to first page when searching happens automatically via ngOnInit subscription
   }
 
   onPageChange(event: PageEvent) {
     this.currentPage = event.pageIndex;
     this.pageSize = event.pageSize;
+    this.pageEvent$.next(event);
   }
 
   openCreateDialog() {
