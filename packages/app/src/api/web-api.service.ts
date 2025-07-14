@@ -3,13 +3,20 @@ import { inject, Injectable } from '@angular/core';
 import { JobType, Polygon, PolygonNote, User, UserRole } from '@reefguide/db';
 import {
   CreateJobResponse,
+  CreateProjectInput,
+  CreateProjectResponse,
+  DeleteProjectResponse,
   DownloadResponse,
+  GetProjectResponse,
+  GetProjectsResponse,
   JobDetailsResponse,
   ListJobsQuery,
   ListJobsResponse,
   ListUserLogsResponse,
   LoginResponse,
-  ProfileResponse
+  ProfileResponse,
+  UpdateProjectInput,
+  UpdateProjectResponse
 } from '@reefguide/types';
 import {
   distinctUntilKeyChanged,
@@ -230,5 +237,36 @@ export class WebApiService {
         );
       })
     );
+  }
+
+  getProjects(query?: {
+    type?: string;
+    name?: string;
+    limit?: number;
+    offset?: number;
+  }): Observable<GetProjectsResponse> {
+    return this.http.get<GetProjectsResponse>(`${this.base}/projects`, {
+      params: query as any
+    });
+  }
+
+  getProject(id: number): Observable<GetProjectResponse> {
+    return this.http.get<GetProjectResponse>(`${this.base}/projects/${id}`);
+  }
+
+  createProject(projectData: CreateProjectInput): Observable<CreateProjectResponse> {
+    return this.http.post<CreateProjectResponse>(`${this.base}/projects`, projectData);
+  }
+
+  updateProject(id: number, projectData: UpdateProjectInput): Observable<UpdateProjectResponse> {
+    return this.http.put<UpdateProjectResponse>(`${this.base}/projects/${id}`, projectData);
+  }
+
+  deleteProject(id: number): Observable<DeleteProjectResponse> {
+    return this.http.delete<DeleteProjectResponse>(`${this.base}/projects/${id}`);
+  }
+
+  getUserProjects(): Observable<GetProjectsResponse> {
+    return this.http.get<GetProjectsResponse>(`${this.base}/projects/user/me`);
   }
 }

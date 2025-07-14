@@ -5,45 +5,30 @@ import { JobsTableComponent } from './jobs/jobs-table/jobs-table.component';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/location-selection',
-    pathMatch: 'full'
+    pathMatch: 'full',
+    redirectTo: 'projects'
   },
   {
-    path: 'new-run',
+    path: 'projects',
+    loadComponent: () =>
+      import('./projects/projects-list/projects-list.component').then(m => m.ProjectsListComponent),
+    title: 'My Projects'
+  },
+  {
+    path: 'adria/:projectId',
     loadComponent: () =>
       import('./model-workflow/model-workflow.component').then(m => m.ModelWorkflowComponent),
-    title: 'Model run manager'
+    title: 'ADRIA Model Run'
   },
   {
-    path: 'location-selection',
+    path: 'location-selection/:projectId',
     loadComponent: () =>
-      import('./location-selection/location-selection.component').then(
-        m => m.LocationSelectionComponent
-      ),
+      import('./location-selection/location-selection.component').then(m => {
+        console.log('selection');
+        return m.LocationSelectionComponent;
+      }),
     title: 'Location Selection'
   },
-  {
-    path: 'test-map',
-    loadComponent: () => import('./test/test-map/test-map.component').then(m => m.TestMapComponent),
-    title: 'Test Map'
-  },
-  // Legacy routes - redirect to new workflow
-  {
-    path: 'invoke-run',
-    redirectTo: '/new-run',
-    pathMatch: 'full'
-  },
-  {
-    path: 'view-run/:id',
-    redirectTo: '/new-run',
-    pathMatch: 'full'
-  },
-  {
-    path: 'runs',
-    redirectTo: '/new-run',
-    pathMatch: 'full'
-  },
-  // initial work on jobs list page. should have auth guard.
   {
     path: 'jobs',
     component: JobsTableComponent,

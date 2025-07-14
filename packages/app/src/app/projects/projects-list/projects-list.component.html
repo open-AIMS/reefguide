@@ -1,0 +1,118 @@
+<div class="projects-container">
+  <!-- Header -->
+  <div class="projects-header">
+    <h1>My Projects</h1>
+  </div>
+
+  <!-- Search and Actions Bar -->
+  <div class="search-actions-bar">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search projects</mat-label>
+      <input
+        matInput
+        placeholder="Search by name, description, or type"
+        (input)="onSearchChange($event)"
+        [value]="searchQuery$ | async"
+      />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <button mat-raised-button color="primary" (click)="openCreateDialog()" class="create-button">
+      <mat-icon>add</mat-icon>
+      Create Project
+    </button>
+  </div>
+
+  <!-- Loading spinner -->
+  <div *ngIf="isLoading$ | async" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading projects...</p>
+  </div>
+
+  <!-- Projects list -->
+  <div *ngIf="!(isLoading$ | async)" class="projects-content">
+    <div *ngIf="(paginatedProjects$ | async)?.length === 0" class="empty-state">
+      <mat-icon class="empty-icon">folder_open</mat-icon>
+      <h3>No projects found</h3>
+      <p *ngIf="!(searchQuery$ | async)">Get started by creating your first project</p>
+      <p *ngIf="searchQuery$ | async">Try adjusting your search criteria</p>
+      <button
+        *ngIf="!(searchQuery$ | async)"
+        mat-raised-button
+        color="primary"
+        (click)="openCreateDialog()"
+      >
+        <mat-icon>add</mat-icon>
+        Create Your First Project
+      </button>
+    </div>
+
+    <div *ngIf="(paginatedProjects$ | async)?.length! > 0" class="projects-grid">
+      <mat-card
+        *ngFor="let project of paginatedProjects$ | async; trackBy: trackByProjectId"
+        class="project-card"
+        (click)="onProjectClick(project)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="'Open project ' + project.name"
+      >
+        <mat-card-header>
+          <div mat-card-avatar class="project-avatar">
+            <!-- Placeholder for project type icon -->
+            <mat-icon [color]="getProjectTypeColor(project.type)">
+              {{ project.type === 'SITE_SELECTION' ? 'location_on' : 'analytics' }}
+            </mat-icon>
+          </div>
+
+          <mat-card-title>{{ project.name }}</mat-card-title>
+
+          <mat-card-subtitle>
+            <mat-chip [color]="getProjectTypeColor(project.type)">
+              {{ getProjectTypeDisplay(project.type) }}
+            </mat-chip>
+          </mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <p class="project-description">
+            {{ project.description || 'No description provided' }}
+          </p>
+
+          <div class="project-meta">
+            <div class="meta-item">
+              <mat-icon>schedule</mat-icon>
+              <span>Created {{ project.created_at | date: 'short' }}</span>
+            </div>
+            <div class="meta-item" *ngIf="project.updated_at !== project.created_at">
+              <mat-icon>edit</mat-icon>
+              <span>Updated {{ project.updated_at | date: 'short' }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+
+        <mat-card-actions align="end">
+          <button
+            mat-button
+            color="primary"
+            (click)="onProjectClick(project); $event.stopPropagation()"
+          >
+            Open
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+
+    <!-- Pagination -->
+    <mat-paginator
+      *ngIf="totalProjects > pageSize"
+      #paginator
+      [length]="totalProjects"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="[5, 10, 25, 50]"
+      [showFirstLastButtons]="true"
+      (page)="onPageChange($event)"
+      aria-label="Select page"
+    >
+    </mat-paginator>
+  </div>
+</div>

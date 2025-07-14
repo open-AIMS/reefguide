@@ -2,6 +2,16 @@
 <div class="workflow-container">
   <!-- Tab Header with Controls -->
   <div class="workspace-header">
+    <!-- Back to Projects Button -->
+    <button
+      mat-icon-button
+      class="back-button"
+      matTooltip="Back to projects"
+      (click)="navigateToProjects()"
+    >
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+
     <mat-tab-group
       class="workspace-tabs"
       [selectedIndex]="selectedTabIndex()"
@@ -52,7 +62,8 @@
         <button
           mat-menu-item
           (click)="copyParametersToNewWorkspace(workspace.id)"
-          [disabled]="!workspace.parameters">
+          [disabled]="!workspace.parameters"
+        >
           <mat-icon>content_copy</mat-icon>
           <span>Copy parameters to new workspace</span>
         </button>
@@ -137,8 +148,9 @@
             <div class="instructions-content">
               <mat-icon class="instructions-icon">science</mat-icon>
               <p>
-                Configure your model parameters {{ parameterPanelCollapsed() ? 'by showing the parameter panel' : 'on the left' }} and click Submit to start your
-                simulation.
+                Configure your model parameters
+                {{ parameterPanelCollapsed() ? 'by showing the parameter panel' : 'on the left' }}
+                and click Submit to start your simulation.
               </p>
             </div>
           </mat-card-content>

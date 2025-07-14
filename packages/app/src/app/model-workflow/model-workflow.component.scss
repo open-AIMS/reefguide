@@ -295,7 +295,9 @@
   overflow: hidden;
   background: white;
   border-right: 1px solid #e0e0e0;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease;
 
   &.collapsed {
     opacity: 0;
@@ -316,7 +318,9 @@
   cursor: col-resize;
   position: relative;
   border-right: 1px solid #e0e0e0;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease;
   user-select: none;
 
   &:hover {

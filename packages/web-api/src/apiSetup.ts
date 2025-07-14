@@ -11,6 +11,7 @@ import * as middlewares from './middlewares';
 import { router as noteRoutes } from './notes/routes';
 import { router as polygonRoutes } from './polygons/routes';
 import { router as userRoutes } from './users/routes';
+import { router as projectRoutes } from './projects/routes';
 
 require('dotenv').config();
 require('express-async-errors');
@@ -51,6 +52,7 @@ api.use('/notes', noteRoutes);
 api.use('/admin', adminRoutes);
 api.use('/users', userRoutes);
 api.use('/jobs', jobRoutes);
+api.use('/projects', projectRoutes);
 
 // API base router
 app.use('/api', api);
