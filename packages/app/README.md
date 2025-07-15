@@ -69,8 +69,6 @@ version 18.0.6.
    npm install --legacy-peer-deps
    ```
 
-**Note:** _--legacy-peer-deps_ will be necessary until ArcGIS updates peer deps to Angular 18.
-
 A script security error may be raised if using PowerShell.
 If this occurs, run the following to [fix Powershell execution policy](https://angular.dev/tools/cli/setup-local#powershell-execution-policy):
 
