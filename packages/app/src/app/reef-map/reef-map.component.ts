@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, inject, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
@@ -56,6 +56,8 @@ export class ReefMapComponent implements AfterViewInit {
     })
   );
 
+  public readonly loading = signal(false);
+
   constructor() {}
 
   /**
@@ -100,6 +102,13 @@ export class ReefMapComponent implements AfterViewInit {
       // console.log(`root layers change from ${event.oldValue} to ${map.getLayers().getLength()}`);
       this.layersChange$.next();
       this.updateLayerGroupListeners();
+    });
+
+    map.on('loadstart', event => {
+      this.loading.set(true);
+    });
+    map.on('loadend', () => {
+      this.loading.set(false);
     });
 
     map.on('click', event => {
