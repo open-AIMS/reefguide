@@ -1,8 +1,11 @@
-import { Component, computed, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
 import Layer from 'ol/layer/Layer';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { ReefGuideMapService } from '../../location-selection/reef-guide-map.service';
+import { LayerController } from '../../map/open-layers-model';
 
 // REVIEW was for ArcGis, but these are canvas blend modes
 const BLEND_MODES = [
@@ -46,12 +49,15 @@ const BLEND_MODES = [
  */
 @Component({
   selector: 'app-layer-style-editor',
-  imports: [MatFormFieldModule, MatSelectModule, MatSliderModule],
+  imports: [MatFormFieldModule, MatSelectModule, MatSliderModule, MatSlideToggle],
   templateUrl: './layer-style-editor.component.html',
   styleUrl: './layer-style-editor.component.scss'
 })
 export class LayerStyleEditorComponent {
+  private readonly mapService = inject(ReefGuideMapService);
+
   layer = input.required<Layer>();
+  layerController!: LayerController;
 
   blendModes = BLEND_MODES;
 
@@ -75,6 +81,10 @@ export class LayerStyleEditorComponent {
   //
   //   return color;
   // });
+
+  ngOnInit() {
+    this.layerController = this.mapService.getLayerController(this.layer());
+  }
 
   // onBlendModeChange(value: BlendModes) {
   //   const layer = this.layer();

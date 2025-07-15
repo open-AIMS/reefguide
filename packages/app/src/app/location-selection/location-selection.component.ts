@@ -65,7 +65,8 @@ export class LocationSelectionComponent implements MapUI {
 
   map = viewChild.required(ReefMapComponent);
 
-  drawerMode = signal<DrawerModes>('criteria');
+  // TODO consider component slots like approach instead
+  drawerMode = signal<DrawerModes | undefined>(undefined);
 
   /**
    * Layer style that is currently being edited
@@ -80,7 +81,6 @@ export class LocationSelectionComponent implements MapUI {
   @ViewChild('drawer') drawer!: MatDrawer;
 
   constructor() {
-    console.warn('construct');
     // track the signals that indicate a current request/job in progress
     // related to the Assess panel.
     this.isAssessing$ = combineLatest([
@@ -131,11 +131,14 @@ export class LocationSelectionComponent implements MapUI {
   }
 
   openDrawer(mode: DrawerModes) {
-    if (mode === 'criteria') {
-      this.mapService.updateCriteriaLayerStates();
-    }
     this.drawerMode.set(mode);
     this.drawer.toggle(true);
+  }
+
+  onDrawerClose() {
+    // clear drawer state
+    this.editingLayerStyle.set(undefined);
+    this.drawerMode.set(undefined);
   }
 
   openAdminPanel() {

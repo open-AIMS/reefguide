@@ -7,12 +7,11 @@ import {
   INJECTOR,
   runInInjectionContext,
   signal,
-  Signal,
-  WritableSignal
+  Signal
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import Map from 'ol/Map';
+import { Map as OLMap } from 'ol';
 import { JobType } from '@reefguide/db';
 import {
   BehaviorSubject,
@@ -61,11 +60,8 @@ import { GeoJSON } from 'ol/format';
 import { Fill, Stroke, Style } from 'ol/style';
 import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
 import Layer from 'ol/layer/Layer';
-
-interface CriteriaLayer {
-  layer: TileLayer;
-  visible: WritableSignal<boolean>;
-}
+import { createSourceFromArcGIS } from '../../util/arcgis/arcgis-openlayer-util';
+import { LayerController } from '../map/open-layers-model';
 
 /**
  * Map UI actions implemented by the overall app design.
@@ -93,11 +89,11 @@ export class ReefGuideMapService {
   private readonly jobsManager = inject(JobsManagerService);
 
   // map is set shortly after construction
-  private map!: Map;
+  private map!: OLMap;
 
   assessColor: ColorRGBA = [241, 192, 12, 1];
 
-  criteriaLayers: Record<string, CriteriaLayer> = {};
+  criteriaLayers: Record<string, LayerController | undefined> = {};
 
   /**
    * HTTP errors encounter by map layers.
@@ -139,6 +135,8 @@ export class ReefGuideMapService {
 
   // suitable sites polygons group layer
   private readonly siteSuitabilityLayerGroup = signal<LayerGroup | undefined>(undefined);
+
+  private layerControllers = new Map<Layer, LayerController>();
 
   // current region assessment in progress
   criteriaRequest = signal<CriteriaRequest | undefined>(undefined);
@@ -203,7 +201,7 @@ export class ReefGuideMapService {
    * Map provided by ReefGuideMapComponent
    * @param map
    */
-  setMap(map: Map) {
+  setMap(map: OLMap) {
     this.map = map;
 
     void this.addCriteriaLayers();
@@ -507,29 +505,13 @@ export class ReefGuideMapService {
       criteriaLayerGroup.setVisible(true);
       for (let id in this.criteriaLayers) {
         const criteriaLayer = this.criteriaLayers[id];
-        criteriaLayer.visible.set(id === criteria && show);
+        criteriaLayer?.visible.set(id === criteria && show);
       }
     }
   }
 
   toggleNotes() {
     console.warn('TODO polygon notes openlayers');
-  }
-
-  /**
-   * Update criteria layers signals to reflect current layer state.
-   * Note: ideally would subscribe to layer event, but doesn't seem to exist.
-   * REVIEW was created for ArcGIS, OpenLayers seems to have own state management, maybe use instead
-   */
-  updateCriteriaLayerStates() {
-    const criteriaLayerGroup = this.criteriaLayerGroup();
-    if (criteriaLayerGroup) {
-      criteriaLayerGroup.setVisible(true);
-      for (let id in this.criteriaLayers) {
-        const criteriaLayer = this.criteriaLayers[id];
-        criteriaLayer.visible.set(criteriaLayer.layer.isVisible());
-      }
-    }
   }
 
   private async addRegionLayer(region: ReadyRegion, layerGroup: LayerGroup) {
@@ -574,7 +556,6 @@ export class ReefGuideMapService {
   }
 
   private async addCriteriaLayers() {
-    const { injector } = this;
     const layers = this.reefGuideApi.getCriteriaLayers();
 
     const layerGroup = new LayerGroup({
@@ -582,42 +563,55 @@ export class ReefGuideMapService {
         title: 'Criteria'
       }
     });
+    this.criteriaLayerGroup.set(layerGroup);
+    this.map.getLayers().push(layerGroup);
 
-    // NOW OpenLayers
     for (let criteria in layers) {
-      // const url = layers[criteria];
-      //
-      // const layer = new TileLayer({
-      //   id: `criteria_${criteria}`,
-      //   // TODO user-friendly title
-      //   // title:
-      //   url,
-      //   visible: false
-      // });
-      // groupLayer.add(layer);
-      //
-      // const visible = signal(false);
-      //
-      // this.criteriaLayers[criteria] = {
-      //   layer,
-      //   visible
-      // };
-      //
-      // effect(
-      //   () => {
-      //     layer.visible = visible();
-      //   },
-      //   { injector }
-      // );
-    }
+      const url = layers[criteria];
 
-    // this.map.addLayer(groupLayer);
-    // this.criteriaLayerGroup.set(groupLayer);
+      const layer = new TileLayer({
+        properties: {
+          id: `criteria_${criteria}`
+        },
+        visible: false
+      });
+      layerGroup.getLayers().push(layer);
+
+      createSourceFromArcGIS(url).then(source => {
+        // ignore OpenLayers types issue
+        // @ts-expect-error
+        layer.setSource(source);
+
+        // set the layer title to the source's title
+        layer.set('title', source.get('title'));
+      });
+
+      this.criteriaLayers[criteria] = this.getLayerController(layer);
+    }
   }
 
   private handleRegionError(region: string) {
     console.warn('handleRegionError', region);
     // TODO multi-error display. this replaces previous error.
     this.snackbar.open(`Error loading ${region}`, 'OK');
+  }
+
+  /**
+   * Get the LayerController for this Layer.
+   * Creates a new LayerController if one does not exist.
+   * @param layer any OpenLayers layer that LayerController supports.
+   */
+  public getLayerController(layer: Layer) {
+    let controller = this.layerControllers.get(layer);
+    if (controller) {
+      return controller;
+    } else {
+      runInInjectionContext(this.injector, () => {
+        controller = new LayerController(layer);
+      });
+      // TODO remove on layer remove/dispose
+      this.layerControllers.set(layer, controller!);
+      return controller!;
+    }
   }
 }

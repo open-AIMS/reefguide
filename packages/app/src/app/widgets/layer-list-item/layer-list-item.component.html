@@ -5,6 +5,6 @@
 </button>
 <button mat-icon-button (click)="toggleVisible()"
         matTooltip="Toggle visibility">
-  <mat-icon>{{ isVisible() ? 'visibility' : 'visibility_off' }}</mat-icon>
+  <mat-icon>{{ layerController.visible() ? 'visibility' : 'visibility_off' }}</mat-icon>
 </button>
 <span class="title">{{ l.get('title') }}</span>

@@ -1,7 +1,7 @@
 @let busyRegions = mapService.criteriaRequest()?.busyRegions$ | async;
 @let isBusy = isAssessing$ | async;
 @let user = authService.user$ | async;
-<mat-drawer-container hasBackdrop="false" class="reef-guide">
+<mat-drawer-container hasBackdrop="false" class="reef-guide" (close)="onDrawerClose()">
   <mat-drawer #drawer>
     @switch (drawerMode()) {
       @case ('criteria') {
