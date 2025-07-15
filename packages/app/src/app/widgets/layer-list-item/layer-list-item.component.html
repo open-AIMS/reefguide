@@ -1,0 +1,5 @@
+@let l = layer();
+<button mat-icon-button (click)="toggleVisible()">
+  <mat-icon>{{ isVisible() ? 'visibility' : 'visibility_off' }}</mat-icon>
+</button>
+<span class="title">{{l.get('title')}}</span>

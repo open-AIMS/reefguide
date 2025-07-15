@@ -1,7 +1,6 @@
 import {
   computed,
   DestroyRef,
-  effect,
   inject,
   Injectable,
   INJECTOR,
@@ -36,7 +35,6 @@ import { getFirstFileFromResults } from '../../util/api-util';
 import { ColorRGBA } from '../../util/arcgis/arcgis-layer-util';
 import { urlToBlobObjectURL } from '../../util/http-util';
 import { isDefined } from '../../util/js-util';
-import { AuthService } from '../auth/auth.service';
 import { StylableLayer } from '../widgets/layer-style-editor/layer-style-editor.component';
 import { ReefGuideApiService } from './reef-guide-api.service';
 import {
@@ -75,7 +73,6 @@ interface CriteriaLayer {
 @Injectable()
 export class ReefGuideMapService {
   readonly config = inject(ReefGuideConfigService);
-  private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(INJECTOR);
   private readonly api = inject(WebApiService);
@@ -473,15 +470,16 @@ export class ReefGuideMapService {
     // cancel current request if any
     this.cancelAssess();
 
+    const rootLayers = this.map.getLayers();
     const regionsLayerGroup = this.cogAssessRegionsLayerGroup();
     if (regionsLayerGroup) {
-      disposeLayerGroup(regionsLayerGroup);
+      disposeLayerGroup(regionsLayerGroup, rootLayers);
     }
     this.cogAssessRegionsLayerGroup.set(undefined);
 
     const sitesLayerGroup = this.siteSuitabilityLayerGroup();
     if (sitesLayerGroup) {
-      disposeLayerGroup(sitesLayerGroup);
+      disposeLayerGroup(sitesLayerGroup, rootLayers);
     }
     this.siteSuitabilityLayerGroup.set(undefined);
   }

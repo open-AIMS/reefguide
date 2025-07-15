@@ -4,3 +4,17 @@
   width: 100%;
   background-color: lightcyan;
 }
+
+.map {
+  height: 100%;
+  width: 100%;
+}
+
+.left-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}

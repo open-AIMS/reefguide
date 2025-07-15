@@ -1,9 +1,15 @@
-import { AfterViewInit, Component, ElementRef, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, viewChild } from '@angular/core';
 import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
+import ScaleLine from 'ol/control/ScaleLine';
 import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
+import { LayerListComponent } from '../widgets/layer-list/layer-list.component';
+import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
+import { debounceTime, map, Subject } from 'rxjs';
+import LayerGroup from 'ol/layer/Group';
+import { MatExpansionPanel } from '@angular/material/expansion';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -15,10 +21,11 @@ import { ReefGuideMapService } from '../location-selection/reef-guide-map.servic
 @Component({
   selector: 'app-reef-map',
   templateUrl: './reef-map.component.html',
+  imports: [LayerListComponent, JobStatusListComponent, MatExpansionPanel],
   styleUrl: './reef-map.component.scss'
 })
 export class ReefMapComponent implements AfterViewInit {
-  private hostEl: ElementRef = inject(ElementRef);
+  private mapEl = viewChild.required<ElementRef>('olMap');
 
   readonly mapService = inject(ReefGuideMapService, { optional: true });
 
@@ -37,19 +44,33 @@ export class ReefMapComponent implements AfterViewInit {
   // will be defined after view init
   private map!: Map;
 
+  private layersChange$ = new Subject<void>();
+
+  public layers$ = this.layersChange$.pipe(
+    debounceTime(50),
+    map(() => {
+      // For now show all layers in flat list;
+      // in future could display tree by recursing through getLayers()
+      // getAllLayers will recursively get all leaf layers
+      return this.map.getAllLayers();
+    })
+  );
+
   constructor() {}
 
   /**
    * Create OpenLayers Map and hookup everything.
    */
   ngAfterViewInit() {
-    console.log('ngAfterViewInit');
     this.map = new Map({
-      target: this.hostEl.nativeElement,
+      target: this.mapEl().nativeElement,
       view: this.view,
       layers: [
         new TileLayer({
-          source: new OSM()
+          source: new OSM(),
+          properties: {
+            title: 'Base map (OSM)'
+          }
         })
       ]
     });
@@ -58,6 +79,10 @@ export class ReefMapComponent implements AfterViewInit {
     //  maybe move View to service
     this.mapService?.setMap(this.map);
     this.hookEvents(this.map);
+    this.setupMapControls(this.map);
+
+    // trigger change to pickup base map layer
+    this.layersChange$.next();
   }
 
   /**
@@ -68,9 +93,40 @@ export class ReefMapComponent implements AfterViewInit {
   }
 
   private hookEvents(map: Map) {
-    // REVIEW maybe use signals or RxJS to handle events
+    // TODO ideally would create RxJS observable util that wraps OpenLayers event system
+
+    // TODO this may need to be recursive if we don't always add/remove root layers
+    map.getLayers().on('change:length', event => {
+      // console.log(`root layers change from ${event.oldValue} to ${map.getLayers().getLength()}`);
+      this.layersChange$.next();
+      this.updateLayerGroupListeners();
+    });
+
     map.on('click', event => {
       console.log('Map click', event);
+    });
+  }
+
+  private setupMapControls(map: Map) {
+    map.addControl(new ScaleLine());
+  }
+
+  private _listeningLayerGroups = new Set<LayerGroup>();
+
+  /**
+   * Start listening to immediate-child LayerGroup change:length if not already.
+   * TODO make recursive if nested LayerGroups
+   */
+  private updateLayerGroupListeners() {
+    this.map.getLayers().forEach(layer => {
+      if (layer instanceof LayerGroup && !this._listeningLayerGroups.has(layer)) {
+        // dispose cleans up listeners, so shouldn't need to manage subscription
+        layer.getLayers().on('change:length', event => {
+          this.layersChange$.next();
+        });
+        // TODO cleanup on LayerGroup remove
+        this._listeningLayerGroups.add(layer);
+      }
     });
   }
 }

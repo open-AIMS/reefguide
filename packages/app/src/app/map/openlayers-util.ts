@@ -1,5 +1,7 @@
 import Layer from 'ol/layer/Layer';
 import LayerGroup from 'ol/layer/Group';
+import { Collection } from 'ol';
+import BaseLayer from 'ol/layer/Base';
 
 /**
  * Call the function when the layer is disposed.
@@ -24,18 +26,29 @@ export function onLayerDispose(layer: Layer, callback: () => void): void {
  * OpenLayers does not seem to do this automatically, or there's a bug with the
  * site suitability vector layer automatic dispose.
  *
- * @param layerGroup
+ * @param layerGroup group to dispose+remove child layers from
+ * @param parentCollection collection that contains the LayerGroup, if provided remove and dispose
+ *                         the given layerGroup.
  */
-export function disposeLayerGroup(layerGroup: LayerGroup): void {
+export function disposeLayerGroup(
+  layerGroup: LayerGroup,
+  parentCollection?: Collection<BaseLayer>
+): void {
   const childLayers = layerGroup.getLayers();
   childLayers.forEach(layer => {
     if (layer instanceof LayerGroup) {
-      disposeLayerGroup(layer);
+      disposeLayerGroup(layer, childLayers);
     } else {
+      // though maybe don't need to dispose at all?
+      // https://github.com/openlayers/openlayers/issues/11052#issuecomment-629844304
       layer.dispose();
     }
   });
 
   childLayers.clear();
-  layerGroup.dispose();
+
+  if (parentCollection) {
+    layerGroup.dispose();
+    parentCollection.remove(layerGroup);
+  }
 }

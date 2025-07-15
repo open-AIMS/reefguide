@@ -1,0 +1,11 @@
+@let layers = mapComponent.layers$ | async;
+@let numLayers = layers?.length ?? 0;
+
+<mat-expansion-panel>
+  <mat-expansion-panel-header>
+    {{numLayers}} Layer{{numLayers > 1 ? 's' : ''}}
+  </mat-expansion-panel-header>
+@for (layer of layers; track layer) {
+  <app-layer-list-item [layer]="layer"></app-layer-list-item>
+}
+</mat-expansion-panel>

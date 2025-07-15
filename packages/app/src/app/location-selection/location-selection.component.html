@@ -1,5 +1,6 @@
 @let busyRegions = mapService.criteriaRequest()?.busyRegions$ | async;
 @let isBusy = isAssessing$ | async;
+@let user = authService.user$ | async;
 <mat-drawer-container hasBackdrop="false" class="reef-guide">
   <mat-drawer #drawer>
     @switch (drawerMode()) {
@@ -50,75 +51,79 @@
         <div class="styling-content">
           <mat-accordion>
             <p>TODO OpenLayers styling</p>
-<!--            FIXME OpenLayers styling -->
-<!--            @for (layer of mapService.styledLayers(); track layer.id) {-->
-<!--              <mat-expansion-panel>-->
-<!--                <mat-expansion-panel-header>{{ layer.title }}</mat-expansion-panel-header>-->
-<!--                <ng-template matExpansionPanelContent>-->
-<!--                  <app-layer-style-editor [layer]="layer"></app-layer-style-editor>-->
-<!--                </ng-template>-->
-<!--              </mat-expansion-panel>-->
-<!--            }-->
+            <!--            FIXME OpenLayers styling -->
+            <!--            @for (layer of mapService.styledLayers(); track layer.id) {-->
+            <!--              <mat-expansion-panel>-->
+            <!--                <mat-expansion-panel-header>{{ layer.title }}</mat-expansion-panel-header>-->
+            <!--                <ng-template matExpansionPanelContent>-->
+            <!--                  <app-layer-style-editor [layer]="layer"></app-layer-style-editor>-->
+            <!--                </ng-template>-->
+            <!--              </mat-expansion-panel>-->
+            <!--            }-->
           </mat-accordion>
         </div>
       }
     }
   </mat-drawer>
   <mat-drawer-content>
-    <app-reef-map></app-reef-map>
-    @if (authService.authenticated()) {
-      @let user = authService.user$ | async;
-      <div class="map-buttons">
-        <div class="row">
+    <app-reef-map>
+      @if (user) {
+        <div class="map-buttons">
+          <div class="row">
+            <button
+              mat-mini-fab
+              (click)="openDrawer('criteria')"
+              matTooltipPosition="right"
+              matTooltip="Adjust criteria"
+            >
+              <mat-icon>linear_scale</mat-icon>
+            </button>
+            @if (isBusy) {
+              <mat-progress-spinner
+                class="criteria-spinner"
+                mode="indeterminate"
+                diameter="32"
+                [matTooltip]="getLoadingRegionsMessage(busyRegions)"
+              >
+              </mat-progress-spinner>
+            }
+          </div>
           <button
             mat-mini-fab
-            (click)="openDrawer('criteria')"
+            (click)="openDrawer('style')"
             matTooltipPosition="right"
-            matTooltip="Adjust criteria"
+            matTooltip="Layer Style"
           >
-            <mat-icon>linear_scale</mat-icon>
+            <mat-icon>brush</mat-icon>
           </button>
-          @if (isBusy) {
-            <mat-progress-spinner
-              class="criteria-spinner"
-              mode="indeterminate"
-              diameter="32"
-              [matTooltip]="getLoadingRegionsMessage(busyRegions)"
-            >
-            </mat-progress-spinner>
-          }
-        </div>
-        <button
-          mat-mini-fab
-          (click)="openDrawer('style')"
-          matTooltipPosition="right"
-          matTooltip="Layer Style"
-        >
-          <mat-icon>brush</mat-icon>
-        </button>
-        <button
-          mat-mini-fab
-          (click)="mapService.toggleNotes()"
-          matTooltipPosition="right"
-          matTooltip="Notes"
-        >
-          <mat-icon>edit_note</mat-icon>
-        </button>
-      </div>
-      <!-- should be inside div.map-buttons, but temporary hack around ESRI layers button -->
-      <app-job-status-list></app-job-status-list>
-
-      <div class="center-container">
-        @let progress = mapService.progress$ | async;
-        @if (progress != null) {
-          <mat-progress-bar
-            class="layer-progress"
-            [value]="progress * 100"
-            [style.visibility]="progress === 1 ? 'hidden' : 'visible'"
+          <button
+            mat-mini-fab
+            (click)="mapService.toggleNotes()"
+            matTooltipPosition="right"
+            matTooltip="Notes"
           >
-          </mat-progress-bar>
-        }
-      </div>
+            <mat-icon>edit_note</mat-icon>
+          </button>
+        </div>
+      }
+    </app-reef-map>
+
+    <!--
+    TODO move to map, tile loading progress for OpenLayers
+    This was originally developed for ArcGis map.
+    <div class="center-container">
+      @let progress = mapService.progress$ | async;
+      @if (progress != null) {
+        <mat-progress-bar
+          class="layer-progress"
+          [value]="progress * 100"
+          [style.visibility]="progress === 1 ? 'hidden' : 'visible'"
+        >
+        </mat-progress-bar>
+      }
+    </div>
+    -->
+    @if (user) {
       <button
         class="profile-button"
         mat-mini-fab
