@@ -7,7 +7,7 @@ import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { ReefGuideMapService } from '../../location-selection/reef-guide-map.service';
 import { LayerController } from '../../map/open-layers-model';
 
-// REVIEW was for ArcGis, but these are canvas blend modes
+// TODO layer blend mode. was for ArcGis, but these are standard canvas blend modes
 const BLEND_MODES = [
   'average',
   'color-burn',
@@ -64,7 +64,7 @@ export class LayerStyleEditorComponent {
   supportsColor = signal(false);
   // supportsColor = computed(() => {
   //   // HACK until we abstract layers properly.
-  //   // TODO fix
+  //   // TODO fix, use layer property instead (or LayerController)
   //   // @ts-ignore
   //   return this.layer().title.startsWith('Assessed Regions');
   // });

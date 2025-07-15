@@ -517,18 +517,6 @@ export class ReefGuideMapService {
   private async addRegionLayer(region: ReadyRegion, layerGroup: LayerGroup) {
     console.log('addRegionLayer', region.region, region.originalUrl);
 
-    // NOW openlayers styling
-    // const layer = new ImageryTileLayer({
-    //   title: region.region,
-    //   url: cleanUrl,
-    //   customParameters: params,
-    //   opacity: 0.9,
-    //   // gold color
-    //   // Note: this only works with binary color COG, it broke with the greyscale raster.
-    //   // TODO heatmap in OpenLayers
-    //   rasterFunction: createSingleColorRasterFunction(this.assessColor)
-    // });
-
     const layer = new TileLayer({
       properties: {
         title: `${region.region} criteria assessment`

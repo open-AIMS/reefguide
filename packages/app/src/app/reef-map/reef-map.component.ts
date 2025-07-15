@@ -76,7 +76,7 @@ export class ReefMapComponent implements AfterViewInit {
       ]
     });
 
-    // REVIEW better design for this component to only listen to service
+    // REVIEW better design if one-way (map component listens to service)
     //  maybe move View to service
     this.mapService?.setMap(this.map);
     this.hookEvents(this.map);
