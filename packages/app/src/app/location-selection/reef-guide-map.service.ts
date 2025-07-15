@@ -429,7 +429,7 @@ export class ReefGuideMapService {
 
         const layer = new VectorLayer({
           properties: {
-            title: `Site Suitability (${region})`
+            title: `${region} site suitability`
           },
           source,
           style
@@ -537,7 +537,7 @@ export class ReefGuideMapService {
 
     const layer = new TileLayer({
       properties: {
-        title: region.region
+        title: `${region.region} criteria assessment`
       },
       source: new GeoTIFF({
         sources: [

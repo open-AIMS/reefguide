@@ -23,6 +23,11 @@ export class LayerListItemComponent implements OnInit {
     layer.on('change:visible', () => {
       this.isVisible.set(layer.isVisible());
     });
+
+    layer.on('error', event => {
+      // TODO display error
+      console.warn('layer error', event);
+    });
   }
 
   toggleVisible() {
