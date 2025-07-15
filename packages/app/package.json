@@ -23,8 +23,6 @@
     "@angular/platform-browser": "^20.0.6",
     "@angular/platform-browser-dynamic": "^20.0.6",
     "@angular/router": "^20.0.6",
-    "@arcgis/core": "^4.30.3",
-    "@arcgis/map-components": "^4.32.14",
     "@esri/calcite-components": "^3.2.1",
     "@esri/calcite-components-angular": "^2.11.1",
     "@ngx-env/builder": "^19.0.4",
@@ -49,11 +47,5 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0"
-  },
-  "overrides": {
-    "@arcgis/map-components-angular": {
-      "@angular/core": "^19.2.5",
-      "@angular/common": "^19.2.5"
-    }
   }
 }

@@ -32,7 +32,6 @@ import {
 import { WebApiService } from '../../api/web-api.service';
 import { environment } from '../../environments/environment';
 import { getFirstFileFromResults } from '../../util/api-util';
-import { ColorRGBA } from '../../util/arcgis/arcgis-layer-util';
 import { urlToBlobObjectURL } from '../../util/http-util';
 import { isDefined } from '../../util/js-util';
 import { ReefGuideApiService } from './reef-guide-api.service';
@@ -91,7 +90,8 @@ export class ReefGuideMapService {
   // map is set shortly after construction
   private map!: OLMap;
 
-  assessColor: ColorRGBA = [241, 192, 12, 1];
+  // TODO apply default style for assessed layer
+  assessColor = [241, 192, 12, 1]; // ColorRGBA
 
   criteriaLayers: Record<string, LayerController | undefined> = {};
 
@@ -99,7 +99,7 @@ export class ReefGuideMapService {
    * HTTP errors encounter by map layers.
    * TODO hookup OpenLayers error reporting
    */
-  httpErrors: Subject<__esri.Error> = new Subject<__esri.Error>();
+  httpErrors: Subject<Error> = new Subject<Error>();
 
   /**
    * Progress on loading incremental map layers, i.e. tiles
@@ -164,9 +164,10 @@ export class ReefGuideMapService {
     this.httpErrors
       .pipe(throttleTime(2_000), takeUntilDestroyed(this.destroyRef))
       .subscribe(err => {
-        const status = err.details.httpStatus;
+        // TODO openlayers error handling
+        // const status = err.details.httpStatus;
         // err.details.url
-        this.snackbar.open(`Map layer error (HTTP ${status})`, 'OK');
+        // this.snackbar.open(`Map layer error (HTTP ${status})`, 'OK');
       });
   }
 
