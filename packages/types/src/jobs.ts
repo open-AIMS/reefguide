@@ -66,7 +66,9 @@ export const dataSpecificationUpdateJobInputSchema = z.object({
 export const adriaModelRunInputSchema = z
   .object({
     // Each data package defines an input domain
-    data_package: z.enum(['MOORE', 'GBR']).describe('Which data package to use for analysis. MOORE or GBR.'),
+    data_package: z
+      .enum(['MOORE', 'GBR'])
+      .describe('Which data package to use for analysis. MOORE or GBR.'),
     num_scenarios: z
       .number()
       .int()
