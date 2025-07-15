@@ -9,7 +9,6 @@ import { LayerListComponent } from '../widgets/layer-list/layer-list.component';
 import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
 import { debounceTime, map, Subject } from 'rxjs';
 import LayerGroup from 'ol/layer/Group';
-import { MatExpansionPanel } from '@angular/material/expansion';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -21,7 +20,7 @@ import { MatExpansionPanel } from '@angular/material/expansion';
 @Component({
   selector: 'app-reef-map',
   templateUrl: './reef-map.component.html',
-  imports: [LayerListComponent, JobStatusListComponent, MatExpansionPanel],
+  imports: [LayerListComponent, JobStatusListComponent],
   styleUrl: './reef-map.component.scss'
 })
 export class ReefMapComponent implements AfterViewInit {

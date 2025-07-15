@@ -3,10 +3,9 @@ import { Component, effect, inject, signal, viewChild, ViewChild } from '@angula
 import { toObservable } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { MatAccordion, MatExpansionModule } from '@angular/material/expansion';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -19,13 +18,14 @@ import { ClusterAdminDialogComponent } from '../admin/cluster/ClusterAdminDialog
 import { ConfigDialogComponent } from './config-dialog/config-dialog.component';
 import { CriteriaAssessment, criteriaToJobPayload } from './reef-guide-api.types';
 import { ReefGuideConfigService } from './reef-guide-config.service';
-import { ReefGuideMapService } from './reef-guide-map.service';
+import { MAP_UI, MapUI, ReefGuideMapService } from './reef-guide-map.service';
 import { SelectionCriteriaComponent } from './selection-criteria/selection-criteria.component';
 import { WebApiService } from '../../api/web-api.service';
 import { RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
-import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
 import { ReefMapComponent } from '../reef-map/reef-map.component';
 import { fromLonLat } from 'ol/proj';
+import Layer from 'ol/layer/Layer';
+import { LayerStyleEditorComponent } from '../widgets/layer-style-editor/layer-style-editor.component';
 
 type DrawerModes = 'criteria' | 'style';
 
@@ -46,19 +46,17 @@ type DrawerModes = 'criteria' | 'style';
     MatTooltip,
     AsyncPipe,
     MatProgressSpinner,
-    MatAccordion,
     MatExpansionModule,
     CommonModule,
     MatMenuModule,
-    MatProgressBar,
-    JobStatusListComponent,
-    ReefMapComponent
+    ReefMapComponent,
+    LayerStyleEditorComponent
   ],
-  providers: [ReefGuideMapService],
+  providers: [ReefGuideMapService, { provide: MAP_UI, useExisting: LocationSelectionComponent }],
   templateUrl: './location-selection.component.html',
   styleUrl: './location-selection.component.scss'
 })
-export class LocationSelectionComponent {
+export class LocationSelectionComponent implements MapUI {
   readonly config = inject(ReefGuideConfigService);
   readonly authService = inject(AuthService);
   readonly api = inject(WebApiService);
@@ -70,6 +68,11 @@ export class LocationSelectionComponent {
   drawerMode = signal<DrawerModes>('criteria');
 
   /**
+   * Layer style that is currently being edited
+   */
+  editingLayerStyle = signal<Layer | undefined>(undefined);
+
+  /**
    * Assess related layer is loading.
    */
   isAssessing$: Observable<boolean>;
@@ -77,6 +80,7 @@ export class LocationSelectionComponent {
   @ViewChild('drawer') drawer!: MatDrawer;
 
   constructor() {
+    console.warn('construct');
     // track the signals that indicate a current request/job in progress
     // related to the Assess panel.
     this.isAssessing$ = combineLatest([
@@ -95,6 +99,11 @@ export class LocationSelectionComponent {
       },
       { manualCleanup: true }
     );
+  }
+
+  openLayerStyleEditor(layer: Layer): void {
+    this.editingLayerStyle.set(layer);
+    this.openDrawer('style');
   }
 
   /**

@@ -1,21 +1,10 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, signal } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
-import Layer from '@arcgis/core/layers/Layer';
-import GroupLayer from '@arcgis/core/layers/GroupLayer';
-import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
-import {
-  changePolygonLayerColor,
-  getPolygonLayerColor
-} from '../../../util/arcgis/arcgis-layer-util';
+import Layer from 'ol/layer/Layer';
 
-// BlendLayer has no default export
-type BlendLayer = __esri.BlendLayer;
-type BlendModes = BlendLayer['blendMode'];
-
-export type StylableLayer = Pick<Layer & BlendLayer, 'opacity' | 'blendMode' | 'id' | 'title'>;
-
+// REVIEW was for ArcGis, but these are canvas blend modes
 const BLEND_MODES = [
   'average',
   'color-burn',
@@ -50,6 +39,11 @@ const BLEND_MODES = [
   'xor'
 ];
 
+/**
+ * Layer style editor.
+ *
+ * TODO add more features for OpenLayers
+ */
 @Component({
   selector: 'app-layer-style-editor',
   imports: [MatFormFieldModule, MatSelectModule, MatSliderModule],
@@ -57,67 +51,48 @@ const BLEND_MODES = [
   styleUrl: './layer-style-editor.component.scss'
 })
 export class LayerStyleEditorComponent {
-  layer = input.required<StylableLayer>();
+  layer = input.required<Layer>();
 
   blendModes = BLEND_MODES;
 
-  supportsColor = computed(() => {
-    // HACK until we abstract layers properly.
-    // TODO fix
-    // @ts-ignore
-    return this.layer().title.startsWith('Assessed Regions');
-  });
+  supportsColor = signal(false);
+  // supportsColor = computed(() => {
+  //   // HACK until we abstract layers properly.
+  //   // TODO fix
+  //   // @ts-ignore
+  //   return this.layer().title.startsWith('Assessed Regions');
+  // });
+  //
+  // currentColor = computed(() => {
+  //   const layer = this.layer();
+  //   let color: string | undefined;
+  //   if (layer) {
+  //     this.iteratePolygonLayers(layer, graphicsLayer => {
+  //       color = getPolygonLayerColor(graphicsLayer);
+  //       return false;
+  //     });
+  //   }
+  //
+  //   return color;
+  // });
 
-  currentColor = computed(() => {
-    const layer = this.layer();
-    let color: string | undefined;
-    if (layer) {
-      this.iteratePolygonLayers(layer, graphicsLayer => {
-        color = getPolygonLayerColor(graphicsLayer);
-        return false;
-      });
-    }
-
-    return color;
-  });
-
-  constructor() {}
-
-  onBlendModeChange(value: BlendModes) {
-    const layer = this.layer();
-    layer.blendMode = value;
-  }
+  // onBlendModeChange(value: BlendModes) {
+  //   const layer = this.layer();
+  //   layer.getRenderer().???
+  // }
 
   onOpacityInput($event: Event) {
     const inputEl = $event.target as HTMLInputElement;
-    this.layer().opacity = Number(inputEl.value);
+    const opacityValue = Number(inputEl.value);
+    this.layer().setOpacity(opacityValue);
   }
 
-  onColorChange(event: Event) {
-    const el = event.target! as HTMLInputElement;
-    const color = el.value;
-    this.iteratePolygonLayers(this.layer(), graphicsLayer => {
-      changePolygonLayerColor(graphicsLayer, color);
-      return true;
-    });
-  }
-
-  // HACK for tile layers until abstraction work
-  private iteratePolygonLayers(
-    layer: StylableLayer,
-    fn: (graphicsLayer: GraphicsLayer) => boolean
-  ) {
-    if (layer instanceof GroupLayer) {
-      layer.layers.forEach(subGroup => {
-        if (subGroup instanceof GroupLayer) {
-          const colorLayer = subGroup.findLayerById('global_polygon_layer');
-          if (colorLayer instanceof GraphicsLayer) {
-            if (!fn(colorLayer)) {
-              return;
-            }
-          }
-        }
-      });
-    }
-  }
+  // onColorChange(event: Event) {
+  //   const el = event.target! as HTMLInputElement;
+  //   const color = el.value;
+  //   this.iteratePolygonLayers(this.layer(), graphicsLayer => {
+  //     changePolygonLayerColor(graphicsLayer, color);
+  //     return true;
+  //   });
+  // }
 }

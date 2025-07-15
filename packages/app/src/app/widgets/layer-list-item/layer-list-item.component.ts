@@ -1,16 +1,20 @@
-import { Component, input, OnInit, signal } from '@angular/core';
+import { Component, inject, input, OnInit, signal } from '@angular/core';
 import Layer from 'ol/layer/Layer';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MAP_UI } from '../../location-selection/reef-guide-map.service';
 
 @Component({
   selector: 'app-layer-list-item',
-  imports: [MatIconButton, MatIcon],
+  imports: [MatIconButton, MatIcon, MatTooltip],
   templateUrl: './layer-list-item.component.html',
   styleUrl: './layer-list-item.component.scss'
 })
 export class LayerListItemComponent implements OnInit {
   layer = input.required<Layer>();
+
+  mapUI = inject(MAP_UI);
 
   // FUTURE ideally have some kind of layer signal wrapper shared among components
   isVisible = signal(true);
@@ -33,5 +37,9 @@ export class LayerListItemComponent implements OnInit {
   toggleVisible() {
     const layer = this.layer();
     layer.setVisible(!layer.getVisible());
+  }
+
+  openStyleEditor() {
+    this.mapUI.openLayerStyleEditor(this.layer());
   }
 }

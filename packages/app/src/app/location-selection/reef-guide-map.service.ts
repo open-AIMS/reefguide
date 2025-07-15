@@ -3,6 +3,7 @@ import {
   DestroyRef,
   inject,
   Injectable,
+  InjectionToken,
   INJECTOR,
   runInInjectionContext,
   signal,
@@ -35,7 +36,6 @@ import { getFirstFileFromResults } from '../../util/api-util';
 import { ColorRGBA } from '../../util/arcgis/arcgis-layer-util';
 import { urlToBlobObjectURL } from '../../util/http-util';
 import { isDefined } from '../../util/js-util';
-import { StylableLayer } from '../widgets/layer-style-editor/layer-style-editor.component';
 import { ReefGuideApiService } from './reef-guide-api.service';
 import {
   criteriaToSiteSuitabilityJobPayload,
@@ -60,11 +60,23 @@ import VectorSource from 'ol/source/Vector';
 import { GeoJSON } from 'ol/format';
 import { Fill, Stroke, Style } from 'ol/style';
 import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
+import Layer from 'ol/layer/Layer';
 
 interface CriteriaLayer {
   layer: TileLayer;
   visible: WritableSignal<boolean>;
 }
+
+/**
+ * Map UI actions implemented by the overall app design.
+ *
+ * @see LocationSelectionComponent
+ */
+export interface MapUI {
+  openLayerStyleEditor(layer: Layer): void;
+}
+
+export const MAP_UI = new InjectionToken<MapUI>('high-level map UI service');
 
 /**
  * Reef Guide map context and layer management.

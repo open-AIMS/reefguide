@@ -1,5 +1,10 @@
 @let l = layer();
-<button mat-icon-button (click)="toggleVisible()">
+<button mat-icon-button (click)="openStyleEditor()"
+        matTooltip="Edit layer style">
+  <mat-icon>brush</mat-icon>
+</button>
+<button mat-icon-button (click)="toggleVisible()"
+        matTooltip="Toggle visibility">
   <mat-icon>{{ isVisible() ? 'visibility' : 'visibility_off' }}</mat-icon>
 </button>
-<span class="title">{{l.get('title')}}</span>
+<span class="title">{{ l.get('title') }}</span>
