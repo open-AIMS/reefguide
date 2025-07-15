@@ -51,7 +51,7 @@
         <div class="styling-content">
           @let editingLayer = editingLayerStyle();
           @if (editingLayer) {
-          <app-layer-style-editor [layer]="editingLayer"></app-layer-style-editor>
+            <app-layer-style-editor [layer]="editingLayer"></app-layer-style-editor>
           } @else {
             <p>No layer selected!</p>
           }
@@ -82,15 +82,15 @@
               </mat-progress-spinner>
             }
           </div>
-<!--          TODO polygon notes -->
-<!--          <button-->
-<!--            mat-mini-fab-->
-<!--            (click)="mapService.toggleNotes()"-->
-<!--            matTooltipPosition="right"-->
-<!--            matTooltip="Notes"-->
-<!--          >-->
-<!--            <mat-icon>edit_note</mat-icon>-->
-<!--          </button>-->
+          <!--          TODO polygon notes -->
+          <!--          <button-->
+          <!--            mat-mini-fab-->
+          <!--            (click)="mapService.toggleNotes()"-->
+          <!--            matTooltipPosition="right"-->
+          <!--            matTooltip="Notes"-->
+          <!--          >-->
+          <!--            <mat-icon>edit_note</mat-icon>-->
+          <!--          </button>-->
         </div>
       }
     </app-reef-map>

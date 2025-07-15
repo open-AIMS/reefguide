@@ -6,8 +6,11 @@
   <mat-expansion-panel-header>
     <span>{{ numLayers }} Layer{{ numLayers > 1 ? 's' : '' }}</span>
 
-    <mat-progress-spinner mode="indeterminate" diameter="24"
-                          [style.visibility]="isLoading ? 'visible' : 'hidden'"></mat-progress-spinner>
+    <mat-progress-spinner
+      mode="indeterminate"
+      diameter="24"
+      [style.visibility]="isLoading ? 'visible' : 'hidden'"
+    ></mat-progress-spinner>
   </mat-expansion-panel-header>
   @for (layer of layers; track layer) {
     <app-layer-list-item [layer]="layer"></app-layer-list-item>

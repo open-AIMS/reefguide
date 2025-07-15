@@ -9,8 +9,7 @@ describe('LayerListItemComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [LayerListItemComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(LayerListItemComponent);
     component = fixture.componentInstance;
