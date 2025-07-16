@@ -86,6 +86,73 @@ const DatabaseConfigSchema = z.object({
   storageGb: z.number().min(20)
 });
 
+// Job worker scaling configuration schema
+const JobWorkerScalingSchema = z.object({
+  /** Minimum number of worker instances */
+  desiredMinCapacity: z.number().int().nonnegative().default(0),
+  /** Maximum number of worker instances */
+  desiredMaxCapacity: z.number().int().positive().default(5),
+  /** Scaling factor for auto-scaling */
+  scalingFactor: z.number().positive().default(3.3),
+  /** Scaling sensitivity */
+  scalingSensitivity: z.number().positive().default(2.6),
+  /** Cooldown period in seconds */
+  cooldownSeconds: z.number().int().positive().default(60)
+});
+
+// ReefGuide worker configuration schema with defaults
+const ReefGuideWorkerConfigSchema = z.object({
+  /** Docker image tag (e.g. 'latest', 'v1.0.0') */
+  imageTag: z.string().default('latest'),
+  /** CPU units for the worker */
+  cpu: z.number().int().positive().default(4096),
+  /** Memory limit in MiB */
+  memoryLimitMiB: z.number().int().positive().default(8192),
+  /** Scaling configuration */
+  scaling: JobWorkerScalingSchema.default({})
+});
+
+// ADRIA worker configuration schema with defaults
+const ADRIAWorkerConfigSchema = z.object({
+  /** Docker image tag (e.g. 'latest', 'v1.0.0') */
+  imageTag: z.string().default('latest'),
+  /** CPU units for the worker */
+  cpu: z.number().int().positive().default(8192),
+  /** Memory limit in MiB */
+  memoryLimitMiB: z.number().int().positive().default(32768),
+  /** Scaling configuration */
+  scaling: JobWorkerScalingSchema.extend({
+    /** Override default scaling sensitivity for ADRIA */
+    scalingSensitivity: z.number().positive().default(2.1)
+  }).default({})
+});
+
+// Capacity manager configuration schema
+const CapacityManagerConfigSchema = z.object({
+  /** CPU units for capacity manager */
+  cpu: z.number().int().positive().default(512),
+  /** Memory limit in MiB for capacity manager */
+  memoryLimitMiB: z.number().int().positive().default(1024),
+  /** Poll interval in milliseconds */
+  pollIntervalMs: z.number().int().positive().default(3000)
+});
+
+// Workers configuration schema
+const WorkersConfigSchema = z.object({
+  /** Main worker handling suitability assessments, tests, etc. */
+  reefguide: ReefGuideWorkerConfigSchema.default({}),
+  /** ADRIA model worker */
+  adria: ADRIAWorkerConfigSchema.default({})
+});
+
+// Job system configuration schema
+const JobSystemConfigSchema = z.object({
+  /** Capacity manager configuration */
+  capacityManager: CapacityManagerConfigSchema.default({}),
+  /** Worker configurations by worker type */
+  workers: WorkersConfigSchema.default({})
+});
+
 // Define the configuration schema using Zod
 export const DeploymentConfigSchema = z.object({
   /** The name of the stack to deploy to cloudformation. Note that changing
@@ -119,7 +186,10 @@ export const DeploymentConfigSchema = z.object({
 
   // Database configuration - if none provided you will need to supply your own
   // DB connection strings
-  db: DatabaseConfigSchema.optional()
+  db: DatabaseConfigSchema.optional(),
+
+  // Job system configuration
+  jobSystem: JobSystemConfigSchema.default({})
 });
 export type DeploymentConfig = z.infer<typeof DeploymentConfigSchema>;
 
