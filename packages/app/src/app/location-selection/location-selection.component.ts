@@ -205,12 +205,4 @@ export class LocationSelectionComponent implements MapUI {
       }
     }
   }
-
-  getLoadingRegionsMessage(busyRegions: Set<string> | null): string {
-    if (busyRegions == null) {
-      return '';
-    }
-    const vals = Array.from(busyRegions).join(', ');
-    return `Loading: ${vals}`;
-  }
 }

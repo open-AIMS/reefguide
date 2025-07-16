@@ -186,6 +186,26 @@ export class WebApiService {
     });
   }
 
+  getCriteriaLayers(): Record<string, string> {
+    // TODO return from API instead of hardcoding.
+    return {
+      Depth:
+        'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_bathymetry/MapServer',
+      Slope:
+        'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_slope_data/MapServer',
+      WavesHs:
+        'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_wave_Hs_data/MapServer',
+      WavesTp:
+        'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer'
+      // Note: ArcGIS has an alternate WMTS URL
+      // https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml
+    };
+  }
+
+  // getCriteriaDefs(region: string): Observable<any> {
+  //   return this.http.get(`${this.base}/criteria`, {})
+  // }
+
   /**
    * DEPRECATED
    * ==========

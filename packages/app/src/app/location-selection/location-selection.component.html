@@ -1,4 +1,3 @@
-@let busyRegions = mapService.criteriaRequest()?.busyRegions$ | async;
 @let isBusy = isAssessing$ | async;
 @let user = authService.user$ | async;
 <mat-drawer-container hasBackdrop="false" class="reef-guide" (close)="onDrawerClose()">
@@ -28,12 +27,7 @@
             }
             <span style="flex: auto"></span>
             @if (isBusy) {
-              <mat-progress-spinner
-                mode="indeterminate"
-                diameter="32"
-                [matTooltip]="getLoadingRegionsMessage(busyRegions)"
-              >
-              </mat-progress-spinner>
+              <mat-progress-spinner mode="indeterminate" diameter="32"> </mat-progress-spinner>
             }
             <button mat-flat-button [disabled]="isBusy" (click)="onAssess(criteria.getCriteria())">
               Assess
@@ -73,12 +67,7 @@
               <mat-icon>linear_scale</mat-icon>
             </button>
             @if (isBusy) {
-              <mat-progress-spinner
-                class="criteria-spinner"
-                mode="indeterminate"
-                diameter="32"
-                [matTooltip]="getLoadingRegionsMessage(busyRegions)"
-              >
+              <mat-progress-spinner class="criteria-spinner" mode="indeterminate" diameter="32">
               </mat-progress-spinner>
             }
           </div>

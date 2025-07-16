@@ -9,7 +9,7 @@ import {
   signal,
   Signal
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Map as OLMap } from 'ol';
 import { JobType } from '@reefguide/db';
@@ -20,7 +20,6 @@ import {
   forkJoin,
   from,
   map,
-  mergeMap,
   Observable,
   of,
   Subject,
@@ -34,10 +33,8 @@ import { environment } from '../../environments/environment';
 import { getFirstFileFromResults } from '../../util/api-util';
 import { urlToBlobObjectURL } from '../../util/http-util';
 import { isDefined } from '../../util/js-util';
-import { ReefGuideApiService } from './reef-guide-api.service';
 import { SelectionCriteria, SiteSuitabilityCriteria } from './reef-guide-api.types';
 import { ReefGuideConfigService } from './reef-guide-config.service';
-import { CriteriaRequest, ReadyRegion } from './selection-criteria/criteria-request.class';
 import {
   RegionDownloadResponse,
   RegionJobsManager
@@ -70,6 +67,15 @@ export interface MapUI {
 export const MAP_UI = new InjectionToken<MapUI>('high-level map UI service');
 
 /**
+ * Region layer data that is ready to be loaded.
+ */
+export interface ReadyRegion {
+  region: string;
+  cogUrl: string;
+  originalUrl: string;
+}
+
+/**
  * Reef Guide map context and layer management.
  * Higher-level abstraction over the map component.
  */
@@ -79,7 +85,6 @@ export class ReefGuideMapService {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(INJECTOR);
   private readonly api = inject(WebApiService);
-  private readonly reefGuideApi = inject(ReefGuideApiService);
   private readonly snackbar = inject(MatSnackBar);
   private readonly jobsManager = inject(JobsManagerService);
 
@@ -133,9 +138,6 @@ export class ReefGuideMapService {
   private readonly siteSuitabilityLayerGroup = signal<LayerGroup | undefined>(undefined);
 
   private layerControllers = new Map<Layer, LayerController>();
-
-  // current region assessment in progress
-  criteriaRequest = signal<CriteriaRequest | undefined>(undefined);
 
   // whether to show the clear layers button
   showClear = computed(() => {
@@ -352,29 +354,6 @@ export class ReefGuideMapService {
     return layerGroup;
   }
 
-  addCOGLayers(criteria: SelectionCriteria) {
-    console.log('addCOGLayers', criteria);
-
-    const regions$ = toObservable(this.config.enabledRegions, {
-      injector: this.injector
-    }).pipe(mergeMap(regions => of(...regions)));
-
-    const criteriaRequest = runInInjectionContext(
-      this.injector,
-      () => new CriteriaRequest(criteria, regions$)
-    );
-    this.criteriaRequest.set(criteriaRequest);
-
-    const layerGroup = this.setupCOGAssessRegionsLayerGroup();
-
-    criteriaRequest.regionError$.subscribe(region => this.handleRegionError(region));
-
-    criteriaRequest.regionReady$
-      // unsubscribe when this component is destroyed
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(region => this.addRegionLayer(region, layerGroup));
-  }
-
   /**
    * Start SUITABILITY_ASSESSMENT jobs for all active regions.
    * @param criteria
@@ -464,12 +443,6 @@ export class ReefGuideMapService {
   cancelAssess() {
     this.cancelAssess$.next();
 
-    const cr = this.criteriaRequest();
-    if (cr) {
-      cr.cancel();
-      this.criteriaRequest.set(undefined);
-    }
-
     // cancel all jobs for now, this code will be reworked soon.
     this.jobsManager.cancelAll();
   }
@@ -545,7 +518,7 @@ export class ReefGuideMapService {
   }
 
   private async addCriteriaLayers() {
-    const layers = this.reefGuideApi.getCriteriaLayers();
+    const layers = this.api.getCriteriaLayers();
 
     const layerGroup = new LayerGroup({
       properties: {

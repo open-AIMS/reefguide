@@ -17,14 +17,9 @@
               </button>
             }
           </div>
-          <mat-slider
-            [min]="c.min"
-            [max]="c.max"
-            [step]="c.step ?? 1"
-            discrete="true"
-          >
-            <input matSliderStartThumb [formControlName]="`${c.payloadPropertyPrefix}_min`">
-            <input matSliderEndThumb [formControlName]="`${c.payloadPropertyPrefix}_max`">
+          <mat-slider [min]="c.min" [max]="c.max" [step]="c.step ?? 1" discrete="true">
+            <input matSliderStartThumb [formControlName]="`${c.payloadPropertyPrefix}_min`" />
+            <input matSliderEndThumb [formControlName]="`${c.payloadPropertyPrefix}_max`" />
           </mat-slider>
         </div>
       }
@@ -42,16 +37,16 @@
           <div class="row">
             <mat-form-field>
               <mat-label>X (meters)</mat-label>
-              <input type="number" matInput formControlName="x_dist"/>
+              <input type="number" matInput formControlName="x_dist" />
             </mat-form-field>
             <mat-form-field>
               <mat-label>Y (meters)</mat-label>
-              <input type="number" matInput formControlName="y_dist"/>
+              <input type="number" matInput formControlName="y_dist" />
             </mat-form-field>
           </div>
           <header class="label">Threshold</header>
           <mat-slider min="0" max="100" discrete>
-            <input matSliderThumb formControlName="threshold"/>
+            <input matSliderThumb formControlName="threshold" />
           </mat-slider>
         </div>
       }
