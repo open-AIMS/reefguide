@@ -220,7 +220,9 @@ The main repository contains a configuration management script that interacts wi
 
 ## Administering the EFS service instance
 
-- connect to the instance using AWS SSM Connect (go to AWS -> EC2 -> Find the service instance -> Connect -> Connect using SSM)
+You can use the below manual process to connect to the EFS volume, or use the management scripts below in [efs scripts](#efs-management-scripts).
+
+Connect to the instance using AWS SSM Connect (go to AWS -> EC2 -> Find the service instance -> Connect -> Connect using SSM)
 
 then get into the ubuntu user and mount the volume
 
@@ -243,7 +245,7 @@ These scripts provide a seamless way to:
 - Upload files/directories to EFS without direct network access
 - Auto-discover EFS connection details from CloudFormation stacks
 - Connect interactively to EFS management instances
-- Handle large transfers efficiently via S3 staging
+- Handle large transfers efficiently via the CDK deployed s3 data transfer bucket
 
 ### Scripts
 
@@ -257,7 +259,7 @@ Uploads local files or directories to EFS via EC2 instance using SSM.
 
 **Options:**
 
-- `--zip`: Compress directories before transfer (more efficient for many small files)
+- `--zip`: Compress directories before transfer
 
 **Examples:**
 
@@ -303,7 +305,6 @@ CONFIG_FILE_NAME=test.json ./connect-efs.sh [stack-name]
 #### Environment Variables
 
 - `CONFIG_FILE_NAME`: Your config file name (e.g., `test.json`, `prod.json`)
-- `AWS_REGION`: AWS region (optional, uses AWS CLI default)
 
 #### Config File Format
 
@@ -314,19 +315,6 @@ Place config files in `configs/${CONFIG_FILE_NAME}`:
   "stackName": "your-cloudformation-stack-name",
   ...
 }
-```
-
-#### CloudFormation Output
-
-Your stack must export an output named `efnConnectionInfo`:
-
-```typescript
-new CfnOutput(this, 'efnConnectionInfo', {
-  value: JSON.stringify({
-    serviceInstanceId: efsManagementInstance.instanceId,
-    transferBucketName: this.dataBucket.bucketName
-  })
-});
 ```
 
 ### Prerequisites
@@ -419,14 +407,6 @@ sudo su - ubuntu
 ls -la /home/ubuntu/efs/
 ```
 
-#### Pipeline Usage
-
-```bash
-# Pipe discovery results
-CONFIG_FILE_NAME=prod.json ./get-efs-target.sh | \
-  xargs ./copy-to-efs.sh --zip ./dataset analysis/dataset
-```
-
 ### Troubleshooting
 
 #### Common Issues
@@ -435,10 +415,6 @@ CONFIG_FILE_NAME=prod.json ./get-efs-target.sh | \
 - **"SessionManagerPlugin not found"**: Install Session Manager plugin (see Prerequisites)
 - **"CONFIG_FILE_NAME not set"**: Export the environment variable
 - **"Stack output not found"**: Verify your CloudFormation stack has the `efnConnectionInfo` output
-
-#### Debugging
-
-All scripts log to `*.log` files in the script directory. Check these for detailed error information.
 
 #### Instance States
 
