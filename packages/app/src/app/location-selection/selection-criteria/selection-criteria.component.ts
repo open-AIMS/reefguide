@@ -135,6 +135,8 @@ export class SelectionCriteriaComponent {
     const formValue = this.form.value;
 
     if (!this.form.valid) {
+      // this causes required form inputs to show error state
+      this.form.markAllAsTouched();
       throw new Error('Form invalid!');
     }
 
