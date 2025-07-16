@@ -11,31 +11,31 @@
     </mat-form-field>
 
     @if (criteriaRanges) {
-    <div formGroupName="criteria">
-      @for (c of criteriaRanges; track c.id) {
-        @let criteriaLayer = mapService.criteriaLayers[c.id];
-        @let visible = criteriaLayer?.visible();
-        <div class="criteria" [class.visible]="visible === true">
-          <div class="row">
-            <span class="label" [matTooltip]="c.units">{{ c.display_title }}</span>
-            @if (visible != null) {
-              <button
-                mat-icon-button
-                class="visibility"
-                (click)="mapService.showCriteriaLayer(c.id, !visible)"
-              >
-                <mat-icon>{{ visible ? 'visibility' : 'visibility_off' }}</mat-icon>
-              </button>
-            }
+      <div formGroupName="criteria">
+        @for (c of criteriaRanges; track c.id) {
+          @let criteriaLayer = mapService.criteriaLayers[c.id];
+          @let visible = criteriaLayer?.visible();
+          <div class="criteria" [class.visible]="visible === true">
+            <div class="row">
+              <span class="label" [matTooltip]="c.units">{{ c.display_title }}</span>
+              @if (visible != null) {
+                <button
+                  mat-icon-button
+                  class="visibility"
+                  (click)="mapService.showCriteriaLayer(c.id, !visible)"
+                >
+                  <mat-icon>{{ visible ? 'visibility' : 'visibility_off' }}</mat-icon>
+                </button>
+              }
+            </div>
+            <p class="subtitle mat-body-small">{{ c.display_subtitle }}</p>
+            <mat-slider [min]="c.min_val" [max]="c.max_val" discrete="true" [step]="c.step">
+              <input matSliderStartThumb [formControlName]="`${c.payload_property_prefix}_min`" />
+              <input matSliderEndThumb [formControlName]="`${c.payload_property_prefix}_max`" />
+            </mat-slider>
           </div>
-          <p class="subtitle mat-body-small">{{ c.display_subtitle }}</p>
-          <mat-slider [min]="c.min_val" [max]="c.max_val" discrete="true" [step]="c.step">
-            <input matSliderStartThumb [formControlName]="`${c.payload_property_prefix}_min`" />
-            <input matSliderEndThumb [formControlName]="`${c.payload_property_prefix}_max`" />
-          </mat-slider>
-        </div>
-      }
-    </div>
+        }
+      </div>
     }
     <div class="ss-container" formGroupName="siteSuitability">
       <mat-slide-toggle
