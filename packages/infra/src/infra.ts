@@ -214,6 +214,7 @@ export class ReefguideStack extends cdk.Stack {
         pollIntervalMs: capacityManager.pollIntervalMs
       },
       workers: [
+        // Reefguide Worker
         {
           // This worker handles both tests and suitability assessments, as well
           // as some misc jobs
@@ -231,7 +232,23 @@ export class ReefguideStack extends cdk.Stack {
           serverPort: 3000,
 
           // Launch the worker
-          command: ['using ReefGuideWorker; ReefGuideWorker.start_worker()'],
+          ...(reefguide.sysimage
+            ? // Sysimage mode!
+              {
+                command: [
+                  '--project=@app',
+                  `-J`,
+                  reefguide.sysimage.sysimagePath,
+                  '--sysimage-native-code=yes',
+                  '-e',
+                  'using ReefGuideWorker; ReefGuideWorker.start_worker()'
+                ],
+                entrypoint: ['julia']
+              }
+            : // Normal mode
+              {
+                command: ['using ReefGuideWorker; ReefGuideWorker.start_worker()']
+              }),
           // Configurable scaling parameters
           desiredMinCapacity: reefguide.scaling.desiredMinCapacity,
           desiredMaxCapacity: reefguide.scaling.desiredMaxCapacity,

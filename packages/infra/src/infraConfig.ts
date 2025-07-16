@@ -100,6 +100,11 @@ const JobWorkerScalingSchema = z.object({
   cooldownSeconds: z.number().int().positive().default(60)
 });
 
+const SysimageConfigurationSchema = z.object({
+  /** What is the absolute path at runtime to the sysimage.so file - this needs to be part of the EFS mount */
+  sysimagePath: z.string().default('/data/reefguide/sysimages/ReefGuideWorker.so')
+});
+
 // ReefGuide worker configuration schema with defaults
 const ReefGuideWorkerConfigSchema = z.object({
   /** Docker image tag (e.g. 'latest', 'v1.0.0') */
@@ -109,7 +114,9 @@ const ReefGuideWorkerConfigSchema = z.object({
   /** Memory limit in MiB */
   memoryLimitMiB: z.number().int().positive().default(8192),
   /** Scaling configuration */
-  scaling: JobWorkerScalingSchema.default({})
+  scaling: JobWorkerScalingSchema.default({}),
+  /** Sysimage mode? */
+  sysimage: SysimageConfigurationSchema.optional()
 });
 
 // ADRIA worker configuration schema with defaults
