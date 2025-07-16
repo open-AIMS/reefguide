@@ -72,12 +72,10 @@ export class RegionJobsManager {
     // avoid repeating values
     regions$ = regions$.pipe(distinct());
 
-    // parallel requests or sequential according to config.
-    const mapFn = this.config.parallelRegionRequests() ? mergeMap : concatMap;
-
     // TODO review error handling, catchError
     this.jobResultsDownload$ = regions$.pipe(
-      mapFn(region => {
+      // mergeMap for parallel, concatMap sequential
+      mergeMap(region => {
         this.startRegion(region);
         const finalPayload = {
           ...payload,

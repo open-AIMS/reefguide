@@ -2,22 +2,10 @@
 <h2 mat-dialog-title>Configuration {{ isAdmin }}</h2>
 <mat-dialog-content>
   <mat-tab-group dynamicHeight>
-    <mat-tab label="Map">
-      <h3 class="mat-headline-small">Regions</h3>
-
-      <mat-selection-list [formControl]="regions">
-        @for (region of regionChoices; track region) {
-          <mat-list-option [value]="region">{{ region }}</mat-list-option>
-        }
-      </mat-selection-list>
-    </mat-tab>
+<!--    <mat-tab label="Map">-->
+<!--      -->
+<!--    </mat-tab>-->
     <mat-tab label="Developer">
-      <mat-checkbox
-        [formControl]="parallelRegionRequests"
-        matTooltip="Request region layers simultaneously"
-      >
-        Parallel COG requests
-      </mat-checkbox>
       <mat-checkbox
         [formControl]="enableCOGBlob"
         matTooltip="Improve COG layer performance by copying entire file in memory"
