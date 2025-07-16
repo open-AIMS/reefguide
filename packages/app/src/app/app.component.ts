@@ -1,9 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterOutlet } from '@angular/router';
-import { defineCustomElements as defineCalciteElements } from '@esri/calcite-components/dist/loader';
 import { environment } from '../environments/environment';
 import { AppAccessService } from './auth/app-access.service';
 import { SplashScreenComponent } from './auth/splash-screen/splash-screen.component';
@@ -25,7 +24,7 @@ import { SplashScreenComponent } from './auth/splash-screen/splash-screen.compon
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   private readonly appAccessService = inject(AppAccessService);
 
   title = 'ReefGuide';
@@ -44,24 +43,6 @@ export class AppComponent implements OnInit {
    * Splash screen configuration from environment
    */
   readonly splashConfig = environment.splashConfig;
-
-  ngOnInit(): void {
-    // Initialize third-party components
-    this.initializeThirdPartyComponents();
-  }
-
-  /**
-   * Initialize ArcGIS and Calcite components
-   * Separated into its own method for clarity
-   */
-  private initializeThirdPartyComponents(): void {
-    // Initialize Calcite components
-    defineCalciteElements(window, {
-      resourcesUrl: 'https://js.arcgis.com/calcite-components/2.11.1/assets'
-    });
-
-    console.log('[AppComponent] Third-party components initialized');
-  }
 
   /**
    * Get CSS classes for the main app container

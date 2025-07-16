@@ -1,8 +1,6 @@
 @use '@angular/material' as mat;
 $theme: mat.define-theme();
 
-@import '@esri/calcite-components/dist/calcite/calcite.css';
-
 html,
 body {
   height: 100%;
