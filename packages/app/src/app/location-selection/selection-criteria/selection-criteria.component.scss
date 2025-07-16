@@ -35,6 +35,11 @@
       color: inherit; // default
     }
   }
+
+  mat-slider {
+    // inline-block was default; this causes it to fill width and respect container padding
+    display: block;
+  }
 }
 
 .ss-container {

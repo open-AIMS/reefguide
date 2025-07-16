@@ -16,7 +16,7 @@ import { AuthService } from '../auth/auth.service';
 import { LoginDialogComponent } from '../auth/login-dialog/login-dialog.component';
 import { ClusterAdminDialogComponent } from '../admin/cluster/ClusterAdminDialog.component';
 import { ConfigDialogComponent } from './config-dialog/config-dialog.component';
-import { CriteriaAssessment, criteriaToJobPayload } from './reef-guide-api.types';
+import { CriteriaAssessment } from './reef-guide-api.types';
 import { ReefGuideConfigService } from './reef-guide-config.service';
 import { MAP_UI, MapUI, ReefGuideMapService } from './reef-guide-map.service';
 import { SelectionCriteriaComponent } from './selection-criteria/selection-criteria.component';
@@ -167,15 +167,13 @@ export class LocationSelectionComponent implements MapUI {
    * @param assessment
    */
   onAssess(assessment: CriteriaAssessment) {
-    const { criteria, siteSuitability } = assessment;
+    const { criteria: raPartialPayload, siteSuitability } = assessment;
 
     this.mapService.clearAssessedLayers();
 
     // no need to await
     void this.drawer.close();
 
-    // convert criteria to job payload and start job
-    const raPartialPayload = criteriaToJobPayload(criteria);
     const jobsManager = this.mapService.addJobLayers('REGIONAL_ASSESSMENT', raPartialPayload);
     // could load previous job result like this:
     // this.mapService.loadLayerFromJobResults(31);
@@ -196,16 +194,14 @@ export class LocationSelectionComponent implements MapUI {
 
           const ssPayload: SuitabilityAssessmentInput = {
             ...raFinalPayload,
-            threshold: siteSuitability.SuitabilityThreshold,
-            x_dist: siteSuitability.xdist,
-            y_dist: siteSuitability.ydist
+            ...siteSuitability
           };
 
           this.mapService.addSiteSuitabilityLayer(ssPayload);
         });
       } else {
         // start site suitability jobs immediately
-        this.mapService.addAllSiteSuitabilityLayers(criteria, siteSuitability);
+        this.mapService.addAllSiteSuitabilityLayers(raPartialPayload, siteSuitability);
       }
     }
   }

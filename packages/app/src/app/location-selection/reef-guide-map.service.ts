@@ -35,11 +35,7 @@ import { getFirstFileFromResults } from '../../util/api-util';
 import { urlToBlobObjectURL } from '../../util/http-util';
 import { isDefined } from '../../util/js-util';
 import { ReefGuideApiService } from './reef-guide-api.service';
-import {
-  criteriaToSiteSuitabilityJobPayload,
-  SelectionCriteria,
-  SiteSuitabilityCriteria
-} from './reef-guide-api.types';
+import { SelectionCriteria, SiteSuitabilityCriteria } from './reef-guide-api.types';
 import { ReefGuideConfigService } from './reef-guide-config.service';
 import { CriteriaRequest, ReadyRegion } from './selection-criteria/criteria-request.class';
 import {
@@ -388,7 +384,11 @@ export class ReefGuideMapService {
     const regions = this.config.enabledRegions();
 
     for (const region of regions) {
-      const payload = criteriaToSiteSuitabilityJobPayload(region, criteria, siteCriteria);
+      const payload: SuitabilityAssessmentInput = {
+        region,
+        ...criteria,
+        ...siteCriteria
+      };
 
       this.addSiteSuitabilityLayer(payload);
     }

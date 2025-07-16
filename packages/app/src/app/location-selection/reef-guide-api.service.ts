@@ -28,6 +28,9 @@ export class ReefGuideApiService {
     return url.toString();
   }
 
+  /**
+   * @deprecated
+   */
   siteSuitabilityUrlForCriteria(
     region: string,
     criteria: SelectionCriteria,
@@ -37,7 +40,7 @@ export class ReefGuideApiService {
     const url = new URL(`/suitability/site-suitability/${region}/${rtype}`, this.base);
     this.addCriteriaToParams(url, criteria);
     for (const [key, value] of Object.entries(suitabilityCriteria)) {
-      url.searchParams.set(key, value);
+      // url.searchParams.set(key, value);
     }
     return url.toString();
   }
@@ -51,11 +54,13 @@ export class ReefGuideApiService {
     return this.http.get(url);
   }
 
+  /**
+   * @deprecated invalid, will be removed soon
+   */
   private addCriteriaToParams(url: URL | URLSearchParams, criteria: SelectionCriteria) {
     const searchParams = url instanceof URL ? url.searchParams : url;
     for (const name in criteria) {
-      const [lower, upper] = criteria[name];
-      searchParams.set(name, `${lower}:${upper}`);
+      searchParams.set(name, `0:1`);
     }
   }
 

@@ -1,5 +1,4 @@
-import { Component, inject, QueryList, signal, ViewChildren } from '@angular/core';
-import { CalciteComponentsModule, CalciteSlider } from '@esri/calcite-components-angular';
+import { Component, inject, signal } from '@angular/core';
 import { MatSliderModule } from '@angular/material/slider';
 import {
   FormBuilder,
@@ -20,6 +19,7 @@ import { ReefGuideConfigService } from '../reef-guide-config.service';
 interface SelectionCriteriaInputDef {
   // field/id used by API
   id: string;
+  payloadPropertyPrefix: string;
   name: string;
   desc?: string;
   min: number;
@@ -37,7 +37,6 @@ interface SelectionCriteriaInputDef {
   selector: 'app-selection-criteria',
   imports: [
     MatSliderModule,
-    CalciteComponentsModule,
     FormsModule,
     MatIconButton,
     MatIcon,
@@ -62,6 +61,7 @@ export class SelectionCriteriaComponent {
   criteria: Array<SelectionCriteriaInputDef> = [
     {
       id: 'Depth',
+      payloadPropertyPrefix: 'depth',
       name: 'Depth (m)',
       // Bathy: -9.0:-2.0
       // UI is positive, but API takes negative numbers
@@ -76,6 +76,7 @@ export class SelectionCriteriaComponent {
     },
     {
       id: 'Slope',
+      payloadPropertyPrefix: 'slope',
       name: 'Slope (degrees)',
       // Slope: 0.0:40.0
       min: 0,
@@ -83,6 +84,7 @@ export class SelectionCriteriaComponent {
     },
     {
       id: 'WavesHs',
+      payloadPropertyPrefix: 'waves_height',
       name: ' Significant Wave Height (Hs)',
       min: 0,
       max: 6,
@@ -91,6 +93,7 @@ export class SelectionCriteriaComponent {
     },
     {
       id: 'WavesTp',
+      payloadPropertyPrefix: 'waves_period',
       name: 'Wave Period',
       // Wave Period: 0.0:6.0
       min: 0,
@@ -100,51 +103,62 @@ export class SelectionCriteriaComponent {
     }
   ];
 
-  enableSiteSuitability = signal(false);
+  enableSiteSuitability = signal(true);
 
-  // form isn't working with Calcite, so we get form data via ViewChildren access
-  // @ViewChild('form') form!: NgForm;
-
-  siteForm: FormGroup;
-
-  @ViewChildren(CalciteSlider) sliders!: QueryList<CalciteSlider>;
+  form: FormGroup;
 
   constructor() {
-    this.siteForm = this.formBuilder.group({
-      xdist: [450, [Validators.min(1), Validators.required]],
-      ydist: [20, [Validators.min(1), Validators.required]],
-      SuitabilityThreshold: [95, Validators.required]
+    const criteriaControlDefs: Record<string, any> = {
+      reef_type: ['slopes']
+    };
+
+    for (const c of this.criteria) {
+      criteriaControlDefs[`${c.payloadPropertyPrefix}_min`] = [c.minValue ?? c.min];
+      criteriaControlDefs[`${c.payloadPropertyPrefix}_max`] = [c.maxValue ?? c.max];
+    }
+
+    this.form = this.formBuilder.group({
+      criteria: this.formBuilder.group(criteriaControlDefs),
+      siteSuitability: this.formBuilder.group<Record<keyof SiteSuitabilityCriteria, any>>({
+        x_dist: [450, [Validators.min(1), Validators.required]],
+        y_dist: [20, [Validators.min(1), Validators.required]],
+        threshold: [95, Validators.required]
+      })
     });
   }
 
   getCriteria(): CriteriaAssessment {
-    // build list of criteria ids with their final values.
-    const valueEntries = this.sliders.map(s => {
-      const crit = this.criteria.find(c => c.id === s.name);
-      if (crit === undefined) {
-        throw new Error(`Criteria with id ${s.name} not found`);
-      }
-
-      // all criteria are ranges
-      let values = s.value as Array<number>;
+    const formValue = this.form.value;
+    // NOW :RegionAssesInput
+    const criteria = { ...formValue.criteria };
+    for (const c of this.criteria) {
+      const minKey = `${c.payloadPropertyPrefix}_min`;
+      let minValue = criteria[minKey];
+      const maxKey = `${c.payloadPropertyPrefix}_max`;
+      let maxValue = criteria[maxKey];
 
       // convert values if function defined
-      const { convertValue, reverseValues } = crit;
+      const { convertValue, reverseValues } = c;
       if (convertValue !== undefined) {
-        values = values.map(convertValue);
+        minValue = convertValue(minValue);
+        maxValue = convertValue(maxValue);
       }
 
       if (reverseValues === true) {
-        values = [...values].reverse();
+        // swap values
+        const temp = minValue;
+        minValue = maxValue;
+        maxValue = temp;
       }
 
-      return [s.name, values];
-    });
-    const criteria = Object.fromEntries(valueEntries);
+      criteria[minKey] = minValue;
+      criteria[maxKey] = maxValue;
+    }
 
     let siteSuitability: SiteSuitabilityCriteria | undefined = undefined;
-    if (this.enableSiteSuitability() && this.siteForm.valid) {
-      siteSuitability = this.siteForm.value;
+    const siteForm = this.form.get('siteSuitability')!;
+    if (this.enableSiteSuitability() && siteForm.valid) {
+      siteSuitability = siteForm.value;
     }
 
     return {
@@ -157,15 +171,12 @@ export class SelectionCriteriaComponent {
    * Reset all criteria to default values.
    */
   reset() {
-    const { criteria } = this;
-    this.sliders.forEach(s => {
-      const c = criteria.find(c => c.id === s.name);
-      if (c === undefined) {
-        console.warn(`No criteria with id="${s.name}"`, s);
-        return;
-      }
-      s.minValue = c.minValue ?? c.min;
-      s.maxValue = c.maxValue ?? c.max;
-    });
+    const criteriaFormGroup = this.form.get('criteria')!;
+    for (const c of this.criteria) {
+      const start = criteriaFormGroup.get(`${c.payloadPropertyPrefix}_min`);
+      start?.setValue(c.minValue ?? c.min);
+      const end = criteriaFormGroup.get(`${c.payloadPropertyPrefix}_max`);
+      end?.setValue(c.maxValue ?? c.max);
+    }
   }
 }
