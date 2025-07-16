@@ -33,13 +33,12 @@ import { environment } from '../../environments/environment';
 import { getFirstFileFromResults } from '../../util/api-util';
 import { urlToBlobObjectURL } from '../../util/http-util';
 import { isDefined } from '../../util/js-util';
-import { SelectionCriteria, SiteSuitabilityCriteria } from './reef-guide-api.types';
 import { ReefGuideConfigService } from './reef-guide-config.service';
 import {
   RegionDownloadResponse,
   RegionJobsManager
 } from './selection-criteria/region-jobs-manager';
-import { SuitabilityAssessmentInput } from '@reefguide/types';
+import { RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
 import { JobsManagerService } from '../jobs/jobs-manager.service';
 import { fromLonLat } from 'ol/proj';
 import LayerGroup from 'ol/layer/Group';
@@ -221,25 +220,16 @@ export class ReefGuideMapService {
    * @param jobType
    * @param payload
    */
-  addJobLayers(jobType: JobType, payload: any): RegionJobsManager {
+  addJobLayers(jobType: JobType, payload: RegionalAssessmentInput): RegionJobsManager {
     console.log('addJobLayers', payload);
 
-    // TODO:region use region selector in panel instead of config system
-    const selectedRegions = this.config
-      .enabledRegions()
-      // TODO:region current UI/config-sys can create blank values
-      .filter(v => v !== '');
-    if (selectedRegions.length === 0) {
-      console.warn('No regions selected!');
-    }
-    const regions$ = of(...selectedRegions);
+    // TODO cleanup old multi-region code
+    const regions$ = of(payload.region);
 
     const jobManager = runInInjectionContext(
       this.injector,
       () => new RegionJobsManager(jobType, payload, regions$)
     );
-    // FIXME refactor, thinking the job/data manager should be outside map service
-    // this.criteriaRequest.set(criteriaRequest);
 
     const layerGroup = this.setupCOGAssessRegionsLayerGroup();
 
@@ -352,25 +342,6 @@ export class ReefGuideMapService {
     this.siteSuitabilityLayerGroup.set(layerGroup);
     this.map.addLayer(layerGroup);
     return layerGroup;
-  }
-
-  /**
-   * Start SUITABILITY_ASSESSMENT jobs for all active regions.
-   * @param criteria
-   * @param siteCriteria
-   */
-  addAllSiteSuitabilityLayers(criteria: SelectionCriteria, siteCriteria: SiteSuitabilityCriteria) {
-    const regions = this.config.enabledRegions();
-
-    for (const region of regions) {
-      const payload: SuitabilityAssessmentInput = {
-        region,
-        ...criteria,
-        ...siteCriteria
-      };
-
-      this.addSiteSuitabilityLayer(payload);
-    }
   }
 
   /**

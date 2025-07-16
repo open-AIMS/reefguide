@@ -1,5 +1,14 @@
 <div class="scrollable">
   <form [formGroup]="form">
+    <mat-form-field class="region-select">
+      <mat-label>Region</mat-label>
+      <mat-select formControlName="region">
+        @for (region of regions; track region) {
+          <mat-option [value]="region">{{ region }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
     <div formGroupName="criteria">
       @for (c of criteria; track c.id) {
         @let criteriaLayer = mapService.criteriaLayers[c.id];

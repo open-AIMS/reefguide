@@ -14,7 +14,8 @@ import { CriteriaAssessment, SiteSuitabilityCriteria } from '../reef-guide-api.t
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
-import { ReefGuideConfigService } from '../reef-guide-config.service';
+import { ALL_REGIONS, ReefGuideConfigService } from '../reef-guide-config.service';
+import { MatSelectModule } from '@angular/material/select';
 
 interface SelectionCriteriaInputDef {
   // field/id used by API
@@ -43,7 +44,8 @@ interface SelectionCriteriaInputDef {
     MatFormFieldModule,
     MatInput,
     MatSlideToggle,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    MatSelectModule
   ],
   templateUrl: './selection-criteria.component.html',
   styleUrl: './selection-criteria.component.scss'
@@ -52,6 +54,8 @@ export class SelectionCriteriaComponent {
   readonly mapService = inject(ReefGuideMapService);
   readonly formBuilder = inject(FormBuilder);
   readonly config = inject(ReefGuideConfigService);
+
+  regions = ALL_REGIONS;
 
   /*
   Distance to Nearest Port (NM): 0.0:200.0
@@ -108,9 +112,7 @@ export class SelectionCriteriaComponent {
   form: FormGroup;
 
   constructor() {
-    const criteriaControlDefs: Record<string, any> = {
-      reef_type: ['slopes']
-    };
+    const criteriaControlDefs: Record<string, any> = {};
 
     for (const c of this.criteria) {
       criteriaControlDefs[`${c.payloadPropertyPrefix}_min`] = [c.minValue ?? c.min];
@@ -118,6 +120,8 @@ export class SelectionCriteriaComponent {
     }
 
     this.form = this.formBuilder.group({
+      region: [null, Validators.required],
+      reef_type: ['slopes'],
       criteria: this.formBuilder.group(criteriaControlDefs),
       siteSuitability: this.formBuilder.group<Record<keyof SiteSuitabilityCriteria, any>>({
         x_dist: [450, [Validators.min(1), Validators.required]],
@@ -129,19 +133,30 @@ export class SelectionCriteriaComponent {
 
   getCriteria(): CriteriaAssessment {
     const formValue = this.form.value;
-    // NOW :RegionAssesInput
-    const criteria = { ...formValue.criteria };
+
+    if (!this.form.valid) {
+      throw new Error('Form invalid!');
+    }
+
+    const criteria: Record<string, number | undefined> = {
+      ...formValue.criteria
+    };
+
     for (const c of this.criteria) {
       const minKey = `${c.payloadPropertyPrefix}_min`;
-      let minValue = criteria[minKey];
+      let minValue = criteria[minKey] as number | undefined;
       const maxKey = `${c.payloadPropertyPrefix}_max`;
       let maxValue = criteria[maxKey];
 
       // convert values if function defined
       const { convertValue, reverseValues } = c;
       if (convertValue !== undefined) {
-        minValue = convertValue(minValue);
-        maxValue = convertValue(maxValue);
+        if (minValue !== undefined) {
+          minValue = convertValue(minValue);
+        }
+        if (maxValue !== undefined) {
+          maxValue = convertValue(maxValue);
+        }
       }
 
       if (reverseValues === true) {
@@ -162,7 +177,11 @@ export class SelectionCriteriaComponent {
     }
 
     return {
-      criteria,
+      criteria: {
+        region: formValue.region,
+        reef_type: formValue.reef_type,
+        ...criteria
+      },
       siteSuitability
     };
   }
