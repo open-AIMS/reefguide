@@ -5,6 +5,7 @@ import {
   CreateJobResponse,
   CreateProjectInput,
   CreateProjectResponse,
+  CriteriaRangeOutput,
   DeleteProjectResponse,
   DownloadResponse,
   GetProjectResponse,
@@ -202,9 +203,9 @@ export class WebApiService {
     };
   }
 
-  // getCriteriaDefs(region: string): Observable<any> {
-  //   return this.http.get(`${this.base}/criteria`, {})
-  // }
+  getRegionCriteria(region: string): Observable<CriteriaRangeOutput> {
+    return this.http.get<CriteriaRangeOutput>(`${this.base}/admin/criteria/${region}/ranges`);
+  }
 
   /**
    * DEPRECATED

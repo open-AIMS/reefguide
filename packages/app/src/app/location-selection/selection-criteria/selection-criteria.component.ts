@@ -14,8 +14,16 @@ import { CriteriaAssessment, SiteSuitabilityCriteria } from '../reef-guide-api.t
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
-import { ALL_REGIONS, ReefGuideConfigService } from '../reef-guide-config.service';
+import { ALL_REGIONS } from '../reef-guide-config.service';
 import { MatSelectModule } from '@angular/material/select';
+import { catchError, EMPTY, switchMap, tap } from 'rxjs';
+import { WebApiService } from '../../../api/web-api.service';
+import { CriteriaRangeOutput } from '@reefguide/types';
+import { MatTooltip } from '@angular/material/tooltip';
+
+// add properties calculated here
+type CriteriaRangeOutput2 = CriteriaRangeOutput[string] & { step: number };
+type CriteriaRangeList = Array<CriteriaRangeOutput2>;
 
 interface SelectionCriteriaInputDef {
   // field/id used by API
@@ -45,15 +53,16 @@ interface SelectionCriteriaInputDef {
     MatInput,
     MatSlideToggle,
     ReactiveFormsModule,
-    MatSelectModule
+    MatSelectModule,
+    MatTooltip
   ],
   templateUrl: './selection-criteria.component.html',
   styleUrl: './selection-criteria.component.scss'
 })
 export class SelectionCriteriaComponent {
+  private readonly api = inject(WebApiService);
+  private readonly formBuilder = inject(FormBuilder);
   readonly mapService = inject(ReefGuideMapService);
-  readonly formBuilder = inject(FormBuilder);
-  readonly config = inject(ReefGuideConfigService);
 
   regions = ALL_REGIONS;
 
@@ -107,28 +116,65 @@ export class SelectionCriteriaComponent {
     }
   ];
 
+  regionCriteriaRanges = signal<CriteriaRangeList | undefined>(undefined);
+
   enableSiteSuitability = signal(true);
 
   form: FormGroup;
 
   constructor() {
-    const criteriaControlDefs: Record<string, any> = {};
-
-    for (const c of this.criteria) {
-      criteriaControlDefs[`${c.payloadPropertyPrefix}_min`] = [c.minValue ?? c.min];
-      criteriaControlDefs[`${c.payloadPropertyPrefix}_max`] = [c.maxValue ?? c.max];
-    }
-
     this.form = this.formBuilder.group({
       region: [null, Validators.required],
       reef_type: ['slopes'],
-      criteria: this.formBuilder.group(criteriaControlDefs),
       siteSuitability: this.formBuilder.group<Record<keyof SiteSuitabilityCriteria, any>>({
         x_dist: [450, [Validators.min(1), Validators.required]],
         y_dist: [20, [Validators.min(1), Validators.required]],
         threshold: [95, Validators.required]
       })
     });
+
+    const regionControl = this.form.get('region')!;
+    regionControl.valueChanges
+      .pipe(
+        tap(x => {
+          // TODO need loading indicator?
+          this.regionCriteriaRanges.set(undefined);
+        }),
+        switchMap(region =>
+          this.api.getRegionCriteria(region).pipe(
+            // catch error to prevent it from breaking parent observable
+            catchError((err, caught) => {
+              console.error(`${region} criteria request failed`, err);
+              return EMPTY;
+            })
+          )
+        )
+      )
+      .subscribe(regionCriteria => {
+        this.buildCriteriaFormGroup(regionCriteria);
+      });
+  }
+
+  private buildCriteriaFormGroup(regionCriteria: CriteriaRangeOutput) {
+    // TODO order?
+    const regionCriteriaRanges = Object.values(regionCriteria) as CriteriaRangeList;
+
+    const criteriaControlDefs: Record<string, any> = {};
+
+    for (const c of regionCriteriaRanges) {
+      c.min_val = Math.floor(c.min_val);
+      c.max_val = Math.ceil(c.max_val);
+      const diff = c.max_val - c.min_val;
+      c.step = diff > 40 ? 1 : 0.1;
+
+      criteriaControlDefs[`${c.payload_property_prefix}_min`] = [c.default_min_val];
+      criteriaControlDefs[`${c.payload_property_prefix}_max`] = [c.default_max_val];
+    }
+
+    const formGroup = this.formBuilder.group(criteriaControlDefs);
+    this.form.setControl('criteria', formGroup);
+
+    this.regionCriteriaRanges.set(regionCriteriaRanges);
   }
 
   getCriteria(): CriteriaAssessment {

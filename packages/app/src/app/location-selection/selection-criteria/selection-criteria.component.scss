@@ -32,6 +32,10 @@
   .label {
     font-weight: 500;
   }
+  .subtitle {
+    margin: 1rex 0 0 0;
+    font: var(--mat-sys-body-medium);
+  }
 
   &.visible {
     // TODO mat theme color

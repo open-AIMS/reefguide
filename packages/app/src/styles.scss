@@ -1,5 +1,13 @@
 @use '@angular/material' as mat;
-$theme: mat.define-theme();
+
+html {
+  color-scheme: light;
+  @include mat.theme((
+    color: mat.$azure-palette,
+    typography: Roboto,
+    density: 0
+  ));
+}
 
 html,
 body {
@@ -26,7 +34,7 @@ body {
 }
 
 .error-message {
-  color: mat.get-theme-color($theme, error);
+  color: var(--mat-sys-error);
   font-weight: 500;
 }
 
