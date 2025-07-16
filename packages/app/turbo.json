@@ -8,7 +8,12 @@
       "env": [
         "NODE_ENV",
         "NG_APP_WEB_API_URL",
-        "NG_APP_ADRIA_API_URL"
+        "NG_APP_ADRIA_API_URL",
+        "NG_APP_SPLASH_ADMIN_EMAIL",
+        "NG_APP_SPLASH_APP_NAME",
+        "NG_APP_SPLASH_SHOW_BACKGROUND_MAP",
+        "NG_APP_DOCUMENTATION_LINK",
+        "NG_APP_ABOUT_LINK"
       ]
     }
   }

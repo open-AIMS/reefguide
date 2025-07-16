@@ -59,7 +59,7 @@ export class ReefGuideFrontend extends Construct {
 
     // Build and deploy the frontend TODO this is not working at the moment due
     // to the BucketDeployment custom resource being extremely slow
-    // this.setupBundling(props);
+    this.setupBundling(props);
 
     // Setup outputs
     this.setupOutputs();
@@ -99,8 +99,8 @@ export class ReefGuideFrontend extends Construct {
     this.endpoint = `https://${props.domainName}`;
   }
 
-  private _setupBundling(props: ReefGuideFrontendProps) {
-    // Default to monorepo root (typically two levels up from infrastructure)
+  private setupBundling(props: ReefGuideFrontendProps) {
+    // Default to monorepo root
     const buildPath = props.buildPath ?? '../..';
     const packageName = '@reefguide/app';
     const outputPath = 'packages/app/dist/adria-app/browser';
@@ -112,7 +112,9 @@ export class ReefGuideFrontend extends Construct {
       NG_APP_ADRIA_API_URL: 'https://fake.com',
       NG_APP_SPLASH_ADMIN_EMAIL: props.adminEmail,
       NG_APP_SPLASH_APP_NAME: props.appName,
-      NG_APP_SPLASH_SHOW_BACKGROUND_MAP: 'true'
+      NG_APP_SPLASH_SHOW_BACKGROUND_MAP: 'true',
+      NG_APP_DOCUMENTATION_LINK: 'https://open-aims.github.io/reefguide',
+      NG_APP_ABOUT_LINK: 'https://github.com/open-AIMS/reefguide'
     };
 
     // Setup deployment with build process
@@ -153,6 +155,9 @@ export class ReefGuideFrontend extends Construct {
 
                 # Please don't use .env
                 rm -f packages/app/.env
+
+                # Run pnpm generate
+                pnpm run generate
                 
                 # Build the specific package using turbo
                 npx turbo build --filter=${packageName}
@@ -171,7 +176,10 @@ export class ReefGuideFrontend extends Construct {
 
                   // Build environment variable exports
                   const envExports = Object.entries(environment)
-                    .map(([key, value]) => `export ${key}="${value}"`)
+                    .map(
+                      ([key, value]) =>
+                        `echo 'export ${key}="${value}"' && export ${key}="${value}"`
+                    )
                     .join(' && ');
 
                   // Execute build commands
@@ -182,6 +190,8 @@ export class ReefGuideFrontend extends Construct {
                     `cd ${buildPath}`,
                     // Install dependencies
                     'pnpm install --frozen-lockfile',
+                    // Ensure client is generated
+                    'pnpm run generate',
                     // Double check there is no .env file!
                     '[ -f packages/app/.env ] && cp packages/app/.env packages/app/backup.env || echo "No .env file to backup"',
                     // Remove
