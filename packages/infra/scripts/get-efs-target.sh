@@ -8,7 +8,6 @@ set -euo pipefail
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_FILE="${SCRIPT_DIR}/get-efs-target.log"
 
 # Colors for output
 RED='\033[0;31m'
