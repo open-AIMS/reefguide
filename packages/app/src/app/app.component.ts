@@ -1,9 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterOutlet } from '@angular/router';
-import { defineCustomElements as defineArcgisMapElements } from '@arcgis/map-components/dist/loader';
 import { defineCustomElements as defineCalciteElements } from '@esri/calcite-components/dist/loader';
 import { environment } from '../environments/environment';
 import { AppAccessService } from './auth/app-access.service';
@@ -59,12 +58,6 @@ export class AppComponent implements OnInit {
     // Initialize Calcite components
     defineCalciteElements(window, {
       resourcesUrl: 'https://js.arcgis.com/calcite-components/2.11.1/assets'
-    });
-
-    // Initialize ArcGIS Map components
-    // Should only be called once per application lifecycle
-    defineArcgisMapElements(window, {
-      resourcesUrl: 'https://js.arcgis.com/map-components/4.30/assets'
     });
 
     console.log('[AppComponent] Third-party components initialized');

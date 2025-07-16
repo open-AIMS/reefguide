@@ -38,14 +38,10 @@ mat-drawer {
   }
 }
 
-// ESRI buttons are offset in global styles.scss
 .map-buttons {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  position: absolute;
-  top: 12px;
-  left: 12px;
 
   .row {
     align-items: center;
@@ -55,13 +51,6 @@ mat-drawer {
     // @include mat.progress-spinner-color($theme, $color-variant: secondary);
     --mat-progress-spinner-active-indicator-color: rgba(237, 237, 237, 0.8);
   }
-}
-
-app-job-status-list {
-  // temporary hack to move below ESRI layers button
-  position: absolute;
-  left: 12px;
-  top: 204px;
 }
 
 .profile-button {

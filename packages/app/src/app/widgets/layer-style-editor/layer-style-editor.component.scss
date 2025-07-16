@@ -1,3 +1,22 @@
+:host {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 4px;
+}
+
+h2 {
+  font-size: 1.2em;
+  margin: 4px 16px;
+  font-weight: normal;
+}
+
+mat-slide-toggle {
+  margin-left: 16px;
+  span {
+    font-weight: 500;
+  }
+}
+
 .row {
   align-items: baseline;
   gap: 12px;

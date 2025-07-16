@@ -1,46 +1,44 @@
 import { AsyncPipe, CommonModule } from '@angular/common';
-import { AfterViewInit, Component, inject, signal, ViewChild } from '@angular/core';
+import { Component, effect, inject, signal, viewChild, ViewChild } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { MatAccordion, MatExpansionModule } from '@angular/material/expansion';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltip } from '@angular/material/tooltip';
-import { ArcgisMapCustomEvent } from '@arcgis/map-components';
-import { ArcgisMap, ComponentLibraryModule } from '@arcgis/map-components-angular';
 import { combineLatest, filter, map, Observable } from 'rxjs';
 import { AdminPanelComponent } from '../admin/user-panel/user-panel.component';
 import { AuthService } from '../auth/auth.service';
 import { LoginDialogComponent } from '../auth/login-dialog/login-dialog.component';
 import { ClusterAdminDialogComponent } from '../admin/cluster/ClusterAdminDialog.component';
-import { LayerStyleEditorComponent } from '../widgets/layer-style-editor/layer-style-editor.component';
 import { ConfigDialogComponent } from './config-dialog/config-dialog.component';
-import { ReefGuideApiService } from './reef-guide-api.service';
 import { CriteriaAssessment, criteriaToJobPayload } from './reef-guide-api.types';
 import { ReefGuideConfigService } from './reef-guide-config.service';
-import { ReefGuideMapService } from './reef-guide-map.service';
+import { MAP_UI, MapUI, ReefGuideMapService } from './reef-guide-map.service';
 import { SelectionCriteriaComponent } from './selection-criteria/selection-criteria.component';
 import { WebApiService } from '../../api/web-api.service';
 import { RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
-import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
+import { ReefMapComponent } from '../reef-map/reef-map.component';
+import { fromLonLat } from 'ol/proj';
+import Layer from 'ol/layer/Layer';
+import { LayerStyleEditorComponent } from '../widgets/layer-style-editor/layer-style-editor.component';
 
 type DrawerModes = 'criteria' | 'style';
 
 /**
- * Prototype of Location Selection app.
- * Map be split-off as its own project in the future.
+ * Reef Guide criteria assessment and site suitability.
+ *
+ * Drawer layout with criteria assessment in left panel. Map component is main content.
  */
 @Component({
   selector: 'app-location-selection',
   imports: [
     CommonModule,
     MatSidenavModule,
-    ComponentLibraryModule,
     MatButtonModule,
     MatIconModule,
     MatToolbarModule,
@@ -48,34 +46,38 @@ type DrawerModes = 'criteria' | 'style';
     MatTooltip,
     AsyncPipe,
     MatProgressSpinner,
-    LayerStyleEditorComponent,
-    MatAccordion,
     MatExpansionModule,
     CommonModule,
     MatMenuModule,
-    MatProgressBar,
-    JobStatusListComponent
+    ReefMapComponent,
+    LayerStyleEditorComponent
   ],
-  providers: [ReefGuideMapService],
+  providers: [ReefGuideMapService, { provide: MAP_UI, useExisting: LocationSelectionComponent }],
   templateUrl: './location-selection.component.html',
   styleUrl: './location-selection.component.scss'
 })
-export class LocationSelectionComponent implements AfterViewInit {
+export class LocationSelectionComponent implements MapUI {
   readonly config = inject(ReefGuideConfigService);
   readonly authService = inject(AuthService);
   readonly api = inject(WebApiService);
-  readonly reefGuideApi = inject(ReefGuideApiService);
   readonly dialog = inject(MatDialog);
   readonly mapService = inject(ReefGuideMapService);
 
-  drawerMode = signal<DrawerModes>('criteria');
+  map = viewChild.required(ReefMapComponent);
+
+  // TODO consider component slots like approach instead
+  drawerMode = signal<DrawerModes | undefined>(undefined);
+
+  /**
+   * Layer style that is currently being edited
+   */
+  editingLayerStyle = signal<Layer | undefined>(undefined);
 
   /**
    * Assess related layer is loading.
    */
   isAssessing$: Observable<boolean>;
 
-  @ViewChild(ArcgisMap) map!: ArcgisMap;
   @ViewChild('drawer') drawer!: MatDrawer;
 
   constructor() {
@@ -88,27 +90,55 @@ export class LocationSelectionComponent implements AfterViewInit {
       // any loading=true indicates busy
       map(vals => vals.includes(true))
     );
+
+    // Note: this executes before ReefMapComponent.ngAfterViewInit, execute once
+    const effectRef = effect(
+      () => {
+        effectRef.destroy();
+        this.setupMap(this.map());
+      },
+      { manualCleanup: true }
+    );
   }
 
-  ngAfterViewInit() {
-    this.mapService.setMap(this.map);
+  openLayerStyleEditor(layer: Layer): void {
+    this.editingLayerStyle.set(layer);
+    this.openDrawer('style');
   }
 
-  async arcgisViewClick(event: ArcgisMapCustomEvent<__esri.ViewClickEvent>) {
-    console.log('arcgis map click', event);
-    // const view = this.map.view;
-    // const resp = await view.hitTest(event.detail);
-    const point = event.detail.mapPoint;
-    // point.spatialReference
-    console.log(`Point ${point.x}, ${point.y} Lon/Lat ${point.longitude}, ${point.latitude}`);
+  /**
+   * One-time setup of Map
+   */
+  private setupMap(map: ReefMapComponent) {
+    // Note: cannot View.setProjection, need to set at View construction
+    const projection = map.view.getProjection();
+    console.log('Map View projection', projection);
+    const units = projection.getUnits();
+    // TODO does OpenLayers have higher-level coord API to do equivalent?
+    const point = [148, -18];
+    if (units === 'm') {
+      // convert to Web Mercator meter coords from lon/lat
+      map.view.setCenter(fromLonLat(point));
+    } else {
+      map.view.setCenter(point);
+    }
+
+    // Note: zoom values differ between projections
+    // TODO how to normalize zoom values?
+    map.view.setZoom(units === 'm' ? 8 : 6);
+    map.view.setMinZoom(4);
+    map.view.setMaxZoom(19);
   }
 
   openDrawer(mode: DrawerModes) {
-    if (mode === 'criteria') {
-      this.mapService.updateCriteriaLayerStates();
-    }
     this.drawerMode.set(mode);
     this.drawer.toggle(true);
+  }
+
+  onDrawerClose() {
+    // clear drawer state
+    this.editingLayerStyle.set(undefined);
+    this.drawerMode.set(undefined);
   }
 
   openAdminPanel() {
@@ -141,7 +171,8 @@ export class LocationSelectionComponent implements AfterViewInit {
 
     this.mapService.clearAssessedLayers();
 
-    this.drawer.close();
+    // no need to await
+    void this.drawer.close();
 
     // convert criteria to job payload and start job
     const raPartialPayload = criteriaToJobPayload(criteria);

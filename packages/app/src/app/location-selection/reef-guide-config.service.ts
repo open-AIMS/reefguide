@@ -1,18 +1,8 @@
-import {
-  computed,
-  effect,
-  inject,
-  Injectable,
-  Signal,
-  signal,
-  WritableSignal
-} from '@angular/core';
+import { effect, inject, Injectable, signal, WritableSignal } from '@angular/core';
 import { AuthService } from '../auth/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 interface StoredConfig {
-  arcgisMap: string;
-  customArcgisMapItemId: string;
   enabledRegions: Array<string>;
   parallelRegionRequests: boolean;
   enableCOGBlob: boolean;
@@ -40,30 +30,6 @@ const configVarGetters: Partial<Record<keyof StoredConfig, (val: string) => any>
   enableCOGBlob: getBoolean
 };
 
-export interface Map {
-  // ID that will never change for this map
-  id: string;
-  name: string;
-  arcgisItemId: string;
-}
-
-export const MAPS: Array<Map> = [
-  // minimalistic map, loads quicker, useful for development
-  {
-    id: 'simple',
-    name: 'Simple',
-    arcgisItemId: 'd7404f1b7eed4269b0028a0a6b698000'
-  },
-  // Decision Sim prototype
-  {
-    id: 'DecisionSim',
-    name: 'Decision Sim 2 v1_5 GS',
-    arcgisItemId: 'fee03c9e65a8413f8b0bb8c158c7f040'
-  }
-];
-
-const DEFAULT_MAP = MAPS[0];
-
 export const ALL_REGIONS = [
   'Townsville-Whitsunday',
   'Cairns-Cooktown',
@@ -77,14 +43,6 @@ export const ALL_REGIONS = [
 export class ReefGuideConfigService {
   readonly authService = inject(AuthService);
 
-  /**
-   * ID of predefined ArcGIS map.
-   */
-  arcgisMap: WritableSignal<string>;
-  /**
-   * Custom ArcGIS item id for arcgisMap.
-   */
-  customArcgisMapItemId: WritableSignal<string | undefined>;
   /**
    * Enabled regions for ReefGuideAPI
    */
@@ -103,12 +61,6 @@ export class ReefGuideConfigService {
    */
   enableCOGBlob: WritableSignal<boolean>;
 
-  // computed signals
-  /**
-   * ArcGIS item id for arcgisMap.
-   */
-  arcgisMapItemId: Signal<string>;
-
   isAdmin = toSignal(this.authService.isAdmin());
 
   /**
@@ -119,23 +71,6 @@ export class ReefGuideConfigService {
   private readonly prefix = 'rg.';
 
   constructor() {
-    this.arcgisMap = signal(this.get('arcgisMap', DEFAULT_MAP.id));
-    this.customArcgisMapItemId = signal(this.get('customArcgisMapItemId'));
-
-    this.arcgisMapItemId = computed(() => {
-      const mapId = this.arcgisMap();
-      if (mapId === 'CUSTOM') {
-        return this.customArcgisMapItemId() ?? DEFAULT_MAP.arcgisItemId;
-      } else {
-        let map = MAPS.find(m => m.id === mapId);
-        if (map === undefined) {
-          console.warn(`No Map found with id="${mapId}", defaulting to "${DEFAULT_MAP.id}"`);
-          map = DEFAULT_MAP;
-        }
-        return map.arcgisItemId;
-      }
-    });
-
     this.enabledRegions = signal(this.get('enabledRegions', ALL_REGIONS));
     this.parallelRegionRequests = signal(this.get('parallelRegionRequests', true));
 
@@ -143,8 +78,6 @@ export class ReefGuideConfigService {
     // Also, should add file size condition
     this.enableCOGBlob = signal(this.get('enableCOGBlob', false));
 
-    effect(() => this.set('arcgisMap', this.arcgisMap()));
-    effect(() => this.set('customArcgisMapItemId', this.customArcgisMapItemId()));
     effect(() => this.set('enabledRegions', this.enabledRegions()));
     effect(() => this.set('parallelRegionRequests', this.parallelRegionRequests()));
     effect(() => this.set('enableCOGBlob', this.enableCOGBlob()));
