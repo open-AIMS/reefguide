@@ -1,6 +1,7 @@
 @use '@angular/material' as mat;
 
 html {
+  // can specify "light dark" to use user theme preference
   color-scheme: light;
   @include mat.theme(
     (

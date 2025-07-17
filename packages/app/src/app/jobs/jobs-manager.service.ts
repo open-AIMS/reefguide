@@ -20,8 +20,8 @@ import {
 import { retryHTTPErrors } from '../../util/http-util';
 import { AuthService } from '../auth/auth.service';
 
-// API's job status plus 'CREATING'
-export type ExtendedJobStatus = JobStatus | 'CREATING';
+// API's job status plus 'CREATING', 'CREATE_FAILED'
+export type ExtendedJobStatus = JobStatus | 'CREATING' | 'CREATE_FAILED';
 
 /**
  * @see JobsManagerService._startJob
@@ -185,6 +185,11 @@ export class JobsManagerService {
 
     const jobDetails$ = createJob$.pipe(
       retryHTTPErrors(3),
+      tap({
+        error: err => {
+          status$.next('CREATE_FAILED');
+        }
+      }),
       switchMap(createJobResp => this._watchJobDetails(createJobResp.jobId, status$, cancel$))
     );
 
