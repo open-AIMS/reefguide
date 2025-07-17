@@ -184,11 +184,7 @@ export class LocationSelectionComponent implements MapUI {
         ...siteSuitability
       };
 
-      // start the site suitability job after the regional assessment job succeeds
-      const ssJobTrigger$ = jobsManager.jobUpdate$.pipe(filter(j => j.status === 'SUCCEEDED'));
-      ssJobTrigger$.subscribe(job => {
-        this.mapService.addSiteSuitabilityLayer(ssPayload);
-      });
+      this.mapService.addSiteSuitabilityLayer(ssPayload);
     }
   }
 }
