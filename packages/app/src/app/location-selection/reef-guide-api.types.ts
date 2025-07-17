@@ -1,7 +1,7 @@
 import { RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
 
 /**
- * The properties added for Site Suitability
+ * The properties unique to Site Suitability payload
  * TODO ideally calculated type = SuitabilityAssessmentInput - RegionalAssessmentInput
  */
 export type SiteSuitabilityCriteria = Pick<
@@ -10,9 +10,9 @@ export type SiteSuitabilityCriteria = Pick<
 >;
 
 /**
- * Separation of criteria from site suitability.
+ * Separated Job payloads for REGIONAL_ASSESSMENT and SUITABILITY_ASSESSMENT
  */
-export interface CriteriaAssessment {
+export interface CriteriaPayloads {
   criteria: RegionalAssessmentInput;
   siteSuitability?: SiteSuitabilityCriteria;
 }

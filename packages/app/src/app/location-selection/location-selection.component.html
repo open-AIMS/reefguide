@@ -33,7 +33,7 @@
             <button
               mat-flat-button
               [disabled]="isBusy || formStatus !== 'VALID'"
-              (click)="onAssess(criteria.getCriteria())"
+              (click)="onAssess(criteria.getCriteriaPayloads())"
             >
               Assess
             </button>

@@ -10,7 +10,7 @@ import {
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { ReefGuideMapService } from '../reef-guide-map.service';
-import { CriteriaAssessment, SiteSuitabilityCriteria } from '../reef-guide-api.types';
+import { CriteriaPayloads, SiteSuitabilityCriteria } from '../reef-guide-api.types';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
@@ -24,23 +24,6 @@ import { MatTooltip } from '@angular/material/tooltip';
 // add properties calculated here
 type CriteriaRangeOutput2 = CriteriaRangeOutput[string] & { step: number };
 type CriteriaRangeList = Array<CriteriaRangeOutput2>;
-
-interface SelectionCriteriaInputDef {
-  // field/id used by API
-  id: string;
-  payloadPropertyPrefix: string;
-  name: string;
-  desc?: string;
-  min: number;
-  minValue?: number;
-  max: number;
-  maxValue?: number;
-  step?: number;
-  // Value converter from displayed values to value in CriteriaAssessment
-  convertValue?: (value: number) => number;
-  // swap the final values
-  reverseValues?: boolean;
-}
 
 @Component({
   selector: 'app-selection-criteria',
@@ -66,59 +49,14 @@ export class SelectionCriteriaComponent {
 
   regions = ALL_REGIONS;
 
-  /*
-  Distance to Nearest Port (NM): 0.0:200.0
-  Good if you add just a little bit beyond these bounds, like +1, except where the lower bound is zero.
-   */
-
-  criteria: Array<SelectionCriteriaInputDef> = [
-    {
-      id: 'Depth',
-      payloadPropertyPrefix: 'depth',
-      name: 'Depth (m)',
-      // Bathy: -9.0:-2.0
-      // UI is positive, but API takes negative numbers
-      min: 0,
-      max: 16,
-      minValue: 2,
-      maxValue: 10,
-      step: 0.5,
-      // convert Depth to negative values required by API. [-10, -2]
-      convertValue: v => -v,
-      reverseValues: true
-    },
-    {
-      id: 'Slope',
-      payloadPropertyPrefix: 'slope',
-      name: 'Slope (degrees)',
-      // Slope: 0.0:40.0
-      min: 0,
-      max: 45
-    },
-    {
-      id: 'WavesHs',
-      payloadPropertyPrefix: 'waves_height',
-      name: ' Significant Wave Height (Hs)',
-      min: 0,
-      max: 6,
-      maxValue: 1,
-      step: 0.1
-    },
-    {
-      id: 'WavesTp',
-      payloadPropertyPrefix: 'waves_period',
-      name: 'Wave Period',
-      // Wave Period: 0.0:6.0
-      min: 0,
-      max: 9,
-      maxValue: 6,
-      step: 0.5
-    }
-  ];
-
   regionCriteriaRanges = signal<CriteriaRangeList | undefined>(undefined);
 
   enableSiteSuitability = signal(true);
+
+  /**
+   * IDs of Criteria that are flipped to positive values for the UI.
+   */
+  negativeFlippedCriteria = new Set(['Depth']);
 
   form: FormGroup;
 
@@ -162,6 +100,14 @@ export class SelectionCriteriaComponent {
     const criteriaControlDefs: Record<string, any> = {};
 
     for (const c of regionCriteriaRanges) {
+      const { min_val, max_val, default_min_val, default_max_val } = c;
+      if (this.negativeFlippedCriteria.has(c.id)) {
+        c.min_val = -max_val;
+        c.max_val = -min_val;
+        c.default_min_val = -default_max_val;
+        c.default_max_val = -default_min_val;
+      }
+
       c.min_val = Math.floor(c.min_val);
       c.max_val = Math.ceil(c.max_val);
       const diff = c.max_val - c.min_val;
@@ -177,8 +123,12 @@ export class SelectionCriteriaComponent {
     this.regionCriteriaRanges.set(regionCriteriaRanges);
   }
 
-  getCriteria(): CriteriaAssessment {
+  /**
+   * Get Job payload criteria values
+   */
+  getCriteriaPayloads(): CriteriaPayloads {
     const formValue = this.form.value;
+    const criteriaRanges = this.regionCriteriaRanges()!;
 
     if (!this.form.valid) {
       // this causes required form inputs to show error state
@@ -190,32 +140,17 @@ export class SelectionCriteriaComponent {
       ...formValue.criteria
     };
 
-    for (const c of this.criteria) {
-      const minKey = `${c.payloadPropertyPrefix}_min`;
-      let minValue = criteria[minKey] as number | undefined;
-      const maxKey = `${c.payloadPropertyPrefix}_max`;
-      let maxValue = criteria[maxKey];
+    // fix values of negative-flipped criteria
+    for (const c of criteriaRanges) {
+      if (this.negativeFlippedCriteria.has(c.id)) {
+        const minKey = `${c.payload_property_prefix}min`;
+        const minValue = criteria[minKey]!;
+        const maxKey = `${c.payload_property_prefix}max`;
+        const maxValue = criteria[maxKey]!;
 
-      // convert values if function defined
-      const { convertValue, reverseValues } = c;
-      if (convertValue !== undefined) {
-        if (minValue !== undefined) {
-          minValue = convertValue(minValue);
-        }
-        if (maxValue !== undefined) {
-          maxValue = convertValue(maxValue);
-        }
+        criteria[minKey] = -maxValue;
+        criteria[maxKey] = -minValue;
       }
-
-      if (reverseValues === true) {
-        // swap values
-        const temp = minValue;
-        minValue = maxValue;
-        maxValue = temp;
-      }
-
-      criteria[minKey] = minValue;
-      criteria[maxKey] = maxValue;
     }
 
     let siteSuitability: SiteSuitabilityCriteria | undefined = undefined;
@@ -239,11 +174,19 @@ export class SelectionCriteriaComponent {
    */
   reset() {
     const criteriaFormGroup = this.form.get('criteria')!;
-    for (const c of this.criteria) {
-      const start = criteriaFormGroup.get(`${c.payloadPropertyPrefix}_min`);
-      start?.setValue(c.minValue ?? c.min);
-      const end = criteriaFormGroup.get(`${c.payloadPropertyPrefix}_max`);
-      end?.setValue(c.maxValue ?? c.max);
+    const criteriaRanges = this.regionCriteriaRanges();
+    if (criteriaRanges === undefined) {
+      return;
     }
+
+    for (const c of criteriaRanges) {
+      // don't need to worry about negative-flipping here since we mutated min/max values
+      const minControl = criteriaFormGroup.get(`${c.payload_property_prefix}min`);
+      minControl?.setValue(c.default_min_val);
+      const maxControl = criteriaFormGroup.get(`${c.payload_property_prefix}max`);
+      maxControl?.setValue(c.default_max_val);
+    }
+
+    // TODO reset site suitability?
   }
 }

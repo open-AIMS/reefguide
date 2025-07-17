@@ -16,7 +16,7 @@ import { AuthService } from '../auth/auth.service';
 import { LoginDialogComponent } from '../auth/login-dialog/login-dialog.component';
 import { ClusterAdminDialogComponent } from '../admin/cluster/ClusterAdminDialog.component';
 import { ConfigDialogComponent } from './config-dialog/config-dialog.component';
-import { CriteriaAssessment } from './reef-guide-api.types';
+import { CriteriaPayloads } from './reef-guide-api.types';
 import { ReefGuideConfigService } from './reef-guide-config.service';
 import { MAP_UI, MapUI, ReefGuideMapService } from './reef-guide-map.service';
 import { SelectionCriteriaComponent } from './selection-criteria/selection-criteria.component';
@@ -166,7 +166,7 @@ export class LocationSelectionComponent implements MapUI {
    * This starts jobs; their results will be used by map layers.
    * @param assessment
    */
-  onAssess(assessment: CriteriaAssessment) {
+  onAssess(assessment: CriteriaPayloads) {
     const { criteria, siteSuitability } = assessment;
 
     this.mapService.clearAssessedLayers();
