@@ -167,8 +167,8 @@ export class SelectionCriteriaComponent {
       const diff = c.max_val - c.min_val;
       c.step = diff > 40 ? 1 : 0.1;
 
-      criteriaControlDefs[`${c.payload_property_prefix}_min`] = [c.default_min_val];
-      criteriaControlDefs[`${c.payload_property_prefix}_max`] = [c.default_max_val];
+      criteriaControlDefs[`${c.payload_property_prefix}min`] = [c.default_min_val];
+      criteriaControlDefs[`${c.payload_property_prefix}max`] = [c.default_max_val];
     }
 
     const formGroup = this.formBuilder.group(criteriaControlDefs);
