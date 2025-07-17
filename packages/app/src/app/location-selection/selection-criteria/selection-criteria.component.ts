@@ -16,7 +16,18 @@ import { MatInput } from '@angular/material/input';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { ALL_REGIONS } from '../reef-guide-config.service';
 import { MatSelectModule } from '@angular/material/select';
-import { catchError, EMPTY, switchMap, tap } from 'rxjs';
+import {
+  catchError,
+  combineLatestWith,
+  EMPTY,
+  Observable,
+  switchMap,
+  tap,
+  startWith,
+  skip,
+  Subject,
+  takeUntil
+} from 'rxjs';
 import { WebApiService } from '../../../api/web-api.service';
 import { CriteriaRangeOutput } from '@reefguide/types';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -60,6 +71,8 @@ export class SelectionCriteriaComponent {
 
   form: FormGroup;
 
+  private reset$ = new Subject<void>();
+
   constructor() {
     this.form = this.formBuilder.group({
       region: [null, Validators.required],
@@ -93,7 +106,16 @@ export class SelectionCriteriaComponent {
       });
   }
 
+  // FIXME remove, hack to avoid selection
+  ngAfterViewInit(): void {
+    this.form.patchValue({
+      region: 'Cairns-Cooktown'
+    });
+  }
+
   private buildCriteriaFormGroup(regionCriteria: CriteriaRangeOutput) {
+    this.reset$.next();
+
     // TODO order?
     const regionCriteriaRanges = Object.values(regionCriteria) as CriteriaRangeList;
 
@@ -121,6 +143,33 @@ export class SelectionCriteriaComponent {
     this.form.setControl('criteria', formGroup);
 
     this.regionCriteriaRanges.set(regionCriteriaRanges);
+
+    // for criteria with layers
+    for (const c of regionCriteriaRanges) {
+      if (c.id === 'Depth') {
+        const { min_val, max_val } = c;
+        const range = max_val - min_val;
+        const minKey = `${c.payload_property_prefix}min`;
+        const maxKey = `${c.payload_property_prefix}max`;
+
+        const min$ = formGroup
+          .get(minKey)!
+          .valueChanges.pipe(startWith(c.default_min_val)) as Observable<number>;
+        const max$ = formGroup
+          .get(maxKey)!
+          .valueChanges.pipe(startWith(c.default_max_val)) as Observable<number>;
+
+        min$
+          .pipe(combineLatestWith(max$))
+          .pipe(skip(1), takeUntil(this.reset$))
+          .subscribe(([min, max]) => {
+            // normalized 0:1
+            const nMin = (min - min_val) / range;
+            const nMax = (max - min_val) / range;
+            this.mapService.filterCriteriaLayer(c.id, nMin, nMax);
+          });
+      }
+    }
   }
 
   /**

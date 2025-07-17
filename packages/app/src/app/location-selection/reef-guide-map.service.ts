@@ -499,28 +499,48 @@ export class ReefGuideMapService {
     this.criteriaLayerGroup.set(layerGroup);
     this.map.getLayers().push(layerGroup);
 
-    for (let criteria in layers) {
-      const url = layers[criteria];
+    // FIXME restore all criteria layers, refactor
+    const criteria = 'Depth';
 
-      const layer = new TileLayer({
-        properties: {
-          id: `criteria_${criteria}`
+    const url = layers[criteria];
+
+    // QGIS says values are -128 to 127
+    // but OpenLayers bands are normalized 0 to 1
+    // invert to align with depth values from criteria UI
+    const depth = ['-', 1, ['band', 1]];
+
+    const layer = new TileLayer({
+      properties: {
+        id: `criteria_${criteria}`
+      },
+      visible: true,
+      style: {
+        variables: {
+          min: 0,
+          // if set to 1, entire layer extent renders color
+          max: 0.9999
         },
-        visible: false
-      });
-      layerGroup.getLayers().push(layer);
 
-      createSourceFromArcGIS(url).then(source => {
-        // ignore OpenLayers types issue
-        // @ts-expect-error
-        layer.setSource(source);
+        color: [
+          'case',
+          ['between', depth, ['var', 'min'], ['var', 'max']],
+          [223, 19, 208, 1],
+          [223, 19, 208, 0]
+        ]
+      }
+    });
+    layerGroup.getLayers().push(layer);
 
-        // set the layer title to the source's title
-        layer.set('title', source.get('title'));
-      });
+    createSourceFromArcGIS(url).then(source => {
+      // ignore OpenLayers types issue
+      // @ts-expect-error
+      layer.setSource(source);
 
-      this.criteriaLayers[criteria] = this.getLayerController(layer);
-    }
+      // set the layer title to the source's title
+      layer.set('title', source.get('title'));
+    });
+
+    this.criteriaLayers[criteria] = this.getLayerController(layer);
   }
 
   private handleRegionError(region: string) {
@@ -545,6 +565,28 @@ export class ReefGuideMapService {
       // TODO remove on layer remove/dispose
       this.layerControllers.set(layer, controller!);
       return controller!;
+    }
+  }
+
+  /**
+   * Filter the criteria raster layer based on normalized band values 0-1
+   * @param criteriaId
+   * @param min
+   * @param max
+   */
+  filterCriteriaLayer(criteriaId: string, min: number, max: number) {
+    const layerController = this.criteriaLayers[criteriaId];
+    if (!layerController) {
+      return;
+    }
+
+    const layer = layerController.layer;
+    if (layer instanceof TileLayer) {
+      // console.log('filter criteria layer', min, max);
+      if (max === 1) {
+        max = 0.9999;
+      }
+      layer.updateStyleVariables({ min, max });
     }
   }
 }
