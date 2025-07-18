@@ -9,6 +9,13 @@
   overflow: auto;
 }
 
+.region-select {
+  width: 100%;
+  padding: 0 12px;
+  margin-top: 8px;
+  box-sizing: border-box;
+}
+
 .criteria {
   box-sizing: border-box;
   padding: 8px 16px 0 16px;
@@ -25,6 +32,10 @@
   .label {
     font-weight: 500;
   }
+  .subtitle {
+    margin: 1rex 0 0 0;
+    font: var(--mat-sys-body-medium);
+  }
 
   &.visible {
     // TODO mat theme color
@@ -34,6 +45,11 @@
     button.visibility {
       color: inherit; // default
     }
+  }
+
+  mat-slider {
+    // inline-block was default; this causes it to fill width and respect container padding
+    display: block;
   }
 }
 

@@ -1,35 +1,43 @@
+@let criteriaRanges = regionCriteriaRanges();
 <div class="scrollable">
-  <form>
-    @for (c of criteria; track c.id) {
-      @let criteriaLayer = mapService.criteriaLayers[c.id];
-      @let visible = criteriaLayer?.visible();
-      <div class="criteria" [class.visible]="visible === true">
-        <div class="row">
-          <span class="label">{{ c.name }}</span>
-          @if (visible != null) {
-            <button
-              mat-icon-button
-              class="visibility"
-              (click)="mapService.showCriteriaLayer(c.id, !visible)"
-            >
-              <mat-icon>{{ visible ? 'visibility' : 'visibility_off' }}</mat-icon>
-            </button>
-          }
-        </div>
-        <calcite-slider
-          [name]="c.id"
-          [min]="c.min"
-          [max]="c.max"
-          [step]="c.step ?? 1"
-          snap
-          [minValue]="c.minValue ?? c.min"
-          [maxValue]="c.maxValue ?? c.max"
-          labelHandles
-        ></calcite-slider>
+  <form [formGroup]="form">
+    <mat-form-field class="region-select">
+      <mat-label>Region</mat-label>
+      <mat-select formControlName="region">
+        @for (region of regions; track region) {
+          <mat-option [value]="region">{{ region }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (criteriaRanges) {
+      <div formGroupName="criteria">
+        @for (c of criteriaRanges; track c.id) {
+          @let criteriaLayer = mapService.criteriaLayers[c.id];
+          @let visible = criteriaLayer?.visible();
+          <div class="criteria" [class.visible]="visible === true">
+            <div class="row">
+              <span class="label" [matTooltip]="c.units">{{ c.display_title }}</span>
+              @if (visible != null) {
+                <button
+                  mat-icon-button
+                  class="visibility"
+                  (click)="mapService.showCriteriaLayer(c.id, !visible)"
+                >
+                  <mat-icon>{{ visible ? 'visibility' : 'visibility_off' }}</mat-icon>
+                </button>
+              }
+            </div>
+            <p class="subtitle mat-body-small">{{ c.display_subtitle }}</p>
+            <mat-slider [min]="c.min_val" [max]="c.max_val" discrete="true" [step]="c.step">
+              <input matSliderStartThumb [formControlName]="`${c.payload_property_prefix}min`" />
+              <input matSliderEndThumb [formControlName]="`${c.payload_property_prefix}max`" />
+            </mat-slider>
+          </div>
+        }
       </div>
     }
-
-    <div class="ss-container">
+    <div class="ss-container" formGroupName="siteSuitability">
       <mat-slide-toggle
         labelPosition="before"
         [checked]="enableSiteSuitability()"
@@ -38,22 +46,22 @@
         Site Suitability
       </mat-slide-toggle>
       @if (enableSiteSuitability()) {
-        <form [formGroup]="siteForm">
+        <div>
           <div class="row">
             <mat-form-field>
               <mat-label>X (meters)</mat-label>
-              <input type="number" matInput formControlName="xdist" />
+              <input type="number" matInput formControlName="x_dist" />
             </mat-form-field>
             <mat-form-field>
               <mat-label>Y (meters)</mat-label>
-              <input type="number" matInput formControlName="ydist" />
+              <input type="number" matInput formControlName="y_dist" />
             </mat-form-field>
           </div>
           <header class="label">Threshold</header>
           <mat-slider min="0" max="100" discrete>
-            <input matSliderThumb formControlName="SuitabilityThreshold" />
+            <input matSliderThumb formControlName="threshold" />
           </mat-slider>
-        </form>
+        </div>
       }
     </div>
   </form>

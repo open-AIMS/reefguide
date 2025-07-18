@@ -16,12 +16,12 @@ import { AuthService } from '../auth/auth.service';
 import { LoginDialogComponent } from '../auth/login-dialog/login-dialog.component';
 import { ClusterAdminDialogComponent } from '../admin/cluster/ClusterAdminDialog.component';
 import { ConfigDialogComponent } from './config-dialog/config-dialog.component';
-import { CriteriaAssessment, criteriaToJobPayload } from './reef-guide-api.types';
+import { CriteriaPayloads } from './reef-guide-api.types';
 import { ReefGuideConfigService } from './reef-guide-config.service';
 import { MAP_UI, MapUI, ReefGuideMapService } from './reef-guide-map.service';
 import { SelectionCriteriaComponent } from './selection-criteria/selection-criteria.component';
 import { WebApiService } from '../../api/web-api.service';
-import { RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
+import { SuitabilityAssessmentInput } from '@reefguide/types';
 import { ReefMapComponent } from '../reef-map/reef-map.component';
 import { fromLonLat } from 'ol/proj';
 import Layer from 'ol/layer/Layer';
@@ -166,7 +166,7 @@ export class LocationSelectionComponent implements MapUI {
    * This starts jobs; their results will be used by map layers.
    * @param assessment
    */
-  onAssess(assessment: CriteriaAssessment) {
+  onAssess(assessment: CriteriaPayloads) {
     const { criteria, siteSuitability } = assessment;
 
     this.mapService.clearAssessedLayers();
@@ -174,47 +174,17 @@ export class LocationSelectionComponent implements MapUI {
     // no need to await
     void this.drawer.close();
 
-    // convert criteria to job payload and start job
-    const raPartialPayload = criteriaToJobPayload(criteria);
-    const jobsManager = this.mapService.addJobLayers('REGIONAL_ASSESSMENT', raPartialPayload);
+    const jobsManager = this.mapService.addJobLayers('REGIONAL_ASSESSMENT', criteria);
     // could load previous job result like this:
     // this.mapService.loadLayerFromJobResults(31);
 
     if (siteSuitability) {
-      // run site suitability job after its corresponding REGIONAL_ASSESSMENT job for the region.
-      const sequentialJobs = false;
-      if (sequentialJobs) {
-        // start the site suitability job after the regional assessment job succeeds
-        const ssJobTrigger$ = jobsManager.jobUpdate$.pipe(filter(j => j.status === 'SUCCEEDED'));
-        ssJobTrigger$.subscribe(job => {
-          // can't use raPayload above as it's missing region
-          if (job.input_payload == null) {
-            throw new Error('REGIONAL_ASSESSMENT job input_payload missing!');
-          }
-          // this final payload contains the region
-          const raFinalPayload: RegionalAssessmentInput = job.input_payload;
+      const ssPayload: SuitabilityAssessmentInput = {
+        ...criteria,
+        ...siteSuitability
+      };
 
-          const ssPayload: SuitabilityAssessmentInput = {
-            ...raFinalPayload,
-            threshold: siteSuitability.SuitabilityThreshold,
-            x_dist: siteSuitability.xdist,
-            y_dist: siteSuitability.ydist
-          };
-
-          this.mapService.addSiteSuitabilityLayer(ssPayload);
-        });
-      } else {
-        // start site suitability jobs immediately
-        this.mapService.addAllSiteSuitabilityLayers(criteria, siteSuitability);
-      }
+      this.mapService.addSiteSuitabilityLayer(ssPayload);
     }
-  }
-
-  getLoadingRegionsMessage(busyRegions: Set<string> | null): string {
-    if (busyRegions == null) {
-      return '';
-    }
-    const vals = Array.from(busyRegions).join(', ');
-    return `Loading: ${vals}`;
   }
 }

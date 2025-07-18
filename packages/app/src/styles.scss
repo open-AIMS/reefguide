@@ -1,7 +1,16 @@
 @use '@angular/material' as mat;
-$theme: mat.define-theme();
 
-@import '@esri/calcite-components/dist/calcite/calcite.css';
+html {
+  // can specify "light dark" to use user theme preference
+  color-scheme: light;
+  @include mat.theme(
+    (
+      color: mat.$azure-palette,
+      typography: Roboto,
+      density: 0
+    )
+  );
+}
 
 html,
 body {
@@ -28,7 +37,7 @@ body {
 }
 
 .error-message {
-  color: mat.get-theme-color($theme, error);
+  color: var(--mat-sys-error);
   font-weight: 500;
 }
 

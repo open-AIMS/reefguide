@@ -19,6 +19,8 @@ export const sharedCriteriaSchema = z.object({
   slope_max: z.number().optional().describe('The slope range (max)'),
   rugosity_min: z.number().optional().describe('The rugosity range (min)'),
   rugosity_max: z.number().optional().describe('The rugosity range (max)'),
+  turbidity_min: z.number().optional().describe('The turbidity range (min)'),
+  turbidity_max: z.number().optional().describe('The turbidity range (max)'),
   waves_period_min: z.number().optional().describe('The wave period range (min)'),
   waves_period_max: z.number().optional().describe('The wave period range (max)'),
   waves_height_min: z.number().optional().describe('The wave height range (min)'),

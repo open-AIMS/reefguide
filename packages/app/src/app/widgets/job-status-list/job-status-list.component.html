@@ -12,8 +12,11 @@
         <mat-progress-spinner mode="indeterminate" diameter="24" matTooltip="working on job">
         </mat-progress-spinner>
       }
+      @case ('CREATE_FAILED') {
+        <mat-icon class="failed" matTooltip="job creation failled">error</mat-icon>
+      }
       @case ('FAILED') {
-        <mat-icon class="failed" matTooltip="job error">error</mat-icon>
+        <mat-icon class="failed" matTooltip="job execution error">error</mat-icon>
       }
       @case ('SUCCEEDED') {
         <mat-icon class="succeeded" matTooltip="job completed">done</mat-icon>

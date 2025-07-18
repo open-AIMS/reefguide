@@ -3,8 +3,6 @@ import { AuthService } from '../auth/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 interface StoredConfig {
-  enabledRegions: Array<string>;
-  parallelRegionRequests: boolean;
   enableCOGBlob: boolean;
 }
 
@@ -25,8 +23,6 @@ function getBoolean(val: string): boolean {
  * TODO fix types so this errors if add property to StoredConfig
  */
 const configVarGetters: Partial<Record<keyof StoredConfig, (val: string) => any>> = {
-  enabledRegions: getArray,
-  parallelRegionRequests: getBoolean,
   enableCOGBlob: getBoolean
 };
 
@@ -42,16 +38,6 @@ export const ALL_REGIONS = [
 })
 export class ReefGuideConfigService {
   readonly authService = inject(AuthService);
-
-  /**
-   * Enabled regions for ReefGuideAPI
-   */
-  enabledRegions: WritableSignal<Array<string>>;
-  /**
-   * Request all regions simultaneously.
-   * Otherwise sequential requests.
-   */
-  parallelRegionRequests: WritableSignal<boolean>;
 
   /**
    * Enable copying of COG files to in-memory Blob, which improves performance.
@@ -71,15 +57,10 @@ export class ReefGuideConfigService {
   private readonly prefix = 'rg.';
 
   constructor() {
-    this.enabledRegions = signal(this.get('enabledRegions', ALL_REGIONS));
-    this.parallelRegionRequests = signal(this.get('parallelRegionRequests', true));
-
     // default to false since ObjectURLs not working in deployed app
     // Also, should add file size condition
     this.enableCOGBlob = signal(this.get('enableCOGBlob', false));
 
-    effect(() => this.set('enabledRegions', this.enabledRegions()));
-    effect(() => this.set('parallelRegionRequests', this.parallelRegionRequests()));
     effect(() => this.set('enableCOGBlob', this.enableCOGBlob()));
 
     // ignore the first effect, which would set the initial value.

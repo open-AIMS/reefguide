@@ -1,5 +1,4 @@
-import { Component, inject, QueryList, signal, ViewChildren } from '@angular/core';
-import { CalciteComponentsModule, CalciteSlider } from '@esri/calcite-components-angular';
+import { Component, inject, signal } from '@angular/core';
 import { MatSliderModule } from '@angular/material/slider';
 import {
   FormBuilder,
@@ -11,144 +10,161 @@ import {
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { ReefGuideMapService } from '../reef-guide-map.service';
-import { CriteriaAssessment, SiteSuitabilityCriteria } from '../reef-guide-api.types';
+import { CriteriaPayloads, SiteSuitabilityCriteria } from '../reef-guide-api.types';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
-import { ReefGuideConfigService } from '../reef-guide-config.service';
+import { ALL_REGIONS } from '../reef-guide-config.service';
+import { MatSelectModule } from '@angular/material/select';
+import { catchError, EMPTY, switchMap, tap } from 'rxjs';
+import { WebApiService } from '../../../api/web-api.service';
+import { CriteriaRangeOutput } from '@reefguide/types';
+import { MatTooltip } from '@angular/material/tooltip';
 
-interface SelectionCriteriaInputDef {
-  // field/id used by API
-  id: string;
-  name: string;
-  desc?: string;
-  min: number;
-  minValue?: number;
-  max: number;
-  maxValue?: number;
-  step?: number;
-  // Value converter from displayed values to value in CriteriaAssessment
-  convertValue?: (value: number) => number;
-  // swap the final values
-  reverseValues?: boolean;
-}
+// add properties calculated here
+type CriteriaRangeOutput2 = CriteriaRangeOutput[string] & { step: number };
+type CriteriaRangeList = Array<CriteriaRangeOutput2>;
 
 @Component({
   selector: 'app-selection-criteria',
   imports: [
     MatSliderModule,
-    CalciteComponentsModule,
     FormsModule,
     MatIconButton,
     MatIcon,
     MatFormFieldModule,
     MatInput,
     MatSlideToggle,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    MatSelectModule,
+    MatTooltip
   ],
   templateUrl: './selection-criteria.component.html',
   styleUrl: './selection-criteria.component.scss'
 })
 export class SelectionCriteriaComponent {
+  private readonly api = inject(WebApiService);
+  private readonly formBuilder = inject(FormBuilder);
   readonly mapService = inject(ReefGuideMapService);
-  readonly formBuilder = inject(FormBuilder);
-  readonly config = inject(ReefGuideConfigService);
 
-  /*
-  Distance to Nearest Port (NM): 0.0:200.0
-  Good if you add just a little bit beyond these bounds, like +1, except where the lower bound is zero.
+  regions = ALL_REGIONS;
+
+  regionCriteriaRanges = signal<CriteriaRangeList | undefined>(undefined);
+
+  enableSiteSuitability = signal(true);
+
+  /**
+   * IDs of Criteria that are flipped to positive values for the UI.
    */
+  negativeFlippedCriteria = new Set(['Depth']);
 
-  criteria: Array<SelectionCriteriaInputDef> = [
-    {
-      id: 'Depth',
-      name: 'Depth (m)',
-      // Bathy: -9.0:-2.0
-      // UI is positive, but API takes negative numbers
-      min: 0,
-      max: 16,
-      minValue: 2,
-      maxValue: 10,
-      step: 0.5,
-      // convert Depth to negative values required by API. [-10, -2]
-      convertValue: v => -v,
-      reverseValues: true
-    },
-    {
-      id: 'Slope',
-      name: 'Slope (degrees)',
-      // Slope: 0.0:40.0
-      min: 0,
-      max: 45
-    },
-    {
-      id: 'WavesHs',
-      name: ' Significant Wave Height (Hs)',
-      min: 0,
-      max: 6,
-      maxValue: 1,
-      step: 0.1
-    },
-    {
-      id: 'WavesTp',
-      name: 'Wave Period',
-      // Wave Period: 0.0:6.0
-      min: 0,
-      max: 9,
-      maxValue: 6,
-      step: 0.5
-    }
-  ];
-
-  enableSiteSuitability = signal(false);
-
-  // form isn't working with Calcite, so we get form data via ViewChildren access
-  // @ViewChild('form') form!: NgForm;
-
-  siteForm: FormGroup;
-
-  @ViewChildren(CalciteSlider) sliders!: QueryList<CalciteSlider>;
+  form: FormGroup;
 
   constructor() {
-    this.siteForm = this.formBuilder.group({
-      xdist: [450, [Validators.min(1), Validators.required]],
-      ydist: [20, [Validators.min(1), Validators.required]],
-      SuitabilityThreshold: [95, Validators.required]
+    this.form = this.formBuilder.group({
+      region: [null, Validators.required],
+      reef_type: ['slopes'],
+      siteSuitability: this.formBuilder.group<Record<keyof SiteSuitabilityCriteria, any>>({
+        x_dist: [450, [Validators.min(1), Validators.required]],
+        y_dist: [20, [Validators.min(1), Validators.required]],
+        threshold: [95, Validators.required]
+      })
     });
+
+    const regionControl = this.form.get('region')!;
+    regionControl.valueChanges
+      .pipe(
+        tap(x => {
+          // TODO need loading indicator?
+          this.regionCriteriaRanges.set(undefined);
+        }),
+        switchMap(region =>
+          this.api.getRegionCriteria(region).pipe(
+            // catch error to prevent it from breaking parent observable
+            catchError((err, caught) => {
+              console.error(`${region} criteria request failed`, err);
+              return EMPTY;
+            })
+          )
+        )
+      )
+      .subscribe(regionCriteria => {
+        this.buildCriteriaFormGroup(regionCriteria);
+      });
   }
 
-  getCriteria(): CriteriaAssessment {
-    // build list of criteria ids with their final values.
-    const valueEntries = this.sliders.map(s => {
-      const crit = this.criteria.find(c => c.id === s.name);
-      if (crit === undefined) {
-        throw new Error(`Criteria with id ${s.name} not found`);
+  private buildCriteriaFormGroup(regionCriteria: CriteriaRangeOutput) {
+    // TODO order?
+    const regionCriteriaRanges = Object.values(regionCriteria) as CriteriaRangeList;
+
+    const criteriaControlDefs: Record<string, any> = {};
+
+    for (const c of regionCriteriaRanges) {
+      const { min_val, max_val, default_min_val, default_max_val } = c;
+      if (this.negativeFlippedCriteria.has(c.id)) {
+        c.min_val = -max_val;
+        c.max_val = -min_val;
+        c.default_min_val = -default_max_val;
+        c.default_max_val = -default_min_val;
       }
 
-      // all criteria are ranges
-      let values = s.value as Array<number>;
+      c.min_val = Math.floor(c.min_val);
+      c.max_val = Math.ceil(c.max_val);
+      const diff = c.max_val - c.min_val;
+      c.step = diff > 40 ? 1 : 0.1;
 
-      // convert values if function defined
-      const { convertValue, reverseValues } = crit;
-      if (convertValue !== undefined) {
-        values = values.map(convertValue);
+      criteriaControlDefs[`${c.payload_property_prefix}min`] = [c.default_min_val];
+      criteriaControlDefs[`${c.payload_property_prefix}max`] = [c.default_max_val];
+    }
+
+    const formGroup = this.formBuilder.group(criteriaControlDefs);
+    this.form.setControl('criteria', formGroup);
+
+    this.regionCriteriaRanges.set(regionCriteriaRanges);
+  }
+
+  /**
+   * Get Job payload criteria values
+   */
+  getCriteriaPayloads(): CriteriaPayloads {
+    const formValue = this.form.value;
+    const criteriaRanges = this.regionCriteriaRanges()!;
+
+    if (!this.form.valid) {
+      // this causes required form inputs to show error state
+      this.form.markAllAsTouched();
+      throw new Error('Form invalid!');
+    }
+
+    const criteria: Record<string, number | undefined> = {
+      ...formValue.criteria
+    };
+
+    // fix values of negative-flipped criteria
+    for (const c of criteriaRanges) {
+      if (this.negativeFlippedCriteria.has(c.id)) {
+        const minKey = `${c.payload_property_prefix}min`;
+        const minValue = criteria[minKey]!;
+        const maxKey = `${c.payload_property_prefix}max`;
+        const maxValue = criteria[maxKey]!;
+
+        criteria[minKey] = -maxValue;
+        criteria[maxKey] = -minValue;
       }
-
-      if (reverseValues === true) {
-        values = [...values].reverse();
-      }
-
-      return [s.name, values];
-    });
-    const criteria = Object.fromEntries(valueEntries);
+    }
 
     let siteSuitability: SiteSuitabilityCriteria | undefined = undefined;
-    if (this.enableSiteSuitability() && this.siteForm.valid) {
-      siteSuitability = this.siteForm.value;
+    const siteForm = this.form.get('siteSuitability')!;
+    if (this.enableSiteSuitability() && siteForm.valid) {
+      siteSuitability = siteForm.value;
     }
 
     return {
-      criteria,
+      criteria: {
+        region: formValue.region,
+        reef_type: formValue.reef_type,
+        ...criteria
+      },
       siteSuitability
     };
   }
@@ -157,15 +173,20 @@ export class SelectionCriteriaComponent {
    * Reset all criteria to default values.
    */
   reset() {
-    const { criteria } = this;
-    this.sliders.forEach(s => {
-      const c = criteria.find(c => c.id === s.name);
-      if (c === undefined) {
-        console.warn(`No criteria with id="${s.name}"`, s);
-        return;
-      }
-      s.minValue = c.minValue ?? c.min;
-      s.maxValue = c.maxValue ?? c.max;
-    });
+    const criteriaFormGroup = this.form.get('criteria')!;
+    const criteriaRanges = this.regionCriteriaRanges();
+    if (criteriaRanges === undefined) {
+      return;
+    }
+
+    for (const c of criteriaRanges) {
+      // don't need to worry about negative-flipping here since we mutated min/max values
+      const minControl = criteriaFormGroup.get(`${c.payload_property_prefix}min`);
+      minControl?.setValue(c.default_min_val);
+      const maxControl = criteriaFormGroup.get(`${c.payload_property_prefix}max`);
+      maxControl?.setValue(c.default_max_val);
+    }
+
+    // TODO reset site suitability?
   }
 }

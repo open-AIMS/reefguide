@@ -1,9 +1,9 @@
+@use '@angular/material' as mat;
+
 :host {
   display: block;
-  // background-color: beige;
+  color-scheme: dark;
 }
-
-$errorColor: rgb(155, 33, 33);
 
 .row {
   padding: 0px 8px;
@@ -12,14 +12,15 @@ $errorColor: rgb(155, 33, 33);
   align-items: center;
   gap: 8px;
 
-  color: whitesmoke;
-  background-color: #1e1e1eba;
+  color: var(--mat-sys-on-background);
+  background-color: var(--mat-sys-background);
+
   box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.18);
   backdrop-filter: blur(4px);
 
   > mat-icon {
-    &.error {
-      color: $errorColor;
+    &.failed {
+      color: var(--mat-sys-error);
     }
     &.succeeded {
       color: rgb(7, 139, 7);
@@ -28,7 +29,7 @@ $errorColor: rgb(155, 33, 33);
 
   > button.cancel-job {
     &:hover {
-      color: $errorColor;
+      color: var(--mat-sys-error);
     }
   }
 }
