@@ -46,5 +46,38 @@
     "db": {
         "instanceSize": "SMALL",
         "storageGb": 20
+    },
+    "jobSystem": {
+        "capacityManager": {
+            "cpu": 512,
+            "memoryLimitMiB": 1024,
+            "pollIntervalMs": 3000
+        },
+        "workers": {
+            "reefguide": {
+                "imageTag": "latest",
+                "cpu": 4096,
+                "memoryLimitMiB": 8192,
+                "scaling": {
+                    "desiredMinCapacity": 0,
+                    "desiredMaxCapacity": 5,
+                    "scalingFactor": 3.3,
+                    "scalingSensitivity": 2.6,
+                    "cooldownSeconds": 60
+                }
+            },
+            "adria": {
+                "imageTag": "latest",
+                "cpu": 8192,
+                "memoryLimitMiB": 32768,
+                "scaling": {
+                    "desiredMinCapacity": 0,
+                    "desiredMaxCapacity": 5,
+                    "scalingFactor": 3.3,
+                    "scalingSensitivity": 2.1,
+                    "cooldownSeconds": 60
+                }
+            }
+        }
     }
 }

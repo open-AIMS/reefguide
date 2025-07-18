@@ -7,7 +7,24 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import { IVpc, Vpc } from 'aws-cdk-lib/aws-ec2';
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Construct } from 'constructs';
-import { RemovalPolicy } from 'aws-cdk-lib';
+import { CfnOutput, RemovalPolicy, Stack } from 'aws-cdk-lib';
+
+/**
+ * Slugify a string for use in CloudFormation output names
+ * CloudFormation output names must be alphanumeric only
+ *
+ * @param text - The text to slugify
+ * @returns Alphanumeric string suitable for CloudFormation output names
+ */
+export function slugify(text: string): string {
+  return (
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '') // Remove all non-alphanumeric characters
+      .replace(/^[0-9]/, 'n$&') || // Prefix with 'n' if starts with number
+    'empty'
+  ); // Fallback if string becomes empty
+}
 
 /**
  * Properties for the SharedBalancers construct
@@ -305,5 +322,14 @@ export class ReefGuideNetworking extends Construct {
 
     // Allow EC2 instance to access EFS
     fileSystem.connections.allowDefaultPortFrom(efsManagementInstance);
+
+    // CfnOutputs
+    new CfnOutput(this, 'efnConnectionInfo', {
+      key: `${slugify(Stack.of(this).stackName)}efnConnectionInfo`,
+      value: JSON.stringify({
+        serviceInstanceId: efsManagementInstance.instanceId,
+        transferBucketName: this.dataBucket.bucketName
+      })
+    });
   }
 }

@@ -1,13 +1,13 @@
+import { JobType } from '@reefguide/db';
 import { Annotations, Duration, IgnoreMode, Stack } from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as efs from 'aws-cdk-lib/aws-efs';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as efs from 'aws-cdk-lib/aws-efs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as sm from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
-import { JobType } from '@reefguide/db';
 import { STANDARD_EXCLUSIONS } from '../infra';
 
 // Define job type configuration
@@ -31,6 +31,7 @@ export interface JobTypeConfig {
   scalingFactor: number;
   serverPort: number;
   command: string[];
+  entrypoint?: string[];
 
   // Additional environment variables
   env?: Record<string, string>;
@@ -154,8 +155,9 @@ export class JobSystem extends Construct {
         // This specifies the image to be used - should be in the full format
         // i.e. "ghcr.io/open-aims/reefguideapi.jl/reefguide-src:latest"
         image: ecs.ContainerImage.fromRegistry(workerConfig.workerImage),
-        // Docker command
+        // Docker command and entrypoint overrides if provided
         command: workerConfig.command,
+        entryPoint: workerConfig.entrypoint,
         logging: ecs.LogDrivers.awsLogs({
           streamPrefix: `worker-${jobId.toLowerCase()}`,
           logRetention: logs.RetentionDays.ONE_WEEK

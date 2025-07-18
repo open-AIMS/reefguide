@@ -199,18 +199,22 @@ export class ReefguideStack extends cdk.Stack {
       appName: config.frontend.appName
     });
 
+    const { jobSystem } = config;
+    const { capacityManager, workers } = jobSystem;
+    const { reefguide, adria } = workers;
+
     new JobSystem(this, 'job-system', {
       vpc: networking.vpc,
       cluster: cluster,
       storageBucket,
       apiEndpoint: webAPI.endpoint,
       capacityManager: {
-        // Measly! But seems to work well
-        cpu: 512,
-        memoryLimitMiB: 1024,
-        pollIntervalMs: 3000
+        cpu: capacityManager.cpu,
+        memoryLimitMiB: capacityManager.memoryLimitMiB,
+        pollIntervalMs: capacityManager.pollIntervalMs
       },
       workers: [
+        // Reefguide Worker
         {
           // This worker handles both tests and suitability assessments, as well
           // as some misc jobs
@@ -220,21 +224,37 @@ export class ReefguideStack extends cdk.Stack {
             JobType.TEST,
             JobType.DATA_SPECIFICATION_UPDATE
           ],
-          // This specifies the image to be used - should be in the full format
-          // i.e. "ghcr.io/open-aims/reefguideapi.jl/reefguide-src:latest"
-          workerImage: 'ghcr.io/open-aims/reefguideworker.jl/reefguide-worker:latest',
-          // Can tinker with performance here
-          cpu: 4096,
-          memoryLimitMiB: 8192,
+          // Use configurable image tag
+          workerImage: `ghcr.io/open-aims/reefguideworker.jl/reefguide-worker:${reefguide.imageTag}`,
+          // Configurable performance settings
+          cpu: reefguide.cpu,
+          memoryLimitMiB: reefguide.memoryLimitMiB,
           serverPort: 3000,
 
           // Launch the worker
-          command: ['using ReefGuideWorker; ReefGuideWorker.start_worker()'],
-          desiredMinCapacity: 0,
-          desiredMaxCapacity: 5,
-          scalingFactor: 3.3,
-          scalingSensitivity: 2.6,
-          cooldownSeconds: 60,
+          ...(reefguide.sysimage
+            ? // Sysimage mode!
+              {
+                command: [
+                  '--project=@app',
+                  `-J`,
+                  reefguide.sysimage.sysimagePath,
+                  '--sysimage-native-code=yes',
+                  '-e',
+                  'using ReefGuideWorker; ReefGuideWorker.start_worker()'
+                ],
+                entrypoint: ['julia']
+              }
+            : // Normal mode
+              {
+                command: ['using ReefGuideWorker; ReefGuideWorker.start_worker()']
+              }),
+          // Configurable scaling parameters
+          desiredMinCapacity: reefguide.scaling.desiredMinCapacity,
+          desiredMaxCapacity: reefguide.scaling.desiredMaxCapacity,
+          scalingFactor: reefguide.scaling.scalingFactor,
+          scalingSensitivity: reefguide.scaling.scalingSensitivity,
+          cooldownSeconds: reefguide.scaling.cooldownSeconds,
 
           // This specifies where the config file path can be found for the
           // worker task
@@ -271,24 +291,19 @@ export class ReefguideStack extends cdk.Stack {
         // ADRIA worker
         {
           jobTypes: [JobType.ADRIA_MODEL_RUN],
-          workerImage: 'ghcr.io/open-aims/adriareefguideworker.jl/adria-reefguide-worker:latest',
-          // 8CPU
-          cpu: 8192,
-          // 32GB
-          memoryLimitMiB: 32768,
-          /* Older config 4CPU
-          // 4CPU
-          cpu: 4096,
-          // 16GB
-          memoryLimitMiB: 16384,
-          */
+          // Use configurable image tag
+          workerImage: `ghcr.io/open-aims/adriareefguideworker.jl/adria-reefguide-worker:${adria.imageTag}`,
+          // Configurable performance settings
+          cpu: adria.cpu,
+          memoryLimitMiB: adria.memoryLimitMiB,
           serverPort: 3000,
           command: ['using ADRIAReefGuideWorker; ADRIAReefGuideWorker.start_worker()'],
-          desiredMinCapacity: 0,
-          desiredMaxCapacity: 5,
-          scalingFactor: 3.3,
-          scalingSensitivity: 2.1,
-          cooldownSeconds: 60,
+          // Configurable scaling parameters
+          desiredMinCapacity: adria.scaling.desiredMinCapacity,
+          desiredMaxCapacity: adria.scaling.desiredMaxCapacity,
+          scalingFactor: adria.scaling.scalingFactor,
+          scalingSensitivity: adria.scaling.scalingSensitivity,
+          cooldownSeconds: adria.scaling.cooldownSeconds,
           env: {
             // ADRIA PARAMS
             ADRIA_OUTPUT_DIR: '/tmp/reefguide',
@@ -302,7 +317,7 @@ export class ReefguideStack extends cdk.Stack {
             MOORE_DATA_PACKAGE_PATH: '/data/reefguide/adria/datapackages/Moore_2025-01-17_v070_rc1',
             // GBR RME cluster data package
             GBR_DATA_PACKAGE_PATH: '/data/reefguide/adria/datapackages/rme_ml_2024_01_08',
-            // Don't use network FS for this - to speed up IO and reduce $$
+            // Don't use network FS for this - to speed up IO and reduce $
             DATA_SCRATCH_SPACE: '/tmp/reefguide'
           },
 

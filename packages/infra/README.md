@@ -220,7 +220,9 @@ The main repository contains a configuration management script that interacts wi
 
 ## Administering the EFS service instance
 
-- connect to the instance using AWS SSM Connect (go to AWS -> EC2 -> Find the service instance -> Connect -> Connect using SSM)
+You can use the below manual process to connect to the EFS volume, or use the management scripts below in [efs scripts](#efs-management-scripts).
+
+Connect to the instance using AWS SSM Connect (go to AWS -> EC2 -> Find the service instance -> Connect -> Connect using SSM)
 
 then get into the ubuntu user and mount the volume
 
@@ -231,3 +233,189 @@ cd ~
 ```
 
 This should mount the data into `/efs/data` with `/efs/data/reefguide` being the targeted data directory.
+
+## EFS Management Scripts
+
+A collection of scripts for managing files on AWS EFS through EC2 instances using AWS Systems Manager (SSM).
+
+### Overview
+
+These scripts provide a seamless way to:
+
+- Upload files/directories to EFS without direct network access
+- Auto-discover EFS connection details from CloudFormation stacks
+- Connect interactively to EFS management instances
+- Handle large transfers efficiently via the CDK deployed s3 data transfer bucket
+
+### Scripts
+
+#### `copy-to-efs.sh` - Core Transfer Script
+
+Uploads local files or directories to EFS via EC2 instance using SSM.
+
+```bash
+./copy-to-efs.sh [--zip] <local_path> <remote_target> <s3_bucket> <ec2_instance_id>
+```
+
+**Options:**
+
+- `--zip`: Compress directories before transfer
+
+**Examples:**
+
+```bash
+# Upload single file
+./copy-to-efs.sh ./data.csv reports/data.csv my-bucket i-1234567890abcdef0
+
+# Upload directory
+./copy-to-efs.sh ./dataset/ analysis/dataset/ my-bucket i-1234567890abcdef0
+
+# Upload directory as zip (faster)
+./copy-to-efs.sh --zip ./dataset/ analysis/dataset/ my-bucket i-1234567890abcdef0
+```
+
+#### `get-efs-target.sh` - Connection Discovery
+
+Extracts EFS connection details from CloudFormation stack outputs.
+
+```bash
+CONFIG_FILE_NAME=test.json ./get-efs-target.sh [stack-name]
+```
+
+**Output:** `<s3_bucket> <ec2_instance_id>`
+
+#### `copy-to-efs-auto.sh` - Automated Transfer
+
+Combines discovery and transfer in one command.
+
+```bash
+CONFIG_FILE_NAME=test.json ./copy-to-efs-auto.sh [--zip] <local_path> <remote_target>
+```
+
+#### `connect-efs.sh` - Interactive Session
+
+Connects to EFS management instance via SSM for direct access.
+
+```bash
+CONFIG_FILE_NAME=test.json ./connect-efs.sh [stack-name]
+```
+
+### Configuration
+
+#### Environment Variables
+
+- `CONFIG_FILE_NAME`: Your config file name (e.g., `test.json`, `prod.json`)
+
+#### Config File Format
+
+Place config files in `configs/${CONFIG_FILE_NAME}`:
+
+```json
+{
+  "stackName": "your-cloudformation-stack-name",
+  ...
+}
+```
+
+### Prerequisites
+
+#### Local Machine
+
+1. **AWS CLI** configured with appropriate credentials
+2. **jq** for JSON parsing: `brew install jq` (macOS) or `apt install jq` (Ubuntu)
+3. **zip/unzip** utilities (usually pre-installed)
+4. **AWS Session Manager plugin** (for `connect-efs.sh`):
+
+   **macOS:**
+
+   ```bash
+   curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/mac/sessionmanager-bundle.zip" -o "sessionmanager-bundle.zip"
+   unzip sessionmanager-bundle.zip
+   sudo ./sessionmanager-bundle/install -i /usr/local/sessionmanagerplugin -b /usr/local/bin/session-manager-plugin
+   ```
+
+   **Ubuntu/Debian:**
+
+   ```bash
+   curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "session-manager-plugin.deb"
+   sudo dpkg -i session-manager-plugin.deb
+   ```
+
+#### AWS Permissions
+
+Your AWS credentials need:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:DescribeStacks",
+        "cloudformation:ListStacks",
+        "ec2:DescribeInstances",
+        "ec2:StartInstances",
+        "ssm:SendCommand",
+        "ssm:GetCommandInvocation",
+        "ssm:DescribeInstanceInformation",
+        "ssm:StartSession",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+#### EC2 Instance
+
+The EFS management instance is deployed and configured automatically by the CDK stack with all necessary permissions and dependencies.
+
+### Usage Patterns
+
+#### Quick Transfer
+
+```bash
+export CONFIG_FILE_NAME=prod.json
+
+# Upload and auto-discover connection details
+./copy-to-efs-auto.sh --zip ./my-data target/location
+```
+
+#### Manual Transfer
+
+```bash
+# Get connection details
+CONFIG_FILE_NAME=test.json ./get-efs-target.sh
+# Output: my-transfer-bucket i-1234567890abcdef0
+
+# Use details directly
+./copy-to-efs.sh --zip ./data target/data my-transfer-bucket i-1234567890abcdef0
+```
+
+#### Interactive Management
+
+```bash
+# Connect to instance
+CONFIG_FILE_NAME=test.json ./connect-efs.sh
+
+# Once connected:
+sudo su - ubuntu
+./mountefs.sh
+ls -la /home/ubuntu/efs/
+```
+
+### Troubleshooting
+
+#### Common Issues
+
+- **"jq not found"**: Install jq: `brew install jq` or `apt install jq`
+- **"SessionManagerPlugin not found"**: Install Session Manager plugin (see Prerequisites)
+- **"CONFIG_FILE_NAME not set"**: Export the environment variable
+- **"Stack output not found"**: Verify your CloudFormation stack has the `efnConnectionInfo` output
+
+#### Instance States
+
+Scripts automatically handle starting stopped EC2 instances and waiting for SSM connectivity.
