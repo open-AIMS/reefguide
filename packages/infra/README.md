@@ -384,6 +384,12 @@ export CONFIG_FILE_NAME=prod.json
 ./copy-to-efs-auto.sh --zip ./my-data target/location
 ```
 
+#### Replace ReefGuideWorker sysimage (example)
+
+```bash
+/scripts/auto-copy-to-efs.sh ../../../ReefGuideWorker.jl/sysimages/reefguide_img.so data/reefguide/sysimages/ReefGuideWorker.so
+```
+
 #### Manual Transfer
 
 ```bash

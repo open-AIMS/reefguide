@@ -237,6 +237,8 @@ export class ReefguideStack extends cdk.Stack {
               {
                 command: [
                   '--project=@app',
+                  '-t',
+                  'auto',
                   `-J`,
                   reefguide.sysimage.sysimagePath,
                   '--sysimage-native-code=yes',
@@ -247,7 +249,14 @@ export class ReefguideStack extends cdk.Stack {
               }
             : // Normal mode
               {
-                command: ['using ReefGuideWorker; ReefGuideWorker.start_worker()']
+                command: [
+                  '--project=@app',
+                  '-t',
+                  'auto',
+                  '-e',
+                  'using ReefGuideWorker; ReefGuideWorker.start_worker()'
+                ],
+                entrypoint: ['julia']
               }),
           // Configurable scaling parameters
           desiredMinCapacity: reefguide.scaling.desiredMinCapacity,
