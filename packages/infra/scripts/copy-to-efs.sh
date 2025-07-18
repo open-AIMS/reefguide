@@ -442,7 +442,7 @@ execute_ssm_command() {
     
     if [[ $output_exit -eq 0 ]] && [[ -n "$output_result" ]] && [[ "$output_result" != "None" ]] && [[ "$output_result" != "null" ]]; then
         log_info "Command output:"
-        echo "$output_result" | sed 's/^/  /'"
+        echo "$output_result" | sed 's/^/  /'
     else
         if [[ $output_exit -ne 0 ]]; then
             log_warn "Could not retrieve command output (exit code: $output_exit)"
