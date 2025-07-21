@@ -173,6 +173,8 @@
           <app-results-view
             [job]="getWorkspaceService(workspace.id)?.getJob() ?? undefined"
             [workspaceId]="workspace.id"
+            [initialActiveCharts]="getActiveChartsForWorkspace(workspace.id)"
+            (chartsChanged)="onChartsChanged(workspace.id, $event)"
           >
           </app-results-view>
         </div>

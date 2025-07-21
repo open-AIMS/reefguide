@@ -315,7 +315,8 @@ export class WorkspacePersistenceService {
       (workspace.parameters === null || typeof workspace.parameters === 'object') &&
       typeof workspace.createdAt === 'string' &&
       typeof workspace.lastModified === 'string' &&
-      (workspace.submittedJobId === undefined || typeof workspace.submittedJobId === 'number')
+      (workspace.submittedJobId === undefined || typeof workspace.submittedJobId === 'number') &&
+      (workspace.activeCharts === undefined || Array.isArray(workspace.activeCharts))
     );
   }
 

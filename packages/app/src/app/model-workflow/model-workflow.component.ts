@@ -52,6 +52,7 @@ interface Workspace {
   createdAt: Date;
   lastModified: Date;
   submittedJobId?: number;
+  activeCharts?: string[];
 }
 
 // Isolated workspace service - one instance per workspace
@@ -433,7 +434,8 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
       workflowState: 'configuring',
       createdAt: new Date(),
       lastModified: new Date(),
-      submittedJobId: undefined
+      submittedJobId: undefined,
+      activeCharts: undefined
     };
 
     this.workspaceCounter.set(counter + 1);
@@ -518,7 +520,8 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
       workflowState: 'configuring',
       createdAt: new Date(),
       lastModified: new Date(),
-      submittedJobId: undefined
+      submittedJobId: undefined,
+      activeCharts: undefined
     };
 
     this.workspaceCounter.set(counter + 1);
@@ -639,7 +642,8 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
       job: null,
       workflowState: 'configuring',
       submittedJobId: undefined,
-      lastModified: new Date()
+      lastModified: new Date(),
+      activeCharts: undefined
     });
 
     this.triggerSave();
@@ -773,5 +777,21 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
       theme: 'primary',
       successMessage: 'Model simulation completed! Results are ready for analysis.'
     });
+  }
+
+  onChartsChanged(workspaceId: string, activeCharts: string[]): void {
+    this.updateWorkspace(workspaceId, {
+      activeCharts: [...activeCharts], // Create a copy
+      lastModified: new Date()
+    });
+
+    // Auto-save chart changes
+    this.triggerSave();
+  }
+
+  // Get active charts for a workspace
+  getActiveChartsForWorkspace(workspaceId: string): string[] {
+    const workspace = this.workspaces().find(w => w.id === workspaceId);
+    return workspace?.activeCharts || [];
   }
 }

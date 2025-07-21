@@ -10,7 +10,8 @@ import {
   input,
   ViewChild,
   OnDestroy,
-  signal
+  signal,
+  output
 } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
@@ -70,6 +71,12 @@ export class ResultsViewComponent implements AfterViewInit, OnDestroy {
   /** Input workspace ID to track workspace changes */
   workspaceId = input<string | undefined>(undefined);
 
+  /** Input: Initial active charts from workspace persistence */
+  initialActiveCharts = input<string[]>([]);
+
+  /** Output: Emit when active charts change for auto-save */
+  chartsChanged = output<string[]>();
+
   /** Reference to the Vega chart container element */
   @ViewChild('vegaChart', { static: false }) vegaChartRef!: ElementRef;
 
@@ -91,6 +98,12 @@ export class ResultsViewComponent implements AfterViewInit, OnDestroy {
 
   /** Flag to prevent duplicate renders during chart addition */
   private isAddingChart = false;
+
+  /** Flag to prevent restoration loops */
+  private isRestoringFromPersistence = signal<boolean>(false);
+
+  /** Last emitted chart state */
+  private lastEmittedCharts = '';
 
   /** Computed job ID for reactive streams */
   private readonly jobId = computed(() => {
@@ -127,6 +140,11 @@ export class ResultsViewComponent implements AfterViewInit, OnDestroy {
           this.initializeCharts(job);
           this.lastRenderedJobId = job.id;
           this.lastRenderedWorkspaceId = workspaceId;
+
+          // Restore charts from persistence ONLY after view is initialized
+          if (this.vegaChartRef) {
+            this.restoreChartsIfNeeded();
+          }
         }
       }
     });
@@ -143,35 +161,84 @@ export class ResultsViewComponent implements AfterViewInit, OnDestroy {
       if (charts.length > 0 && this.vegaChartRef && workspaceId && jobId && !this.isAddingChart) {
         this.renderActiveCharts(jobId, workspaceId);
       }
+
+      // Emit chart changes for persistence (only if we have a workspace and we're not restoring)
+      if (workspaceId && !this.isRestoringFromPersistence()) {
+        const chartTitles = charts.map(c => c.title);
+        const currentEmitted = JSON.stringify(chartTitles.sort());
+
+        // Only emit if charts actually changed
+        if (this.lastEmittedCharts !== currentEmitted) {
+          this.lastEmittedCharts = currentEmitted;
+          this.chartsChanged.emit(chartTitles);
+        }
+      }
     });
   }
 
   /**
-   * AfterViewInit lifecycle hook
+   * AfterViewInit lifecycle hook - trigger restoration if needed
    */
   ngAfterViewInit(): void {
+    // Only restore if we haven't already initialized in the effect
     const job = this.job();
     const workspaceId = this.currentWorkspaceId();
 
     if (job?.status === 'SUCCEEDED' && workspaceId) {
-      const needsRender =
-        this.lastRenderedJobId !== job.id || this.lastRenderedWorkspaceId !== workspaceId;
-
-      if (needsRender) {
-        console.log(`[${workspaceId}] Initial initialization for job ${job.id}`);
-
-        // Clear cache when switching to a different job
-        if (this.lastRenderedJobId !== job.id) {
-          this.clearCache();
-        }
-
-        this.initializeCharts(job);
-        this.lastRenderedJobId = job.id;
-        this.lastRenderedWorkspaceId = workspaceId;
+      // If charts were already initialized but view wasn't ready, restore now
+      if (this.lastRenderedJobId === job.id && this.lastRenderedWorkspaceId === workspaceId) {
+        this.restoreChartsIfNeeded();
       }
     }
   }
 
+  /**
+   * Restore charts from persistence if needed (only once per job/workspace)
+   */
+  private restoreChartsIfNeeded(): void {
+    const initialCharts = this.initialActiveCharts();
+    const activeCharts = this.activeCharts();
+
+    // Only restore if:
+    // 1. We have charts to restore
+    // 2. We haven't already restored (active charts is empty)
+    // 3. We're not currently restoring
+    if (initialCharts.length > 0 && activeCharts.length === 0 && !this.isRestoringFromPersistence()) {
+      this.restoreChartsFromPersistence(initialCharts);
+    }
+  }
+
+  /**
+   * Restore charts from persistence
+   */
+  private restoreChartsFromPersistence(chartTitles: string[]): void {
+    const availableCharts = this.availableCharts();
+    const workspaceId = this.currentWorkspaceId();
+
+    if (!availableCharts.length || !workspaceId || this.isRestoringFromPersistence()) {
+      return;
+    }
+
+    console.log(`[${workspaceId}] Restoring ${chartTitles.length} charts from persistence`);
+
+    // Set flag to prevent emission during restoration
+    this.isRestoringFromPersistence.set(true);
+
+    // Filter to only charts that still exist in the job results
+    const validCharts = chartTitles
+      .map(title => availableCharts.find(chart => chart.title === title))
+      .filter((chart): chart is ChartItem => chart !== undefined)
+      .map(chart => ({ ...chart, isActive: true }));
+
+    if (validCharts.length > 0) {
+      this.activeCharts.set(validCharts);
+      this.isRestoringFromPersistence.set(false);
+      console.log(`[${workspaceId}] Restored ${validCharts.length} valid charts`);
+    } else {
+      this.isRestoringFromPersistence.set(false);
+      console.log(`[${workspaceId}] No valid charts found to restore`);
+    }
+  }
   /**
    * Initialize charts from job output payload
    */
@@ -260,6 +327,8 @@ export class ResultsViewComponent implements AfterViewInit, OnDestroy {
     // Update the active charts list
     const filtered = currentActive.filter(c => c.title !== title);
     this.activeCharts.set(filtered);
+
+    // chartsChanged will be emitted by the effect automatically
   }
 
   /**
