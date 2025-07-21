@@ -9,7 +9,6 @@
         }
       </mat-select>
     </mat-form-field>
-
     @if (criteriaRanges) {
       <div formGroupName="criteria">
         @for (c of criteriaRanges; track c.id) {
@@ -36,33 +35,34 @@
           </div>
         }
       </div>
-    }
-    <div class="ss-container" formGroupName="siteSuitability">
-      <mat-slide-toggle
-        labelPosition="before"
-        [checked]="enableSiteSuitability()"
-        (change)="enableSiteSuitability.set($event.checked)"
-      >
-        Site Suitability
-      </mat-slide-toggle>
-      @if (enableSiteSuitability()) {
-        <div>
-          <div class="row">
-            <mat-form-field>
-              <mat-label>X (meters)</mat-label>
-              <input type="number" matInput formControlName="x_dist" />
-            </mat-form-field>
-            <mat-form-field>
-              <mat-label>Y (meters)</mat-label>
-              <input type="number" matInput formControlName="y_dist" />
-            </mat-form-field>
+
+      <div class="ss-container" formGroupName="siteSuitability">
+        <mat-slide-toggle
+          labelPosition="before"
+          [checked]="enableSiteSuitability()"
+          (change)="enableSiteSuitability.set($event.checked)"
+        >
+          Site Suitability
+        </mat-slide-toggle>
+        @if (enableSiteSuitability()) {
+          <div>
+            <div class="row">
+              <mat-form-field>
+                <mat-label>X (meters)</mat-label>
+                <input type="number" matInput formControlName="x_dist" />
+              </mat-form-field>
+              <mat-form-field>
+                <mat-label>Y (meters)</mat-label>
+                <input type="number" matInput formControlName="y_dist" />
+              </mat-form-field>
+            </div>
+            <header class="label">Threshold</header>
+            <mat-slider min="0" max="100" discrete>
+              <input matSliderThumb formControlName="threshold" />
+            </mat-slider>
           </div>
-          <header class="label">Threshold</header>
-          <mat-slider min="0" max="100" discrete>
-            <input matSliderThumb formControlName="threshold" />
-          </mat-slider>
-        </div>
-      }
-    </div>
+        }
+      </div>
+    }
   </form>
 </div>
