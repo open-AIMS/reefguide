@@ -106,13 +106,6 @@ export class SelectionCriteriaComponent {
       });
   }
 
-  // FIXME remove, hack to avoid selection
-  ngAfterViewInit(): void {
-    this.form.patchValue({
-      region: 'Cairns-Cooktown'
-    });
-  }
-
   private buildCriteriaFormGroup(regionCriteria: CriteriaRangeOutput) {
     this.reset$.next();
 
