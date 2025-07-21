@@ -5,6 +5,7 @@ import {
   CreateJobResponse,
   CreateProjectInput,
   CreateProjectResponse,
+  CriteriaLayerDef,
   CriteriaRangeOutput,
   DeleteProjectResponse,
   DownloadResponse,
@@ -187,20 +188,38 @@ export class WebApiService {
     });
   }
 
-  getCriteriaLayers(): Record<string, string> {
-    // TODO return from API instead of hardcoding.
-    return {
-      Depth:
-        'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_bathymetry/MapServer',
-      Slope:
-        'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_slope_data/MapServer',
-      WavesHs:
-        'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_wave_Hs_data/MapServer',
-      WavesTp:
-        'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer'
-      // Note: ArcGIS has an alternate WMTS URL
-      // https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml
-    };
+  /**
+   * Get criteria visualization layer definitions.
+   * TODO return from API instead of hardcoding in app code.
+   */
+  getCriteriaLayers(): CriteriaLayerDef[] {
+    return [
+      {
+        id: 'Depth',
+        title: 'Depth',
+        url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_bathymetry/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+        urlType: 'WMTSCapabilitiesXml'
+        // reverseRange: true
+      },
+      {
+        id: 'Slope',
+        title: 'Slope',
+        url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_slope_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+        urlType: 'WMTSCapabilitiesXml'
+      },
+      {
+        id: 'WavesHs',
+        title: 'WavesHs',
+        url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_wave_Hs_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+        urlType: 'WMTSCapabilitiesXml'
+      },
+      {
+        id: 'WavesTp',
+        title: 'WavesTp',
+        url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+        urlType: 'WMTSCapabilitiesXml'
+      }
+    ];
   }
 
   getRegionCriteria(region: string): Observable<CriteriaRangeOutput> {

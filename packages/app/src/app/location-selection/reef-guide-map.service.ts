@@ -51,7 +51,7 @@ import { GeoJSON } from 'ol/format';
 import { Fill, Stroke, Style } from 'ol/style';
 import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
 import Layer from 'ol/layer/Layer';
-import { createSourceFromArcGIS } from '../../util/arcgis/arcgis-openlayer-util';
+import { createSourceFromCapabilitiesXml } from '../../util/arcgis/arcgis-openlayer-util';
 import { LayerController } from '../map/open-layers-model';
 import { LayerProperties } from '../../types/layer.type';
 
@@ -503,49 +503,59 @@ export class ReefGuideMapService {
     this.criteriaLayerGroup.set(layerGroup);
     this.map.getLayers().push(layerGroup);
 
-    // FIXME restore all criteria layers, refactor
-    const criteria = 'Depth';
+    for (let layerDef of layers) {
+      const { id, title, url, urlType, reverseRange } = layerDef;
 
-    const url = layers[criteria];
-
-    // QGIS says values are -128 to 127
-    // but OpenLayers bands are normalized 0 to 1
-    // invert to align with depth values from criteria UI
-    const depth = ['-', 1, ['band', 1]];
-
-    const layer = new TileLayer({
-      properties: {
-        id: `criteria_${criteria}`,
-        webUrl: url
-      } satisfies LayerProperties,
-      visible: true,
-      style: {
-        variables: {
-          min: 0,
-          // if set to 1, entire layer extent renders color
-          max: 0.9999
-        },
-
-        color: [
-          'case',
-          ['between', depth, ['var', 'min'], ['var', 'max']],
-          [223, 19, 208, 1],
-          [223, 19, 208, 0]
-        ]
+      // OpenLayers bands are normalized 0 to 1
+      let metric: any[] = ['band', 1];
+      if (reverseRange) {
+        // invert to align with values from criteria UI
+        metric = ['-', 1, metric];
       }
-    });
-    layerGroup.getLayers().push(layer);
 
-    createSourceFromArcGIS(url).then(source => {
-      // ignore OpenLayers types issue
-      // @ts-expect-error
-      layer.setSource(source);
+      const flatColor = [
+        'case',
+        ['between', metric, ['var', 'min'], ['var', 'max']],
+        // doesn't work
+        // NOW [['*', 255, depth], 19, 208, 1],
+        [223, 19, 208, 1],
+        [223, 19, 208, 0]
+      ];
 
-      // set the layer title to the source's title
-      layer.set('title', source.get('title'));
-    });
+      const layer = new TileLayer({
+        properties: {
+          id: `criteria_${id}`,
+          title,
+          webUrl: url
+        } satisfies LayerProperties,
+        visible: false,
+        style: {
+          variables: {
+            // if set to 0 or 1 entire layer extent renders color (depending on reverseRange)
+            min: 0.0000001,
+            max: 0.999999
+          },
 
-    this.criteriaLayers[criteria] = this.getLayerController(layer);
+          color: flatColor
+        }
+      });
+      layerGroup.getLayers().push(layer);
+
+      if (urlType !== 'WMTSCapabilitiesXml') {
+        throw new Error('Unsupported url type');
+      }
+
+      createSourceFromCapabilitiesXml(url).then(source => {
+        // ignore OpenLayers types issue
+        // @ts-expect-error
+        layer.setSource(source);
+
+        // set the layer title to the source's title
+        // layer.set('title', source.get('title'));
+      });
+
+      this.criteriaLayers[id] = this.getLayerController(layer);
+    }
   }
 
   private handleRegionError(region: string) {
@@ -588,8 +598,12 @@ export class ReefGuideMapService {
     const layer = layerController.layer;
     if (layer instanceof TileLayer) {
       // console.log('filter criteria layer', min, max);
+      // prevent full layer extent rendering color issue when min/max at extreme
+      if (min === 0) {
+        min = 0.0000001;
+      }
       if (max === 1) {
-        max = 0.9999;
+        max = 0.999999;
       }
       layer.updateStyleVariables({ min, max });
     }
