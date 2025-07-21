@@ -239,7 +239,7 @@ export class ReefguideStack extends cdk.Stack {
                   '--project=@app',
                   '-t',
                   'auto',
-                  `-J`,
+                  '-J',
                   reefguide.sysimage.sysimagePath,
                   '--sysimage-native-code=yes',
                   '-e',

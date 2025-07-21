@@ -9,8 +9,7 @@ describe('ProfileButtonComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProfileButtonComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ProfileButtonComponent);
     component = fixture.componentInstance;
