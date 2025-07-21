@@ -23,6 +23,9 @@ export async function createSourceFromCapabilitiesXml(capabilitiesUrl: string): 
     throw new Error('options null');
   }
 
+  // change to nearest neighbor, prevents darkened edge with default linear interpolation
+  options.interpolate = false;
+
   const wmts = new WMTS(options);
   wmts.set('title', layerDef.Title || layerDef.Identifier);
   return wmts;

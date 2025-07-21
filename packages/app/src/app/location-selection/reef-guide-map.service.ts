@@ -471,6 +471,7 @@ export class ReefGuideMapService {
         downloadUrl: region.originalUrl
       } satisfies LayerProperties,
       source: new GeoTIFF({
+        interpolate: false,
         sources: [
           {
             url: region.cogUrl
