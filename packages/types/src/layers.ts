@@ -24,6 +24,11 @@ export type CriteriaLayerDef = {
   urlType: 'WMTSCapabilitiesXml';
 
   /**
+   * Web page where user can learn about the layer.
+   */
+  infoUrl?: string;
+
+  /**
    * Reverse criteria range values when applying pixel filter
    */
   reverseRange?: boolean;

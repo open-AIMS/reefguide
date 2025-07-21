@@ -504,13 +504,13 @@ export class ReefGuideMapService {
     this.map.getLayers().push(layerGroup);
 
     for (let layerDef of layers) {
-      const { id, title, url, urlType } = layerDef;
+      const { id, title, url, urlType, infoUrl } = layerDef;
 
       const layer = new TileLayer({
         properties: {
           id: `criteria_${id}`,
           title,
-          webUrl: url
+          infoUrl
         } satisfies LayerProperties,
         visible: false,
         opacity: 0.7

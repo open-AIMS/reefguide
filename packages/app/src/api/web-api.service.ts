@@ -197,6 +197,8 @@ export class WebApiService {
       {
         id: 'Depth',
         title: 'Depth',
+        infoUrl:
+          'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_bathymetry/MapServer',
         url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_bathymetry/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
         urlType: 'WMTSCapabilitiesXml',
         reverseRange: true
@@ -204,18 +206,24 @@ export class WebApiService {
       {
         id: 'Slope',
         title: 'Slope',
+        infoUrl:
+          'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_slope_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
         url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_slope_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
         urlType: 'WMTSCapabilitiesXml'
       },
       {
         id: 'WavesHs',
         title: 'WavesHs',
+        infoUrl:
+          'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_wave_Hs_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
         url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_wave_Hs_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
         urlType: 'WMTSCapabilitiesXml'
       },
       {
         id: 'WavesTp',
         title: 'WavesTp',
+        infoUrl:
+          'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
         url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
         urlType: 'WMTSCapabilitiesXml'
       }
