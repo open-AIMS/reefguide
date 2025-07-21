@@ -2,7 +2,7 @@ import { S3Client, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/clien
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { BadRequestException } from '../exceptions';
 
-const MAX_FILES = 10;
+const MAX_FILES = 25;
 
 export interface MinioConfig {
   endpoint: string;

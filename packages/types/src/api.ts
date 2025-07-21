@@ -175,6 +175,10 @@ export const jobDetailsSchema = baseJobSchema.extend({
 });
 export type JobDetails = z.infer<typeof jobDetailsSchema>;
 
+// Cancel job response
+export const cancelJobResponseSchema = z.object({ job: baseJobSchema });
+export type CancelJobResponse = z.infer<typeof cancelJobResponseSchema>;
+
 // Job Request
 export const jobRequestSchema = z.object({
   id: z.number(),

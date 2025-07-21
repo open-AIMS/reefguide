@@ -1,92 +1,124 @@
-<!-- results-view.component.html -->
-<div class="results-container">
-  <!-- Chart Selector and Management -->
-  <mat-card
-    class="chart-controls"
-    *ngIf="job()?.status === 'SUCCEEDED' && availableCharts().length > 0"
-  >
-    <mat-card-header>
-      <mat-card-title>Available Visualizations</mat-card-title>
-      <mat-card-subtitle>Select charts to display from available metrics</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="chart-selector">
-        <mat-form-field appearance="outline" class="chart-dropdown">
-          <mat-label>Add Chart</mat-label>
-          <mat-select
-            [value]="selectedChart()"
-            (selectionChange)="selectedChart.set($event.value)"
-            [disabled]="getInactiveCharts().length === 0"
-          >
-            <mat-option *ngFor="let chart of getInactiveCharts()" [value]="chart.title">
-              {{ chart.title }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
+<!-- src/app/model-workflow/results-view/results-view.component.html -->
+<div class="results-container" *ngIf="job()">
+  <!-- Header with chart selector -->
+  <div class="results-header">
+    <div class="header-content">
+      <h2>Model Results</h2>
+      <p class="results-subtitle">
+        Displaying {{ activeCharts().length }} of {{ availableCharts().length }} available charts
+      </p>
+    </div>
 
-        <button
-          mat-raised-button
-          color="primary"
-          (click)="addChart()"
-          [disabled]="!selectedChart()"
+    <div class="chart-controls">
+      <mat-form-field appearance="outline" class="chart-selector">
+        <mat-label>Add Chart</mat-label>
+        <mat-select
+          [value]="null"
+          (selectionChange)="addChart($event.value)"
+          [disabled]="availableChartsForSelect().length === 0"
         >
-          <mat-icon>add</mat-icon>
-          Add Chart
-        </button>
-      </div>
+          <mat-option
+            *ngFor="let chart of availableChartsForSelect()"
+            [value]="chart.filename"
+          >
+            {{ chart.title }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
 
-      <!-- Active Charts Summary -->
-      <div class="active-charts-summary" *ngIf="activeCharts().length > 0">
-        <h4>Active Charts ({{ activeCharts().length }})</h4>
-        <div class="chart-chips">
-          <div class="chart-chip" *ngFor="let chart of activeCharts()">
-            <span>{{ chart.title }}</span>
+  <!-- Active charts display -->
+  <div class="charts-grid" *ngIf="activeCharts().length > 0">
+    <div
+      *ngFor="let chart of activeCharts(); trackBy: trackByChartId"
+      class="chart-card-container"
+    >
+      <mat-card class="chart-card">
+        <mat-card-header>
+          <mat-card-title>{{ chart.title }}</mat-card-title>
+          <div class="chart-actions">
             <button
               mat-icon-button
-              (click)="removeChart(chart.title)"
-              class="remove-chart-btn"
-              [attr.aria-label]="'Remove ' + chart.title"
+              (click)="removeChart(chart.id)"
+              matTooltip="Remove chart"
+              class="remove-chart-button"
             >
               <mat-icon>close</mat-icon>
             </button>
           </div>
+        </mat-card-header>
+
+        <mat-card-content class="chart-content">
+          <!-- Chart container - always present -->
+          <div
+            [id]="'chart-container-' + chart.id"
+            class="chart-container"
+            [class.hidden]="chart.isLoading || chart.hasError"
+          ></div>
+
+          <!-- Loading state overlay -->
+          <div *ngIf="chart.isLoading" class="chart-loading">
+            <mat-spinner diameter="50"></mat-spinner>
+            <p>Loading chart...</p>
+          </div>
+
+          <!-- Error state overlay -->
+          <div *ngIf="chart.hasError" class="chart-error">
+            <mat-icon>error_outline</mat-icon>
+            <p>Failed to load chart</p>
+            <p class="error-details">{{ chart.errorMessage }}</p>
+            <button
+              mat-stroked-button
+              color="primary"
+              (click)="retryChart(chart.id)"
+            >
+              Retry
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="activeCharts().length === 0" class="empty-state">
+    <mat-card class="empty-state-card">
+      <mat-card-content>
+        <div class="empty-state-content">
+          <mat-icon class="empty-state-icon">bar_chart</mat-icon>
+          <h3>No Charts Selected</h3>
+          <p>Select charts from the dropdown above to visualize your model results.</p>
+          <p *ngIf="availableCharts().length > 0">
+            {{ availableCharts().length }} chart{{ availableCharts().length === 1 ? '' : 's' }} available
+          </p>
         </div>
-      </div>
-    </mat-card-content>
-  </mat-card>
+      </mat-card-content>
+    </mat-card>
+  </div>
 
-  <!-- Charts Display Area -->
-  <mat-card
-    class="charts-display"
-    *ngIf="job()?.status === 'SUCCEEDED' && activeCharts().length > 0"
-  >
-    <mat-card-content class="charts-content">
-      <div #vegaChart class="charts-container"></div>
-    </mat-card-content>
-  </mat-card>
+  <!-- No charts available state -->
+  <div *ngIf="availableCharts().length === 0" class="no-charts-state">
+    <mat-card class="empty-state-card">
+      <mat-card-content>
+        <div class="empty-state-content">
+          <mat-icon class="empty-state-icon">info</mat-icon>
+          <h3>No Charts Available</h3>
+          <p>No visualization files were found in the model results.</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
 
-  <!-- No Charts Message -->
-  <mat-card
-    class="no-charts-card"
-    *ngIf="job()?.status === 'SUCCEEDED' && activeCharts().length === 0"
-  >
+<!-- No job state -->
+<div *ngIf="!job()" class="no-job-state">
+  <mat-card class="empty-state-card">
     <mat-card-content>
-      <div class="no-charts-message">
-        <mat-icon class="large-icon">show_chart</mat-icon>
-        <p>No charts are currently displayed.</p>
-        <p *ngIf="availableCharts().length > 0">Use the dropdown above to add visualizations.</p>
-        <p *ngIf="availableCharts().length === 0">No charts are available for this job.</p>
-      </div>
-    </mat-card-content>
-  </mat-card>
-
-  <!-- Loading State -->
-  <mat-card class="loading-card" *ngIf="job()?.status === 'IN_PROGRESS'">
-    <mat-card-content>
-      <div class="loading-message">
-        <mat-icon class="large-icon">hourglass_empty</mat-icon>
-        <p>Model run in progress...</p>
-        <p>Charts will be available when the job completes.</p>
+      <div class="empty-state-content">
+        <mat-icon class="empty-state-icon">pending</mat-icon>
+        <h3>No Results Available</h3>
+        <p>Complete a model run to view results.</p>
       </div>
     </mat-card-content>
   </mat-card>
