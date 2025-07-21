@@ -9,6 +9,7 @@ import { LayerListComponent } from '../widgets/layer-list/layer-list.component';
 import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
 import { debounceTime, map, Subject } from 'rxjs';
 import LayerGroup from 'ol/layer/Group';
+import { LayerProperties } from '../../types/layer.type';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -63,17 +64,18 @@ export class ReefMapComponent implements AfterViewInit {
    * Create OpenLayers Map and hookup everything.
    */
   ngAfterViewInit() {
+    const baseLayer = new TileLayer({
+      source: new OSM(),
+      properties: {
+        title: 'Base map (OSM)',
+        webUrl: 'https://www.openstreetmap.org/copyright'
+      } satisfies LayerProperties
+    });
+
     this.map = new Map({
       target: this.mapEl().nativeElement,
       view: this.view,
-      layers: [
-        new TileLayer({
-          source: new OSM(),
-          properties: {
-            title: 'Base map (OSM)'
-          }
-        })
-      ]
+      layers: [baseLayer]
     });
 
     // REVIEW better design if one-way (map component listens to service)

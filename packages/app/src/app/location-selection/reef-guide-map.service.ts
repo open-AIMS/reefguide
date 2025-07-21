@@ -53,6 +53,7 @@ import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
 import Layer from 'ol/layer/Layer';
 import { createSourceFromArcGIS } from '../../util/arcgis/arcgis-openlayer-util';
 import { LayerController } from '../map/open-layers-model';
+import { LayerProperties } from '../../types/layer.type';
 
 /**
  * Map UI actions implemented by the overall app design.
@@ -390,8 +391,9 @@ export class ReefGuideMapService {
 
         const layer = new VectorLayer({
           properties: {
-            title: `${region} site suitability`
-          },
+            title: `${region} site suitability`,
+            downloadUrl: url
+          } satisfies LayerProperties,
           source,
           style
         });
@@ -464,8 +466,10 @@ export class ReefGuideMapService {
 
     const layer = new TileLayer({
       properties: {
-        title: `${region.region} criteria assessment`
-      },
+        title: `${region.region} criteria assessment`,
+        // cogUrl could be Blob URL, we want to send users to the original
+        downloadUrl: region.originalUrl
+      } satisfies LayerProperties,
       source: new GeoTIFF({
         sources: [
           {
@@ -504,8 +508,9 @@ export class ReefGuideMapService {
 
       const layer = new TileLayer({
         properties: {
-          id: `criteria_${criteria}`
-        },
+          id: `criteria_${criteria}`,
+          webUrl: url
+        } satisfies LayerProperties,
         visible: false
       });
       layerGroup.getLayers().push(layer);
