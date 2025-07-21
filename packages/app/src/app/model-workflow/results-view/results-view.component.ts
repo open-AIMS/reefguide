@@ -1,6 +1,7 @@
 // src/app/model-workflow/results-view/results-view.component.ts
 import { CommonModule } from '@angular/common';
 import {
+  AfterViewInit,
   Component,
   computed,
   effect,
@@ -8,10 +9,9 @@ import {
   inject,
   input,
   OnDestroy,
-  OnInit,
   output,
-  Renderer2,
-  signal
+  signal,
+  ViewChild
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -23,7 +23,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AdriaModelRunResult, JobDetailsResponse } from '@reefguide/types';
-import { of, Subject, takeUntil } from 'rxjs';
+import { debounceTime, of, Subject, takeUntil } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import embed, { EmbedOptions, Result } from 'vega-embed';
 import { WebApiService } from '../../../api/web-api.service';
@@ -66,11 +66,13 @@ interface ChartCache {
   templateUrl: './results-view.component.html',
   styleUrl: './results-view.component.scss'
 })
-export class ResultsViewComponent implements OnInit, OnDestroy {
+export class ResultsViewComponent implements OnDestroy, AfterViewInit {
   private readonly api = inject(WebApiService);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly renderer = inject(Renderer2);
   private readonly destroy$ = new Subject<void>();
+  private readonly resizeSubject$ = new Subject<void>();
+
+  @ViewChild('chartsGridWrapper') chartsGridWrapper!: ElementRef<HTMLElement>;
 
   // Inputs
   job = input<JobDetailsResponse['job'] | undefined>();
@@ -87,6 +89,7 @@ export class ResultsViewComponent implements OnInit, OnDestroy {
   private chartIdCounter = signal(0);
   private chartElementRefs = new Map<string, ElementRef<HTMLDivElement>>();
   private hasRestoredFromPersistence = signal(false); // Track if we've already restored
+  private resizeObserver?: ResizeObserver;
 
   // Computed properties
   availableCharts = computed(() => this.availableChartsSignal());
@@ -133,14 +136,20 @@ export class ResultsViewComponent implements OnInit, OnDestroy {
       const chartTitles = active.map(chart => chart.title);
       this.chartsChanged.emit(chartTitles);
     });
+
+    // Set up debounced resize handling
+    this.setupResizeHandling();
   }
 
-  ngOnInit(): void {
-    console.log(`[${this.workspaceId()}] ResultsViewComponent initialized`);
+  ngAfterViewInit(): void {
+    this.setupResizeObserver();
   }
 
   ngOnDestroy(): void {
-    console.log(`[${this.workspaceId()}] ResultsViewComponent destroyed`);
+    // Clean up resize observer
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
 
     // Clean up all chart elements and Vega instances
     this.cleanupAllCharts();
@@ -148,6 +157,83 @@ export class ResultsViewComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
     this.clearChartCache();
+  }
+
+  // Set up debounced resize handling
+  private setupResizeHandling(): void {
+    this.resizeSubject$
+      .pipe(
+        debounceTime(300), // 300ms debounce
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        this.reRenderAllCharts();
+      });
+  }
+
+  // Set up ResizeObserver to watch for container size changes
+  private setupResizeObserver(): void {
+    console.log(`[${this.workspaceId()}] Setting up ResizeObserver`);
+    if (typeof ResizeObserver === 'undefined') {
+      console.warn(`[${this.workspaceId()}] ResizeObserver not supported`);
+      return;
+    }
+
+    this.resizeObserver = new ResizeObserver(_entries => {
+      // Check if any of the observed elements have changed size
+      this.resizeSubject$.next();
+    });
+
+    // Observe the charts grid container
+    const chartsGrid = this.chartsGridWrapper.nativeElement;
+
+    if (chartsGrid) {
+      this.resizeObserver.observe(chartsGrid);
+      console.log(`[${this.workspaceId()}] ResizeObserver attached to charts grid`);
+    }
+  }
+
+  // Re-render all active charts with new width calculations
+  private reRenderAllCharts(): void {
+    const activeCharts = this.activeCharts();
+
+    activeCharts.forEach(chart => {
+      // Only re-render charts that are successfully loaded
+      if (!chart.isLoading && !chart.hasError && chart.vegaResult) {
+        this.reRenderChart(chart.id);
+      }
+    });
+  }
+
+  // Re-render a specific chart with updated width
+  private reRenderChart(chartId: string): void {
+    const chart = this.activeCharts().find(c => c.id === chartId);
+    const job = this.job();
+
+    if (!chart || !job) return;
+
+    const cacheKey = `${job.id}-${chart.filename}`;
+    const cache = this.chartCache();
+    const chartSpec = cache[cacheKey];
+
+    if (!chartSpec) {
+      console.warn(`[${this.workspaceId()}] No cached spec found for chart: ${chartId}`);
+      return;
+    }
+
+    // Clean up existing chart
+    const container = this.getChartContainer(chartId);
+    if (container && chart.vegaResult) {
+      try {
+        chart.vegaResult.finalize();
+        container.innerHTML = '';
+      } catch (error) {
+        console.warn(`[${this.workspaceId()}] Error cleaning up chart for re-render:`, error);
+      }
+    }
+
+    // Re-render with new width calculation
+    this.renderChartWithSpec(chartId, chartSpec);
   }
 
   // Process job results to extract available charts
@@ -394,61 +480,60 @@ export class ResultsViewComponent implements OnInit, OnDestroy {
   private renderChart(chartId: string, chartSpec: any): void {
     // Wait for the DOM element to be available
     setTimeout(() => {
-      const container = this.getChartContainer(chartId);
-      if (!container) {
-        console.warn(`[${this.workspaceId()}] Chart container not found: ${chartId}`);
-        this.setChartError(chartId, 'Chart container not available');
-        return;
-      }
-
-      console.log(`[${this.workspaceId()}] Rendering chart: ${chartId}`);
-
-      // Get the chart card container (parent) to measure available width
-      const chartCard = container.closest('.chart-card') as HTMLElement;
-      let containerWidth = 600; // Fallback width
-
-      if (chartCard) {
-        containerWidth = chartCard.clientWidth;
-        console.log(`[${this.workspaceId()}] Chart card width: ${containerWidth}`);
-      } else {
-        console.warn(`[${this.workspaceId()}] Could not find chart card, using fallback width`);
-      }
-
-      // Calculate dynamic width with padding consideration
-      const dynamicWidth = Math.max(400, containerWidth - 275); // 275px for padding
-
-      console.log(`[${this.workspaceId()}] Calculated chart width: ${dynamicWidth}`);
-
-      // Configure Vega-Lite options
-      const options = {
-        theme: 'quartz',
-        renderer: 'canvas' as const,
-        actions: {
-          export: true,
-          source: false,
-          compiled: false,
-          editor: false
-        },
-        width: dynamicWidth
-        // Remove fixed height to let chart determine its own height
-      } satisfies EmbedOptions;
-
-      // Render the chart
-      embed(container, chartSpec, options)
-        .then(result => {
-          console.log(`[${this.workspaceId()}] Chart rendered successfully: ${chartId}`);
-
-          // Store the Vega result for cleanup
-          this.updateChartVegaResult(chartId, result);
-
-          // Set chart to loaded state (this will hide loading overlay and show chart)
-          this.setChartLoaded(chartId);
-        })
-        .catch(error => {
-          console.error(`[${this.workspaceId()}] Failed to render chart ${chartId}:`, error);
-          this.setChartError(chartId, 'Failed to render chart');
-        });
+      this.renderChartWithSpec(chartId, chartSpec);
     }, 50);
+  }
+
+  // Render chart with provided spec (extracted for reuse)
+  private renderChartWithSpec(chartId: string, chartSpec: any): void {
+    const container = this.getChartContainer(chartId);
+    if (!container) {
+      console.warn(`[${this.workspaceId()}] Chart container not found: ${chartId}`);
+      this.setChartError(chartId, 'Chart container not available');
+      return;
+    }
+
+    console.log(`[${this.workspaceId()}] Rendering chart: ${chartId}`);
+
+    // Get the chart card container (parent) to measure available width
+    const chartCard = container.closest('.chart-card') as HTMLElement;
+    let containerWidth = 600; // Fallback width
+
+    if (chartCard) {
+      containerWidth = chartCard.clientWidth;
+    } else {
+      console.warn(`[${this.workspaceId()}] Could not find chart card, using fallback width`);
+    }
+
+    // Calculate dynamic width with padding consideration
+    const dynamicWidth = Math.max(400, containerWidth - 275); // 275px for padding
+
+    // Configure Vega-Lite options
+    const options = {
+      theme: 'quartz',
+      renderer: 'canvas' as const,
+      actions: {
+        export: true,
+        source: false,
+        compiled: false,
+        editor: false
+      },
+      width: dynamicWidth
+    } satisfies EmbedOptions;
+
+    // Render the chart
+    embed(container, chartSpec, options)
+      .then(result => {
+        // Store the Vega result for cleanup
+        this.updateChartVegaResult(chartId, result);
+
+        // Set chart to loaded state (this will hide loading overlay and show chart)
+        this.setChartLoaded(chartId);
+      })
+      .catch(error => {
+        console.error(`[${this.workspaceId()}] Failed to render chart ${chartId}:`, error);
+        this.setChartError(chartId, 'Failed to render chart');
+      });
   }
 
   // Get chart container element
@@ -517,7 +602,6 @@ export class ResultsViewComponent implements OnInit, OnDestroy {
     if (chart.vegaResult) {
       try {
         chart.vegaResult.finalize();
-        console.log(`[${this.workspaceId()}] Finalized Vega chart: ${chartId}`);
       } catch (error) {
         console.warn(`[${this.workspaceId()}] Error finalizing Vega chart ${chartId}:`, error);
       }

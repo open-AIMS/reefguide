@@ -17,10 +17,7 @@
           (selectionChange)="addChart($event.value)"
           [disabled]="availableChartsForSelect().length === 0"
         >
-          <mat-option
-            *ngFor="let chart of availableChartsForSelect()"
-            [value]="chart.filename"
-          >
+          <mat-option *ngFor="let chart of availableChartsForSelect()" [value]="chart.filename">
             {{ chart.title }}
           </mat-option>
         </mat-select>
@@ -29,55 +26,53 @@
   </div>
 
   <!-- Active charts display -->
-  <div class="charts-grid" *ngIf="activeCharts().length > 0">
-    <div
-      *ngFor="let chart of activeCharts(); trackBy: trackByChartId"
-      class="chart-card-container"
-    >
-      <mat-card class="chart-card">
-        <mat-card-header>
-          <mat-card-title>{{ chart.title }}</mat-card-title>
-          <div class="chart-actions">
-            <button
-              mat-icon-button
-              (click)="removeChart(chart.id)"
-              matTooltip="Remove chart"
-              class="remove-chart-button"
-            >
-              <mat-icon>close</mat-icon>
-            </button>
-          </div>
-        </mat-card-header>
+  <div #chartsGridWrapper id="charts-grid-wrapper" class="charts-grid">
+    <div id="charts-grid" class="charts-grid" *ngIf="activeCharts().length > 0">
+      <div
+        *ngFor="let chart of activeCharts(); trackBy: trackByChartId"
+        class="chart-card-container"
+      >
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>{{ chart.title }}</mat-card-title>
+            <div class="chart-actions">
+              <button
+                mat-icon-button
+                (click)="removeChart(chart.id)"
+                matTooltip="Remove chart"
+                class="remove-chart-button"
+              >
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </mat-card-header>
 
-        <mat-card-content class="chart-content">
-          <!-- Chart container - always present -->
-          <div
-            [id]="'chart-container-' + chart.id"
-            class="chart-container"
-            [class.hidden]="chart.isLoading || chart.hasError"
-          ></div>
+          <mat-card-content class="chart-content">
+            <!-- Chart container - always present -->
+            <div
+              [id]="'chart-container-' + chart.id"
+              class="chart-container"
+              [class.hidden]="chart.isLoading || chart.hasError"
+            ></div>
 
-          <!-- Loading state overlay -->
-          <div *ngIf="chart.isLoading" class="chart-loading">
-            <mat-spinner diameter="50"></mat-spinner>
-            <p>Loading chart...</p>
-          </div>
+            <!-- Loading state overlay -->
+            <div *ngIf="chart.isLoading" class="chart-loading">
+              <mat-spinner diameter="50"></mat-spinner>
+              <p>Loading chart...</p>
+            </div>
 
-          <!-- Error state overlay -->
-          <div *ngIf="chart.hasError" class="chart-error">
-            <mat-icon>error_outline</mat-icon>
-            <p>Failed to load chart</p>
-            <p class="error-details">{{ chart.errorMessage }}</p>
-            <button
-              mat-stroked-button
-              color="primary"
-              (click)="retryChart(chart.id)"
-            >
-              Retry
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
+            <!-- Error state overlay -->
+            <div *ngIf="chart.hasError" class="chart-error">
+              <mat-icon>error_outline</mat-icon>
+              <p>Failed to load chart</p>
+              <p class="error-details">{{ chart.errorMessage }}</p>
+              <button mat-stroked-button color="primary" (click)="retryChart(chart.id)">
+                Retry
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
     </div>
   </div>
 
@@ -90,7 +85,8 @@
           <h3>No Charts Selected</h3>
           <p>Select charts from the dropdown above to visualize your model results.</p>
           <p *ngIf="availableCharts().length > 0">
-            {{ availableCharts().length }} chart{{ availableCharts().length === 1 ? '' : 's' }} available
+            {{ availableCharts().length }} chart{{ availableCharts().length === 1 ? '' : 's' }}
+            available
           </p>
         </div>
       </mat-card-content>
