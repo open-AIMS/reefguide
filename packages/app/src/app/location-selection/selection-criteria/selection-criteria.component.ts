@@ -21,12 +21,11 @@ import {
   combineLatestWith,
   EMPTY,
   Observable,
-  switchMap,
-  tap,
   startWith,
-  skip,
   Subject,
-  takeUntil
+  switchMap,
+  takeUntil,
+  tap
 } from 'rxjs';
 import { WebApiService } from '../../../api/web-api.service';
 import { CriteriaRangeOutput } from '@reefguide/types';
@@ -146,7 +145,8 @@ export class SelectionCriteriaComponent {
 
     // for criteria with layers
     for (const c of regionCriteriaRanges) {
-      if (c.id === 'Depth') {
+      const layerController = this.mapService.criteriaLayers[c.id];
+      if (layerController) {
         const { min_val, max_val } = c;
         const range = max_val - min_val;
         const minKey = `${c.payload_property_prefix}min`;
@@ -161,12 +161,12 @@ export class SelectionCriteriaComponent {
 
         min$
           .pipe(combineLatestWith(max$))
-          .pipe(skip(1), takeUntil(this.reset$))
+          .pipe(takeUntil(this.reset$))
           .subscribe(([min, max]) => {
             // normalized 0:1
             const nMin = (min - min_val) / range;
             const nMax = (max - min_val) / range;
-            this.mapService.filterCriteriaLayer(c.id, nMin, nMax);
+            layerController.filterCriteriaLayer(nMin, nMax);
           });
       }
     }

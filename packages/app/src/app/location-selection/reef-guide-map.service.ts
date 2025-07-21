@@ -582,30 +582,4 @@ export class ReefGuideMapService {
       return controller!;
     }
   }
-
-  /**
-   * Filter the criteria raster layer based on normalized band values 0-1
-   * @param criteriaId
-   * @param min
-   * @param max
-   */
-  filterCriteriaLayer(criteriaId: string, min: number, max: number) {
-    const layerController = this.criteriaLayers[criteriaId];
-    if (!layerController) {
-      return;
-    }
-
-    const layer = layerController.layer;
-    if (layer instanceof TileLayer) {
-      // console.log('filter criteria layer', min, max);
-      // prevent full layer extent rendering color issue when min/max at extreme
-      if (min === 0) {
-        min = 0.0000001;
-      }
-      if (max === 1) {
-        max = 0.999999;
-      }
-      layer.updateStyleVariables({ min, max });
-    }
-  }
 }
