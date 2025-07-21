@@ -2,7 +2,6 @@ import { AsyncPipe, CommonModule } from '@angular/common';
 import { Component, effect, inject, signal, viewChild, ViewChild } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -10,22 +9,19 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltip } from '@angular/material/tooltip';
-import { combineLatest, filter, map, Observable } from 'rxjs';
-import { AdminPanelComponent } from '../admin/user-panel/user-panel.component';
+import { SuitabilityAssessmentInput } from '@reefguide/types';
+import Layer from 'ol/layer/Layer';
+import { fromLonLat } from 'ol/proj';
+import { combineLatest, map, Observable } from 'rxjs';
+import { WebApiService } from '../../api/web-api.service';
 import { AuthService } from '../auth/auth.service';
-import { LoginDialogComponent } from '../auth/login-dialog/login-dialog.component';
-import { ClusterAdminDialogComponent } from '../admin/cluster/ClusterAdminDialog.component';
-import { ConfigDialogComponent } from './config-dialog/config-dialog.component';
+import { ReefMapComponent } from '../reef-map/reef-map.component';
+import { ProfileButtonComponent } from '../user/profile-button/profile-button.component';
+import { LayerStyleEditorComponent } from '../widgets/layer-style-editor/layer-style-editor.component';
 import { CriteriaPayloads } from './reef-guide-api.types';
 import { ReefGuideConfigService } from './reef-guide-config.service';
 import { MAP_UI, MapUI, ReefGuideMapService } from './reef-guide-map.service';
 import { SelectionCriteriaComponent } from './selection-criteria/selection-criteria.component';
-import { WebApiService } from '../../api/web-api.service';
-import { SuitabilityAssessmentInput } from '@reefguide/types';
-import { ReefMapComponent } from '../reef-map/reef-map.component';
-import { fromLonLat } from 'ol/proj';
-import Layer from 'ol/layer/Layer';
-import { LayerStyleEditorComponent } from '../widgets/layer-style-editor/layer-style-editor.component';
 
 type DrawerModes = 'criteria' | 'style';
 
@@ -50,7 +46,8 @@ type DrawerModes = 'criteria' | 'style';
     CommonModule,
     MatMenuModule,
     ReefMapComponent,
-    LayerStyleEditorComponent
+    LayerStyleEditorComponent,
+    ProfileButtonComponent
   ],
   providers: [ReefGuideMapService, { provide: MAP_UI, useExisting: LocationSelectionComponent }],
   templateUrl: './location-selection.component.html',
@@ -60,7 +57,6 @@ export class LocationSelectionComponent implements MapUI {
   readonly config = inject(ReefGuideConfigService);
   readonly authService = inject(AuthService);
   readonly api = inject(WebApiService);
-  readonly dialog = inject(MatDialog);
   readonly mapService = inject(ReefGuideMapService);
 
   map = viewChild.required(ReefMapComponent);
@@ -139,26 +135,6 @@ export class LocationSelectionComponent implements MapUI {
     // clear drawer state
     this.editingLayerStyle.set(undefined);
     this.drawerMode.set(undefined);
-  }
-
-  openAdminPanel() {
-    this.dialog.open(AdminPanelComponent, {
-      width: '800px'
-    });
-  }
-
-  openConfig() {
-    this.dialog.open(ConfigDialogComponent);
-  }
-
-  openLogin() {
-    this.dialog.open(LoginDialogComponent);
-  }
-
-  openClusterAdmin() {
-    this.dialog.open(ClusterAdminDialogComponent, {
-      width: '800px'
-    });
   }
 
   /**

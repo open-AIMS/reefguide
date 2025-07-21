@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -13,6 +12,7 @@ import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/p
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { Project } from '@reefguide/db';
 import {
   BehaviorSubject,
@@ -20,14 +20,12 @@ import {
   debounceTime,
   distinctUntilChanged,
   map,
-  Observable,
-  startWith,
-  switchMap,
-  merge,
-  EMPTY
+  Observable
 } from 'rxjs';
 import { WebApiService } from '../../../api/web-api.service';
+import { ProfileButtonComponent } from '../../user/profile-button/profile-button.component';
 import { CreateProjectDialogComponent } from '../create-project-dialog/create-project-dialog.component';
+import { AuthService } from '../../auth/auth.service';
 
 @Component({
   selector: 'app-projects-list',
@@ -45,7 +43,8 @@ import { CreateProjectDialogComponent } from '../create-project-dialog/create-pr
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatRadioModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    ProfileButtonComponent
   ],
   templateUrl: './projects-list.component.html',
   styleUrls: ['./projects-list.component.scss']

@@ -60,12 +60,12 @@ export class AppComponent {
   }
 
   /**
-   * Check if the main app content should be rendered
+   * Check if the main app content should be rendered - we now use only render
+   * if the user is authorized to prevent unstable behaviour with queries
+   * failing
    */
   shouldRenderMainContent(): boolean {
-    // Always render content so it loads in background while splash shows
-    // This provides a smoother user experience
-    return true;
+    return this.splashState().userAccessState === 'authorized';
   }
 
   /**
