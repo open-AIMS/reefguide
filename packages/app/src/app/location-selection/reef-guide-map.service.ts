@@ -52,7 +52,7 @@ import { Fill, Stroke, Style } from 'ol/style';
 import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
 import Layer from 'ol/layer/Layer';
 import { createSourceFromCapabilitiesXml } from '../../util/arcgis/arcgis-openlayer-util';
-import { LayerController } from '../map/open-layers-model';
+import { LayerController, LayerControllerOptions } from '../map/open-layers-model';
 import { LayerProperties } from '../../types/layer.type';
 
 /**
@@ -504,23 +504,7 @@ export class ReefGuideMapService {
     this.map.getLayers().push(layerGroup);
 
     for (let layerDef of layers) {
-      const { id, title, url, urlType, reverseRange } = layerDef;
-
-      // OpenLayers bands are normalized 0 to 1
-      let metric: any[] = ['band', 1];
-      if (reverseRange) {
-        // invert to align with values from criteria UI
-        metric = ['-', 1, metric];
-      }
-
-      const flatColor = [
-        'case',
-        ['between', metric, ['var', 'min'], ['var', 'max']],
-        // doesn't work
-        // NOW [['*', 255, depth], 19, 208, 1],
-        [223, 19, 208, 1],
-        [223, 19, 208, 0]
-      ];
+      const { id, title, url, urlType } = layerDef;
 
       const layer = new TileLayer({
         properties: {
@@ -529,15 +513,7 @@ export class ReefGuideMapService {
           webUrl: url
         } satisfies LayerProperties,
         visible: false,
-        style: {
-          variables: {
-            // if set to 0 or 1 entire layer extent renders color (depending on reverseRange)
-            min: 0.0000001,
-            max: 0.999999
-          },
-
-          color: flatColor
-        }
+        opacity: 0.7
       });
       layerGroup.getLayers().push(layer);
 
@@ -554,7 +530,9 @@ export class ReefGuideMapService {
         // layer.set('title', source.get('title'));
       });
 
-      this.criteriaLayers[id] = this.getLayerController(layer);
+      this.criteriaLayers[id] = this.createLayerController(layer, {
+        criteriaLayerDef: layerDef
+      });
     }
   }
 
@@ -569,17 +547,26 @@ export class ReefGuideMapService {
    * Creates a new LayerController if one does not exist.
    * @param layer any OpenLayers layer that LayerController supports.
    */
-  public getLayerController(layer: Layer) {
+  public getLayerController(layer: Layer): LayerController {
     let controller = this.layerControllers.get(layer);
     if (controller) {
       return controller;
     } else {
-      runInInjectionContext(this.injector, () => {
-        controller = new LayerController(layer);
-      });
-      // TODO remove on layer remove/dispose
-      this.layerControllers.set(layer, controller!);
-      return controller!;
+      return this.createLayerController(layer);
     }
+  }
+
+  private createLayerController(layer: Layer, options?: LayerControllerOptions): LayerController {
+    runInInjectionContext(this.injector, () => {
+      const controller = new LayerController(layer, options);
+      // TODO remove on layer remove/dispose
+      this.layerControllers.set(layer, controller);
+    });
+
+    const controller = this.layerControllers.get(layer);
+    if (controller === undefined) {
+      throw new Error('LayerController not created!');
+    }
+    return controller;
   }
 }

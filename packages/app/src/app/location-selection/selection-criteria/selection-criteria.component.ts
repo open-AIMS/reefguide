@@ -21,6 +21,7 @@ import {
   combineLatestWith,
   EMPTY,
   Observable,
+  skip,
   startWith,
   Subject,
   switchMap,
@@ -161,12 +162,17 @@ export class SelectionCriteriaComponent {
 
         min$
           .pipe(combineLatestWith(max$))
-          .pipe(takeUntil(this.reset$))
+          .pipe(skip(1), takeUntil(this.reset$))
           .subscribe(([min, max]) => {
+            if (!layerController.visible()) {
+              layerController.visible.set(true);
+              this.mapService.showCriteriaLayer(c.id);
+            }
+
             // normalized 0:1
             const nMin = (min - min_val) / range;
             const nMax = (max - min_val) / range;
-            layerController.filterCriteriaLayer(nMin, nMax);
+            layerController.filterLayerPixels(nMin, nMax);
           });
       }
     }
@@ -237,5 +243,10 @@ export class SelectionCriteriaComponent {
     }
 
     // TODO reset site suitability?
+  }
+
+  onBlurSlider(criteriaId: string) {
+    const lc = this.mapService.criteriaLayers[criteriaId];
+    lc?.resetStyle();
   }
 }

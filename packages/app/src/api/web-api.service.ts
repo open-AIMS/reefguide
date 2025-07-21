@@ -198,8 +198,8 @@ export class WebApiService {
         id: 'Depth',
         title: 'Depth',
         url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_bathymetry/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
-        urlType: 'WMTSCapabilitiesXml'
-        // reverseRange: true
+        urlType: 'WMTSCapabilitiesXml',
+        reverseRange: true
       },
       {
         id: 'Slope',
