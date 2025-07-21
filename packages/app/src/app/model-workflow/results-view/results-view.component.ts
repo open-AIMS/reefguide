@@ -1,4 +1,4 @@
-// results-view.component.ts
+// src/app/model-workflow/results-view/results-view.component.ts
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
@@ -8,438 +8,665 @@ import {
   ElementRef,
   inject,
   input,
-  ViewChild,
   OnDestroy,
-  signal
+  output,
+  signal,
+  ViewChild
 } from '@angular/core';
-import { MatCardModule } from '@angular/material/card';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { JobDetailsResponse } from '@reefguide/types';
-import embed, { VisualizationSpec } from 'vega-embed';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { AdriaModelRunResult, JobDetailsResponse } from '@reefguide/types';
+import { debounceTime, of, Subject, takeUntil } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
+import embed, { EmbedOptions, Result } from 'vega-embed';
 import { WebApiService } from '../../../api/web-api.service';
 
-interface ChartItem {
+interface ChartInfo {
   title: string;
   filename: string;
-  isActive: boolean;
+  description?: string;
 }
 
-interface CachedChartSpec {
-  spec: VisualizationSpec;
-  url: string;
-  downloadedAt: Date;
+interface ActiveChart {
+  id: string; // Unique identifier for this chart instance
+  title: string;
+  filename: string;
+  isLoading: boolean;
+  hasError: boolean;
+  errorMessage?: string;
+  elementRef?: ElementRef<HTMLDivElement>; // Reference to DOM element
+  vegaResult?: Result; // Vega embed result for cleanup
 }
 
-/**
- * Results View Component
- *
- * Displays the results of a completed model run job including:
- * - Multiple interactive Vega-Lite charts with dropdown selection
- * - Dynamic chart loading based on available visualizations
- * - Efficient caching to avoid re-downloading chart specifications
- *
- * The component handles workspace isolation by:
- * - Tracking workspace ID to detect workspace changes
- * - Re-rendering charts when workspace or job changes
- * - Managing multiple chart instances
- * - Caching chart specifications per job to avoid redundant downloads
- */
+interface ChartCache {
+  [key: string]: any; // Vega-Lite spec
+}
+
 @Component({
   selector: 'app-results-view',
   standalone: true,
   imports: [
     CommonModule,
     MatCardModule,
+    MatButtonModule,
+    MatIconModule,
     MatSelectModule,
     MatFormFieldModule,
-    MatButtonModule,
-    MatIconModule
+    MatChipsModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule
   ],
   templateUrl: './results-view.component.html',
   styleUrl: './results-view.component.scss'
 })
-export class ResultsViewComponent implements AfterViewInit, OnDestroy {
-  private readonly webApi = inject(WebApiService);
+export class ResultsViewComponent implements OnDestroy, AfterViewInit {
+  private readonly api = inject(WebApiService);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly destroy$ = new Subject<void>();
+  private readonly resizeSubject$ = new Subject<void>();
 
-  /** Input job from the parent workflow component */
-  job = input<JobDetailsResponse['job'] | undefined>(undefined);
+  @ViewChild('chartsGridWrapper') chartsGridWrapper!: ElementRef<HTMLElement>;
 
-  /** Input workspace ID to track workspace changes */
-  workspaceId = input<string | undefined>(undefined);
+  // Inputs
+  job = input<JobDetailsResponse['job'] | undefined>();
+  workspaceId = input<string>('');
+  initialActiveCharts = input<string[]>([]);
 
-  /** Reference to the Vega chart container element */
-  @ViewChild('vegaChart', { static: false }) vegaChartRef!: ElementRef;
+  // Outputs
+  chartsChanged = output<string[]>();
 
-  /** Available charts from the job output */
-  availableCharts = signal<ChartItem[]>([]);
+  // State
+  private availableChartsSignal = signal<ChartInfo[]>([]);
+  private activeChartsSignal = signal<ActiveChart[]>([]);
+  private chartCache = signal<ChartCache>({});
+  private chartIdCounter = signal(0);
+  private chartElementRefs = new Map<string, ElementRef<HTMLDivElement>>();
+  private hasRestoredFromPersistence = signal(false); // Track if we've already restored
+  private resizeObserver?: ResizeObserver;
 
-  /** Currently selected chart for dropdown */
-  selectedChart = signal<string | null>(null);
+  // Computed properties
+  availableCharts = computed(() => this.availableChartsSignal());
+  activeCharts = computed(() => this.activeChartsSignal());
 
-  /** Active charts being displayed */
-  activeCharts = signal<ChartItem[]>([]);
-
-  /** Cache for downloaded chart specs to avoid re-downloading */
-  private chartSpecCache = new Map<string, CachedChartSpec>();
-
-  /** Track the last rendered job/workspace combination */
-  private lastRenderedJobId: number | null = null;
-  private lastRenderedWorkspaceId: string | null = null;
-
-  /** Flag to prevent duplicate renders during chart addition */
-  private isAddingChart = false;
-
-  /** Computed job ID for reactive streams */
-  private readonly jobId = computed(() => {
-    const job = this.job();
-    return job?.id || undefined;
-  });
-
-  /** Computed workspace ID for tracking changes */
-  private readonly currentWorkspaceId = computed(() => {
-    return this.workspaceId() || null;
+  // Available charts for select dropdown (exclude already active charts)
+  availableChartsForSelect = computed(() => {
+    const activeFilenames = new Set(this.activeCharts().map(chart => chart.filename));
+    return this.availableCharts().filter(chart => !activeFilenames.has(chart.filename));
   });
 
   constructor() {
-    /**
-     * Effect to handle chart initialization when job completes OR workspace changes
-     */
+    // Effect to process job changes
     effect(() => {
-      const job = this.job();
-      const workspaceId = this.currentWorkspaceId();
+      const currentJob = this.job();
+      if (currentJob && currentJob.status === 'SUCCEEDED') {
+        this.processJobResults(currentJob);
+      } else {
+        this.clearCharts();
+      }
+    });
 
-      if (job?.status === 'SUCCEEDED' && workspaceId) {
-        // Check if we need to re-initialize (job changed OR workspace changed)
-        const needsRender =
-          this.lastRenderedJobId !== job.id || this.lastRenderedWorkspaceId !== workspaceId;
+    // Effect to restore charts from initialActiveCharts OR add default chart
+    effect(() => {
+      const initialCharts = this.initialActiveCharts();
+      const available = this.availableCharts();
+      const hasRestored = this.hasRestoredFromPersistence();
 
-        if (needsRender) {
-          console.log(`[${workspaceId}] Initializing charts for job ${job.id}`);
-
-          // Clear cache when switching to a different job
-          if (this.lastRenderedJobId !== job.id) {
-            this.clearCache();
-          }
-
-          this.initializeCharts(job);
-          this.lastRenderedJobId = job.id;
-          this.lastRenderedWorkspaceId = workspaceId;
+      // Only restore/add default if we haven't restored yet and have available charts
+      if (!hasRestored && available.length > 0 && this.activeCharts().length === 0) {
+        if (initialCharts.length > 0) {
+          // Restore from persistence
+          this.restoreChartsFromPersistence(initialCharts);
+        } else {
+          // Add default chart if no initial charts and none restored yet
+          this.addDefaultChart();
         }
       }
     });
 
-    /**
-     * Effect to render active charts when they change
-     * Only re-render all charts if we're not in the middle of adding a single chart
-     */
+    // Effect to emit chart changes for persistence
     effect(() => {
-      const charts = this.activeCharts();
-      const workspaceId = this.currentWorkspaceId();
-      const jobId = this.jobId();
-
-      if (charts.length > 0 && this.vegaChartRef && workspaceId && jobId && !this.isAddingChart) {
-        this.renderActiveCharts(jobId, workspaceId);
-      }
+      const active = this.activeCharts();
+      const chartTitles = active.map(chart => chart.title);
+      this.chartsChanged.emit(chartTitles);
     });
+
+    // Set up debounced resize handling
+    this.setupResizeHandling();
   }
 
-  /**
-   * AfterViewInit lifecycle hook
-   */
   ngAfterViewInit(): void {
-    const job = this.job();
-    const workspaceId = this.currentWorkspaceId();
-
-    if (job?.status === 'SUCCEEDED' && workspaceId) {
-      const needsRender =
-        this.lastRenderedJobId !== job.id || this.lastRenderedWorkspaceId !== workspaceId;
-
-      if (needsRender) {
-        console.log(`[${workspaceId}] Initial initialization for job ${job.id}`);
-
-        // Clear cache when switching to a different job
-        if (this.lastRenderedJobId !== job.id) {
-          this.clearCache();
-        }
-
-        this.initializeCharts(job);
-        this.lastRenderedJobId = job.id;
-        this.lastRenderedWorkspaceId = workspaceId;
-      }
-    }
+    this.setupResizeObserver();
   }
 
-  /**
-   * Initialize charts from job output payload
-   */
-  private initializeCharts(job: JobDetailsResponse['job']): void {
-    try {
-      // Parse the job output to get available charts
-      const outputPayload = (job as any).assignments?.[0].result?.result_payload;
-
-      if (!outputPayload?.available_charts) {
-        console.warn('No available_charts found in job output');
-        return;
-      }
-
-      // Convert available charts to ChartItem array
-      const charts: ChartItem[] = Object.entries(outputPayload.available_charts).map(
-        ([title, filename]) => ({
-          title,
-          filename: filename as string,
-          isActive: false
-        })
-      );
-
-      this.availableCharts.set(charts);
-      console.log(`Initialized ${charts.length} available charts`);
-    } catch (error) {
-      console.error('Error initializing charts:', error);
-    }
-  }
-
-  /**
-   * Add a chart to the active charts list
-   */
-  async addChart(): Promise<void> {
-    const selectedTitle = this.selectedChart();
-    if (!selectedTitle) return;
-
-    const availableChart = this.availableCharts().find(c => c.title === selectedTitle);
-    if (!availableChart) return;
-
-    // Check if chart is already active
-    const currentActive = this.activeCharts();
-    if (currentActive.some(c => c.title === selectedTitle)) {
-      return; // Already active
+  ngOnDestroy(): void {
+    // Clean up resize observer
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
     }
 
-    // Set flag to prevent the effect from re-rendering all charts
-    this.isAddingChart = true;
+    // Clean up all chart elements and Vega instances
+    this.cleanupAllCharts();
 
-    try {
-      // Add to active charts
-      const newActiveChart = { ...availableChart, isActive: true };
-      this.activeCharts.set([...currentActive, newActiveChart]);
-
-      // Reset dropdown selection
-      this.selectedChart.set(null);
-
-      // Render only the new chart
-      const jobId = this.jobId();
-      const workspaceId = this.currentWorkspaceId();
-      if (jobId && workspaceId) {
-        await this.renderSingleChart(jobId, newActiveChart, workspaceId);
-      }
-    } finally {
-      // Reset flag after chart is added and rendered
-      this.isAddingChart = false;
-    }
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.clearChartCache();
   }
 
-  /**
-   * Remove a chart from active charts
-   */
-  removeChart(title: string): void {
-    const currentActive = this.activeCharts();
-    const chartToRemove = currentActive.find(c => c.title === title);
-
-    if (chartToRemove) {
-      // Remove the chart's DOM element
-      const chartElement = this.vegaChartRef?.nativeElement?.querySelector(
-        `[data-chart-title="${title}"]`
-      );
-      if (chartElement) {
-        chartElement.remove();
-      }
-    }
-
-    // Update the active charts list
-    const filtered = currentActive.filter(c => c.title !== title);
-    this.activeCharts.set(filtered);
-  }
-
-  /**
-   * Get available charts that aren't currently active
-   */
-  getInactiveCharts(): ChartItem[] {
-    const active = this.activeCharts();
-    const available = this.availableCharts();
-    return available.filter(chart => !active.some(ac => ac.title === chart.title));
-  }
-
-  /**
-   * Generate cache key for a chart
-   */
-  private getCacheKey(jobId: number, filename: string): string {
-    return `${jobId}_${filename}`;
-  }
-
-  /**
-   * Get chart specification from cache or download it
-   */
-  private async getChartSpec(
-    jobId: number,
-    chart: ChartItem,
-    workspaceId: string
-  ): Promise<VisualizationSpec | null> {
-    const cacheKey = this.getCacheKey(jobId, chart.filename);
-
-    // Check if we have a cached version
-    if (this.chartSpecCache.has(cacheKey)) {
-      const cached = this.chartSpecCache.get(cacheKey)!;
-      console.log(`[${workspaceId}] Using cached chart spec: ${chart.title}`);
-      return cached.spec;
-    }
-
-    try {
-      console.log(`[${workspaceId}] Downloading chart spec: ${chart.title}`);
-
-      // Download the Vega-Lite specification file
-      const downloadResponse = await this.webApi
-        .downloadJobResults(jobId, undefined, chart.filename)
-        .toPromise();
-
-      const vegaUrl = downloadResponse?.files[chart.filename];
-
-      if (!vegaUrl) {
-        console.warn(`[${workspaceId}] No URL found for chart: ${chart.filename}`);
-        return null;
-      }
-
-      // Fetch and parse the JSON specification
-      const response = await fetch(vegaUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch chart spec: ${response.status}`);
-      }
-
-      const spec = await response.json();
-
-      // Cache the specification
-      this.chartSpecCache.set(cacheKey, {
-        spec,
-        url: vegaUrl,
-        downloadedAt: new Date()
+  // Set up debounced resize handling
+  private setupResizeHandling(): void {
+    this.resizeSubject$
+      .pipe(
+        debounceTime(300), // 300ms debounce
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        this.reRenderAllCharts();
       });
+  }
 
-      console.log(`[${workspaceId}] Successfully downloaded and cached chart spec: ${chart.title}`);
-      return spec;
-    } catch (error) {
-      console.error(`[${workspaceId}] Error downloading chart spec ${chart.title}:`, error);
-      return null;
+  // Set up ResizeObserver to watch for container size changes
+  private setupResizeObserver(): void {
+    console.log(`[${this.workspaceId()}] Setting up ResizeObserver`);
+    if (typeof ResizeObserver === 'undefined') {
+      console.warn(`[${this.workspaceId()}] ResizeObserver not supported`);
+      return;
+    }
+
+    this.resizeObserver = new ResizeObserver(_entries => {
+      // Check if any of the observed elements have changed size
+      this.resizeSubject$.next();
+    });
+
+    // Observe the charts grid container
+    const chartsGrid = this.chartsGridWrapper.nativeElement;
+
+    if (chartsGrid) {
+      this.resizeObserver.observe(chartsGrid);
+      console.log(`[${this.workspaceId()}] ResizeObserver attached to charts grid`);
     }
   }
 
-  /**
-   * Render all active charts
-   */
-  private async renderActiveCharts(jobId: number, workspaceId: string): Promise<void> {
-    if (!this.vegaChartRef?.nativeElement) return;
-
-    // Clear existing charts
-    this.clearAllCharts();
-
+  // Re-render all active charts with new width calculations
+  private reRenderAllCharts(): void {
     const activeCharts = this.activeCharts();
 
-    // Render all active charts
-    for (const chart of activeCharts) {
-      await this.renderSingleChart(jobId, chart, workspaceId);
-    }
+    activeCharts.forEach(chart => {
+      // Only re-render charts that are successfully loaded
+      if (!chart.isLoading && !chart.hasError && chart.vegaResult) {
+        this.reRenderChart(chart.id);
+      }
+    });
   }
 
-  /**
-   * Render a single chart
-   */
-  private async renderSingleChart(
-    jobId: number,
-    chart: ChartItem,
-    workspaceId: string
-  ): Promise<void> {
+  // Re-render a specific chart with updated width
+  private reRenderChart(chartId: string): void {
+    const chart = this.activeCharts().find(c => c.id === chartId);
+    const job = this.job();
+
+    if (!chart || !job) return;
+
+    const cacheKey = `${job.id}-${chart.filename}`;
+    const cache = this.chartCache();
+    const chartSpec = cache[cacheKey];
+
+    if (!chartSpec) {
+      console.warn(`[${this.workspaceId()}] No cached spec found for chart: ${chartId}`);
+      return;
+    }
+
+    // Clean up existing chart
+    const container = this.getChartContainer(chartId);
+    if (container && chart.vegaResult) {
+      try {
+        chart.vegaResult.finalize();
+        container.innerHTML = '';
+      } catch (error) {
+        console.warn(`[${this.workspaceId()}] Error cleaning up chart for re-render:`, error);
+      }
+    }
+
+    // Re-render with new width calculation
+    this.renderChartWithSpec(chartId, chartSpec);
+  }
+
+  // Process job results to extract available charts
+  private processJobResults(job: JobDetailsResponse['job']): void {
+    console.log(`[${this.workspaceId()}] Processing job results for job ${job.id}`);
+
+    // Clear existing cache for different jobs
+    this.clearChartCache();
+
+    // Reset restoration flag when processing new job results
+    this.hasRestoredFromPersistence.set(false);
+
+    // Extract chart information from job payload
     try {
-      // Check if chart already exists in DOM to prevent duplicates
-      const existingChart = this.vegaChartRef?.nativeElement?.querySelector(
-        `[data-chart-title="${chart.title}"]`
+      if (!job.assignments || job.assignments.length === 0) {
+        console.warn(`[${this.workspaceId()}] No assignments found in job ${job.id}`);
+        this.availableChartsSignal.set([]);
+        return;
+      }
+
+      const resultPayload = job.assignments[0].result?.result_payload as AdriaModelRunResult;
+      const files = resultPayload.available_charts || {};
+
+      const charts: ChartInfo[] = Array.from(Object.entries(files)).map(([name, filename]) => ({
+        title: this.formatChartTitle(name),
+        filename,
+        description: `Chart from ${filename}`
+      }));
+
+      console.log(
+        `[${this.workspaceId()}] Found ${charts.length} charts:`,
+        charts.map(c => c.title)
       );
-      if (existingChart) {
-        console.log(`[${workspaceId}] Chart already exists, skipping render: ${chart.title}`);
-        return;
-      }
-
-      // Get chart specification (from cache or download)
-      const spec = await this.getChartSpec(jobId, chart, workspaceId);
-
-      if (!spec) {
-        console.warn(`[${workspaceId}] Failed to get chart spec for: ${chart.title}`);
-        return;
-      }
-
-      // Create a container for this specific chart
-      const chartContainer = document.createElement('div');
-      chartContainer.className = 'individual-chart-container';
-      chartContainer.setAttribute('data-chart-title', chart.title);
-
-      // Add chart title
-      const titleElement = document.createElement('h3');
-      titleElement.className = 'chart-title';
-      titleElement.textContent = chart.title;
-      chartContainer.appendChild(titleElement);
-
-      // Add chart content container
-      const contentContainer = document.createElement('div');
-      contentContainer.className = 'chart-content';
-      chartContainer.appendChild(contentContainer);
-
-      // Append to main container
-      this.vegaChartRef.nativeElement.appendChild(chartContainer);
-
-      // Render the chart
-      await embed(contentContainer, spec, {
-        actions: true,
-        theme: 'vox',
-        width: Math.max(500, this.vegaChartRef.nativeElement.clientWidth - 275)
-      });
-
-      console.log(`[${workspaceId}] Successfully rendered chart: ${chart.title}`);
+      this.availableChartsSignal.set(charts);
     } catch (error) {
-      console.error(`[${workspaceId}] Error rendering chart ${chart.title}:`, error);
+      console.error(`[${this.workspaceId()}] Failed to process job results:`, error);
+      this.availableChartsSignal.set([]);
     }
   }
 
-  /**
-   * Clear all rendered charts
-   */
-  private clearAllCharts(): void {
-    if (this.vegaChartRef?.nativeElement) {
-      this.vegaChartRef.nativeElement.innerHTML = '';
+  // Add default chart (Relative Coral Cover Over Time) if available
+  private addDefaultChart(): void {
+    const defaultChartTitle = 'Relative Coral Cover Over Time';
+    const defaultChart = this.availableCharts().find(chart => chart.title === defaultChartTitle);
+
+    if (defaultChart) {
+      console.log(`[${this.workspaceId()}] Adding default chart: ${defaultChartTitle}`);
+
+      // Mark that we've restored from persistence (even though we're adding default)
+      this.hasRestoredFromPersistence.set(true);
+
+      // Add the default chart
+      this.addChart(defaultChart.filename);
+    } else {
+      console.log(`[${this.workspaceId()}] Default chart "${defaultChartTitle}" not available`);
+      // Still mark as restored so we don't keep trying
+      this.hasRestoredFromPersistence.set(true);
     }
   }
 
-  /**
-   * Clear the chart specification cache
-   */
-  private clearCache(): void {
-    console.log(`Clearing chart spec cache (${this.chartSpecCache.size} entries)`);
-    this.chartSpecCache.clear();
+  // Restore charts from persistence
+  private restoreChartsFromPersistence(chartTitles: string[]): void {
+    console.log(`[${this.workspaceId()}] Restoring charts from persistence:`, chartTitles);
+
+    const available = this.availableCharts();
+    const chartsToRestore = chartTitles
+      .map(title => available.find(chart => chart.title === title))
+      .filter((chart): chart is ChartInfo => chart !== undefined);
+
+    console.log(`[${this.workspaceId()}] Found ${chartsToRestore.length} charts to restore`);
+
+    // Mark that we've restored from persistence
+    this.hasRestoredFromPersistence.set(true);
+
+    // Add charts without triggering individual events
+    const newActiveCharts: ActiveChart[] = chartsToRestore.map(chart => ({
+      id: this.generateChartId(),
+      title: chart.title,
+      filename: chart.filename,
+      isLoading: true,
+      hasError: false
+    }));
+
+    this.activeChartsSignal.set(newActiveCharts);
+
+    // Load all charts after DOM elements are created
+    setTimeout(() => {
+      newActiveCharts.forEach(chart => {
+        this.loadChart(chart.id);
+      });
+    }, 100);
   }
 
-  /**
-   * Get cache statistics for debugging
-   */
-  getCacheStats(): { size: number; keys: string[] } {
-    return {
-      size: this.chartSpecCache.size,
-      keys: Array.from(this.chartSpecCache.keys())
+  // Add a new chart
+  addChart(filename: string): void {
+    if (!filename) return;
+
+    const chartInfo = this.availableCharts().find(chart => chart.filename === filename);
+    if (!chartInfo) {
+      console.warn(`[${this.workspaceId()}] Chart not found: ${filename}`);
+      return;
+    }
+
+    // Check if chart is already active
+    const isAlreadyActive = this.activeCharts().some(chart => chart.filename === filename);
+    if (isAlreadyActive) {
+      this.snackBar.open('Chart is already displayed', 'Dismiss', { duration: 3000 });
+      return;
+    }
+
+    const newChart: ActiveChart = {
+      id: this.generateChartId(),
+      title: chartInfo.title,
+      filename: chartInfo.filename,
+      isLoading: true,
+      hasError: false
     };
+
+    console.log(`[${this.workspaceId()}] Adding chart: ${newChart.title}`);
+
+    // Add to active charts
+    const currentCharts = this.activeCharts();
+    this.activeChartsSignal.set([...currentCharts, newChart]);
+
+    // Load the chart data after DOM element is created
+    setTimeout(() => {
+      this.loadChart(newChart.id);
+    }, 100);
   }
 
-  /**
-   * OnDestroy lifecycle hook
-   */
-  ngOnDestroy(): void {
-    this.clearAllCharts();
-    this.clearCache();
+  // Remove a chart
+  removeChart(chartId: string): void {
+    const chart = this.activeCharts().find(c => c.id === chartId);
+    if (!chart) return;
+
+    console.log(`[${this.workspaceId()}] Removing chart: ${chart.title}`);
+
+    // Clean up Vega instance and DOM element
+    this.cleanupChart(chartId);
+
+    // Remove from active charts
+    const updatedCharts = this.activeCharts().filter(c => c.id !== chartId);
+    this.activeChartsSignal.set(updatedCharts);
+  }
+
+  // Retry loading a chart
+  retryChart(chartId: string): void {
+    const currentCharts = this.activeCharts();
+    const chartIndex = currentCharts.findIndex(c => c.id === chartId);
+
+    if (chartIndex === -1) return;
+
+    console.log(`[${this.workspaceId()}] Retrying chart: ${currentCharts[chartIndex].title}`);
+
+    // Clean up existing chart first
+    this.cleanupChart(chartId);
+
+    // Reset chart state
+    const updatedCharts = [...currentCharts];
+    updatedCharts[chartIndex] = {
+      ...updatedCharts[chartIndex],
+      isLoading: true,
+      hasError: false,
+      errorMessage: undefined,
+      vegaResult: undefined
+    };
+
+    this.activeChartsSignal.set(updatedCharts);
+
+    // Retry loading after a short delay
+    setTimeout(() => {
+      this.loadChart(chartId);
+    }, 100);
+  }
+
+  // Load chart data and render
+  private loadChart(chartId: string): void {
+    const chart = this.activeCharts().find(c => c.id === chartId);
+    const job = this.job();
+
+    if (!chart || !job) return;
+
+    const cacheKey = `${job.id}-${chart.filename}`;
+    const cache = this.chartCache();
+
+    // Check cache first
+    if (cache[cacheKey]) {
+      console.log(`[${this.workspaceId()}] Loading chart from cache: ${chart.title}`);
+      this.renderChart(chartId, cache[cacheKey]);
+      return;
+    }
+
+    // Download chart data
+    console.log(`[${this.workspaceId()}] Downloading chart data: ${chart.title}`);
+
+    this.api
+      .downloadJobResults(job.id, undefined, chart.filename)
+      .pipe(
+        takeUntil(this.destroy$),
+        switchMap(response => {
+          const files = response.files;
+          const chartDataUrl = files[chart.filename];
+
+          if (!chartDataUrl) {
+            throw new Error(`Chart file not found: ${chart.filename}`);
+          }
+
+          // Fetch the actual chart data from the presigned URL
+          return fetch(chartDataUrl).then(res => {
+            if (!res.ok) {
+              throw new Error(`Failed to fetch chart data: ${res.status} ${res.statusText}`);
+            }
+            return res.text();
+          });
+        }),
+        map(chartDataText => {
+          // Parse the chart specification
+          try {
+            return JSON.parse(chartDataText);
+          } catch (parseError) {
+            throw new Error(`Invalid chart data format: ${parseError}`);
+          }
+        }),
+        catchError(error => {
+          console.error(`[${this.workspaceId()}] Failed to load chart ${chart.title}:`, error);
+          this.setChartError(chartId, error.message || 'Failed to load chart');
+          return of(null);
+        })
+      )
+      .subscribe(chartSpec => {
+        if (chartSpec) {
+          // Cache the chart spec
+          const updatedCache = { ...this.chartCache() };
+          updatedCache[cacheKey] = chartSpec;
+          this.chartCache.set(updatedCache);
+
+          // Render the chart
+          this.renderChart(chartId, chartSpec);
+        }
+      });
+  }
+
+  // Render chart using Vega-Lite
+  private renderChart(chartId: string, chartSpec: any): void {
+    // Wait for the DOM element to be available
+    setTimeout(() => {
+      this.renderChartWithSpec(chartId, chartSpec);
+    }, 50);
+  }
+
+  // Render chart with provided spec (extracted for reuse)
+  private renderChartWithSpec(chartId: string, chartSpec: any): void {
+    const container = this.getChartContainer(chartId);
+    if (!container) {
+      console.warn(`[${this.workspaceId()}] Chart container not found: ${chartId}`);
+      this.setChartError(chartId, 'Chart container not available');
+      return;
+    }
+
+    console.log(`[${this.workspaceId()}] Rendering chart: ${chartId}`);
+
+    // Get the chart card container (parent) to measure available width
+    const chartCard = container.closest('.chart-card') as HTMLElement;
+    let containerWidth = 600; // Fallback width
+
+    if (chartCard) {
+      containerWidth = chartCard.clientWidth;
+    } else {
+      console.warn(`[${this.workspaceId()}] Could not find chart card, using fallback width`);
+    }
+
+    // Calculate dynamic width with padding consideration
+    const dynamicWidth = Math.max(400, containerWidth - 275); // 275px for padding
+
+    // Configure Vega-Lite options
+    const options = {
+      theme: 'quartz',
+      renderer: 'canvas' as const,
+      actions: {
+        export: true,
+        source: false,
+        compiled: false,
+        editor: false
+      },
+      width: dynamicWidth
+    } satisfies EmbedOptions;
+
+    // Render the chart
+    embed(container, chartSpec, options)
+      .then(result => {
+        // Store the Vega result for cleanup
+        this.updateChartVegaResult(chartId, result);
+
+        // Set chart to loaded state (this will hide loading overlay and show chart)
+        this.setChartLoaded(chartId);
+      })
+      .catch(error => {
+        console.error(`[${this.workspaceId()}] Failed to render chart ${chartId}:`, error);
+        this.setChartError(chartId, 'Failed to render chart');
+      });
+  }
+
+  // Get chart container element
+  private getChartContainer(chartId: string): HTMLElement | null {
+    return document.getElementById(`chart-container-${chartId}`);
+  }
+
+  // Update chart's Vega result for cleanup purposes
+  private updateChartVegaResult(chartId: string, vegaResult: Result): void {
+    const currentCharts = this.activeCharts();
+    const chartIndex = currentCharts.findIndex(c => c.id === chartId);
+
+    if (chartIndex === -1) return;
+
+    const updatedCharts = [...currentCharts];
+    updatedCharts[chartIndex] = {
+      ...updatedCharts[chartIndex],
+      vegaResult
+    };
+
+    this.activeChartsSignal.set(updatedCharts);
+  }
+
+  // Update chart state to loaded
+  private setChartLoaded(chartId: string): void {
+    const currentCharts = this.activeCharts();
+    const chartIndex = currentCharts.findIndex(c => c.id === chartId);
+
+    if (chartIndex === -1) return;
+
+    const updatedCharts = [...currentCharts];
+    updatedCharts[chartIndex] = {
+      ...updatedCharts[chartIndex],
+      isLoading: false,
+      hasError: false,
+      errorMessage: undefined
+    };
+
+    this.activeChartsSignal.set(updatedCharts);
+  }
+
+  // Update chart state to error
+  private setChartError(chartId: string, errorMessage: string): void {
+    const currentCharts = this.activeCharts();
+    const chartIndex = currentCharts.findIndex(c => c.id === chartId);
+
+    if (chartIndex === -1) return;
+
+    const updatedCharts = [...currentCharts];
+    updatedCharts[chartIndex] = {
+      ...updatedCharts[chartIndex],
+      isLoading: false,
+      hasError: true,
+      errorMessage
+    };
+
+    this.activeChartsSignal.set(updatedCharts);
+  }
+
+  // Clean up a specific chart
+  private cleanupChart(chartId: string): void {
+    const chart = this.activeCharts().find(c => c.id === chartId);
+    if (!chart) return;
+
+    // Finalize Vega view if it exists
+    if (chart.vegaResult) {
+      try {
+        chart.vegaResult.finalize();
+      } catch (error) {
+        console.warn(`[${this.workspaceId()}] Error finalizing Vega chart ${chartId}:`, error);
+      }
+    }
+
+    // Clear the container
+    const container = this.getChartContainer(chartId);
+    if (container) {
+      container.innerHTML = '';
+    }
+
+    // Remove element reference
+    this.chartElementRefs.delete(chartId);
+  }
+
+  // Clean up all charts
+  private cleanupAllCharts(): void {
+    console.log(`[${this.workspaceId()}] Cleaning up all charts`);
+
+    const currentCharts = this.activeCharts();
+    currentCharts.forEach(chart => {
+      this.cleanupChart(chart.id);
+    });
+
+    this.chartElementRefs.clear();
+  }
+
+  // Clear all charts
+  private clearCharts(): void {
+    console.log(`[${this.workspaceId()}] Clearing all charts`);
+
+    // Clean up existing charts before clearing
+    this.cleanupAllCharts();
+
+    // Reset restoration flag when clearing charts
+    this.hasRestoredFromPersistence.set(false);
+
+    this.activeChartsSignal.set([]);
+    this.availableChartsSignal.set([]);
+  }
+
+  // Clear chart cache
+  private clearChartCache(): void {
+    this.chartCache.set({});
+  }
+
+  // Generate unique chart ID
+  private generateChartId(): string {
+    const counter = this.chartIdCounter();
+    this.chartIdCounter.set(counter + 1);
+    return `chart-${this.workspaceId()}-${counter}`;
+  }
+
+  // Format chart title from chart name
+  private formatChartTitle(chartName: string): string {
+    // Convert snake_case or kebab-case to Title Case
+    return chartName
+      .replace(/[_-]/g, ' ')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  // TrackBy function for chart list
+  trackByChartId(index: number, chart: ActiveChart): string {
+    return chart.id;
   }
 }

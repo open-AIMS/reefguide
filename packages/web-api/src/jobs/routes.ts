@@ -2,6 +2,7 @@ import { JobStatus, JobType } from '@reefguide/db';
 import {
   AssignJobResponse,
   assignJobSchema,
+  CancelJobResponse,
   createJobResponseSchema,
   createJobSchema,
   InvalidateCacheResponse,
@@ -167,7 +168,7 @@ router.post(
   }),
   passport.authenticate('jwt', { session: false }),
   assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
-  async (req, res: Response<JobDetailsResponse>) => {
+  async (req, res: Response<CancelJobResponse>) => {
     if (!req.user) throw new UnauthorizedException();
     const jobId = parseInt(req.params.id);
     const job = await jobService.cancelJob(jobId, req.user.id, userIsAdmin(req.user));
