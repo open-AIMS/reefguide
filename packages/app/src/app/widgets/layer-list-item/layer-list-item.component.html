@@ -1,4 +1,14 @@
 @let l = layer();
+@let props = layerController.getProperties();
+@if (props.downloadUrl) {
+  <a mat-icon-button [href]="props.downloadUrl" download matTooltip="Download layer file">
+    <mat-icon>download</mat-icon>
+  </a>
+} @else if (props.webUrl) {
+  <a mat-icon-button [href]="props.webUrl" target="_blank" matTooltip="Layer source information">
+    <mat-icon>travel_explore</mat-icon>
+  </a>
+}
 <button mat-icon-button (click)="openStyleEditor()" matTooltip="Edit layer style">
   <mat-icon>brush</mat-icon>
 </button>

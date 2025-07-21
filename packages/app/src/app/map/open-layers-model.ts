@@ -1,5 +1,6 @@
 import { effect, signal, WritableSignal } from '@angular/core';
 import type Layer from 'ol/layer/Layer';
+import { LayerProperties } from '../../types/layer.type';
 
 // TODO cleanup/dispose
 export class LayerController {
@@ -21,5 +22,12 @@ export class LayerController {
     // Sync layer to signal (if changed externally)
     this.layer.on('change:visible', () => this.visible.set(this.layer.getVisible()));
     this.layer.on('change:opacity', () => this.opacity.set(this.layer.getOpacity()));
+  }
+
+  /**
+   * Get the layer's custom properties.
+   */
+  public getProperties(): LayerProperties {
+    return this.layer.getProperties();
   }
 }
