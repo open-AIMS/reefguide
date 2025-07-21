@@ -126,35 +126,7 @@ export const JwtContentsSchema = z.object({
 });
 export type JwtContents = z.infer<typeof JwtContentsSchema>;
 
-// Job Assignment
-export const jobAssignmentSchema = z.object({
-  id: z.number(),
-  created_at: z.date(),
-  updated_at: z.date(),
-  job_id: z.number(),
-  ecs_task_arn: z.string(),
-  ecs_cluster_arn: z.string(),
-  expires_at: z.date(),
-  storage_scheme: z.nativeEnum(StorageScheme),
-  storage_uri: z.string(),
-  heartbeat_at: z.date().nullable(),
-  completed_at: z.date().nullable()
-});
-export type JobAssignment = z.infer<typeof jobAssignmentSchema>;
-
-// Job Request
-export const jobRequestSchema = z.object({
-  id: z.number(),
-  created_at: z.date(),
-  user_id: z.number(),
-  type: z.nativeEnum(JobType),
-  input_payload: z.any(),
-  cache_hit: z.boolean(),
-  job_id: z.number()
-});
-export type JobRequest = z.infer<typeof jobRequestSchema>;
-
-// Job Result
+// Job Result Schema (needed first for references)
 export const jobResultSchema = z.object({
   id: z.number(),
   created_at: z.date(),
@@ -168,17 +140,52 @@ export const jobResultSchema = z.object({
 });
 export type JobResult = z.infer<typeof jobResultSchema>;
 
-// Job Details
-export const jobDetailsSchema = z.object({
+// Job Assignment Schema (with result reference)
+export const jobAssignmentSchema = z.object({
+  id: z.number(),
+  created_at: z.date(),
+  updated_at: z.date(),
+  job_id: z.number(),
+  ecs_task_arn: z.string(),
+  ecs_cluster_arn: z.string(),
+  expires_at: z.date(),
+  storage_scheme: z.nativeEnum(StorageScheme),
+  storage_uri: z.string(),
+  heartbeat_at: z.date().nullable(),
+  completed_at: z.date().nullable(),
+  result: jobResultSchema.nullable()
+});
+export type JobAssignment = z.infer<typeof jobAssignmentSchema>;
+
+// Base Job Schema (without relations)
+export const baseJobSchema = z.object({
   id: z.number(),
   created_at: z.date(),
   updated_at: z.date(),
   type: z.nativeEnum(JobType),
   status: z.nativeEnum(JobStatus),
+  hash: z.string(),
   user_id: z.number(),
   input_payload: z.any()
 });
+
+// Job Details Schema (with assignments relation)
+export const jobDetailsSchema = baseJobSchema.extend({
+  assignments: z.array(jobAssignmentSchema)
+});
 export type JobDetails = z.infer<typeof jobDetailsSchema>;
+
+// Job Request
+export const jobRequestSchema = z.object({
+  id: z.number(),
+  created_at: z.date(),
+  user_id: z.number(),
+  type: z.nativeEnum(JobType),
+  input_payload: z.any(),
+  cache_hit: z.boolean(),
+  job_id: z.number()
+});
+export type JobRequest = z.infer<typeof jobRequestSchema>;
 
 // List Jobs Query
 export const listJobsSchema = z.object({
@@ -186,9 +193,9 @@ export const listJobsSchema = z.object({
 });
 export type ListJobsQuery = z.infer<typeof listJobsSchema>;
 
-// List Jobs Response
+// List Jobs Response (uses base job schema without relations)
 export const listJobsResponseSchema = z.object({
-  jobs: z.array(jobDetailsSchema),
+  jobs: z.array(baseJobSchema),
   total: z.number()
 });
 export type ListJobsResponse = z.infer<typeof listJobsResponseSchema>;
@@ -214,9 +221,9 @@ export const pollJobsSchema = z.object({
 });
 export type PollJobsQuery = z.infer<typeof pollJobsSchema>;
 
-// Poll Jobs Response
+// Poll Jobs Response (uses base job schema)
 export const pollJobsResponseSchema = z.object({
-  jobs: z.array(jobDetailsSchema)
+  jobs: z.array(baseJobSchema)
 });
 export type PollJobsResponse = z.infer<typeof pollJobsResponseSchema>;
 
@@ -228,9 +235,24 @@ export const assignJobSchema = z.object({
 });
 export type AssignJobRequest = z.infer<typeof assignJobSchema>;
 
+// Job Assignment Schema (without result for assignment responses)
+export const jobAssignmentWithoutResultSchema = z.object({
+  id: z.number(),
+  created_at: z.date(),
+  updated_at: z.date(),
+  job_id: z.number(),
+  ecs_task_arn: z.string(),
+  ecs_cluster_arn: z.string(),
+  expires_at: z.date(),
+  storage_scheme: z.nativeEnum(StorageScheme),
+  storage_uri: z.string(),
+  heartbeat_at: z.date().nullable(),
+  completed_at: z.date().nullable()
+});
+
 // Assign Job Response
 export const assignJobResponseSchema = z.object({
-  assignment: jobAssignmentSchema
+  assignment: jobAssignmentWithoutResultSchema
 });
 export type AssignJobResponse = z.infer<typeof assignJobResponseSchema>;
 

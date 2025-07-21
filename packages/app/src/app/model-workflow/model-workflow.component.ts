@@ -240,12 +240,22 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
     return this.workspaces().findIndex(w => w.id === activeId);
   });
 
+  // Force remount when workspace ID changes
+  forceChartRemount = false;
+
   constructor() {
     // Set up CSS custom property for left panel width
     effect(() => {
       const width = this.leftPanelWidth();
       const element = this.elementRef.nativeElement as HTMLElement;
       element.style.setProperty('--left-panel-width', `${width}px`);
+    });
+
+    // When the workspace ID changes, force a chart remount
+    effect(() => {
+      // Use workspace ID to trigger remount
+      const _activeId = this.activeWorkspaceId();
+      this.doForceChartRemount();
     });
   }
 
@@ -780,18 +790,45 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
   }
 
   onChartsChanged(workspaceId: string, activeCharts: string[]): void {
-    this.updateWorkspace(workspaceId, {
-      activeCharts: [...activeCharts], // Create a copy
-      lastModified: new Date()
-    });
+    const currentWorkspace = this.workspaces().find(w => w.id === workspaceId);
+    if (!currentWorkspace) {
+      console.warn(`Workspace ${workspaceId} not found when updating charts`);
+      return;
+    }
 
-    // Auto-save chart changes
-    this.triggerSave();
+    // Only update if charts actually changed
+    const currentCharts = currentWorkspace.activeCharts || [];
+    const newCharts = [...activeCharts];
+
+    // Simple comparison - if lengths differ or any chart is different
+    const hasChanged =
+      currentCharts.length !== newCharts.length ||
+      currentCharts.some(chart => !newCharts.includes(chart)) ||
+      newCharts.some(chart => !currentCharts.includes(chart));
+
+    if (hasChanged) {
+      console.log(`[${workspaceId}] Updating active charts:`, newCharts);
+      this.updateWorkspace(workspaceId, {
+        activeCharts: newCharts,
+        lastModified: new Date()
+      });
+
+      // Auto-save chart changes
+      this.triggerSave();
+    }
   }
 
   // Get active charts for a workspace
   getActiveChartsForWorkspace(workspaceId: string): string[] {
     const workspace = this.workspaces().find(w => w.id === workspaceId);
-    return workspace?.activeCharts || [];
+    // Return a new array to ensure change detection works properly
+    return workspace?.activeCharts ? [...workspace.activeCharts] : [];
+  }
+
+  doForceChartRemount(): void {
+    this.forceChartRemount = true;
+    setTimeout(() => {
+      this.forceChartRemount = false;
+    }, 0);
   }
 }

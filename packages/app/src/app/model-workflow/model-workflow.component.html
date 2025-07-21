@@ -169,14 +169,16 @@
         </div>
 
         <!-- Viewing State: Results -->
-        <div class="results-container" *ngIf="getWorkspaceService(workspace.id)?.isViewing()">
+        <div
+          class="results-container"
+          *ngIf="!forceChartRemount && getWorkspaceService(workspace.id)?.isViewing()"
+        >
           <app-results-view
             [job]="getWorkspaceService(workspace.id)?.getJob() ?? undefined"
             [workspaceId]="workspace.id"
             [initialActiveCharts]="getActiveChartsForWorkspace(workspace.id)"
             (chartsChanged)="onChartsChanged(workspace.id, $event)"
-          >
-          </app-results-view>
+          />
         </div>
       </div>
     </div>
