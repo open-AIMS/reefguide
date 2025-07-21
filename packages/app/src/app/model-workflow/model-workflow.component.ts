@@ -51,6 +51,7 @@ interface Workspace {
   workflowState: WorkflowState;
   createdAt: Date;
   lastModified: Date;
+  submittedJobId?: number;
 }
 
 // Isolated workspace service - one instance per workspace
@@ -78,7 +79,10 @@ class WorkspaceService {
   }
 
   // Submit job for this workspace only
-  submitJob(parameters: ModelParameters): void {
+  submitJob(
+    parameters: ModelParameters,
+    onSubmitted: ((job: JobDetailsResponse['job']) => void) | undefined = undefined
+  ): void {
     console.log(`[${this.workspaceId}] Submitting job with parameters:`, parameters);
 
     this.workflowState.set('submitting');
@@ -90,6 +94,9 @@ class WorkspaceService {
         console.log(`[${this.workspaceId}] Job started:`, job);
         this.job.set(job);
         this.workflowState.set('monitoring');
+        if (onSubmitted) {
+          onSubmitted(job);
+        }
       },
       error: error => {
         console.error(`[${this.workspaceId}] Failed to start job:`, error);
@@ -135,6 +142,35 @@ class WorkspaceService {
         pending: 'Allocating computational resources for model run...',
         inProgress: 'Executing coral reef simulation scenarios... This may take several minutes.',
         succeeded: 'Simulation complete! Processing results and generating figures...'
+      }
+    });
+  }
+
+  restoreJobFromId(jobId: number): void {
+    console.log(`[${this.workspaceId}] Restoring job ${jobId} from persistence`);
+
+    // Fetch the job details from the API
+    this.api.getJob(jobId).subscribe({
+      next: response => {
+        const job = response.job;
+        console.log(`[${this.workspaceId}] Restored job:`, job);
+        this.job.set(job);
+
+        // Set workflow state based on job status
+        if (job.status === 'SUCCEEDED') {
+          this.workflowState.set('viewing');
+        } else if (['FAILED', 'CANCELLED', 'TIMED_OUT'].includes(job.status)) {
+          this.workflowState.set('monitoring'); // Show error state
+        } else if (['PENDING', 'IN_PROGRESS'].includes(job.status)) {
+          this.workflowState.set('monitoring');
+        } else {
+          this.workflowState.set('configuring');
+        }
+      },
+      error: error => {
+        console.error(`[${this.workspaceId}] Failed to restore job ${jobId}:`, error);
+        // Clear the invalid job ID and reset to configuring
+        this.workflowState.set('configuring');
       }
     });
   }
@@ -310,6 +346,11 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
             this.getWorkspaceService(workspace.id);
           });
 
+          // NEW: Restore jobs for workspaces that have submitted job IDs
+          setTimeout(() => {
+            this.restoreJobsForWorkspaces();
+          }, 100); // Small delay to ensure services are initialized
+
           console.log(`Restored ${runtimeWorkspaces.length} workspaces from persistence`);
         } else {
           // No saved state, create default workspace
@@ -381,6 +422,7 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
   }
 
   // Create workspace with given name
+  // Update createWorkspaceWithName method:
   private createWorkspaceWithName(name: string): void {
     const counter = this.workspaceCounter();
     const newWorkspace: Workspace = {
@@ -390,7 +432,8 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
       job: null,
       workflowState: 'configuring',
       createdAt: new Date(),
-      lastModified: new Date()
+      lastModified: new Date(),
+      submittedJobId: undefined
     };
 
     this.workspaceCounter.set(counter + 1);
@@ -474,7 +517,8 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
       job: null,
       workflowState: 'configuring',
       createdAt: new Date(),
-      lastModified: new Date()
+      lastModified: new Date(),
+      submittedJobId: undefined
     };
 
     this.workspaceCounter.set(counter + 1);
@@ -548,7 +592,14 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
     // Submit job through workspace service
     const service = this.getWorkspaceService(workspaceId);
     if (service) {
-      service.submitJob(parameters);
+      service.submitJob(parameters, job => {
+        // Update workspace with submitted job ID
+        this.updateWorkspace(workspaceId, {
+          submittedJobId: job.id,
+          lastModified: new Date()
+        });
+        this.triggerSave();
+      });
     }
   }
 
@@ -587,8 +638,11 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
     this.updateWorkspace(workspaceId, {
       job: null,
       workflowState: 'configuring',
+      submittedJobId: undefined,
       lastModified: new Date()
     });
+
+    this.triggerSave();
   }
 
   // Helper method to get job config for template
@@ -691,6 +745,21 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
   // Navigate back to projects list
   navigateToProjects(): void {
     this.router.navigate(['/projects']);
+  }
+
+  // Restore jobs for all workspaces on initialization
+  private restoreJobsForWorkspaces(): void {
+    const workspaces = this.workspaces();
+
+    workspaces.forEach(workspace => {
+      if (workspace.submittedJobId) {
+        const service = this.getWorkspaceService(workspace.id);
+        if (service) {
+          console.log(`Restoring job ${workspace.submittedJobId} for workspace ${workspace.id}`);
+          service.restoreJobFromId(workspace.submittedJobId);
+        }
+      }
+    });
   }
 
   // Get default job config as fallback

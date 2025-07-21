@@ -314,7 +314,8 @@ export class WorkspacePersistenceService {
       typeof workspace.name === 'string' &&
       (workspace.parameters === null || typeof workspace.parameters === 'object') &&
       typeof workspace.createdAt === 'string' &&
-      typeof workspace.lastModified === 'string'
+      typeof workspace.lastModified === 'string' &&
+      (workspace.submittedJobId === undefined || typeof workspace.submittedJobId === 'number')
     );
   }
 

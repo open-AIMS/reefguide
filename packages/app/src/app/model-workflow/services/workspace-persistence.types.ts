@@ -11,6 +11,8 @@ export interface RuntimeWorkspace {
   workflowState: 'configuring' | 'submitting' | 'monitoring' | 'viewing';
   createdAt: Date;
   lastModified: Date;
+  // NEW: Track the submitted job ID for persistence
+  submittedJobId?: number;
 }
 
 export interface PersistedWorkspace {
@@ -19,6 +21,8 @@ export interface PersistedWorkspace {
   parameters: ModelParameters | null;
   createdAt: string; // ISO string
   lastModified: string; // ISO string
+  // NEW: Persisted job ID
+  submittedJobId?: number;
 }
 
 // Convert runtime workspace to persisted format
@@ -28,7 +32,8 @@ export function toPersistedWorkspace(workspace: RuntimeWorkspace): PersistedWork
     name: workspace.name,
     parameters: workspace.parameters ? { ...workspace.parameters } : null, // Deep copy
     createdAt: workspace.createdAt.toISOString(),
-    lastModified: workspace.lastModified.toISOString()
+    lastModified: workspace.lastModified.toISOString(),
+    submittedJobId: workspace.submittedJobId
   };
 }
 
@@ -38,9 +43,10 @@ export function toRuntimeWorkspace(persisted: PersistedWorkspace): RuntimeWorksp
     id: persisted.id,
     name: persisted.name,
     parameters: persisted.parameters ? { ...persisted.parameters } : null, // Deep copy
-    job: null, // Always start with no job
-    workflowState: 'configuring', // Always start in configuring state
+    job: null, // Always start with no job - this will be loaded separately
+    workflowState: 'configuring', // Will be updated based on job status
     createdAt: new Date(persisted.createdAt),
-    lastModified: new Date(persisted.lastModified)
+    lastModified: new Date(persisted.lastModified),
+    submittedJobId: persisted.submittedJobId
   };
 }
