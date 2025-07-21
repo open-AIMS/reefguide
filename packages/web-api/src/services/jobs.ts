@@ -381,7 +381,7 @@ export class JobService {
 
     return prisma.job.update({
       where: { id: jobId },
-      data: { status: JobStatus.CANCELLED },
+      data: { status: JobStatus.CANCELLED }
     });
   }
 

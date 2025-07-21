@@ -35,10 +35,7 @@ import {
   WorkspacePersistenceService,
   WorkspaceState
 } from './services/workspace-persistence.service';
-import {
-  toPersistedWorkspace,
-  toRuntimeWorkspace,
-} from './services/workspace-persistence.types';
+import { toPersistedWorkspace, toRuntimeWorkspace } from './services/workspace-persistence.types';
 
 type WorkflowState = 'configuring' | 'submitting' | 'monitoring' | 'viewing';
 
