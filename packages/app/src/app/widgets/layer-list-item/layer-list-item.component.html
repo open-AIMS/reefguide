@@ -1,5 +1,7 @@
 @let l = layer();
 @let props = layerController.getProperties();
+<!-- drag handle -->
+<ng-content/>
 @if (props.downloadUrl) {
   <a mat-icon-button [href]="props.downloadUrl" download matTooltip="Download layer file">
     <mat-icon>download</mat-icon>

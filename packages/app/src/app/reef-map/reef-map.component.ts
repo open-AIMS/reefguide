@@ -7,9 +7,11 @@ import ScaleLine from 'ol/control/ScaleLine';
 import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
 import { LayerListComponent } from '../widgets/layer-list/layer-list.component';
 import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
-import { debounceTime, map, Subject } from 'rxjs';
+import { debounceTime, map, Observable, Subject } from 'rxjs';
 import LayerGroup from 'ol/layer/Group';
 import { LayerProperties } from '../../types/layer.type';
+import Layer from 'ol/layer/Layer';
+import { moveItemInArray } from '@angular/cdk/drag-drop';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -45,14 +47,22 @@ export class ReefMapComponent implements AfterViewInit {
   private map!: Map;
 
   private layersChange$ = new Subject<void>();
+  private _lastEmittedLayers?: Layer[];
 
-  public layers$ = this.layersChange$.pipe(
+  /**
+   * Flat list of all layers ordered by zIndex descending.
+   */
+  public sortedLayers$: Observable<Layer[]> = this.layersChange$.pipe(
     debounceTime(50),
     map(() => {
       // For now show all layers in flat list;
       // in future could display tree by recursing through getLayers()
       // getAllLayers will recursively get all leaf layers
-      return this.map.getAllLayers();
+      const allLayers = this.map.getAllLayers();
+      this.setMissingZindexes(allLayers);
+      allLayers.sort((a, b) => b.getZIndex()! - a.getZIndex()!);
+      this._lastEmittedLayers = allLayers;
+      return allLayers;
     })
   );
 
@@ -85,6 +95,23 @@ export class ReefMapComponent implements AfterViewInit {
     this.setupMapControls(this.map);
 
     // trigger change to pickup base map layer
+    this.layersChange$.next();
+  }
+
+  /**
+   * Re-order the layer to this position in allLayers.
+   * Bumps the zIndex of other layers up
+   */
+  public reorderLayer(previousIndex: number, currentIndex: number) {
+    const allLayers = this._lastEmittedLayers!;
+    moveItemInArray(allLayers, previousIndex, currentIndex);
+
+    for (let i = 0; i < allLayers.length; i++) {
+      const layer = allLayers[i];
+      layer.setZIndex(allLayers.length - i);
+    }
+
+    // trigger sortedLayersChange$
     this.layersChange$.next();
   }
 
@@ -136,6 +163,19 @@ export class ReefMapComponent implements AfterViewInit {
         });
         // TODO cleanup on LayerGroup remove
         this._listeningLayerGroups.add(layer);
+      }
+    });
+  }
+
+  private setMissingZindexes(allLayers: Layer[]) {
+    let highest_zIndex = 0;
+    allLayers.forEach(layer => {
+      const zIndex = layer.getZIndex();
+      if (zIndex === undefined) {
+        highest_zIndex++;
+        layer.setZIndex(highest_zIndex);
+      } else {
+        highest_zIndex = Math.max(highest_zIndex, zIndex);
       }
     });
   }
