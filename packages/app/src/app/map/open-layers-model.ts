@@ -2,12 +2,12 @@ import { effect, signal, WritableSignal } from '@angular/core';
 import type Layer from 'ol/layer/Layer';
 import { LayerProperties } from '../../types/layer.type';
 import TileLayer from 'ol/layer/WebGLTile';
-import { CriteriaLayerDef } from '@reefguide/types';
+import { LayerDef } from '@reefguide/types';
 
 type LayerStyleModes = 'default' | 'pixel-filtering';
 
 export type LayerControllerOptions = {
-  criteriaLayerDef?: CriteriaLayerDef;
+  criteriaLayerDef?: LayerDef;
 };
 
 // TODO lifecycle/dispose concerns, may need to cleanup listeners
