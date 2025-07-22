@@ -1,0 +1,101 @@
+<div class="landing-page-container">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1 class="hero-title">ReefGuide</h1>
+        <p class="hero-subtitle">
+          A comprehensive decision support platform for reef intervention planning and analysis
+        </p>
+        <p class="hero-description">
+          ReefGuide integrates multiple data layers and analytical capabilities to help reef managers and researchers
+          make informed decisions about reef restoration and adaptation interventions across the Great Barrier Reef.
+        </p>
+      </div>
+
+      <div class="hero-links">
+        <div class="links-header">Learn More</div>
+        <div class="links-grid">
+          <a href="https://open-aims.github.io/reefguide" class="hero-link" target="_blank" rel="noopener" title="ReefGuide Documentation">
+            <mat-icon>description</mat-icon>
+            <span>Docs</span>
+          </a>
+
+          <a href="https://github.com/open-AIMS/reefguide" class="hero-link" target="_blank" rel="noopener" title="ReefGuide Source Code">
+            <mat-icon>code</mat-icon>
+            <span>Source</span>
+          </a>
+
+          <a href="https://github.com/open-AIMS/ADRIA.jl" class="hero-link" target="_blank" rel="noopener" title="ADRIA.jl Source Code">
+            <mat-icon>analytics</mat-icon>
+            <span>ADRIA</span>
+          </a>
+
+          <a href="https://open-aims.github.io/ADRIA.jl/dev/usage/getting_started/" class="hero-link" target="_blank" rel="noopener" title="ADRIA Getting Started Guide">
+            <mat-icon>school</mat-icon>
+            <span>Guide</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Section -->
+  <section class="main-content-section">
+    <div class="content-container">
+      <!-- Left Column: Capabilities -->
+      <div class="capabilities-column">
+        <h2>Platform Capabilities</h2>
+        <div class="capabilities-stack">
+          <div class="capability-card">
+            <div class="capability-icon">
+              <mat-icon>filter_list</mat-icon>
+            </div>
+            <h3>Reef Criteria Assessment</h3>
+            <p>
+              Filter suitable reefs based on customizable ecological and bathymetric criteria
+              across the entire Great Barrier Reef scale.
+            </p>
+          </div>
+
+          <div class="capability-card">
+            <div class="capability-icon">
+              <mat-icon>location_on</mat-icon>
+            </div>
+            <h3>Site Placement Optimisation</h3>
+            <p>
+              Identify optimized deployment locations within filtered reefs using configurable
+              site dimensions and ecological factors.
+            </p>
+          </div>
+
+          <div class="capability-card">
+            <div class="capability-icon">
+              <mat-icon>analytics</mat-icon>
+            </div>
+            <h3>ADRIA Analysis</h3>
+            <p>
+              Perform scenario analysis at site scale (Moore Reef cluster) and reef scale (whole GBR)
+              using adaptive reef intervention algorithms.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Projects -->
+      <div class="projects-column">
+        <div class="projects-intro">
+          <h2>Your Projects</h2>
+          <p>
+            Projects in ReefGuide organize your analysis work. Each project contains your specific configurations,
+            results, and visualizations for either Site Assessment or ADRIA Analysis workflows.
+          </p>
+        </div>
+
+        <app-projects-list></app-projects-list>
+      </div>
+    </div>
+  </section>
+
+  <app-profile-button></app-profile-button>
+</div>

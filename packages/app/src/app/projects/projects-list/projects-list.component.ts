@@ -43,8 +43,7 @@ import { AuthService } from '../../auth/auth.service';
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatRadioModule,
-    MatSnackBarModule,
-    ProfileButtonComponent
+    MatSnackBarModule
   ],
   templateUrl: './projects-list.component.html',
   styleUrls: ['./projects-list.component.scss']
