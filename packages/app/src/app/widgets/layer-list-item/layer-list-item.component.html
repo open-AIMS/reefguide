@@ -4,8 +4,8 @@
   <a mat-icon-button [href]="props.downloadUrl" download matTooltip="Download layer file">
     <mat-icon>download</mat-icon>
   </a>
-} @else if (props.webUrl) {
-  <a mat-icon-button [href]="props.webUrl" target="_blank" matTooltip="Layer source information">
+} @else if (props.infoUrl) {
+  <a mat-icon-button [href]="props.infoUrl" target="_blank" matTooltip="Layer source information">
     <mat-icon>travel_explore</mat-icon>
   </a>
 }

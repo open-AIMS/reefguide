@@ -11,5 +11,5 @@ export type LayerProperties = {
   /**
    * Informational page about the layer.
    */
-  webUrl?: string;
+  infoUrl?: string;
 };

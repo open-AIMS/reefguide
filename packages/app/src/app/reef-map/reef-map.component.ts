@@ -68,7 +68,7 @@ export class ReefMapComponent implements AfterViewInit {
       source: new OSM(),
       properties: {
         title: 'Base map (OSM)',
-        webUrl: 'https://www.openstreetmap.org/copyright'
+        infoUrl: 'https://www.openstreetmap.org/copyright'
       } satisfies LayerProperties
     });
 

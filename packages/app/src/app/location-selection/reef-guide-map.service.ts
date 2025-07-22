@@ -51,8 +51,8 @@ import { GeoJSON } from 'ol/format';
 import { Fill, Stroke, Style } from 'ol/style';
 import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
 import Layer from 'ol/layer/Layer';
-import { createSourceFromArcGIS } from '../../util/arcgis/arcgis-openlayer-util';
-import { LayerController } from '../map/open-layers-model';
+import { createSourceFromCapabilitiesXml } from '../../util/arcgis/arcgis-openlayer-util';
+import { LayerController, LayerControllerOptions } from '../map/open-layers-model';
 import { LayerProperties } from '../../types/layer.type';
 
 /**
@@ -503,28 +503,36 @@ export class ReefGuideMapService {
     this.criteriaLayerGroup.set(layerGroup);
     this.map.getLayers().push(layerGroup);
 
-    for (let criteria in layers) {
-      const url = layers[criteria];
+    for (let layerDef of layers) {
+      const { id, title, url, urlType, infoUrl } = layerDef;
 
       const layer = new TileLayer({
         properties: {
-          id: `criteria_${criteria}`,
-          webUrl: url
+          id: `criteria_${id}`,
+          title,
+          infoUrl
         } satisfies LayerProperties,
-        visible: false
+        visible: false,
+        opacity: 0.7
       });
       layerGroup.getLayers().push(layer);
 
-      createSourceFromArcGIS(url).then(source => {
+      if (urlType !== 'WMTSCapabilitiesXml') {
+        throw new Error('Unsupported url type');
+      }
+
+      createSourceFromCapabilitiesXml(url).then(source => {
         // ignore OpenLayers types issue
         // @ts-expect-error
         layer.setSource(source);
 
         // set the layer title to the source's title
-        layer.set('title', source.get('title'));
+        // layer.set('title', source.get('title'));
       });
 
-      this.criteriaLayers[criteria] = this.getLayerController(layer);
+      this.criteriaLayers[id] = this.createLayerController(layer, {
+        criteriaLayerDef: layerDef
+      });
     }
   }
 
@@ -539,17 +547,26 @@ export class ReefGuideMapService {
    * Creates a new LayerController if one does not exist.
    * @param layer any OpenLayers layer that LayerController supports.
    */
-  public getLayerController(layer: Layer) {
+  public getLayerController(layer: Layer): LayerController {
     let controller = this.layerControllers.get(layer);
     if (controller) {
       return controller;
     } else {
-      runInInjectionContext(this.injector, () => {
-        controller = new LayerController(layer);
-      });
-      // TODO remove on layer remove/dispose
-      this.layerControllers.set(layer, controller!);
-      return controller!;
+      return this.createLayerController(layer);
     }
+  }
+
+  private createLayerController(layer: Layer, options?: LayerControllerOptions): LayerController {
+    runInInjectionContext(this.injector, () => {
+      const controller = new LayerController(layer, options);
+      // TODO remove on layer remove/dispose
+      this.layerControllers.set(layer, controller);
+    });
+
+    const controller = this.layerControllers.get(layer);
+    if (controller === undefined) {
+      throw new Error('LayerController not created!');
+    }
+    return controller;
   }
 }

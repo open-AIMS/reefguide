@@ -2,18 +2,11 @@ import WMTSCapabilities from 'ol/format/WMTSCapabilities';
 import WMTS, { optionsFromCapabilities } from 'ol/source/WMTS';
 
 /**
- * Create WMTS source based on the capabilities at the ArcGis map server.
- * Capabilities XML must exist: {url}/WMTS/1.0.0/WMTSCapabilities.xml
+ * Create WMTS source based from capabilities XML file url.
  * Sets the title property based on layer metadata
- * @param mapServerUrl
+ * @param capabilitiesUrl URL to WMTS Capabilities XML file
  */
-export async function createSourceFromArcGIS(mapServerUrl: string): Promise<WMTS> {
-  // 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer'
-  // Note: ArcGIS has an alternate WMTS URL
-  // https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml
-
-  const capabilitiesUrl = `${mapServerUrl}/WMTS/1.0.0/WMTSCapabilities.xml`;
-
+export async function createSourceFromCapabilitiesXml(capabilitiesUrl: string): Promise<WMTS> {
   // https://openlayers.org/en/latest/examples/wmts-layer-from-capabilities.html
   const response = await fetch(capabilitiesUrl);
   const text = await response.text();

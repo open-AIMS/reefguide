@@ -29,8 +29,16 @@
             </div>
             <p class="subtitle mat-body-small">{{ c.display_subtitle }}</p>
             <mat-slider [min]="c.min_val" [max]="c.max_val" discrete="true" [step]="c.step">
-              <input matSliderStartThumb [formControlName]="`${c.payload_property_prefix}min`" />
-              <input matSliderEndThumb [formControlName]="`${c.payload_property_prefix}max`" />
+              <input
+                matSliderStartThumb
+                [formControlName]="`${c.payload_property_prefix}min`"
+                (blur)="onBlurSlider(c.id)"
+              />
+              <input
+                matSliderEndThumb
+                [formControlName]="`${c.payload_property_prefix}max`"
+                (blur)="onBlurSlider(c.id)"
+              />
             </mat-slider>
           </div>
         }
