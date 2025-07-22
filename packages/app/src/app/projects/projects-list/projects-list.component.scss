@@ -1,18 +1,6 @@
 .projects-container {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.projects-header {
-  margin-bottom: 24px;
-
-  h1 {
-    margin: 0;
-    font-size: 2rem;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.87);
-  }
+  padding: 0;
+  width: 100%;
 }
 
 .search-actions-bar {
@@ -37,12 +25,50 @@
     max-width: none;
     width: 100%;
   }
+
+  ::ng-deep .mat-mdc-form-field {
+    .mat-mdc-text-field-wrapper {
+      background-color: #f8f9fa;
+      border-radius: 12px;
+
+      .mat-mdc-form-field-outline {
+        color: transparent;
+      }
+
+      &:hover .mat-mdc-form-field-outline {
+        color: rgba(102, 126, 234, 0.3);
+      }
+    }
+
+    &.mat-focused .mat-mdc-text-field-wrapper .mat-mdc-form-field-outline {
+      color: #667eea;
+    }
+  }
 }
 
 .create-button {
-  height: 56px; // Match the search field height
+  height: 56px;
   white-space: nowrap;
   flex-shrink: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  transition: all 0.2s ease;
+  border: none;
+  color: white !important;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  ::ng-deep .mdc-button__label {
+    color: white !important;
+  }
+
+  ::ng-deep mat-icon {
+    color: white !important;
+  }
 
   mat-icon {
     margin-right: 8px;
@@ -56,15 +82,27 @@
 
 .loading-container {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 64px 16px;
-  text-align: center;
+  min-height: 300px;
 
-  p {
-    margin-top: 16px;
-    color: rgba(0, 0, 0, 0.6);
+  .loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+    ::ng-deep mat-spinner circle {
+      stroke: #667eea;
+    }
+
+    p {
+      margin-top: 16px;
+      color: #666;
+      font-size: 1rem;
+      font-weight: 400;
+    }
   }
 }
 
@@ -74,40 +112,81 @@
 
 .empty-state {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 64px 16px;
-  text-align: center;
+  min-height: 400px;
 
-  .empty-icon {
-    font-size: 64px;
-    width: 64px;
-    height: 64px;
-    color: rgba(0, 0, 0, 0.3);
-    margin-bottom: 16px;
-  }
-
-  h3 {
-    margin: 0 0 8px 0;
-    color: rgba(0, 0, 0, 0.87);
-  }
-
-  p {
-    margin: 0 0 24px 0;
-    color: rgba(0, 0, 0, 0.6);
+  .empty-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
     max-width: 400px;
-  }
 
-  button mat-icon {
-    margin-right: 8px;
+    .empty-icon-wrapper {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+
+      .empty-icon {
+        font-size: 40px;
+        width: 40px;
+        height: 40px;
+        color: #667eea;
+      }
+    }
+
+    h3 {
+      margin: 0 0 12px 0;
+      color: #333;
+      font-weight: 400;
+      font-size: 1.5rem;
+    }
+
+    p {
+      margin: 0 0 32px 0;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .empty-action-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white !important;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      transition: all 0.2s ease;
+      border: none;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      ::ng-deep .mdc-button__label {
+        color: white !important;
+      }
+
+      ::ng-deep mat-icon {
+        color: white !important;
+      }
+
+      mat-icon {
+        margin-right: 8px;
+      }
+    }
   }
 }
 
 .projects-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
   margin-bottom: 32px;
 
   @media (max-width: 768px) {
@@ -117,69 +196,107 @@
 }
 
 .project-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  border-radius: 16px;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    border-color: rgba(102, 126, 234, 0.3);
   }
 
   &:focus {
-    outline: 2px solid #1976d2;
+    outline: 2px solid #667eea;
     outline-offset: 2px;
   }
 
-  .project-avatar {
+  .project-card-header {
+    padding: 24px 24px 0;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: rgba(0, 0, 0, 0.04);
+    align-items: flex-start;
+    gap: 16px;
 
-    mat-icon {
-      font-size: 24px;
-      width: 24px;
-      height: 24px;
-    }
-  }
+    .project-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
 
-  mat-card-header {
-    margin-bottom: 16px;
+      &[data-type="SITE_SELECTION"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
 
-    mat-card-title {
-      font-size: 1.25rem;
-      font-weight: 500;
-      line-height: 1.2;
-      margin-bottom: 8px;
-    }
+      &[data-type="ADRIA_ANALYSIS"] {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      }
 
-    mat-card-subtitle {
-      margin-bottom: 0;
-
-      mat-chip {
-        font-size: 0.75rem;
+      mat-icon {
+        color: white;
+        font-size: 24px;
+        width: 24px;
         height: 24px;
-        border-radius: 12px;
+      }
+    }
+
+    .project-header-content {
+      flex: 1;
+      min-width: 0;
+
+      .project-title {
+        margin: 0 0 8px 0;
+        color: #333;
+        font-weight: 500;
+        font-size: 1.25rem;
+        line-height: 1.3;
+        word-wrap: break-word;
+      }
+
+      .project-type-chip {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: 1px solid;
+
+        &[data-type="SITE_SELECTION"] {
+          background: rgba(102, 126, 234, 0.1);
+          color: #667eea;
+          border-color: rgba(102, 126, 234, 0.2);
+        }
+
+        &[data-type="ADRIA_ANALYSIS"] {
+          background: rgba(240, 147, 251, 0.1);
+          color: #f5576c;
+          border-color: rgba(240, 147, 251, 0.2);
+        }
       }
     }
   }
 
-  mat-card-content {
-    padding-top: 0;
+  .project-card-content {
+    padding: 20px 24px;
+    flex: 1;
 
     .project-description {
-      margin: 0 0 16px 0;
-      color: rgba(0, 0, 0, 0.6);
-      line-height: 1.5;
+      margin: 0 0 20px 0;
+      color: #666;
+      line-height: 1.6;
+      font-size: 0.95rem;
       display: -webkit-box;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      min-height: 4.5em; // 3 lines worth of height
+      min-height: 4.8em;
     }
 
     .project-meta {
@@ -191,26 +308,59 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        color: rgba(0, 0, 0, 0.5);
+        color: #888;
         font-size: 0.875rem;
 
         mat-icon {
           font-size: 16px;
           width: 16px;
           height: 16px;
+          color: #999;
         }
       }
     }
   }
 
-  mat-card-actions {
-    padding-top: 16px;
-    margin-top: auto;
+  .project-card-actions {
+    padding: 0 24px 24px;
+
+    .open-button {
+      background: transparent;
+      color: #667eea;
+      border: 1px solid rgba(102, 126, 234, 0.3);
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(102, 126, 234, 0.1);
+        border-color: #667eea;
+      }
+
+      mat-icon {
+        margin-left: 4px;
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+    }
   }
 }
 
-mat-paginator {
+.projects-paginator {
   margin-top: 32px;
   border: none;
   background: transparent;
+
+  ::ng-deep {
+    .mat-mdc-paginator-navigation-next,
+    .mat-mdc-paginator-navigation-previous,
+    .mat-mdc-paginator-navigation-first,
+    .mat-mdc-paginator-navigation-last {
+      .mat-mdc-icon-button {
+        --mdc-icon-button-state-layer-size: 40px;
+        --mdc-icon-button-icon-size: 20px;
+      }
+    }
+  }
 }

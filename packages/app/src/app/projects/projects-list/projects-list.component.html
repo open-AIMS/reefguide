@@ -1,9 +1,4 @@
 <div class="projects-container">
-  <!-- Header -->
-  <div class="projects-header">
-    <h1>My Projects</h1>
-  </div>
-
   <!-- Search and Actions Bar -->
   <div class="search-actions-bar">
     <mat-form-field appearance="outline" class="search-field">
@@ -25,30 +20,37 @@
 
   <!-- Loading spinner -->
   <div *ngIf="isLoading$ | async" class="loading-container">
-    <mat-spinner diameter="50"></mat-spinner>
-    <p>Loading projects...</p>
+    <div class="loading-content">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Loading projects...</p>
+    </div>
   </div>
 
   <!-- Projects list -->
   <div *ngIf="!(isLoading$ | async)" class="projects-content">
     <div *ngIf="(paginatedProjects$ | async)?.length === 0" class="empty-state">
-      <mat-icon class="empty-icon">folder_open</mat-icon>
-      <h3>No projects found</h3>
-      <p *ngIf="!(searchQuery$ | async)">Get started by creating your first project</p>
-      <p *ngIf="searchQuery$ | async">Try adjusting your search criteria</p>
-      <button
-        *ngIf="!(searchQuery$ | async)"
-        mat-raised-button
-        color="primary"
-        (click)="openCreateDialog()"
-      >
-        <mat-icon>add</mat-icon>
-        Create Your First Project
-      </button>
+      <div class="empty-content">
+        <div class="empty-icon-wrapper">
+          <mat-icon class="empty-icon">folder_open</mat-icon>
+        </div>
+        <h3>No projects found</h3>
+        <p *ngIf="!(searchQuery$ | async)">Get started by creating your first project</p>
+        <p *ngIf="searchQuery$ | async">Try adjusting your search criteria</p>
+        <button
+          *ngIf="!(searchQuery$ | async)"
+          mat-raised-button
+          color="primary"
+          (click)="openCreateDialog()"
+          class="empty-action-button"
+        >
+          <mat-icon>add</mat-icon>
+          Create Your First Project
+        </button>
+      </div>
     </div>
 
     <div *ngIf="(paginatedProjects$ | async)?.length! > 0" class="projects-grid">
-      <mat-card
+      <div
         *ngFor="let project of paginatedProjects$ | async; trackBy: trackByProjectId"
         class="project-card"
         (click)="onProjectClick(project)"
@@ -56,24 +58,22 @@
         role="button"
         [attr.aria-label]="'Open project ' + project.name"
       >
-        <mat-card-header>
-          <div mat-card-avatar class="project-avatar">
-            <!-- Placeholder for project type icon -->
-            <mat-icon [color]="getProjectTypeColor(project.type)">
+        <div class="project-card-header">
+          <div class="project-avatar" [attr.data-type]="project.type">
+            <mat-icon>
               {{ project.type === 'SITE_SELECTION' ? 'location_on' : 'analytics' }}
             </mat-icon>
           </div>
 
-          <mat-card-title>{{ project.name }}</mat-card-title>
-
-          <mat-card-subtitle>
-            <mat-chip [color]="getProjectTypeColor(project.type)">
+          <div class="project-header-content">
+            <h3 class="project-title">{{ project.name }}</h3>
+            <div class="project-type-chip" [attr.data-type]="project.type">
               {{ getProjectTypeDisplay(project.type) }}
-            </mat-chip>
-          </mat-card-subtitle>
-        </mat-card-header>
+            </div>
+          </div>
+        </div>
 
-        <mat-card-content>
+        <div class="project-card-content">
           <p class="project-description">
             {{ project.description || 'No description provided' }}
           </p>
@@ -81,25 +81,27 @@
           <div class="project-meta">
             <div class="meta-item">
               <mat-icon>schedule</mat-icon>
-              <span>Created {{ project.created_at | date: 'short' }}</span>
+              <span>{{ project.created_at | date: 'MMM d, y' }}</span>
             </div>
             <div class="meta-item" *ngIf="project.updated_at !== project.created_at">
               <mat-icon>edit</mat-icon>
-              <span>Updated {{ project.updated_at | date: 'short' }}</span>
+              <span>{{ project.updated_at | date: 'MMM d, y' }}</span>
             </div>
           </div>
-        </mat-card-content>
+        </div>
 
-        <mat-card-actions align="end">
+        <div class="project-card-actions">
           <button
             mat-button
             color="primary"
             (click)="onProjectClick(project); $event.stopPropagation()"
+            class="open-button"
           >
+            <mat-icon>arrow_forward</mat-icon>
             Open
           </button>
-        </mat-card-actions>
-      </mat-card>
+        </div>
+      </div>
     </div>
 
     <!-- Pagination -->
@@ -112,6 +114,7 @@
       [showFirstLastButtons]="true"
       (page)="onPageChange($event)"
       aria-label="Select page"
+      class="projects-paginator"
     >
     </mat-paginator>
   </div>

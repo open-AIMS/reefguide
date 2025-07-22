@@ -754,7 +754,7 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
 
   // Navigate back to projects list
   navigateToProjects(): void {
-    this.router.navigate(['/projects']);
+    this.router.navigate(['/']);
   }
 
   // Restore jobs for all workspaces on initialization
