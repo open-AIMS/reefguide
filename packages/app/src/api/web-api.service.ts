@@ -12,6 +12,7 @@ import {
   GetProjectResponse,
   GetProjectsResponse,
   JobDetailsResponse,
+  LayerDef,
   ListJobsQuery,
   ListJobsResponse,
   ListMyJobsQuery,
@@ -234,6 +235,39 @@ export class WebApiService {
         url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
         urlType: 'WMTSCapabilitiesXml'
       }
+    ];
+  }
+
+  /**
+   * Get informational layers
+   */
+  getInfoLayers(): Array<LayerDef> {
+    return [
+      {
+        id: 'canonical_reefs',
+        title: 'RRAP Canonical Reefs',
+        url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/RRAP_Canonical_Reefs/FeatureServer',
+        urlType: 'ArcGisFeatureServer'
+      },
+      {
+        id: 'ecorrap_site_locations',
+        title: 'EcoRRAP Site Locations',
+        url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
+        urlType: 'ArcGisFeatureServer'
+      }
+      // FIXME ImageServer not working
+      // {
+      //   id: 'ccgeo',
+      //   title: 'CC Geo',
+      //   url: 'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgCairns_Cooktown_hybrid_geomorphichyb/ImageServer',
+      //   urlType: 'TileArcGISRest'
+      // },
+      // {
+      //   id: 'twbenth',
+      //   title: 'TSV Whit Benthic',
+      //   url: 'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgTownsville_Whitsunday_hybrid_benthichyb/ImageServer',
+      //   urlType: 'TileArcGISRest'
+      // }
     ];
   }
 

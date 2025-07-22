@@ -2,7 +2,7 @@
  * Definition of a map layer that visualizes a criteria.
  * Should be greyscale, color and styling is done by the app.
  */
-export type CriteriaLayerDef = {
+export type LayerDef = {
   /**
    * Criteria ID corresponding to CriteriaRangeOutput.id
    */
@@ -12,7 +12,7 @@ export type CriteriaLayerDef = {
    */
   title: string;
   /**
-   * May layer URL
+   * layer URL
    */
   url: string;
 
@@ -20,8 +20,9 @@ export type CriteriaLayerDef = {
    * the kind of url
    *
    * WMTSCapabilitiesXml - URL of WMTSCapabilities.xml file
+   * ArcGisFeatureServer - .../FeatureServer URL
    */
-  urlType: 'WMTSCapabilitiesXml';
+  urlType: 'WMTSCapabilitiesXml' | 'ArcGisImageServer' | 'ArcGisMapServer' | 'ArcGisFeatureServer';
 
   /**
    * Web page where user can learn about the layer.
