@@ -1,0 +1,90 @@
+<!-- src/app/model-workflow/map-results-view/map-results-view.component.html -->
+<div class="map-results-container" *ngIf="job()">
+  <!-- Header with map controls -->
+  <div class="map-header">
+    <div class="header-content">
+      <h2>Map View</h2>
+      <p class="map-subtitle" *ngIf="hasJobResults()">
+        Spatial visualization of model results
+      </p>
+      <p class="map-subtitle" *ngIf="!hasJobResults()">
+        Complete a model run to view spatial results
+      </p>
+    </div>
+
+    <div class="map-controls" *ngIf="hasJobResults() && mapInitialized()">
+      <mat-form-field appearance="outline" class="region-selector">
+        <mat-label>Map Region</mat-label>
+        <mat-select
+          [value]="selectedRegion()"
+          (selectionChange)="onRegionChange($event.value)"
+        >
+          <mat-option *ngFor="let region of mapRegions" [value]="region.value">
+            {{ region.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button
+        mat-icon-button
+        matTooltip="Reset map view"
+        (click)="resetMapView()"
+        class="reset-view-button"
+      >
+        <mat-icon>home</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Map container -->
+  <div class="map-container-wrapper" *ngIf="hasJobResults()">
+    <div class="map-container" #mapContainer [class.hidden]="isLoading() || hasError()">
+      <!-- OpenLayers map will be mounted here -->
+    </div>
+
+    <!-- Loading state overlay -->
+    <div *ngIf="isLoading()" class="map-loading">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Initializing map...</p>
+    </div>
+
+    <!-- Error state overlay -->
+    <div *ngIf="hasError()" class="map-error">
+      <mat-icon>error_outline</mat-icon>
+      <p>Failed to load map</p>
+      <p class="error-details">{{ errorMessage() }}</p>
+      <button mat-stroked-button color="primary" (click)="retryMapInitialization()">
+        Retry
+      </button>
+    </div>
+  </div>
+
+  <!-- No results state -->
+  <div *ngIf="!hasJobResults()" class="no-results-state">
+    <mat-card class="empty-state-card">
+      <mat-card-content>
+        <div class="empty-state-content">
+          <mat-icon class="empty-state-icon">map</mat-icon>
+          <h3>No Spatial Results Available</h3>
+          <p>Complete a model run to view spatial visualizations of your results.</p>
+          <p *ngIf="job()">
+            Current job status: <strong>{{ job()?.status }}</strong>
+          </p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
+
+<!-- No job state -->
+<div *ngIf="!job()" class="no-job-state">
+  <mat-card class="empty-state-card">
+    <mat-card-content>
+      <div class="empty-state-content">
+        <mat-icon class="empty-state-icon">pending</mat-icon>
+        <h3>No Results Available</h3>
+        <p>Complete a model run to view spatial results.</p>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

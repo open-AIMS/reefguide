@@ -168,17 +168,51 @@
           </app-job-status>
         </div>
 
-        <!-- Viewing State: Results -->
+        <!-- Viewing State: Results with Tabs -->
         <div
           class="results-container"
           *ngIf="!forceChartRemount && getWorkspaceService(workspace.id)?.isViewing()"
         >
-          <app-results-view
-            [job]="getWorkspaceService(workspace.id)?.getJob() ?? undefined"
-            [workspaceId]="workspace.id"
-            [initialActiveCharts]="getActiveChartsForWorkspace(workspace.id)"
-            (chartsChanged)="onChartsChanged(workspace.id, $event)"
-          />
+          <!-- Results Tab Navigation -->
+          <mat-tab-group
+            class="results-tabs"
+            [selectedIndex]="getSelectedResultsTab(workspace.id)"
+            (selectedIndexChange)="onResultsTabChange(workspace.id, $event)"
+            animationDuration="200ms"
+          >
+            <!-- Charts Tab -->
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon class="tab-icon">bar_chart</mat-icon>
+                <span>Charts</span>
+              </ng-template>
+              <div class="tab-content">
+                <app-results-view
+                  [job]="getWorkspaceService(workspace.id)?.getJob() ?? undefined"
+                  [workspaceId]="workspace.id"
+                  [initialActiveCharts]="getActiveChartsForWorkspace(workspace.id)"
+                  (chartsChanged)="onChartsChanged(workspace.id, $event)"
+                />
+              </div>
+            </mat-tab>
+
+            <!-- Map Tab -->
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon class="tab-icon">map</mat-icon>
+                <span>Map</span>
+              </ng-template>
+              <div class="tab-content">
+                <app-map-results-view
+                  [job]="getWorkspaceService(workspace.id)?.getJob() ?? undefined"
+                  [workspaceId]="workspace.id"
+                  [initialMapConfig]="getMapConfigForWorkspace(workspace.id)"
+                  (mapInteraction)="onMapInteraction(workspace.id, $event)"
+                  (mapConfigChanged)="onMapConfigChanged(workspace.id, $event)"
+                />
+              </div>
+            </mat-tab>
+          </mat-tab-group>
         </div>
       </div>
     </div>

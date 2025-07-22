@@ -1,620 +1,467 @@
-/* src/app/model-workflow/model-workflow.component.scss */
+// src/app/model-workflow/model-workflow.component.scss
 
-.workflow-container {
-  height: 100vh;
+:host {
   display: flex;
   flex-direction: column;
-  background-color: #f5f5f5;
+  height: 100vh;
   overflow: hidden;
 }
+
+.workflow-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--mat-app-background);
+}
+
+// ==================
+// WORKSPACE HEADER STYLES
+// ==================
 
 .workspace-header {
   display: flex;
   align-items: center;
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
-  padding-right: 16px;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--mat-divider-color);
+  background-color: var(--mat-app-background);
   flex-shrink: 0;
-}
+  gap: 1rem;
+  position: relative;
+  z-index: 10;
 
-.workspace-tabs {
-  flex: 0 0 auto; // Don't expand to fill width
-  max-width: calc(100% - 60px); // Leave space for the new workspace button
-
-  // Override Material tabs styling
-  :deep(.mat-mdc-tab-group) {
-    --mdc-secondary-navigation-tab-container-height: 56px; // Increased from 48px
-    width: auto; // Let tabs determine their own width
+  .back-button {
+    color: var(--mat-primary-text);
+    margin-right: 0.5rem;
   }
 
-  :deep(.mat-mdc-tab-header) {
-    border-bottom: none;
-    width: auto;
-  }
+  .workspace-tabs {
+    flex: 1;
 
-  :deep(.mat-mdc-tab-header-pagination) {
-    display: none; // Hide pagination arrows for cleaner look
-  }
+    ::ng-deep .mat-mdc-tab-header {
+      border-bottom: none;
 
-  :deep(.mat-mdc-tab) {
-    min-width: 180px; // Increased from 160px
-    max-width: 280px; // Increased from 240px
-    width: auto;
-    flex: 0 1 220px; // Increased preferred width from 200px
-    padding: 0 12px; // Increased from 8px
-    border-right: 1px solid rgba(0, 0, 0, 0.12); // Add border between tabs
-    position: relative;
+      .mat-mdc-tab-label-container {
+        .mat-mdc-tab-list {
+          .mat-mdc-tab {
+            min-width: 180px;
+            max-width: 250px;
 
-    &:last-child {
-      border-right: none; // Remove border from last tab
-    }
+            .tab-label {
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+              width: 100%;
+              min-width: 0; // Allow text truncation
 
-    // Add subtle background on hover
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.04);
-    }
+              .context-menu-button {
+                width: 24px;
+                height: 24px;
+                flex-shrink: 0;
 
-    // Active tab styling
-    &.mat-mdc-tab-active {
-      background-color: rgba(25, 118, 210, 0.04);
-    }
-  }
+                .mat-icon {
+                  font-size: 16px;
+                  width: 16px;
+                  height: 16px;
+                }
+              }
 
-  :deep(.mat-mdc-tab .mdc-tab__content) {
-    padding: 0;
-  }
+              .tab-name {
+                flex: 1;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                white-space: nowrap;
+                min-width: 0;
+              }
 
-  :deep(.mat-mdc-tab .mdc-tab__text-label) {
-    padding: 0;
-    width: 100%;
-  }
+              .close-button {
+                width: 24px;
+                height: 24px;
+                flex-shrink: 0;
+                opacity: 0.7;
 
-  // When there are multiple tabs, make them shrink proportionally like Chrome
-  &:has(:deep(.mat-mdc-tab:nth-child(4))) :deep(.mat-mdc-tab) {
-    flex: 1 1 200px; // Increased from 180px
-    max-width: 240px; // Increased from 200px
-  }
+                &:hover:not(:disabled) {
+                  opacity: 1;
+                  background-color: rgba(0, 0, 0, 0.04);
+                }
 
-  &:has(:deep(.mat-mdc-tab:nth-child(6))) :deep(.mat-mdc-tab) {
-    flex: 1 1 180px; // Increased from 160px
-    max-width: 220px; // Increased from 180px
-  }
+                &:disabled {
+                  opacity: 0.3;
+                  cursor: not-allowed;
+                }
 
-  &:has(:deep(.mat-mdc-tab:nth-child(8))) :deep(.mat-mdc-tab) {
-    flex: 1 1 160px; // Increased from 140px
-    max-width: 200px; // Increased from 160px
-  }
-
-  // Hide the tab content since we're managing it separately
-  :deep(.mat-mdc-tab-body-wrapper) {
-    display: none;
-  }
-}
-
-.tab-label {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  height: 40px; // Increased from 32px
-  padding: 0 4px; // Increased from 0 8px 0 4px
-  gap: 30px; // Increased from 8px
-}
-
-.context-menu-button {
-  width: 20px !important; // Increased from 18px
-  height: 20px !important; // Increased from 18px
-  min-width: 20px !important;
-  max-width: 20px !important;
-  flex-shrink: 0;
-  border-radius: 50%;
-  padding: 0 !important;
-  margin: 0;
-  margin-left: 0; // Align to left edge
-  order: 1; // Show first
-
-  // Override all Material button styling
-  :deep(.mat-mdc-button-base) {
-    width: 20px !important;
-    height: 20px !important;
-    padding: 0 !important;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  :deep(.mat-mdc-button-touch-target) {
-    display: none !important;
-  }
-
-  :deep(.mat-mdc-button-ripple),
-  :deep(.mat-mdc-button-persistent-ripple) {
-    border-radius: 50%;
-  }
-
-  :deep(.mat-icon) {
-    font-size: 14px !important; // Increased from 12px
-    width: 14px !important; // Increased from 12px
-    height: 14px !important; // Increased from 12px
-    line-height: 14px !important;
-    color: rgba(0, 0, 0, 0.6);
-  }
-
-  &:hover:not(:disabled) {
-    background-color: rgba(0, 0, 0, 0.08);
-
-    :deep(.mat-icon) {
-      color: rgba(0, 0, 0, 0.87);
+                .mat-icon {
+                  font-size: 16px;
+                  width: 16px;
+                  height: 16px;
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+  .new-workspace-button {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
 
-    &:hover {
-      background-color: transparent;
+    .mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
     }
   }
 }
 
-.tab-name {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 14px; // Increased from 13px
-  font-weight: 500;
-  min-width: 0; // Important for text truncation
-  order: 2; // Show second
-}
-
-.close-button {
-  width: 22px !important; // Increased from 20px
-  height: 22px !important; // Increased from 20px
-  min-width: 22px !important;
-  max-width: 22px !important;
-  flex-shrink: 0;
-  border-radius: 50%;
-  padding: 0 !important;
-  margin: 0;
-  margin-left: auto; // Push to right edge
-  order: 3; // Show last
-
-  // Override all Material button styling
-  :deep(.mat-mdc-button-base) {
-    width: 22px !important;
-    height: 22px !important;
-    padding: 0 !important;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  :deep(.mat-mdc-button-touch-target) {
-    display: none !important;
-  }
-
-  :deep(.mat-mdc-button-ripple),
-  :deep(.mat-mdc-button-persistent-ripple) {
-    border-radius: 50%;
-  }
-
-  :deep(.mat-icon) {
-    font-size: 14px !important; // Increased from 12px
-    width: 14px !important; // Increased from 12px
-    height: 14px !important; // Increased from 12px
-    line-height: 14px !important;
-  }
-
-  &:hover:not(:disabled) {
-    background-color: rgba(0, 0, 0, 0.08);
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-
-    &:hover {
-      background-color: transparent;
-    }
-  }
-}
-
-.new-workspace-button {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-
-  :deep(.mat-icon) {
-    font-size: 20px;
-  }
-}
+// ==================
+// WORKSPACE CONTENT STYLES
+// ==================
 
 .workspace-content {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  flex: 1;
   overflow: hidden;
 }
 
 .workflow-header {
-  padding: 16px 24px;
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--mat-divider-color);
+  background-color: var(--mat-app-background);
   flex-shrink: 0;
-
-  h1 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 500;
-    color: #1976d2;
-  }
 
   .header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
-  }
+    gap: 1rem;
 
-  .panel-toggle-button {
-    color: rgba(0, 0, 0, 0.6);
+    .panel-toggle-button {
+      color: var(--mat-primary-text);
+    }
 
-    &:hover {
-      color: #1976d2;
-      background-color: rgba(25, 118, 210, 0.04);
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: var(--mat-primary-text);
     }
   }
 
   .new-run-button {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
   }
 }
 
+// ==================
+// MAIN CONTENT GRID
+// ==================
+
 .workflow-content-grid {
-  flex: 1;
   display: grid;
   grid-template-columns: var(--left-panel-width, 600px) auto 1fr;
+  flex: 1;
   overflow: hidden;
-  position: relative;
+  transition: grid-template-columns 0.3s ease;
 
   &.panel-collapsed {
     grid-template-columns: 0 0 1fr;
   }
 }
 
+// ==================
+// LEFT PANEL (PARAMETERS)
+// ==================
+
 .left-panel {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: white;
-  border-right: 1px solid #e0e0e0;
-  transition:
-    opacity 0.2s ease,
-    visibility 0.2s ease;
+  background-color: var(--mat-app-background);
+  border-right: 1px solid var(--mat-divider-color);
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 
   &.collapsed {
     opacity: 0;
-    visibility: hidden;
-    width: 0;
+    transform: translateX(-100%);
     overflow: hidden;
-  }
-
-  app-parameter-config {
-    height: 100%;
-    display: block;
   }
 }
 
+// ==================
+// PANEL DIVIDER
+// ==================
+
 .panel-divider {
-  width: 16px;
-  background: #f5f5f5;
+  width: 4px;
+  background-color: var(--mat-divider-color);
   cursor: col-resize;
   position: relative;
-  border-right: 1px solid #e0e0e0;
-  transition:
-    opacity 0.2s ease,
-    visibility 0.2s ease;
   user-select: none;
-
-  &:hover {
-    background: #e3f2fd;
-
-    .divider-handle {
-      opacity: 1;
-    }
-  }
-
-  &:active {
-    background: #bbdefb;
-  }
+  transition: opacity 0.3s ease;
 
   &.hidden {
     opacity: 0;
-    visibility: hidden;
-    width: 0;
-    cursor: default;
+    pointer-events: none;
   }
 
-  &.dragging {
-    background: #bbdefb;
+  &:hover {
+    background-color: var(--mat-primary-color);
+  }
 
-    .divider-handle {
-      opacity: 1;
+  .divider-handle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--mat-primary-color);
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+
+    .divider-line {
+      width: 2px;
+      height: 20px;
+      background-color: white;
+      border-radius: 1px;
     }
   }
-}
 
-.divider-handle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 4px;
-  height: 40px;
-  opacity: 0.3;
-  transition: opacity 0.2s ease;
-  pointer-events: none;
-}
-
-.divider-line {
-  width: 100%;
-  height: 100%;
-  background: #666;
-  border-radius: 2px;
-  position: relative;
-
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: #666;
-    border-radius: 50%;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-
-  &::before {
-    top: -6px;
-  }
-
-  &::after {
-    bottom: -6px;
+  &:hover .divider-handle {
+    opacity: 1;
   }
 }
+
+// Global dragging state
+body.dragging-active {
+  cursor: col-resize !important;
+  user-select: none !important;
+
+  * {
+    cursor: col-resize !important;
+    user-select: none !important;
+  }
+}
+
+// ==================
+// RIGHT PANEL (RESULTS)
+// ==================
 
 .right-panel {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 16px;
+  background-color: var(--mat-app-background);
 }
 
-// Instructions Card Styling
+// ==================
+// INSTRUCTIONS CARD
+// ==================
+
 .instructions-card {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.instructions-content {
+  margin: 2rem auto;
+  max-width: 500px;
   text-align: center;
-  padding: 64px 32px;
 
-  .instructions-icon {
-    font-size: 72px;
-    height: 72px;
-    width: 72px;
-    color: #1976d2;
-    margin-bottom: 24px;
-  }
-
-  p {
-    font-size: 18px;
-    color: rgba(0, 0, 0, 0.6);
-    margin: 0;
-    line-height: 1.5;
-  }
-}
-
-// Job Status Container
-.job-status-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-// Results Container
-.results-container {
-  height: 100%;
-  overflow: hidden;
-
-  app-results-view {
-    height: 100%;
-    display: block;
-  }
-
-  .workspace-indicator {
-    font-size: 12px;
-    opacity: 0.7;
-    font-weight: normal;
-  }
-}
-
-// Global styles for dragging
-.dragging-active {
-  user-select: none;
-
-  * {
-    pointer-events: none;
-  }
-
-  .panel-divider {
-    pointer-events: auto;
-  }
-}
-
-// Responsive Design
-@media (max-width: 1200px) {
-  .workflow-content-grid {
-    --left-panel-width: 350px;
-  }
-}
-
-@media (max-width: 968px) {
-  .workflow-content-grid {
+  .instructions-content {
+    padding: 2rem;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    align-items: center;
+    gap: 1rem;
 
-    &.panel-collapsed {
-      display: flex;
+    .instructions-icon {
+      font-size: 4rem;
+      width: 4rem;
+      height: 4rem;
+      color: var(--mat-primary-color);
+    }
+
+    p {
+      margin: 0;
+      color: var(--mat-secondary-text);
+      line-height: 1.6;
+    }
+  }
+}
+
+// ==================
+// JOB STATUS CONTAINER
+// ==================
+
+.job-status-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+// ==================
+// RESULTS CONTAINER WITH TABS
+// ==================
+
+.results-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  .results-tabs {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    ::ng-deep .mat-mdc-tab-header {
+      border-bottom: 1px solid var(--mat-divider-color);
+      background-color: var(--mat-app-background);
+      flex-shrink: 0;
+
+      .mat-mdc-tab-label-container {
+        .mat-mdc-tab-list {
+          .mat-mdc-tab {
+            min-width: 120px;
+
+            .tab-icon {
+              margin-right: 0.5rem;
+              font-size: 18px;
+              width: 18px;
+              height: 18px;
+            }
+          }
+        }
+      }
+    }
+
+    ::ng-deep .mat-mdc-tab-body-wrapper {
+      flex: 1;
+      overflow: hidden;
+
+      .mat-mdc-tab-body {
+        height: 100%;
+
+        .mat-mdc-tab-body-content {
+          height: 100%;
+          overflow: hidden;
+
+          .tab-content {
+            height: 100%;
+            overflow: hidden;
+          }
+        }
+      }
+    }
+  }
+}
+
+// ==================
+// RESPONSIVE DESIGN
+// ==================
+
+@media (max-width: 1024px) {
+  .workflow-content-grid {
+    --left-panel-width: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .workspace-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+    padding: 0.5rem;
+
+    .workspace-tabs {
+      order: 2;
+
+      ::ng-deep .mat-mdc-tab-header {
+        .mat-mdc-tab-label-container {
+          .mat-mdc-tab-list {
+            .mat-mdc-tab {
+              min-width: 120px;
+              max-width: 180px;
+
+              .tab-label {
+                .tab-name {
+                  font-size: 0.875rem;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .new-workspace-button {
+      order: 1;
+      align-self: flex-end;
+      width: 36px;
+      height: 36px;
     }
   }
 
-  .left-panel {
-    max-height: 50vh;
-    overflow-y: auto;
-    border-right: none;
-    border-bottom: 1px solid #e0e0e0;
+  .workflow-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
 
-    &.collapsed {
-      max-height: 0;
-      opacity: 0;
-      visibility: hidden;
+    .header-left {
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-start;
+
+      h1 {
+        font-size: 1.25rem;
+      }
+    }
+  }
+
+  .workflow-content-grid {
+    --left-panel-width: 100%;
+    grid-template-columns: 100% 0 0;
+
+    &:not(.panel-collapsed) {
+      .right-panel {
+        display: none;
+      }
+    }
+
+    &.panel-collapsed {
+      grid-template-columns: 0 0 1fr;
+
+      .left-panel {
+        display: none;
+      }
     }
   }
 
   .panel-divider {
     display: none;
   }
-
-  .right-panel {
-    flex: 1;
-  }
 }
 
-@media (max-width: 768px) {
-  .workspace-header {
-    padding-right: 8px;
-  }
+// ==================
+// DARK THEME SUPPORT
+// ==================
 
-  .new-workspace-button {
-    width: 36px;
-    height: 36px;
-
-    :deep(.mat-icon) {
-      font-size: 18px;
-    }
-  }
-
-  .workspace-tabs {
-    max-width: calc(100% - 50px); // Adjust for smaller new workspace button
-
-    :deep(.mat-mdc-tab) {
-      min-width: 120px;
-      max-width: 160px;
-      flex: 0 1 140px;
+@media (prefers-color-scheme: dark) {
+  .panel-divider {
+    &:hover {
+      background-color: var(--mat-primary-color);
     }
 
-    // Adjust shrinking behavior for mobile
-    &:has(:deep(.mat-mdc-tab:nth-child(3))) :deep(.mat-mdc-tab) {
-      flex: 1 1 100px;
-      max-width: 120px;
-    }
-
-    &:has(:deep(.mat-mdc-tab:nth-child(4))) :deep(.mat-mdc-tab) {
-      flex: 1 1 90px;
-      max-width: 110px;
-    }
-  }
-
-  .tab-label {
-    gap: 6px; // Further reduced gap for mobile
-    padding: 0 6px 0 2px; // Adjusted mobile padding for context menu
-  }
-
-  .tab-name {
-    font-size: 13px; // Slightly smaller on mobile but still larger than before
-  }
-
-  .context-menu-button {
-    width: 16px !important; // Smaller on mobile
-    height: 16px !important;
-    min-width: 16px !important;
-    max-width: 16px !important;
-
-    :deep(.mat-mdc-button-base) {
-      width: 16px !important;
-      height: 16px !important;
-    }
-
-    :deep(.mat-icon) {
-      font-size: 10px !important; // Smaller icon on mobile
-      width: 10px !important;
-      height: 10px !important;
-      line-height: 10px !important;
-    }
-  }
-
-  .close-button {
-    width: 18px !important; // Smaller on mobile
-    height: 18px !important;
-    min-width: 18px !important;
-    max-width: 18px !important;
-
-    :deep(.mat-mdc-button-base) {
-      width: 18px !important;
-      height: 18px !important;
-    }
-
-    :deep(.mat-icon) {
-      font-size: 10px !important; // Smaller icon on mobile
-      width: 10px !important;
-      height: 10px !important;
-      line-height: 10px !important;
-    }
-  }
-
-  .right-panel {
-    padding: 8px;
-  }
-}
-
-@media (max-width: 600px) {
-  .right-panel {
-    padding: 8px;
-  }
-
-  .workflow-header {
-    padding: 12px 16px;
-
-    h1 {
-      font-size: 20px;
-    }
-  }
-
-  .instructions-content {
-    padding: 32px 16px;
-
-    .instructions-icon {
-      font-size: 56px;
-      height: 56px;
-      width: 56px;
-      margin-bottom: 16px;
-    }
-
-    p {
-      font-size: 16px;
+    .divider-handle {
+      background-color: var(--mat-primary-color);
     }
   }
 }

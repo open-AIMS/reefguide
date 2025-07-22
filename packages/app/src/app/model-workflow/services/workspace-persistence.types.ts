@@ -11,10 +11,14 @@ export interface RuntimeWorkspace {
   workflowState: 'configuring' | 'submitting' | 'monitoring' | 'viewing';
   createdAt: Date;
   lastModified: Date;
-  // NEW: Track the submitted job ID for persistence
+  // Track the submitted job ID for persistence
   submittedJobId?: number;
-  // NEW: Track active charts for persistence
+  // Track active charts for persistence
   activeCharts?: string[];
+  // NEW: Track selected results tab (0 = Charts, 1 = Map)
+  selectedResultsTab?: number;
+  // NEW: Track map configuration
+  mapConfig?: any;
 }
 
 export interface PersistedWorkspace {
@@ -23,10 +27,14 @@ export interface PersistedWorkspace {
   parameters: ModelParameters | null;
   createdAt: string; // ISO string
   lastModified: string; // ISO string
-  // NEW: Persisted job ID
+  // Persisted job ID
   submittedJobId?: number;
-  // NEW: Persisted active chart titles
+  // Persisted active chart titles
   activeCharts?: string[];
+  // NEW: Persisted selected results tab
+  selectedResultsTab?: number;
+  // NEW: Persisted map configuration
+  mapConfig?: any;
 }
 
 // Convert runtime workspace to persisted format
@@ -38,7 +46,9 @@ export function toPersistedWorkspace(workspace: RuntimeWorkspace): PersistedWork
     createdAt: workspace.createdAt.toISOString(),
     lastModified: workspace.lastModified.toISOString(),
     submittedJobId: workspace.submittedJobId,
-    activeCharts: workspace.activeCharts ? [...workspace.activeCharts] : undefined
+    activeCharts: workspace.activeCharts ? [...workspace.activeCharts] : undefined,
+    selectedResultsTab: workspace.selectedResultsTab,
+    mapConfig: workspace.mapConfig ? { ...workspace.mapConfig } : undefined
   };
 }
 
@@ -53,6 +63,8 @@ export function toRuntimeWorkspace(persisted: PersistedWorkspace): RuntimeWorksp
     createdAt: new Date(persisted.createdAt),
     lastModified: new Date(persisted.lastModified),
     submittedJobId: persisted.submittedJobId,
-    activeCharts: persisted.activeCharts ? [...persisted.activeCharts] : undefined
+    activeCharts: persisted.activeCharts ? [...persisted.activeCharts] : undefined,
+    selectedResultsTab: persisted.selectedResultsTab ?? 0, // Default to Charts tab
+    mapConfig: persisted.mapConfig ? { ...persisted.mapConfig } : undefined
   };
 }

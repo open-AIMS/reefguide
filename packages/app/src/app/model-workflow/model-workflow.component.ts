@@ -30,6 +30,7 @@ import {
   ModelParameters
 } from './parameter-config/parameter-config.component';
 import { ResultsViewComponent } from './results-view/results-view.component';
+import { MapResultsViewComponent } from './map-results-view/map-results-view.component';
 import { WorkspaceNameDialogComponent } from './workspace-name-dialog/workspace-name-dialog.component';
 import {
   WorkspacePersistenceService,
@@ -49,6 +50,10 @@ interface Workspace {
   lastModified: Date;
   submittedJobId?: number;
   activeCharts?: string[];
+  // NEW: Track selected results tab (0 = Charts, 1 = Map)
+  selectedResultsTab?: number;
+  // NEW: Track map configuration
+  mapConfig?: any;
 }
 
 // Isolated workspace service - one instance per workspace
@@ -188,7 +193,8 @@ class WorkspaceService {
     MatDialogModule,
     ParameterConfigComponent,
     JobStatusComponent,
-    ResultsViewComponent
+    ResultsViewComponent,
+    MapResultsViewComponent
   ],
   templateUrl: './model-workflow.component.html',
   styleUrl: './model-workflow.component.scss'
@@ -429,7 +435,6 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
   }
 
   // Create workspace with given name
-  // Update createWorkspaceWithName method:
   private createWorkspaceWithName(name: string): void {
     const counter = this.workspaceCounter();
     const newWorkspace: Workspace = {
@@ -441,7 +446,9 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
       createdAt: new Date(),
       lastModified: new Date(),
       submittedJobId: undefined,
-      activeCharts: undefined
+      activeCharts: undefined,
+      selectedResultsTab: 0, // Default to Charts tab
+      mapConfig: undefined
     };
 
     this.workspaceCounter.set(counter + 1);
@@ -527,7 +534,9 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
       createdAt: new Date(),
       lastModified: new Date(),
       submittedJobId: undefined,
-      activeCharts: undefined
+      activeCharts: undefined,
+      selectedResultsTab: 0, // Default to Charts tab
+      mapConfig: undefined
     };
 
     this.workspaceCounter.set(counter + 1);
@@ -653,6 +662,48 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
     });
 
     this.triggerSave();
+  }
+
+  // NEW: Handle results tab change
+  onResultsTabChange(workspaceId: string, tabIndex: number): void {
+    console.log(`[${workspaceId}] Results tab changed to: ${tabIndex === 0 ? 'Charts' : 'Map'}`);
+
+    this.updateWorkspace(workspaceId, {
+      selectedResultsTab: tabIndex,
+      lastModified: new Date()
+    });
+
+    this.triggerSave();
+  }
+
+  // NEW: Get selected results tab for workspace
+  getSelectedResultsTab(workspaceId: string): number {
+    const workspace = this.workspaces().find(w => w.id === workspaceId);
+    return workspace?.selectedResultsTab ?? 0; // Default to Charts tab
+  }
+
+  // NEW: Handle map interactions
+  onMapInteraction(workspaceId: string, interaction: any): void {
+    console.log(`[${workspaceId}] Map interaction:`, interaction);
+    // Could store interaction history or trigger other actions
+  }
+
+  // NEW: Handle map configuration changes
+  onMapConfigChanged(workspaceId: string, config: any): void {
+    console.log(`[${workspaceId}] Map config changed:`, config);
+
+    this.updateWorkspace(workspaceId, {
+      mapConfig: config,
+      lastModified: new Date()
+    });
+
+    this.triggerSave();
+  }
+
+  // NEW: Get map config for workspace
+  getMapConfigForWorkspace(workspaceId: string): any {
+    const workspace = this.workspaces().find(w => w.id === workspaceId);
+    return workspace?.mapConfig || null;
   }
 
   // Helper method to get job config for template
