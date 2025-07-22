@@ -10,7 +10,6 @@ import {
   JobDetailsResponse,
   ListJobsResponse,
   listJobsSchema,
-  ListMyJobsQuery,
   listMyJobsSchema,
   PollJobsResponse,
   pollJobsSchema,
@@ -81,7 +80,7 @@ router.get(
     // user
     const customUserId = req.query.userId ? parseInt(req.query.userId) : undefined;
     const isAdmin = userIsAdmin(req.user);
-    if (!isAdmin && customUserId !== req.user.id) {
+    if (!isAdmin && customUserId !== undefined && customUserId !== req.user.id) {
       throw new UnauthorizedException(
         'Non-admin users cannot specify a userId other than their own.'
       );
