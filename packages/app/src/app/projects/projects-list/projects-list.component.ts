@@ -185,7 +185,7 @@ export class ProjectsListComponent implements OnInit {
   getProjectTypeDisplay(type: string): string {
     switch (type) {
       case 'SITE_SELECTION':
-        return 'Site Selection';
+        return 'Site Assessment';
       case 'ADRIA_ANALYSIS':
         return 'ADRIA Analysis';
       default:

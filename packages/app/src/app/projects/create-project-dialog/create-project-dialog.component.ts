@@ -50,16 +50,15 @@ export class CreateProjectDialogComponent {
   projectTypes: ProjectTypeOption[] = [
     {
       value: 'SITE_SELECTION',
-      label: 'Site Selection',
+      label: 'Site Assessment',
       description:
-        'Analyze and select optimal sites for reef restoration projects based on environmental criteria and constraints.',
+        'Assess optimal sites for reef restoration projects based on environmental criteria and constraints.',
       icon: 'location_on'
     },
     {
       value: 'ADRIA_ANALYSIS',
       label: 'ADRIA Analysis',
-      description:
-        'Perform comprehensive reef ecosystem modeling and intervention analysis using the ADRIA platform.',
+      description: 'Perform reef ecosystem modeling and intervention analysis using ADRIA.',
       icon: 'analytics'
     }
   ];

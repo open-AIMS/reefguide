@@ -339,8 +339,8 @@ export class ParameterConfigComponent {
   scenarioOptions = [1, 2, 4, 8, 16, 32, 64, 128, 256];
   dataPackageOptions: DataPackage[] = ['MOORE', 'GBR'];
   dataPackageSpec: Record<DataPackage, { displayName: string }> = {
-    MOORE: { displayName: 'Moore Reef Cluster' },
-    GBR: { displayName: 'Whole of Great Barrier Reef' }
+    MOORE: { displayName: 'Moore Reef cluster (site scale)' },
+    GBR: { displayName: 'Great Barrier Reef (reef scale)' }
   };
 
   configForm = new FormGroup({
