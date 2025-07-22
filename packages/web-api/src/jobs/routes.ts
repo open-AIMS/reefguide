@@ -10,6 +10,7 @@ import {
   JobDetailsResponse,
   ListJobsResponse,
   listJobsSchema,
+  listMyJobsSchema,
   PollJobsResponse,
   pollJobsSchema,
   submitResultSchema
@@ -59,6 +60,12 @@ router.post(
   }
 );
 
+/**
+ * List all jobs
+ * - Admins can specify a userId to list jobs for that user
+ * - Non-admins can only list their own jobs
+ * - Can filter by status
+ */
 router.get(
   '/',
   processRequest({
@@ -69,8 +76,44 @@ router.get(
   async (req, res: Response<ListJobsResponse>) => {
     if (!req.user) throw new UnauthorizedException();
 
+    // If the user is an admin, they can specify a userId to list jobs for that
+    // user
+    const customUserId = req.query.userId ? parseInt(req.query.userId) : undefined;
     const isAdmin = userIsAdmin(req.user);
-    const userId = isAdmin ? undefined : req.user.id;
+    if (!isAdmin && customUserId !== undefined && customUserId !== req.user.id) {
+      throw new UnauthorizedException(
+        'Non-admin users cannot specify a userId other than their own.'
+      );
+    }
+    const userId = customUserId ?? (isAdmin ? undefined : req.user.id);
+    const status = req.query.status as JobStatus | undefined;
+
+    const { jobs, total } = await jobService.listJobs({
+      userId,
+      status
+    });
+
+    res.json({ jobs, total });
+  }
+);
+
+/**
+ * List jobs for the authenticated user
+ * - Can filter by status
+ * - Only returns jobs created by the authenticated user
+ */
+router.get(
+  '/mine',
+  processRequest({
+    query: listMyJobsSchema
+  }),
+  passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
+  async (req, res: Response<ListJobsResponse>) => {
+    if (!req.user) throw new UnauthorizedException();
+
+    // Only list jobs for the authenticated user
+    const userId = req.user.id;
     const status = req.query.status as JobStatus | undefined;
 
     const { jobs, total } = await jobService.listJobs({

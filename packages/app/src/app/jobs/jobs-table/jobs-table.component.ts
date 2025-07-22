@@ -40,7 +40,7 @@ export class JobsTableComponent {
   @ViewChild(MatSort) sort!: MatSort;
 
   constructor() {
-    this.jobs$ = this.api.listJobs();
+    this.jobs$ = this.api.listAllJobs();
 
     this.jobs$.subscribe(resp => {
       this.dataSource.data = resp.jobs;
