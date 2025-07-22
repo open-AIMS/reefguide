@@ -51,7 +51,7 @@ import { GeoJSON } from 'ol/format';
 import { Fill, Stroke, Style } from 'ol/style';
 import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
 import Layer from 'ol/layer/Layer';
-import { createSourceFromCapabilitiesXml } from '../../util/arcgis/arcgis-openlayer-util';
+import { createLayerFromDef, createSourceFromCapabilitiesXml } from '../../util/arcgis/arcgis-openlayer-util';
 import { LayerController, LayerControllerOptions } from '../map/open-layers-model';
 import { LayerProperties } from '../../types/layer.type';
 
@@ -204,6 +204,7 @@ export class ReefGuideMapService {
     this.map = map;
 
     void this.addCriteriaLayers();
+    this.addInfoLayers();
   }
 
   /**
@@ -534,6 +535,15 @@ export class ReefGuideMapService {
       this.criteriaLayers[id] = this.createLayerController(layer, {
         criteriaLayerDef: layerDef
       });
+    }
+  }
+
+  private addInfoLayers() {
+    const infoLayerDefs = this.api.getInfoLayers();
+    for (const layerDef of infoLayerDefs) {
+      const layer = createLayerFromDef(layerDef);
+
+      this.map.getLayers().push(layer);
     }
   }
 
