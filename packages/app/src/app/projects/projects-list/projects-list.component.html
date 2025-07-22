@@ -12,10 +12,17 @@
       <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
 
-    <button mat-raised-button color="primary" (click)="openCreateDialog()" class="create-button">
-      <mat-icon>add</mat-icon>
-      Create Project
-    </button>
+    <div class="actions-group">
+      <!-- Pagination Info -->
+      <div *ngIf="totalProjects > 0 && !(isLoading$ | async)" class="pagination-info">
+        <span>{{ ((currentPage * pageSize) + 1) }}-{{ Math.min((currentPage + 1) * pageSize, totalProjects) }} of {{ totalProjects }}</span>
+      </div>
+
+      <button mat-raised-button color="primary" (click)="openCreateDialog()" class="create-button">
+        <mat-icon>add</mat-icon>
+        Create Project
+      </button>
+    </div>
   </div>
 
   <!-- Loading spinner -->
@@ -49,73 +56,102 @@
       </div>
     </div>
 
-    <div *ngIf="(paginatedProjects$ | async)?.length! > 0" class="projects-grid">
-      <div
-        *ngFor="let project of paginatedProjects$ | async; trackBy: trackByProjectId"
-        class="project-card"
-        (click)="onProjectClick(project)"
-        tabindex="0"
-        role="button"
-        [attr.aria-label]="'Open project ' + project.name"
-      >
-        <div class="project-card-header">
-          <div class="project-avatar" [attr.data-type]="project.type">
-            <mat-icon>
-              {{ project.type === 'SITE_SELECTION' ? 'location_on' : 'analytics' }}
-            </mat-icon>
-          </div>
-
-          <div class="project-header-content">
-            <h3 class="project-title">{{ project.name }}</h3>
-            <div class="project-type-chip" [attr.data-type]="project.type">
-              {{ getProjectTypeDisplay(project.type) }}
-            </div>
-          </div>
+    <div *ngIf="(paginatedProjects$ | async)?.length! > 0" class="projects-section">
+      <!-- Top Pagination Controls -->
+      <div *ngIf="totalProjects > 0" class="pagination-controls top">
+        <div class="pagination-info-detailed">
+          Showing {{ ((currentPage * pageSize) + 1) }}-{{ Math.min((currentPage + 1) * pageSize, totalProjects) }} of {{ totalProjects }} projects
         </div>
+        <mat-paginator
+          #paginatorTop
+          [length]="totalProjects"
+          [pageSize]="pageSize"
+          [pageIndex]="currentPage"
+          [pageSizeOptions]="[5, 10, 25, 50]"
+          [showFirstLastButtons]="true"
+          (page)="onPageChange($event)"
+          aria-label="Select page"
+          class="compact-paginator"
+        >
+        </mat-paginator>
+      </div>
 
-        <div class="project-card-content">
-          <p class="project-description">
-            {{ project.description || 'No description provided' }}
-          </p>
-
-          <div class="project-meta">
-            <div class="meta-item">
-              <mat-icon>schedule</mat-icon>
-              <span>{{ project.created_at | date: 'MMM d, y' }}</span>
+      <div class="projects-grid">
+        <div
+          *ngFor="let project of paginatedProjects$ | async; trackBy: trackByProjectId"
+          class="project-card"
+          (click)="onProjectClick(project)"
+          tabindex="0"
+          role="button"
+          [attr.aria-label]="'Open project ' + project.name"
+        >
+          <div class="project-card-header">
+            <div class="project-avatar" [attr.data-type]="project.type">
+              <mat-icon>
+                {{ project.type === 'SITE_SELECTION' ? 'location_on' : 'analytics' }}
+              </mat-icon>
             </div>
-            <div class="meta-item" *ngIf="project.updated_at !== project.created_at">
-              <mat-icon>edit</mat-icon>
-              <span>{{ project.updated_at | date: 'MMM d, y' }}</span>
+
+            <div class="project-header-content">
+              <h3
+                class="project-title"
+                [matTooltip]="isTextTruncated(project.name, 40) ? project.name : ''"
+                matTooltipPosition="above"
+              >
+                {{ truncateText(project.name, 40) }}
+              </h3>
+              <div class="project-type-chip" [attr.data-type]="project.type">
+                {{ getProjectTypeDisplay(project.type) }}
+              </div>
+            </div>
+
+            <button
+              mat-icon-button
+              (click)="onProjectClick(project); $event.stopPropagation()"
+              class="quick-open-button"
+              [attr.aria-label]="'Open project ' + project.name"
+            >
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+
+          <div class="project-card-content">
+            <p
+              class="project-description"
+              [matTooltip]="isTextTruncated(project.description || 'No description provided', 80) ? (project.description || 'No description provided') : ''"
+              matTooltipPosition="above"
+            >
+              {{ truncateText(project.description || 'No description provided', 80) }}
+            </p>
+
+            <div class="project-meta">
+              <div class="meta-item">
+                <mat-icon>schedule</mat-icon>
+                <span>{{ project.created_at | date: 'MMM d, y' }}</span>
+              </div>
+              <div class="meta-item" *ngIf="project.updated_at !== project.created_at">
+                <mat-icon>edit</mat-icon>
+                <span>{{ project.updated_at | date: 'MMM d, y' }}</span>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div class="project-card-actions">
-          <button
-            mat-button
-            color="primary"
-            (click)="onProjectClick(project); $event.stopPropagation()"
-            class="open-button"
-          >
-            <mat-icon>arrow_forward</mat-icon>
-            Open
-          </button>
         </div>
       </div>
-    </div>
 
-    <!-- Pagination -->
-    <mat-paginator
-      *ngIf="totalProjects > pageSize"
-      #paginator
-      [length]="totalProjects"
-      [pageSize]="pageSize"
-      [pageSizeOptions]="[5, 10, 25, 50]"
-      [showFirstLastButtons]="true"
-      (page)="onPageChange($event)"
-      aria-label="Select page"
-      class="projects-paginator"
-    >
-    </mat-paginator>
+      <!-- Bottom Pagination -->
+      <mat-paginator
+        *ngIf="totalProjects > 0"
+        #paginator
+        [length]="totalProjects"
+        [pageSize]="pageSize"
+        [pageIndex]="currentPage"
+        [pageSizeOptions]="[5, 10, 25, 50]"
+        [showFirstLastButtons]="true"
+        (page)="onPageChange($event)"
+        aria-label="Select page"
+        class="projects-paginator"
+      >
+      </mat-paginator>
+    </div>
   </div>
 </div>

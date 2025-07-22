@@ -12,6 +12,7 @@ import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/p
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { Project } from '@reefguide/db';
 import {
@@ -23,7 +24,6 @@ import {
   Observable
 } from 'rxjs';
 import { WebApiService } from '../../../api/web-api.service';
-import { ProfileButtonComponent } from '../../user/profile-button/profile-button.component';
 import { CreateProjectDialogComponent } from '../create-project-dialog/create-project-dialog.component';
 import { AuthService } from '../../auth/auth.service';
 
@@ -43,7 +43,8 @@ import { AuthService } from '../../auth/auth.service';
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatRadioModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatTooltipModule
   ],
   templateUrl: './projects-list.component.html',
   styleUrls: ['./projects-list.component.scss']
@@ -54,6 +55,9 @@ export class ProjectsListComponent implements OnInit {
   private readonly router = inject(Router);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
+
+  // Expose Math to template
+  Math = Math;
 
   // Search and pagination state
   searchQuery$ = new BehaviorSubject<string>('');
@@ -111,6 +115,7 @@ export class ProjectsListComponent implements OnInit {
     // Reset to first page when search changes
     this.searchQuery$.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => {
       this.pageEvent$.next({ pageIndex: 0, pageSize: this.pageSize, length: 0 });
+      this.currentPage = 0;
     });
   }
 
@@ -205,5 +210,17 @@ export class ProjectsListComponent implements OnInit {
 
   trackByProjectId(index: number, project: Project): number {
     return project.id;
+  }
+
+  // Helper methods for text truncation
+  truncateText(text: string, maxLength: number): string {
+    if (!text || text.length <= maxLength) {
+      return text;
+    }
+    return text.substring(0, maxLength).trim() + '...';
+  }
+
+  isTextTruncated(text: string, maxLength: number): boolean {
+    return text ? text.length > maxLength : false;
   }
 }
