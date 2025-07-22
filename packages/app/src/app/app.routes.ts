@@ -5,14 +5,9 @@ import { JobsTableComponent } from './jobs/jobs-table/jobs-table.component';
 export const routes: Routes = [
   {
     path: '',
-    pathMatch: 'full',
-    redirectTo: 'projects'
-  },
-  {
-    path: 'projects',
     loadComponent: () =>
-      import('./projects/projects-list/projects-list.component').then(m => m.ProjectsListComponent),
-    title: 'My Projects'
+      import('./landing-page/landing-page.component').then(m => m.LandingPageComponent),
+    title: 'ReefGuide'
   },
   {
     path: 'adria/:projectId',
