@@ -193,9 +193,17 @@ export type JobRequest = z.infer<typeof jobRequestSchema>;
 
 // List Jobs Query
 export const listJobsSchema = z.object({
-  status: z.nativeEnum(JobStatus).optional()
+  status: z.nativeEnum(JobStatus).optional(),
+  // If the user is an admin, they can list others' jobs
+  userId: z.string().optional()
 });
 export type ListJobsQuery = z.infer<typeof listJobsSchema>;
+
+// List my Jobs Query
+export const listMyJobsSchema = z.object({
+  status: z.nativeEnum(JobStatus).optional()
+});
+export type ListMyJobsQuery = z.infer<typeof listMyJobsSchema>;
 
 // List Jobs Response (uses base job schema without relations)
 export const listJobsResponseSchema = z.object({

@@ -109,10 +109,13 @@ export class JobsManagerService {
    */
   refresh() {
     // TODO PENDING or IN-PROGRESS
-    // TODO update API to support only my jobs, if admin, you'll see everyone's jobs
-    this.webApi.listJobs({ status: 'PENDING' }).subscribe(jobs => {
-      this.addExistingJobs(jobs);
-    });
+    this.webApi
+      .listMyJobs({
+        status: 'PENDING'
+      })
+      .subscribe(jobs => {
+        this.addExistingJobs(jobs);
+      });
   }
 
   /**

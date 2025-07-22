@@ -14,6 +14,7 @@ import {
   JobDetailsResponse,
   ListJobsQuery,
   ListJobsResponse,
+  ListMyJobsQuery,
   ListUserLogsResponse,
   LoginResponse,
   ProfileResponse,
@@ -182,8 +183,14 @@ export class WebApiService {
     });
   }
 
-  listJobs(query?: ListJobsQuery): Observable<ListJobsResponse> {
+  listAllJobs(query?: ListJobsQuery): Observable<ListJobsResponse> {
     return this.http.get<ListJobsResponse>(`${this.base}/jobs`, {
+      params: query
+    });
+  }
+
+  listMyJobs(query?: ListMyJobsQuery): Observable<ListJobsResponse> {
+    return this.http.get<ListJobsResponse>(`${this.base}/jobs/mine`, {
       params: query
     });
   }
