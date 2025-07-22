@@ -5,7 +5,6 @@ import {
   CreateJobResponse,
   CreateProjectInput,
   CreateProjectResponse,
-  CriteriaLayerDef,
   CriteriaRangeOutput,
   DeleteProjectResponse,
   DownloadResponse,
@@ -193,7 +192,7 @@ export class WebApiService {
    * Get criteria visualization layer definitions.
    * TODO return from API instead of hardcoding in app code.
    */
-  getCriteriaLayers(): CriteriaLayerDef[] {
+  getCriteriaLayers(): LayerDef[] {
     return [
       {
         id: 'Depth',

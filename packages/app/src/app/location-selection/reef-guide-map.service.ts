@@ -51,7 +51,10 @@ import { GeoJSON } from 'ol/format';
 import { Fill, Stroke, Style } from 'ol/style';
 import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
 import Layer from 'ol/layer/Layer';
-import { createLayerFromDef, createSourceFromCapabilitiesXml } from '../../util/arcgis/arcgis-openlayer-util';
+import {
+  createLayerFromDef,
+  createSourceFromCapabilitiesXml
+} from '../../util/arcgis/arcgis-openlayer-util';
 import { LayerController, LayerControllerOptions } from '../map/open-layers-model';
 import { LayerProperties } from '../../types/layer.type';
 
