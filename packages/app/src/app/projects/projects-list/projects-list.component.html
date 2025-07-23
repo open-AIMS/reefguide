@@ -15,7 +15,12 @@
     <div class="actions-group">
       <!-- Pagination Info -->
       <div *ngIf="totalProjects > 0 && !(isLoading$ | async)" class="pagination-info">
-        <span>{{ ((currentPage * pageSize) + 1) }}-{{ Math.min((currentPage + 1) * pageSize, totalProjects) }} of {{ totalProjects }}</span>
+        <span
+          >{{ currentPage * pageSize + 1 }}-{{
+            Math.min((currentPage + 1) * pageSize, totalProjects)
+          }}
+          of {{ totalProjects }}</span
+        >
       </div>
 
       <button mat-raised-button color="primary" (click)="openCreateDialog()" class="create-button">
@@ -60,7 +65,10 @@
       <!-- Top Pagination Controls -->
       <div *ngIf="totalProjects > 0" class="pagination-controls top">
         <div class="pagination-info-detailed">
-          Showing {{ ((currentPage * pageSize) + 1) }}-{{ Math.min((currentPage + 1) * pageSize, totalProjects) }} of {{ totalProjects }} projects
+          Showing {{ currentPage * pageSize + 1 }}-{{
+            Math.min((currentPage + 1) * pageSize, totalProjects)
+          }}
+          of {{ totalProjects }} projects
         </div>
         <mat-paginator
           #paginatorTop
@@ -118,7 +126,11 @@
           <div class="project-card-content">
             <p
               class="project-description"
-              [matTooltip]="isTextTruncated(project.description || 'No description provided', 80) ? (project.description || 'No description provided') : ''"
+              [matTooltip]="
+                isTextTruncated(project.description || 'No description provided', 80)
+                  ? project.description || 'No description provided'
+                  : ''
+              "
               matTooltipPosition="above"
             >
               {{ truncateText(project.description || 'No description provided', 80) }}
@@ -140,7 +152,7 @@
 
       <!-- Bottom Pagination -->
       <mat-paginator
-        *ngIf="totalProjects > 0"
+        *ngIf="totalProjects >= 4"
         #paginator
         [length]="totalProjects"
         [pageSize]="pageSize"
