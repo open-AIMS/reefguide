@@ -1,98 +1,98 @@
 <!-- src/app/model-workflow/map-results-view/map-results-view.component.html -->
-<div class="map-results-container" *ngIf="job()">
-  <!-- Header with map controls -->
-  <div class="map-header">
-    <div class="header-content">
-      <h2>Map View</h2>
-      <p class="map-subtitle" *ngIf="hasJobResults()">
-        Spatial visualization of model results
-      </p>
-      <p class="map-subtitle" *ngIf="!hasJobResults()">
-        Complete a model run to view spatial results
-      </p>
-    </div>
+<div class="map-results-container">
+  <!-- Map Card -->
+  <mat-card class="map-card">
+    <mat-card-header>
+      <mat-card-title>
+        <div class="title-row">
+          <span>Spatial Analysis</span>
+          <div class="region-selector" *ngIf="mapInitialized() && !hasError()">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Region</mat-label>
+              <mat-select
+                [value]="selectedRegion()"
+                (selectionChange)="onRegionChange($event.value)"
+              >
+                <mat-option *ngFor="let region of mapRegions" [value]="region.value">
+                  {{ region.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+      </mat-card-title>
+    </mat-card-header>
 
-    <div class="map-controls" *ngIf="hasJobResults() && mapInitialized()">
-      <mat-form-field appearance="outline" class="region-selector">
-        <mat-label>Map Region</mat-label>
-        <mat-select
-          [value]="selectedRegion()"
-          (selectionChange)="onRegionChange($event.value)"
-        >
-          <mat-option *ngFor="let region of mapRegions" [value]="region.value">
-            {{ region.label }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
+    <mat-card-content>
+      <!-- Map Container -->
+      <div class="map-wrapper">
+        <div #mapContainer class="map-container" [class.hidden]="!mapInitialized() || hasError()">
+          <!-- OpenLayers map will be rendered here -->
+        </div>
 
-      <button
-        mat-icon-button
-        matTooltip="Reset map view"
-        (click)="resetMapView()"
-        class="reset-view-button"
-      >
-        <mat-icon>home</mat-icon>
-      </button>
-    </div>
-  </div>
-
-  <!-- Map container -->
-  <div class="map-container-wrapper" *ngIf="hasJobResults()">
-    <div class="map-container" #mapContainer [class.hidden]="isLoading() || hasError()">
-      <!-- OpenLayers map will be mounted here -->
-    </div>
-
-    <!-- Loading state overlay -->
-    <div *ngIf="isLoading()" class="map-loading">
-      <mat-spinner diameter="50"></mat-spinner>
-      <p *ngIf="isMapLoading()">Initializing map...</p>
-      <p *ngIf="isLoadingGeoData()">Loading reef boundaries...</p>
-    </div>
-
-    <!-- Error state overlay -->
-    <div *ngIf="hasError()" class="map-error">
-      <mat-icon>error_outline</mat-icon>
-      <p>Failed to load map</p>
-      <p class="error-details">{{ errorMessage() }}</p>
-      <button mat-stroked-button color="primary" (click)="retryMapInitialization()">
-        Retry
-      </button>
-    </div>
-
-    <!-- Data loading status indicator (shows when geodata is loading but map is ready) -->
-    <div *ngIf="mapInitialized() && isLoadingGeoData() && !hasError()" class="data-loading-indicator">
-      <div class="loading-badge">
-        <mat-spinner diameter="16"></mat-spinner>
-        <span>Loading reef data...</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- No results state -->
-  <div *ngIf="!hasJobResults()" class="no-results-state">
-    <mat-card class="empty-state-card">
-      <mat-card-content>
-        <div class="empty-state-content">
-          <mat-icon class="empty-state-icon">map</mat-icon>
-          <h3>No Spatial Results Available</h3>
-          <p>Complete a model run to view spatial visualizations of your results.</p>
-          <p *ngIf="job()">
-            Current job status: <strong>{{ job()?.status }}</strong>
+        <!-- Loading State -->
+        <div class="map-loading" *ngIf="isLoading()">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>
+            <span *ngIf="isMapLoading()">Initializing map...</span>
+            <span *ngIf="isLoadingGeoData()">Loading reef boundaries...</span>
+            <span *ngIf="isLoadingCoralData()">Loading coral cover data...</span>
           </p>
         </div>
-      </mat-card-content>
-    </mat-card>
-  </div>
-</div>
 
-<!-- No job state -->
-<div *ngIf="!job()" class="no-job-state">
-  <mat-card class="empty-state-card">
+        <!-- Error State -->
+        <div class="map-error" *ngIf="hasError()">
+          <mat-icon>error_outline</mat-icon>
+          <p>{{ errorMessage() }}</p>
+          <button mat-raised-button color="primary" (click)="retryMapInitialization()">
+            <mat-icon>refresh</mat-icon>
+            Retry
+          </button>
+        </div>
+
+        <!-- No Results State -->
+        <div class="map-empty" *ngIf="!hasJobResults() && !isLoading()">
+          <mat-icon>map</mat-icon>
+          <p>No map data available</p>
+          <p class="hint">Run a model simulation to see spatial results</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="map-actions" *ngIf="mapInitialized() && !hasError()">
+        <button
+          mat-stroked-button
+          (click)="resetMapView()"
+          matTooltip="Reset map to default view"
+        >
+          <mat-icon>center_focus_strong</mat-icon>
+          Reset View
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Site Details Card - Shows when a site is selected -->
+  <mat-card class="site-details-card" *ngIf="selectedSite()">
+    <mat-card-header>
+      <mat-card-title>
+        <div class="title-row">
+          <span>Location {{ selectedSite()!.locationId }} - Coral Cover Over Time</span>
+          <button mat-icon-button (click)="clearSelectedSite()" matTooltip="Close">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </mat-card-title>
+    </mat-card-header>
+
     <mat-card-content>
-      <div class="empty-state-content">
-        <mat-icon class="empty-state-icon">pending</mat-icon>
-        <h3>No Results Available</h3>
-        <p>Complete a model run to view spatial results.</p>
+      <div class="chart-container" #siteChartContainer>
+        <!-- Vega-Lite chart will be rendered here -->
+      </div>
+
+      <div class="site-info" *ngIf="selectedSite()">
+        <p><strong>Mean Coral Cover:</strong> {{ (selectedSite()!.meanCover * 100).toFixed(1) }}%</p>
+        <p><strong>Data Points:</strong> {{ selectedSite()!.dataPoints }} ({{ selectedSite()!.timesteps }} timesteps × {{ selectedSite()!.scenarios }} scenarios)</p>
       </div>
     </mat-card-content>
   </mat-card>

@@ -27,9 +27,10 @@ import { WebApiService } from '../../../api/web-api.service';
 // Import both libraries for Parquet → Arrow conversion
 import * as arrow from 'apache-arrow';
 import initWasm, { readParquet } from 'parquet-wasm';
+import embed, { Result as VegaResult, VisualizationSpec } from 'vega-embed';
 
 interface CoralCoverData {
-  location_id: number;
+  location_id: string;
   mean_relative_cover: number;
   timestep_count: number;
   scenario_count: number;
@@ -40,6 +41,77 @@ interface CoralCoverStats {
   max: number;
   mean: number;
   locations: CoralCoverData[];
+}
+
+interface SiteData {
+  locationId: string;
+  meanCover: number;
+  timesteps: number;
+  scenarios: number;
+  dataPoints: number;
+}
+
+interface TimeSeriesData {
+  timestep: number;
+  scenario_type: string;
+  relative_cover: number;
+}
+
+/**
+ * Aggregates time series data by timestep and scenario type.
+ *
+ * For each group, it calculates the mean, min, and max of relative_cover.
+ * This is perfect for summarizing ensemble model runs before visualization.
+ *
+ * @param {TimeSeriesData[]} data - The raw, flat time series data.
+ * @returns {AggregatedTimeSeriesData[]} - The aggregated data.
+ */
+interface AggregatedTimeSeriesData {
+  timestep: number;
+  scenario_type: string;
+  mean_cover: number;
+  min_cover: number;
+  max_cover: number;
+}
+
+function aggregateTimeSeriesData(data: TimeSeriesData[]): AggregatedTimeSeriesData[] {
+  if (!data || data.length === 0) {
+    return [];
+  }
+
+  // Use a Map to group data points by a composite key.
+  // Key format: "timestep-scenario_type" (e.g., "2025-guided")
+  const groupedData = new Map<string, number[]>();
+
+  for (const point of data) {
+    const key = `${point.timestep}-${point.scenario_type}`;
+    if (!groupedData.has(key)) {
+      groupedData.set(key, []);
+    }
+    groupedData.get(key)!.push(point.relative_cover);
+  }
+
+  // Now, process the grouped data to calculate statistics.
+  const aggregatedResult: AggregatedTimeSeriesData[] = [];
+  for (const [key, values] of groupedData.entries()) {
+    const [timestep, scenario_type] = key.split('-');
+
+    const sum = values.reduce((acc, val) => acc + val, 0);
+    const mean = sum / values.length;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+
+    aggregatedResult.push({
+      timestep: Number(timestep),
+      scenario_type,
+      mean_cover: mean,
+      min_cover: min,
+      max_cover: max
+    });
+  }
+
+  // Sort the final result for clean line drawing (important for Vega-Lite)
+  return aggregatedResult.sort((a, b) => a.timestep - b.timestep);
 }
 
 @Component({
@@ -88,15 +160,23 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
   private coralCoverStats = signal<CoralCoverStats | null>(null);
   private resizeObserver?: ResizeObserver;
 
+  // Site selection state
+  public selectedSite = signal<SiteData | null>(null);
+  private siteTimeSeriesData = signal<AggregatedTimeSeriesData[]>([]);
+  private vegaView: VegaResult | null = null;
+
+  @ViewChild('siteChartContainer', { static: false })
+  siteChartContainer?: ElementRef<HTMLDivElement>;
+
   // Computed properties
-  isLoading = computed(() =>
-    this.isMapLoading() || this.isLoadingGeoData() || this.isLoadingCoralData()
+  isLoading = computed(
+    () => this.isMapLoading() || this.isLoadingGeoData() || this.isLoadingCoralData()
   );
-  hasError = computed(() =>
-    this.mapError() !== null || this.geoDataError() !== null || this.coralDataError() !== null
+  hasError = computed(
+    () => this.mapError() !== null || this.geoDataError() !== null || this.coralDataError() !== null
   );
-  errorMessage = computed(() =>
-    this.mapError() || this.geoDataError() || this.coralDataError() || ''
+  errorMessage = computed(
+    () => this.mapError() || this.geoDataError() || this.coralDataError() || ''
   );
   hasJobResults = computed(() => {
     console.log(`[MapResultsView] Checking for job results`);
@@ -164,6 +244,11 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     console.log(`[${this.workspaceId()}] Destroying map view component`);
+
+    // Clean up Vega chart if exists
+    if (this.vegaView) {
+      this.vegaView.finalize();
+    }
 
     // Clean up resize observer
     if (this.resizeObserver) {
@@ -275,7 +360,9 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     console.log(`[MapResultsView][${workspaceId}] Loading spatial data for job:`, job.id);
 
     if (!this.mapInitialized()) {
-      console.warn(`[MapResultsView][${workspaceId}] Map not initialized, skipping spatial data load`);
+      console.warn(
+        `[MapResultsView][${workspaceId}] Map not initialized, skipping spatial data load`
+      );
       return;
     }
 
@@ -387,7 +474,10 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         .pipe(
           takeUntil(this.destroy$),
           catchError(error => {
-            console.error(`[MapResultsView][${workspaceId}] Failed to get presigned URL for coral data:`, error);
+            console.error(
+              `[MapResultsView][${workspaceId}] Failed to get presigned URL for coral data:`,
+              error
+            );
             this.coralDataError.set('Failed to get download URL for coral cover data');
             this.isLoadingCoralData.set(false);
             return of(null);
@@ -396,7 +486,10 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         .subscribe(response => {
           if (!response) return;
 
-          console.log(`[MapResultsView][${workspaceId}] Got coral data presigned URL response:`, response);
+          console.log(
+            `[MapResultsView][${workspaceId}] Got coral data presigned URL response:`,
+            response
+          );
 
           // Step 2: Download and process the Parquet file
           this.downloadAndProcessParquet(response.files[spatialMetricsPath], workspaceId);
@@ -411,7 +504,10 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
   /**
    * Download and process Parquet file containing coral cover data
    */
-  private async downloadAndProcessParquet(presignedUrl: string, workspaceId: string): Promise<void> {
+  private async downloadAndProcessParquet(
+    presignedUrl: string,
+    workspaceId: string
+  ): Promise<void> {
     console.log(`[MapResultsView][${workspaceId}] Downloading Parquet from:`, presignedUrl);
 
     try {
@@ -422,19 +518,29 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       }
 
       const arrayBuffer = await response.arrayBuffer();
-      console.log(`[MapResultsView][${workspaceId}] Downloaded file, size:`, arrayBuffer.byteLength);
+      console.log(
+        `[MapResultsView][${workspaceId}] Downloaded file, size:`,
+        arrayBuffer.byteLength
+      );
 
       // Debug: Check what we actually downloaded
       const uint8Array = new Uint8Array(arrayBuffer);
-      const firstBytes = Array.from(uint8Array.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+      const firstBytes = Array.from(uint8Array.slice(0, 16))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join(' ');
       const firstChars = new TextDecoder().decode(uint8Array.slice(0, 100));
 
       console.log(`[MapResultsView][${workspaceId}] First 16 bytes (hex):`, firstBytes);
       console.log(`[MapResultsView][${workspaceId}] First 100 chars:`, firstChars);
 
       // Check if this looks like HTML (error page)
-      if (firstChars.toLowerCase().includes('<!doctype') || firstChars.toLowerCase().includes('<html')) {
-        throw new Error(`Downloaded file appears to be HTML instead of Parquet. Content: ${firstChars.slice(0, 200)}...`);
+      if (
+        firstChars.toLowerCase().includes('<!doctype') ||
+        firstChars.toLowerCase().includes('<html')
+      ) {
+        throw new Error(
+          `Downloaded file appears to be HTML instead of Parquet. Content: ${firstChars.slice(0, 200)}...`
+        );
       }
 
       // Check for Parquet magic bytes (should start with 'PAR1')
@@ -447,7 +553,9 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         console.log(`[MapResultsView][${workspaceId}] End magic bytes:`, endMagic);
 
         if (endMagic !== 'PAR1') {
-          throw new Error(`File does not appear to be a valid Parquet file. Magic bytes: start='${parquetMagic}', end='${endMagic}'`);
+          throw new Error(
+            `File does not appear to be a valid Parquet file. Magic bytes: start='${parquetMagic}', end='${endMagic}'`
+          );
         }
       }
 
@@ -465,18 +573,22 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
             throw new Error('WASM file not found in public');
           }
         } catch (assetsError) {
-          console.log(`[MapResultsView][${workspaceId}] Assets WASM failed, trying default init...`);
+          console.log(
+            `[MapResultsView][${workspaceId}] Assets WASM failed, trying default init...`
+          );
           await initWasm();
-          console.log(`[MapResultsView][${workspaceId}] parquet-wasm initialized with default method`);
+          console.log(
+            `[MapResultsView][${workspaceId}] parquet-wasm initialized with default method`
+          );
         }
-      } catch (wasmError : any) {
+      } catch (wasmError: any) {
         console.error(`[MapResultsView][${workspaceId}] WASM initialization failed:`, wasmError);
 
         // Provide helpful error message
         if (wasmError.message?.includes('404') || wasmError.message?.includes('Failed to fetch')) {
           throw new Error(
             'WebAssembly module failed to load. Please copy the WASM file to assets: ' +
-            'cp node_modules/parquet-wasm/esm/parquet_wasm_bg.wasm public/wasm/'
+              'cp node_modules/parquet-wasm/esm/parquet_wasm_bg.wasm public/wasm/'
           );
         }
 
@@ -518,7 +630,6 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
           verticalPosition: 'bottom'
         }
       );
-
     } catch (error: any) {
       console.error(`[MapResultsView][${workspaceId}] Failed to process Parquet file:`, error);
       this.coralDataError.set('Failed to process coral cover data: ' + error.message);
@@ -540,7 +651,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     console.log(`[MapResultsView][${workspaceId}] Processing coral cover data...`);
 
     // Extract columns using Apache Arrow API
-    const locationIds = table.getChild('location_id')?.toArray() as number[];
+    const locationIds = table.getChild('location_id')?.toArray() as string[];
     const relativeCover = table.getChild('relative_cover')?.toArray() as number[];
     const timesteps = table.getChild('timestep')?.toArray() as number[];
     const scenarioIds = table.getChild('scenario_id')?.toArray() as number[];
@@ -557,11 +668,14 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     });
 
     // Group by location_id and calculate mean relative cover
-    const locationData = new Map<number, {
-      coverValues: number[];
-      timestepCount: number;
-      scenarioCount: number;
-    }>();
+    const locationData = new Map<
+      string,
+      {
+        coverValues: number[];
+        timestepCount: number;
+        scenarioCount: number;
+      }
+    >();
 
     // Aggregate data by location
     for (let i = 0; i < locationIds.length; i++) {
@@ -588,7 +702,8 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     let globalCount = 0;
 
     for (const [locationId, data] of locationData.entries()) {
-      const meanCover = data.coverValues.reduce((sum, val) => sum + val, 0) / data.coverValues.length;
+      const meanCover =
+        data.coverValues.reduce((sum, val) => sum + val, 0) / data.coverValues.length;
 
       locations.push({
         location_id: locationId,
@@ -607,7 +722,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       min: globalMin,
       max: globalMax,
       mean: globalSum / globalCount,
-      locations: locations.sort((a, b) => a.location_id - b.location_id)
+      locations: locations
     };
 
     console.log(`[MapResultsView][${workspaceId}] Coral cover statistics:`, {
@@ -751,15 +866,15 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
 
     try {
       // Create a map of location_id to coral cover for quick lookup
-      const coverMap = new Map<number, number>();
+      const coverMap = new Map<string, number>();
       stats.locations.forEach(loc => {
         coverMap.set(loc.location_id, loc.mean_relative_cover);
       });
 
       // Update the styling function in the map service
-      this.mapService.updateGeoJSONStyling('reef-boundaries', (feature) => {
+      this.mapService.updateGeoJSONStyling('reef-boundaries', feature => {
         // Handle both Feature and RenderFeature types
-        let locationId: number | undefined;
+        let locationId: string | undefined;
 
         if ('get' in feature && typeof feature.get === 'function') {
           // This is a Feature
@@ -807,7 +922,6 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         horizontalPosition: 'right',
         verticalPosition: 'bottom'
       });
-
     } catch (error: any) {
       console.error(`[MapResultsView][${workspaceId}] Failed to update map styling:`, error);
       this.snackBar.open('Failed to apply coral cover styling', 'Dismiss', {
@@ -815,6 +929,302 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         horizontalPosition: 'right',
         verticalPosition: 'bottom'
       });
+    }
+  }
+
+  /**
+   * Load time series data for a specific location
+   */
+  private async loadSiteTimeSeriesData(locationId: string): Promise<void> {
+    const workspaceId = this.workspaceId();
+    const job = this.job();
+
+    if (!job || !job.assignments || job.assignments.length === 0) {
+      console.warn(`[${workspaceId}] No job data available for time series`);
+      return;
+    }
+
+    try {
+      const resultPayload = job.assignments[0].result?.result_payload as AdriaModelRunResult;
+
+      if (!resultPayload || !resultPayload.spatial_metrics_path) {
+        console.warn(`[${workspaceId}] No spatial metrics path found`);
+        return;
+      }
+
+      // We already have the parquet data loaded, so we need to filter it
+      // This requires us to store the full dataset when we process it
+      // For now, we'll make another request to get the data
+
+      console.log(`[${workspaceId}] Loading time series data for location ${locationId}`);
+
+      // Since we already have the coral cover stats, we can use that to set up the site info
+      const stats = this.coralCoverStats();
+      if (stats) {
+        const locationData = stats.locations.find(loc => loc.location_id === locationId);
+        if (locationData) {
+          this.selectedSite.set({
+            locationId: locationId,
+            meanCover: locationData.mean_relative_cover,
+            timesteps: locationData.timestep_count,
+            scenarios: locationData.scenario_count,
+            dataPoints: locationData.timestep_count * locationData.scenario_count
+          });
+
+          // Load and render the time series chart
+          await this.loadAndRenderTimeSeriesChart(locationId);
+        }
+      }
+    } catch (error) {
+      console.error(`[${workspaceId}] Failed to load time series data:`, error);
+      this.snackBar.open('Failed to load site data', 'Dismiss', {
+        duration: 3000,
+        horizontalPosition: 'right',
+        verticalPosition: 'bottom'
+      });
+    }
+  }
+
+  /**
+   * Load, filter, and render time series chart for a specific location from the Parquet file.
+   */
+  private async loadAndRenderTimeSeriesChart(locationId: string): Promise<void> {
+    const workspaceId = this.workspaceId();
+    const job = this.job();
+
+    if (!job || !job.assignments || job.assignments.length === 0) {
+      this.snackBar.open('No job data available to load time series.', 'Dismiss', {
+        duration: 3000
+      });
+      return;
+    }
+
+    const resultPayload = job.assignments[0].result?.result_payload as AdriaModelRunResult;
+    if (!resultPayload || !resultPayload.spatial_metrics_path) {
+      this.snackBar.open('Spatial metrics file not found in job results.', 'Dismiss', {
+        duration: 3000
+      });
+      return;
+    }
+
+    console.log(`[${workspaceId}] Loading time series for location ${locationId}`);
+    this.isLoadingCoralData.set(true); // Use coral data loader for visual feedback
+
+    try {
+      // Step 1: Get a presigned URL for the Parquet file
+      const spatialMetricsPath = resultPayload.spatial_metrics_path;
+      const response = await new Promise<any>((resolve, reject) => {
+        this.api
+          .downloadJobOutput(job.id, spatialMetricsPath)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: res => resolve(res),
+            error: err => reject(err)
+          });
+      });
+
+      if (!response || !response.files || !response.files[spatialMetricsPath]) {
+        throw new Error('Failed to get a valid download URL for the data file.');
+      }
+      const presignedUrl = response.files[spatialMetricsPath];
+
+      // Step 2: Download the Parquet file
+      const parquetResponse = await fetch(presignedUrl);
+      if (!parquetResponse.ok) {
+        throw new Error(`Failed to download data file: HTTP ${parquetResponse.status}`);
+      }
+      const arrayBuffer = await parquetResponse.arrayBuffer();
+
+      // Step 3: Initialize WASM and parse the Parquet file into an Arrow Table
+      // Note: initWasm() is idempotent, so it's safe to call again.
+      await initWasm();
+      const wasmTable = readParquet(new Uint8Array(arrayBuffer));
+      const table = arrow.tableFromIPC(wasmTable.intoIPCStream());
+
+      // Step 4: Filter the Arrow Table to get data only for the selected location
+      // The apache-arrow library uses a predicate system for filtering.
+      if (!table.schema.fields.some(f => f.name === 'location_id')) {
+        throw new Error("Column 'location_id' not found in the data file.");
+      }
+
+      const timestep = table.getChild('timestep')?.toArray() as number[];
+      const locationIds = table.getChild('location_id')?.toArray() as string[];
+      const relativeCover = table.getChild('relative_cover')?.toArray() as number[];
+      const scenarioType = table.getChild('scenario_type')?.toArray() as string[];
+      const timeSeries: TimeSeriesData[] = [];
+
+      for (let i = 0; i < locationIds.length; i++) {
+        if (locationIds[i] === locationId) {
+          const entry = {
+            timestep: Number(timestep[i]),
+            scenario_type: scenarioType[i],
+            relative_cover: Number(relativeCover[i])
+          };
+          if (entry.relative_cover === 0) console.log('ZERO ENTRY', entry);
+          timeSeries.push(entry);
+        }
+      }
+
+      this.siteTimeSeriesData.set(aggregateTimeSeriesData(timeSeries));
+
+      // Step 6: Render the chart
+      // Use a timeout to ensure the DOM updates before rendering the chart
+      setTimeout(() => {
+        this.renderVegaChart();
+      }, 100);
+    } catch (error: any) {
+      console.error(
+        `[${workspaceId}] Failed to load or process time series data for location ${locationId}:`,
+        error
+      );
+      this.snackBar.open(
+        `Error loading data for location ${locationId}: ${error.message}`,
+        'Dismiss',
+        {
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        }
+      );
+      // Clear any previous data to avoid showing a stale chart
+      this.clearSelectedSite();
+    } finally {
+      this.isLoadingCoralData.set(false);
+    }
+  }
+
+  /**
+   * Render Vega-Lite chart for site time series
+   */
+  private renderVegaChart(): void {
+    if (!this.siteChartContainer?.nativeElement) {
+      console.warn('Chart container not available');
+      return;
+    }
+
+    const container = this.siteChartContainer.nativeElement;
+    const data = this.siteTimeSeriesData();
+
+    if (data.length === 0) {
+      console.warn('No time series data to render');
+      return;
+    }
+
+    // Clear previous chart
+    if (this.vegaView) {
+      this.vegaView.finalize();
+      container.innerHTML = '';
+    }
+
+    // NOTE: This spec assumes you are passing the `aggregatedData` from the function above.
+    const spec = {
+      $schema: 'https://vega.github.io/schema/vega-lite/v6.json',
+      width: 'container',
+      height: 350,
+      // Use the pre-aggregated data
+      data: { values: data },
+      encoding: {
+        // Shared X-axis for all layers
+        x: {
+          field: 'timestep',
+          type: 'quantitative', // Quantitative is better for years than nominal/ordinal
+          title: 'Year',
+          axis: { format: 'd' },
+          scale: { zero: false }
+        },
+        // Shared color scheme for all layers
+        color: {
+          field: 'scenario_type',
+          type: 'nominal',
+          title: 'Scenario Type',
+          scale: {
+            domain: ['guided', 'unguided', 'counterfactual'],
+            range: ['#2196F3', '#FF9800', '#F44336']
+          },
+          legend: {
+            orient: 'top',
+            direction: 'horizontal',
+            title: null
+          }
+        }
+      },
+      layer: [
+        {
+          // Layer 1: Confidence Band (using the pre-calculated min/max fields)
+          mark: { type: 'area', opacity: 0.3 },
+          encoding: {
+            y: {
+              field: 'min_cover', // Map to your pre-calculated min field
+              type: 'quantitative',
+              title: 'Relative Coral Cover'
+            },
+            y2: {
+              field: 'max_cover' // Map to your pre-calculated max field
+            }
+          }
+        },
+        {
+          // Layer 2: Mean Trend Line (using the pre-calculated mean field)
+          mark: { type: 'line', strokeWidth: 2.5, interpolate: 'monotone' },
+          encoding: {
+            y: {
+              field: 'mean_cover', // Map to your pre-calculated mean field
+              type: 'quantitative'
+            }
+          }
+        },
+        {
+          // Layer 3: Invisible tooltip rule
+          mark: { type: 'rule', stroke: 'transparent' },
+          encoding: {
+            tooltip: [
+              { field: 'timestep', type: 'quantitative', title: 'Year', format: 'd' },
+              { field: 'scenario_type', type: 'nominal', title: 'Scenario' },
+              { field: 'mean_cover', type: 'quantitative', title: 'Mean Cover', format: '.1%' },
+              { field: 'min_cover', type: 'quantitative', title: 'Min Cover', format: '.1%' },
+              { field: 'max_cover', type: 'quantitative', title: 'Max Cover', format: '.1%' }
+            ]
+          }
+        }
+      ],
+      config: {
+        view: { stroke: 'transparent' },
+        axis: { domainColor: '#ccc', tickColor: '#ccc', gridColor: '#eee' }
+      }
+    } satisfies VisualizationSpec;
+    // Render the chart
+    embed(container, spec, {
+      theme: 'quartz',
+      renderer: 'canvas',
+      actions: {
+        export: true,
+        source: false,
+        compiled: false,
+        editor: true
+      }
+    })
+      .then(result => {
+        this.vegaView = result;
+        console.log('Vega chart rendered successfully');
+      })
+      .catch(error => {
+        console.error('Failed to render Vega chart:', error);
+      });
+  }
+
+  /**
+   * Clear selected site and chart
+   */
+  clearSelectedSite(): void {
+    this.selectedSite.set(null);
+    this.siteTimeSeriesData.set([]);
+
+    if (this.vegaView) {
+      this.vegaView.finalize();
+      this.vegaView = null;
+    }
+
+    if (this.siteChartContainer?.nativeElement) {
+      this.siteChartContainer.nativeElement.innerHTML = '';
     }
   }
 
@@ -828,7 +1238,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     const features = this.mapService.getFeaturesAtPixel(event.pixel);
     if (features && features.length > 0) {
       const feature = features[0];
-      let locationId: number | undefined;
+      let locationId: string | undefined;
 
       // Handle different feature types
       if ('get' in feature && typeof feature.get === 'function') {
@@ -845,7 +1255,10 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         if (locationData) {
           console.log(`[${this.workspaceId()}] Clicked location ${locationId}:`, locationData);
 
-          // Show location info in snackbar
+          // Load time series data for this location
+          this.loadSiteTimeSeriesData(locationId);
+
+          // Show location info in snackbar (keep existing behavior)
           this.snackBar.open(
             `Location ${locationId}: ${(locationData.mean_relative_cover * 100).toFixed(1)}% coral cover`,
             'Dismiss',
@@ -853,6 +1266,9 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
           );
         }
       }
+    } else {
+      // Clear selection if clicking on empty space
+      this.clearSelectedSite();
     }
 
     // Emit map interaction for parent component
