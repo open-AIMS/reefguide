@@ -55,12 +55,14 @@ export class LayerController {
         this.enablePixelFiltering();
       }
 
-      // console.log('filter criteria layer', min, max);
-      // prevent full layer extent rendering color issue when min/max at extreme
-      if (min === 0) {
-        min = 0.0000001;
+      // values at the extreme or beyond can cause the full layer extent to render the color,
+      // so offset number value slightly to prevent this.
+      if (min <= 0) {
+        min = Number.EPSILON;
       }
-      if (max === 1) {
+      if (max >= 1) {
+        // offset by EPSILON did not work. Maybe float64 to float32 conversion issue with GPU?
+        // max = 1 - Number.EPSILON;
         max = 0.999999;
       }
       layer.updateStyleVariables({ min, max });
@@ -75,6 +77,10 @@ export class LayerController {
     }
   }
 
+  /**
+   * Sets the layer style to filter pixels using min, max style variables.
+   * Changes the styleMode to pixel-filtering
+   */
   private enablePixelFiltering() {
     this.styleMode.set('pixel-filtering');
 
@@ -87,6 +93,7 @@ export class LayerController {
         metric = ['-', 1, metric];
       }
 
+      // if set to 0 or 1 entire layer extent renders color (depending on reverseRange)
       const flatColor = [
         'case',
         ['between', metric, ['var', 'min'], ['var', 'max']],
@@ -96,11 +103,10 @@ export class LayerController {
 
       layer.setStyle({
         variables: {
-          // if set to 0 or 1 entire layer extent renders color (depending on reverseRange)
-          min: 0.0000001,
+          // avoid full extent color render by offsetting numbers
+          min: Number.EPSILON,
           max: 0.999999
         },
-
         color: flatColor
       });
     }
