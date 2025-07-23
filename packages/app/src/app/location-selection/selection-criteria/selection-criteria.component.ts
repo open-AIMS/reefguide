@@ -118,6 +118,15 @@ export class SelectionCriteriaComponent {
 
     for (const c of regionCriteriaRanges) {
       const { min_val, max_val, default_min_val, default_max_val } = c;
+      if (default_min_val < min_val) {
+        console.warn(`criteria ${c.id} default_min_val=${default_min_val} < min_val=${min_val}`);
+      }
+
+      if (default_max_val > max_val) {
+        console.warn(`criteria ${c.id} default_max_val=${default_max_val} > max_val=${max_val}`);
+      }
+
+      // this feature is for criteria like Depth
       if (this.negativeFlippedCriteria.has(c.id)) {
         c.min_val = -max_val;
         c.max_val = -min_val;
@@ -125,25 +134,18 @@ export class SelectionCriteriaComponent {
         c.default_max_val = -default_min_val;
       }
 
+      // round the min/max outward, otherwise the slider step values will be long
+      // floating point numbers that are visible to user on slider thumb.
       c.min_val = Math.floor(c.min_val);
       c.max_val = Math.ceil(c.max_val);
+
+      // use step 1 for large ranges, step 0.1 for smaller. (40 is arbitrary)
       const diff = c.max_val - c.min_val;
       c.step = diff > 40 ? 1 : 0.1;
 
       // ensure that default values are not outside the criteria range.
       const minValue = Math.max(c.default_min_val, c.min_val);
-      if (minValue !== c.default_min_val) {
-        console.warn(
-          `criteria ${c.id} default_min_val=${c.default_min_val} < min_val=${c.min_val}`
-        );
-      }
-
       const maxValue = Math.min(c.default_max_val, c.max_val);
-      if (maxValue !== c.default_max_val) {
-        console.warn(
-          `criteria ${c.id} default_max_val=${c.default_max_val} > max_val=${c.max_val}`
-        );
-      }
 
       criteriaControlDefs[`${c.payload_property_prefix}min`] = [minValue];
       criteriaControlDefs[`${c.payload_property_prefix}max`] = [maxValue];
