@@ -1,9 +1,12 @@
 // src/app/model-workflow/services/map.service.ts
 import { Injectable, signal } from '@angular/core';
-import { Map, View } from 'ol';
-import { Tile as TileLayer } from 'ol/layer';
-import { OSM } from 'ol/source';
+import { Map as OlMap, View } from 'ol';
+import { createEmpty } from 'ol/extent';
+import { GeoJSON } from 'ol/format';
+import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
 import { fromLonLat } from 'ol/proj';
+import { OSM, Vector as VectorSource } from 'ol/source';
+import { Fill, Stroke, Style } from 'ol/style';
 import { BehaviorSubject } from 'rxjs';
 
 export interface MapConfiguration {
@@ -13,12 +16,27 @@ export interface MapConfiguration {
   maxZoom?: number;
 }
 
+export interface GeoJSONLayerOptions {
+  layerName: string;
+  style?: {
+    stroke?: {
+      color: string;
+      width: number;
+    };
+    fill?: {
+      color: string;
+    };
+  };
+  zIndex?: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class MapService {
-  private map: Map | null = null;
+  private map: OlMap | null = null;
   private isInitialized = signal(false);
+  private vectorLayers: Map<string, VectorLayer<VectorSource>> = new Map();
 
   // Observable for map state changes
   private mapInitializedSubject = new BehaviorSubject<boolean>(false);
@@ -39,7 +57,7 @@ export class MapService {
   /**
    * Initialize the map with a target container
    */
-  initializeMap(target: string | HTMLElement, config?: Partial<MapConfiguration>): Map {
+  initializeMap(target: string | HTMLElement, config?: Partial<MapConfiguration>): OlMap {
     console.log('[MapService] initializeMap() called');
     console.log('[MapService] Target:', target);
     console.log('[MapService] Config:', config);
@@ -84,7 +102,7 @@ export class MapService {
       }
 
       // Create the map
-      this.map = new Map({
+      this.map = new OlMap({
         target: targetElement,
         layers: [
           new TileLayer({
@@ -122,9 +140,137 @@ export class MapService {
   }
 
   /**
+   * Add a GeoJSON layer to the map
+   */
+  addGeoJSONLayer(geoJsonData: any, options: GeoJSONLayerOptions): void {
+    console.log('[MapService] addGeoJSONLayer() called');
+    console.log('[MapService] GeoJSON data:', geoJsonData);
+    console.log('[MapService] Options:', options);
+    console.log('[MapService] Current map instance:', this.map);
+
+    if (!this.map) {
+      console.warn('[MapService] Cannot add GeoJSON layer - no map instance');
+      return;
+    }
+
+    try {
+      // Remove existing layer with the same name if it exists
+      if (this.vectorLayers.has(options.layerName)) {
+        console.log(`[MapService] Removing existing layer: ${options.layerName}`);
+        this.removeGeoJSONLayer(options.layerName);
+      }
+
+      // Create vector source from GeoJSON
+      const vectorSource = new VectorSource({
+        features: new GeoJSON().readFeatures(geoJsonData, {
+          featureProjection: 'EPSG:3857', // Web Mercator
+          dataProjection: 'EPSG:4326' // WGS84
+        })
+      });
+
+      console.log(
+        '[MapService] Vector source created with features:',
+        vectorSource.getFeatures().length
+      );
+
+      // Create style
+      const style = new Style({
+        stroke: new Stroke({
+          color: options.style?.stroke?.color || '#2196F3',
+          width: options.style?.stroke?.width || 2
+        }),
+        fill: new Fill({
+          color: options.style?.fill?.color || 'rgba(33, 150, 243, 0.1)'
+        })
+      });
+
+      // Create vector layer
+      const vectorLayer = new VectorLayer({
+        source: vectorSource,
+        style: style,
+        zIndex: options.zIndex || 10
+      });
+
+      // Add layer to map
+      this.map.addLayer(vectorLayer);
+
+      // Store layer reference
+      this.vectorLayers.set(options.layerName, vectorLayer);
+
+      console.log(`[MapService] GeoJSON layer '${options.layerName}' added successfully`);
+    } catch (error) {
+      console.error('[MapService] Failed to add GeoJSON layer:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a GeoJSON layer from the map
+   */
+  removeGeoJSONLayer(layerName: string): void {
+    console.log(`[MapService] removeGeoJSONLayer() called for: ${layerName}`);
+
+    if (!this.map) {
+      console.warn('[MapService] Cannot remove layer - no map instance');
+      return;
+    }
+
+    const layer = this.vectorLayers.get(layerName);
+    if (layer) {
+      console.log(`[MapService] Removing layer: ${layerName}`);
+      this.map.removeLayer(layer);
+      this.vectorLayers.delete(layerName);
+      console.log(`[MapService] Layer '${layerName}' removed successfully`);
+    } else {
+      console.warn(`[MapService] Layer '${layerName}' not found`);
+    }
+  }
+
+  /**
+   * Fit map view to GeoJSON extent
+   */
+  fitToGeoJSONExtent(geoJsonData: any, padding?: number[]): void {
+    console.log('[MapService] fitToGeoJSONExtent() called');
+    console.log('[MapService] GeoJSON data:', geoJsonData);
+    console.log('[MapService] Current map instance:', this.map);
+
+    if (!this.map) {
+      console.warn('[MapService] Cannot fit to extent - no map instance');
+      return;
+    }
+
+    try {
+      // Create temporary vector source to calculate extent
+      const vectorSource = new VectorSource({
+        features: new GeoJSON().readFeatures(geoJsonData, {
+          featureProjection: 'EPSG:3857',
+          dataProjection: 'EPSG:4326'
+        })
+      });
+
+      const extent = vectorSource.getExtent();
+      console.log('[MapService] Calculated extent:', extent);
+
+      if (extent && extent !== createEmpty()) {
+        const view = this.map.getView();
+        view.fit(extent, {
+          padding: padding || [50, 50, 50, 50],
+          duration: 1000,
+          maxZoom: 14 // Don't zoom in too close
+        });
+        console.log('[MapService] Map fitted to GeoJSON extent');
+      } else {
+        console.warn('[MapService] Could not calculate valid extent from GeoJSON');
+      }
+    } catch (error) {
+      console.error('[MapService] Failed to fit to GeoJSON extent:', error);
+    }
+  }
+
+  /**
    * Get the current map instance
    */
-  getMap(): Map | null {
+  getMap(): OlMap | null {
     console.log('[MapService] getMap() called, returning:', this.map);
     return this.map;
   }
@@ -222,6 +368,13 @@ export class MapService {
 
     if (this.map) {
       console.log('[MapService] Cleaning up map instance...');
+
+      // Remove all vector layers
+      this.vectorLayers.forEach((layer, name) => {
+        console.log(`[MapService] Removing vector layer: ${name}`);
+        this.map!.removeLayer(layer);
+      });
+      this.vectorLayers.clear();
 
       // Remove all event listeners
       console.log('[MapService] Removing event listeners');

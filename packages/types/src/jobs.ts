@@ -110,6 +110,8 @@ export const dataSpecificationUpdateResultSchema = z.object({}).strict();
 
 export const adriaModelRunResultSchema = z
   .object({
+    spatial_metrics_path: z.string().describe('Relative path to the spatial metrics parquet file'),
+    reef_boundaries_path: z.string().describe('Relative path to the reef geometry GeoJSON file'),
     output_result_set_path: z
       .string()
       .describe('The relative location of the result set data package'),

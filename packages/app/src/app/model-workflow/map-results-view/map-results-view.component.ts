@@ -21,8 +21,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AdriaModelRunResult, JobDetailsResponse } from '@reefguide/types';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { MapService } from '../services/map.service';
+import { WebApiService } from '../../../api/web-api.service';
 
 @Component({
   selector: 'app-map-results-view',
@@ -43,6 +44,7 @@ import { MapService } from '../services/map.service';
 export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
   private readonly mapService = inject(MapService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly api = inject(WebApiService);
   private readonly destroy$ = new Subject<void>();
 
   @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef<HTMLDivElement>;
@@ -57,15 +59,18 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
   mapConfigChanged = output<any>();
 
   // State
-  private isMapLoading = signal(true);
+  public isMapLoading = signal(true);
   private mapError = signal<string | null>(null);
   public mapInitialized = signal(false);
+  public isLoadingGeoData = signal(false);
+  private geoDataError = signal<string | null>(null);
+  private geoDataLoaded = signal(false);
   private resizeObserver?: ResizeObserver;
 
   // Computed properties
-  isLoading = computed(() => this.isMapLoading());
-  hasError = computed(() => this.mapError() !== null);
-  errorMessage = computed(() => this.mapError() || '');
+  isLoading = computed(() => this.isMapLoading() || this.isLoadingGeoData());
+  hasError = computed(() => this.mapError() !== null || this.geoDataError() !== null);
+  errorMessage = computed(() => this.mapError() || this.geoDataError() || '');
   hasJobResults = computed(() => {
     console.log(`[MapResultsView] Checking for job results`);
     const currentJob = this.job();
@@ -98,13 +103,20 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       }
     });
 
-    // Effect to handle job changes
+    // Effect to handle job changes and load geodata
     effect(() => {
       const currentJob = this.job();
       console.log(`[${this.workspaceId()}] Map view job changed:`, currentJob?.id);
 
       if (currentJob && currentJob.status === 'SUCCEEDED') {
         this.processJobResults(currentJob);
+
+        // Load geodata after map is initialized
+        setTimeout(() => {
+          if (this.mapInitialized()) {
+            this.loadGeoData(currentJob);
+          }
+        }, 200);
       } else {
         this.clearMapData();
       }
@@ -216,6 +228,14 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         this.mapService.addClickHandler(this.handleMapClick.bind(this));
 
         console.log(`[MapResultsView][${workspaceId}] Map initialization complete`);
+
+        // Load geodata if we have a completed job
+        const currentJob = this.job();
+        if (currentJob && currentJob.status === 'SUCCEEDED') {
+          setTimeout(() => {
+            this.loadGeoData(currentJob);
+          }, 100);
+        }
       } else {
         console.error(`[MapResultsView][${workspaceId}] Map service returned null/undefined`);
         throw new Error('Failed to create map instance');
@@ -225,6 +245,164 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       console.error(`[MapResultsView][${workspaceId}] Error stack:`, error.stack);
       this.mapError.set('Failed to initialize map: ' + error.message);
       this.isMapLoading.set(false);
+    }
+  }
+
+  /**
+   * Load GeoJSON data from job results
+   */
+  private loadGeoData(job: JobDetailsResponse['job']): void {
+    const workspaceId = this.workspaceId();
+    console.log(`[MapResultsView][${workspaceId}] Loading geodata for job:`, job.id);
+
+    if (!this.mapInitialized()) {
+      console.warn(`[MapResultsView][${workspaceId}] Map not initialized, skipping geodata load`);
+      return;
+    }
+
+    if (this.geoDataLoaded()) {
+      console.log(`[MapResultsView][${workspaceId}] Geodata already loaded, skipping`);
+      return;
+    }
+
+    try {
+      if (!job.assignments || job.assignments.length === 0) {
+        console.warn(`[MapResultsView][${workspaceId}] No assignments found in job ${job.id}`);
+        return;
+      }
+
+      const resultPayload = job.assignments[0].result?.result_payload as AdriaModelRunResult;
+
+      if (!resultPayload || !resultPayload.reef_boundaries_path) {
+        console.warn(
+          `[MapResultsView][${workspaceId}] No reef boundaries path found in job results`
+        );
+        return;
+      }
+
+      const reefBoundariesPath = resultPayload.reef_boundaries_path;
+      console.log(
+        `[MapResultsView][${workspaceId}] Found reef boundaries path:`,
+        reefBoundariesPath
+      );
+
+      this.isLoadingGeoData.set(true);
+      this.geoDataError.set(null);
+
+      // Step 1: Get presigned URL for the GeoJSON file
+      console.log(
+        `[MapResultsView][${workspaceId}] Requesting presigned URL for:`,
+        reefBoundariesPath
+      );
+
+      this.api
+        .downloadJobOutput(job.id, reefBoundariesPath)
+        .pipe(
+          takeUntil(this.destroy$),
+          catchError(error => {
+            console.error(`[MapResultsView][${workspaceId}] Failed to get presigned URL:`, error);
+            this.geoDataError.set('Failed to get download URL for reef boundaries');
+            this.isLoadingGeoData.set(false);
+            return of(null);
+          })
+        )
+        .subscribe(response => {
+          if (!response) return;
+
+          console.log(`[MapResultsView][${workspaceId}] Got presigned URL response:`, response);
+
+          // Step 2: Download the GeoJSON file using the presigned URL
+          this.downloadGeoJSON(response.files[reefBoundariesPath], workspaceId);
+        });
+    } catch (error: any) {
+      console.error(`[MapResultsView][${workspaceId}] Failed to load geodata:`, error);
+      this.geoDataError.set('Failed to load reef boundaries: ' + error.message);
+      this.isLoadingGeoData.set(false);
+    }
+  }
+
+  /**
+   * Download GeoJSON file and add to map
+   */
+  private downloadGeoJSON(presignedUrl: string, workspaceId: string): void {
+    console.log(`[MapResultsView][${workspaceId}] Downloading GeoJSON from:`, presignedUrl);
+
+    fetch(presignedUrl)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then(geoJsonData => {
+        console.log(
+          `[MapResultsView][${workspaceId}] Successfully downloaded GeoJSON:`,
+          geoJsonData
+        );
+
+        // Step 3: Add GeoJSON layer to the map
+        this.addGeoJSONToMap(geoJsonData, workspaceId);
+
+        this.geoDataLoaded.set(true);
+        this.isLoadingGeoData.set(false);
+
+        // Show success message
+        this.snackBar.open('Reef boundaries loaded successfully', 'Dismiss', {
+          duration: 3000,
+          horizontalPosition: 'right',
+          verticalPosition: 'bottom'
+        });
+      })
+      .catch(error => {
+        console.error(`[MapResultsView][${workspaceId}] Failed to download GeoJSON:`, error);
+        this.geoDataError.set('Failed to download reef boundaries: ' + error.message);
+        this.isLoadingGeoData.set(false);
+
+        // Show error message
+        this.snackBar.open('Failed to load reef boundaries', 'Dismiss', {
+          duration: 5000,
+          horizontalPosition: 'right',
+          verticalPosition: 'bottom'
+        });
+      });
+  }
+
+  /**
+   * Add GeoJSON data as a layer to the OpenLayers map
+   */
+  private addGeoJSONToMap(geoJsonData: any, workspaceId: string): void {
+    console.log(`[MapResultsView][${workspaceId}] Adding GeoJSON layer to map`);
+
+    try {
+      // Add the GeoJSON layer through the map service
+      this.mapService.addGeoJSONLayer(geoJsonData, {
+        layerName: 'reef-boundaries',
+        style: {
+          stroke: {
+            color: '#2196F3',
+            width: 2
+          },
+          fill: {
+            color: 'rgba(33, 150, 243, 0.1)'
+          }
+        },
+        zIndex: 10
+      });
+
+      // Optionally fit the map view to the GeoJSON extent
+      this.mapService.fitToGeoJSONExtent(geoJsonData);
+
+      console.log(`[MapResultsView][${workspaceId}] GeoJSON layer added successfully`);
+    } catch (error: any) {
+      console.error(`[MapResultsView][${workspaceId}] Failed to add GeoJSON to map:`, error);
+      this.geoDataError.set('Failed to display reef boundaries on map');
+
+      // Show error message
+      this.snackBar.open('Failed to display reef boundaries', 'Dismiss', {
+        duration: 5000,
+        horizontalPosition: 'right',
+        verticalPosition: 'bottom'
+      });
     }
   }
 
@@ -255,16 +433,20 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
 
       const resultPayload = job.assignments[0].result?.result_payload as AdriaModelRunResult;
 
-      // In the future, we can extract spatial data from resultPayload
-      // For now, just log what's available
       console.log(`[${this.workspaceId()}] Job result payload:`, Object.keys(resultPayload || {}));
 
-      // TODO: Extract and process spatial data for map display
+      if (resultPayload) {
+        console.log(`[${this.workspaceId()}] Available spatial data:`, {
+          spatial_metrics_path: resultPayload.spatial_metrics_path,
+          reef_boundaries_path: resultPayload.reef_boundaries_path
+        });
+      }
+
+      // TODO: Extract and process spatial metrics data for additional map display
       // This could include:
-      // - Reef locations
-      // - Intervention sites
-      // - Coverage data
-      // - Scenario results by location
+      // - Processing spatial_metrics_path parquet file
+      // - Adding point data or heatmaps based on metrics
+      // - Creating interactive popups with metric data
     } catch (error) {
       console.error(`[${this.workspaceId()}] Failed to process job results for map:`, error);
     }
@@ -280,6 +462,9 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     this.mapInitialized.set(false);
     this.isMapLoading.set(true);
     this.mapError.set(null);
+    this.isLoadingGeoData.set(false);
+    this.geoDataError.set(null);
+    this.geoDataLoaded.set(false);
 
     // Destroy existing map
     this.mapService.destroyMap();

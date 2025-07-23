@@ -45,7 +45,8 @@
     <!-- Loading state overlay -->
     <div *ngIf="isLoading()" class="map-loading">
       <mat-spinner diameter="50"></mat-spinner>
-      <p>Initializing map...</p>
+      <p *ngIf="isMapLoading()">Initializing map...</p>
+      <p *ngIf="isLoadingGeoData()">Loading reef boundaries...</p>
     </div>
 
     <!-- Error state overlay -->
@@ -56,6 +57,14 @@
       <button mat-stroked-button color="primary" (click)="retryMapInitialization()">
         Retry
       </button>
+    </div>
+
+    <!-- Data loading status indicator (shows when geodata is loading but map is ready) -->
+    <div *ngIf="mapInitialized() && isLoadingGeoData() && !hasError()" class="data-loading-indicator">
+      <div class="loading-badge">
+        <mat-spinner diameter="16"></mat-spinner>
+        <span>Loading reef data...</span>
+      </div>
     </div>
   </div>
 
