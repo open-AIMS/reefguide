@@ -154,7 +154,11 @@
       width: 80px;
       height: 80px;
       border-radius: 50%;
-      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+      background: linear-gradient(
+        135deg,
+        rgba(102, 126, 234, 0.1) 0%,
+        rgba(118, 75, 162, 0.1) 100%
+      );
       display: flex;
       align-items: center;
       justify-content: center;
@@ -316,11 +320,11 @@
       justify-content: center;
       flex-shrink: 0;
 
-      &[data-type="SITE_SELECTION"] {
+      &[data-type='SITE_SELECTION'] {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       }
 
-      &[data-type="ADRIA_ANALYSIS"] {
+      &[data-type='ADRIA_ANALYSIS'] {
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       }
 
@@ -342,7 +346,6 @@
         font-weight: 500;
         font-size: 1.1rem;
         line-height: 1.3;
-        cursor: help;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -356,13 +359,13 @@
         font-weight: 500;
         border: 1px solid;
 
-        &[data-type="SITE_SELECTION"] {
+        &[data-type='SITE_SELECTION'] {
           background: rgba(102, 126, 234, 0.1);
           color: #667eea;
           border-color: rgba(102, 126, 234, 0.2);
         }
 
-        &[data-type="ADRIA_ANALYSIS"] {
+        &[data-type='ADRIA_ANALYSIS'] {
           background: rgba(240, 147, 251, 0.1);
           color: #f5576c;
           border-color: rgba(240, 147, 251, 0.2);
@@ -398,11 +401,9 @@
       color: #666;
       line-height: 1.5;
       font-size: 0.9rem;
-      cursor: help;
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
-      -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       min-height: 2.7em;
     }
