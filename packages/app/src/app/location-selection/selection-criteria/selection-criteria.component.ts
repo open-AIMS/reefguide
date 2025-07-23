@@ -103,6 +103,7 @@ export class SelectionCriteriaComponent {
       )
       .subscribe(regionCriteria => {
         this.buildCriteriaFormGroup(regionCriteria);
+        this.setupLayerPixelFiltering();
       });
   }
 
@@ -112,6 +113,7 @@ export class SelectionCriteriaComponent {
     // TODO order?
     const regionCriteriaRanges = Object.values(regionCriteria) as CriteriaRangeList;
 
+    // formBuilder definitions for 'criteria' group
     const criteriaControlDefs: Record<string, any> = {};
 
     for (const c of regionCriteriaRanges) {
@@ -128,16 +130,41 @@ export class SelectionCriteriaComponent {
       const diff = c.max_val - c.min_val;
       c.step = diff > 40 ? 1 : 0.1;
 
-      criteriaControlDefs[`${c.payload_property_prefix}min`] = [c.default_min_val];
-      criteriaControlDefs[`${c.payload_property_prefix}max`] = [c.default_max_val];
+      // ensure that default values are not outside the criteria range.
+      const minValue = Math.max(c.default_min_val, c.min_val);
+      if (minValue !== c.default_min_val) {
+        console.warn(
+          `criteria ${c.id} default_min_val=${c.default_min_val} < min_val=${c.min_val}`
+        );
+      }
+
+      const maxValue = Math.min(c.default_max_val, c.max_val);
+      if (maxValue !== c.default_max_val) {
+        console.warn(
+          `criteria ${c.id} default_max_val=${c.default_max_val} > max_val=${c.max_val}`
+        );
+      }
+
+      criteriaControlDefs[`${c.payload_property_prefix}min`] = [minValue];
+      criteriaControlDefs[`${c.payload_property_prefix}max`] = [maxValue];
     }
 
     const formGroup = this.formBuilder.group(criteriaControlDefs);
     this.form.setControl('criteria', formGroup);
 
     this.regionCriteriaRanges.set(regionCriteriaRanges);
+  }
 
-    // for criteria with layers
+  /**
+   * For criteria with a map layer, listen to slider min/max changes and pixel-filter.
+   * Sets layer visible (exclusive to other criteria layers) on min|max change
+   */
+  private setupLayerPixelFiltering() {
+    const regionCriteriaRanges = this.regionCriteriaRanges();
+    const formGroup = this.form.get('criteria');
+    if (!regionCriteriaRanges || !formGroup) {
+      return;
+    }
     for (const c of regionCriteriaRanges) {
       const layerController = this.mapService.criteriaLayers[c.id];
       if (layerController) {
