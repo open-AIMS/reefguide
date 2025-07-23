@@ -7,15 +7,8 @@ import { ProfileButtonComponent } from '../user/profile-button/profile-button.co
 @Component({
   selector: 'app-landing-page',
   standalone: true,
-  imports: [
-    CommonModule,
-    MatIconModule,
-    ProjectsListComponent,
-    ProfileButtonComponent
-  ],
+  imports: [CommonModule, MatIconModule, ProjectsListComponent, ProfileButtonComponent],
   templateUrl: './landing-page.component.html',
   styleUrls: ['./landing-page.component.scss']
 })
-export class LandingPageComponent {
-
-}
+export class LandingPageComponent {}
