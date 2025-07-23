@@ -24,6 +24,23 @@ import { AdriaModelRunResult, JobDetailsResponse } from '@reefguide/types';
 import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { MapService } from '../services/map.service';
 import { WebApiService } from '../../../api/web-api.service';
+// Import both libraries for Parquet → Arrow conversion
+import * as arrow from 'apache-arrow';
+import initWasm, { readParquet } from 'parquet-wasm';
+
+interface CoralCoverData {
+  location_id: number;
+  mean_relative_cover: number;
+  timestep_count: number;
+  scenario_count: number;
+}
+
+interface CoralCoverStats {
+  min: number;
+  max: number;
+  mean: number;
+  locations: CoralCoverData[];
+}
 
 @Component({
   selector: 'app-map-results-view',
@@ -63,14 +80,24 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
   private mapError = signal<string | null>(null);
   public mapInitialized = signal(false);
   public isLoadingGeoData = signal(false);
+  public isLoadingCoralData = signal(false);
   private geoDataError = signal<string | null>(null);
+  private coralDataError = signal<string | null>(null);
   private geoDataLoaded = signal(false);
+  private coralDataLoaded = signal(false);
+  private coralCoverStats = signal<CoralCoverStats | null>(null);
   private resizeObserver?: ResizeObserver;
 
   // Computed properties
-  isLoading = computed(() => this.isMapLoading() || this.isLoadingGeoData());
-  hasError = computed(() => this.mapError() !== null || this.geoDataError() !== null);
-  errorMessage = computed(() => this.mapError() || this.geoDataError() || '');
+  isLoading = computed(() =>
+    this.isMapLoading() || this.isLoadingGeoData() || this.isLoadingCoralData()
+  );
+  hasError = computed(() =>
+    this.mapError() !== null || this.geoDataError() !== null || this.coralDataError() !== null
+  );
+  errorMessage = computed(() =>
+    this.mapError() || this.geoDataError() || this.coralDataError() || ''
+  );
   hasJobResults = computed(() => {
     console.log(`[MapResultsView] Checking for job results`);
     const currentJob = this.job();
@@ -111,10 +138,11 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       if (currentJob && currentJob.status === 'SUCCEEDED') {
         this.processJobResults(currentJob);
 
-        // Load geodata after map is initialized
+        // Load both spatial and coral cover data after map is initialized
         setTimeout(() => {
           if (this.mapInitialized()) {
-            this.loadGeoData(currentJob);
+            this.loadSpatialData(currentJob);
+            this.loadCoralCoverData(currentJob);
           }
         }, 200);
       } else {
@@ -165,22 +193,14 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     }
 
     console.log(`[MapResultsView][${workspaceId}] Checking map container...`);
-    console.log(`[MapResultsView][${workspaceId}] MapContainer ViewChild:`, this.mapContainer);
 
     if (!this.mapContainer?.nativeElement) {
       console.warn(`[MapResultsView][${workspaceId}] Map container not available`);
-      console.warn(`[MapResultsView][${workspaceId}] - mapContainer:`, this.mapContainer);
-      console.warn(
-        `[MapResultsView][${workspaceId}] - nativeElement:`,
-        this.mapContainer?.nativeElement
-      );
       return;
     }
 
     const containerElement = this.mapContainer.nativeElement;
     console.log(`[MapResultsView][${workspaceId}] Container element:`, containerElement);
-    console.log(`[MapResultsView][${workspaceId}] Container ID:`, containerElement.id);
-    console.log(`[MapResultsView][${workspaceId}] Container class:`, containerElement.className);
 
     // Check container dimensions
     const rect = containerElement.getBoundingClientRect();
@@ -206,8 +226,6 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       const selectedRegion = this.selectedRegion();
       console.log(`[MapResultsView][${workspaceId}] Selected region:`, selectedRegion);
 
-      console.log(`[MapResultsView][${workspaceId}] Available region configs:`, regionConfigs);
-
       const config = regionConfigs[selectedRegion] || regionConfigs['gbr'];
       console.log(`[MapResultsView][${workspaceId}] Using config:`, config);
 
@@ -229,11 +247,12 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
 
         console.log(`[MapResultsView][${workspaceId}] Map initialization complete`);
 
-        // Load geodata if we have a completed job
+        // Load data if we have a completed job
         const currentJob = this.job();
         if (currentJob && currentJob.status === 'SUCCEEDED') {
           setTimeout(() => {
-            this.loadGeoData(currentJob);
+            this.loadSpatialData(currentJob);
+            this.loadCoralCoverData(currentJob);
           }, 100);
         }
       } else {
@@ -249,19 +268,19 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Load GeoJSON data from job results
+   * Load spatial GeoJSON data from job results
    */
-  private loadGeoData(job: JobDetailsResponse['job']): void {
+  private loadSpatialData(job: JobDetailsResponse['job']): void {
     const workspaceId = this.workspaceId();
-    console.log(`[MapResultsView][${workspaceId}] Loading geodata for job:`, job.id);
+    console.log(`[MapResultsView][${workspaceId}] Loading spatial data for job:`, job.id);
 
     if (!this.mapInitialized()) {
-      console.warn(`[MapResultsView][${workspaceId}] Map not initialized, skipping geodata load`);
+      console.warn(`[MapResultsView][${workspaceId}] Map not initialized, skipping spatial data load`);
       return;
     }
 
     if (this.geoDataLoaded()) {
-      console.log(`[MapResultsView][${workspaceId}] Geodata already loaded, skipping`);
+      console.log(`[MapResultsView][${workspaceId}] Spatial data already loaded, skipping`);
       return;
     }
 
@@ -315,10 +334,289 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
           this.downloadGeoJSON(response.files[reefBoundariesPath], workspaceId);
         });
     } catch (error: any) {
-      console.error(`[MapResultsView][${workspaceId}] Failed to load geodata:`, error);
+      console.error(`[MapResultsView][${workspaceId}] Failed to load spatial data:`, error);
       this.geoDataError.set('Failed to load reef boundaries: ' + error.message);
       this.isLoadingGeoData.set(false);
     }
+  }
+
+  /**
+   * Load and process coral cover data from Parquet file
+   */
+  private loadCoralCoverData(job: JobDetailsResponse['job']): void {
+    const workspaceId = this.workspaceId();
+    console.log(`[MapResultsView][${workspaceId}] Loading coral cover data for job:`, job.id);
+
+    if (this.coralDataLoaded()) {
+      console.log(`[MapResultsView][${workspaceId}] Coral data already loaded, skipping`);
+      return;
+    }
+
+    try {
+      if (!job.assignments || job.assignments.length === 0) {
+        console.warn(`[MapResultsView][${workspaceId}] No assignments found in job ${job.id}`);
+        return;
+      }
+
+      const resultPayload = job.assignments[0].result?.result_payload as AdriaModelRunResult;
+
+      if (!resultPayload || !resultPayload.spatial_metrics_path) {
+        console.warn(
+          `[MapResultsView][${workspaceId}] No spatial metrics path found in job results`
+        );
+        return;
+      }
+
+      const spatialMetricsPath = resultPayload.spatial_metrics_path;
+      console.log(
+        `[MapResultsView][${workspaceId}] Found spatial metrics path:`,
+        spatialMetricsPath
+      );
+
+      this.isLoadingCoralData.set(true);
+      this.coralDataError.set(null);
+
+      // Step 1: Get presigned URL for the Parquet file
+      console.log(
+        `[MapResultsView][${workspaceId}] Requesting presigned URL for:`,
+        spatialMetricsPath
+      );
+
+      this.api
+        .downloadJobOutput(job.id, spatialMetricsPath)
+        .pipe(
+          takeUntil(this.destroy$),
+          catchError(error => {
+            console.error(`[MapResultsView][${workspaceId}] Failed to get presigned URL for coral data:`, error);
+            this.coralDataError.set('Failed to get download URL for coral cover data');
+            this.isLoadingCoralData.set(false);
+            return of(null);
+          })
+        )
+        .subscribe(response => {
+          if (!response) return;
+
+          console.log(`[MapResultsView][${workspaceId}] Got coral data presigned URL response:`, response);
+
+          // Step 2: Download and process the Parquet file
+          this.downloadAndProcessParquet(response.files[spatialMetricsPath], workspaceId);
+        });
+    } catch (error: any) {
+      console.error(`[MapResultsView][${workspaceId}] Failed to load coral cover data:`, error);
+      this.coralDataError.set('Failed to load coral cover data: ' + error.message);
+      this.isLoadingCoralData.set(false);
+    }
+  }
+
+  /**
+   * Download and process Parquet file containing coral cover data
+   */
+  private async downloadAndProcessParquet(presignedUrl: string, workspaceId: string): Promise<void> {
+    console.log(`[MapResultsView][${workspaceId}] Downloading Parquet from:`, presignedUrl);
+
+    try {
+      // Download the Parquet file as ArrayBuffer
+      const response = await fetch(presignedUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      console.log(`[MapResultsView][${workspaceId}] Downloaded file, size:`, arrayBuffer.byteLength);
+
+      // Debug: Check what we actually downloaded
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const firstBytes = Array.from(uint8Array.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+      const firstChars = new TextDecoder().decode(uint8Array.slice(0, 100));
+
+      console.log(`[MapResultsView][${workspaceId}] First 16 bytes (hex):`, firstBytes);
+      console.log(`[MapResultsView][${workspaceId}] First 100 chars:`, firstChars);
+
+      // Check if this looks like HTML (error page)
+      if (firstChars.toLowerCase().includes('<!doctype') || firstChars.toLowerCase().includes('<html')) {
+        throw new Error(`Downloaded file appears to be HTML instead of Parquet. Content: ${firstChars.slice(0, 200)}...`);
+      }
+
+      // Check for Parquet magic bytes (should start with 'PAR1')
+      const parquetMagic = new TextDecoder().decode(uint8Array.slice(0, 4));
+      console.log(`[MapResultsView][${workspaceId}] File magic bytes:`, parquetMagic);
+
+      if (parquetMagic !== 'PAR1') {
+        // Check if it might be at the end (Parquet files have magic bytes at both ends)
+        const endMagic = new TextDecoder().decode(uint8Array.slice(-4));
+        console.log(`[MapResultsView][${workspaceId}] End magic bytes:`, endMagic);
+
+        if (endMagic !== 'PAR1') {
+          throw new Error(`File does not appear to be a valid Parquet file. Magic bytes: start='${parquetMagic}', end='${endMagic}'`);
+        }
+      }
+
+      // Initialize parquet-wasm with local WASM file
+      try {
+        console.log(`[MapResultsView][${workspaceId}] Attempting to initialize parquet-wasm...`);
+
+        // Try to load from assets directory first
+        try {
+          const wasmResponse = await fetch('wasm/parquet_wasm_bg.wasm');
+          if (wasmResponse.ok) {
+            await initWasm(wasmResponse);
+            console.log(`[MapResultsView][${workspaceId}] parquet-wasm initialized from public`);
+          } else {
+            throw new Error('WASM file not found in public');
+          }
+        } catch (assetsError) {
+          console.log(`[MapResultsView][${workspaceId}] Assets WASM failed, trying default init...`);
+          await initWasm();
+          console.log(`[MapResultsView][${workspaceId}] parquet-wasm initialized with default method`);
+        }
+      } catch (wasmError : any) {
+        console.error(`[MapResultsView][${workspaceId}] WASM initialization failed:`, wasmError);
+
+        // Provide helpful error message
+        if (wasmError.message?.includes('404') || wasmError.message?.includes('Failed to fetch')) {
+          throw new Error(
+            'WebAssembly module failed to load. Please copy the WASM file to assets: ' +
+            'cp node_modules/parquet-wasm/esm/parquet_wasm_bg.wasm public/wasm/'
+          );
+        }
+
+        throw new Error(`Failed to initialize parquet-wasm: ${wasmError.message}`);
+      }
+
+      // Read Parquet file to WASM Arrow table
+      const wasmTable = readParquet(uint8Array);
+
+      // Convert WASM Arrow table to JS Arrow table
+      const table = arrow.tableFromIPC(wasmTable.intoIPCStream());
+
+      console.log(`[MapResultsView][${workspaceId}] Parsed Arrow table:`, {
+        numRows: table.numRows,
+        numCols: table.numCols,
+        schema: table.schema.toString()
+      });
+
+      // Process the data to calculate mean relative cover by location
+      const coralCoverStats = this.processCoralCoverData(table, workspaceId);
+
+      // Store the processed data
+      this.coralCoverStats.set(coralCoverStats);
+      this.coralDataLoaded.set(true);
+      this.isLoadingCoralData.set(false);
+
+      // Update map styling if spatial data is already loaded
+      if (this.geoDataLoaded()) {
+        this.updateMapStyling();
+      }
+
+      // Show success message
+      this.snackBar.open(
+        `Coral cover data loaded (${coralCoverStats.locations.length} locations)`,
+        'Dismiss',
+        {
+          duration: 3000,
+          horizontalPosition: 'right',
+          verticalPosition: 'bottom'
+        }
+      );
+
+    } catch (error: any) {
+      console.error(`[MapResultsView][${workspaceId}] Failed to process Parquet file:`, error);
+      this.coralDataError.set('Failed to process coral cover data: ' + error.message);
+      this.isLoadingCoralData.set(false);
+
+      // Show error message
+      this.snackBar.open('Failed to load coral cover data', 'Dismiss', {
+        duration: 5000,
+        horizontalPosition: 'right',
+        verticalPosition: 'bottom'
+      });
+    }
+  }
+
+  /**
+   * Process coral cover data from Arrow table to calculate location-based statistics
+   */
+  private processCoralCoverData(table: arrow.Table, workspaceId: string): CoralCoverStats {
+    console.log(`[MapResultsView][${workspaceId}] Processing coral cover data...`);
+
+    // Extract columns using Apache Arrow API
+    const locationIds = table.getChild('location_id')?.toArray() as number[];
+    const relativeCover = table.getChild('relative_cover')?.toArray() as number[];
+    const timesteps = table.getChild('timestep')?.toArray() as number[];
+    const scenarioIds = table.getChild('scenario_id')?.toArray() as number[];
+
+    if (!locationIds || !relativeCover || !timesteps || !scenarioIds) {
+      throw new Error('Required columns not found in Parquet data');
+    }
+
+    console.log(`[MapResultsView][${workspaceId}] Data dimensions:`, {
+      rows: table.numRows,
+      uniqueLocations: new Set(locationIds).size,
+      uniqueTimesteps: new Set(timesteps).size,
+      uniqueScenarios: new Set(scenarioIds).size
+    });
+
+    // Group by location_id and calculate mean relative cover
+    const locationData = new Map<number, {
+      coverValues: number[];
+      timestepCount: number;
+      scenarioCount: number;
+    }>();
+
+    // Aggregate data by location
+    for (let i = 0; i < locationIds.length; i++) {
+      const locationId = locationIds[i];
+      const cover = relativeCover[i];
+
+      if (!locationData.has(locationId)) {
+        locationData.set(locationId, {
+          coverValues: [],
+          timestepCount: 0,
+          scenarioCount: 0
+        });
+      }
+
+      const data = locationData.get(locationId)!;
+      data.coverValues.push(cover);
+    }
+
+    // Calculate statistics for each location
+    const locations: CoralCoverData[] = [];
+    let globalMin = Infinity;
+    let globalMax = -Infinity;
+    let globalSum = 0;
+    let globalCount = 0;
+
+    for (const [locationId, data] of locationData.entries()) {
+      const meanCover = data.coverValues.reduce((sum, val) => sum + val, 0) / data.coverValues.length;
+
+      locations.push({
+        location_id: locationId,
+        mean_relative_cover: meanCover,
+        timestep_count: new Set(timesteps.filter((_, i) => locationIds[i] === locationId)).size,
+        scenario_count: new Set(scenarioIds.filter((_, i) => locationIds[i] === locationId)).size
+      });
+
+      globalMin = Math.min(globalMin, meanCover);
+      globalMax = Math.max(globalMax, meanCover);
+      globalSum += meanCover;
+      globalCount++;
+    }
+
+    const stats: CoralCoverStats = {
+      min: globalMin,
+      max: globalMax,
+      mean: globalSum / globalCount,
+      locations: locations.sort((a, b) => a.location_id - b.location_id)
+    };
+
+    console.log(`[MapResultsView][${workspaceId}] Coral cover statistics:`, {
+      locations: stats.locations.length,
+      coverRange: [stats.min, stats.max],
+      meanCover: stats.mean
+    });
+
+    return stats;
   }
 
   /**
@@ -346,6 +644,11 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         this.geoDataLoaded.set(true);
         this.isLoadingGeoData.set(false);
 
+        // Update styling if coral data is already loaded
+        if (this.coralDataLoaded()) {
+          this.updateMapStyling();
+        }
+
         // Show success message
         this.snackBar.open('Reef boundaries loaded successfully', 'Dismiss', {
           duration: 3000,
@@ -368,7 +671,33 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Add GeoJSON data as a layer to the OpenLayers map
+   * Create color scale for coral cover visualization
+   */
+  private getCoralCoverColor(relativeCover: number, stats: CoralCoverStats): string {
+    // Normalize value between 0 and 1
+    const normalized = (relativeCover - stats.min) / (stats.max - stats.min);
+
+    // Create color gradient from red (low) to green (high)
+    // Red: #FF4444, Yellow: #FFAA00, Green: #44AA44
+    if (normalized < 0.5) {
+      // Red to Yellow
+      const factor = normalized * 2;
+      const red = Math.round(255);
+      const green = Math.round(68 + (170 - 68) * factor);
+      const blue = Math.round(68 * (1 - factor));
+      return `rgb(${red}, ${green}, ${blue})`;
+    } else {
+      // Yellow to Green
+      const factor = (normalized - 0.5) * 2;
+      const red = Math.round(255 * (1 - factor) + 68 * factor);
+      const green = Math.round(170);
+      const blue = Math.round(68);
+      return `rgb(${red}, ${green}, ${blue})`;
+    }
+  }
+
+  /**
+   * Add GeoJSON data as a layer to the OpenLayers map with coral cover styling
    */
   private addGeoJSONToMap(geoJsonData: any, workspaceId: string): void {
     console.log(`[MapResultsView][${workspaceId}] Adding GeoJSON layer to map`);
@@ -380,7 +709,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         style: {
           stroke: {
             color: '#2196F3',
-            width: 2
+            width: 1
           },
           fill: {
             color: 'rgba(33, 150, 243, 0.1)'
@@ -407,15 +736,131 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
+   * Update map styling based on coral cover data
+   */
+  private updateMapStyling(): void {
+    const workspaceId = this.workspaceId();
+    const stats = this.coralCoverStats();
+
+    if (!stats) {
+      console.warn(`[MapResultsView][${workspaceId}] No coral cover stats available for styling`);
+      return;
+    }
+
+    console.log(`[MapResultsView][${workspaceId}] Updating map styling with coral cover data`);
+
+    try {
+      // Create a map of location_id to coral cover for quick lookup
+      const coverMap = new Map<number, number>();
+      stats.locations.forEach(loc => {
+        coverMap.set(loc.location_id, loc.mean_relative_cover);
+      });
+
+      // Update the styling function in the map service
+      this.mapService.updateGeoJSONStyling('reef-boundaries', (feature) => {
+        // Handle both Feature and RenderFeature types
+        let locationId: number | undefined;
+
+        if ('get' in feature && typeof feature.get === 'function') {
+          // This is a Feature
+          locationId = feature.get('location_id');
+        } else if ('getProperties' in feature && typeof feature.getProperties === 'function') {
+          // This is a RenderFeature
+          const properties = feature.getProperties();
+          locationId = properties['location_id'];
+        }
+
+        const relativeCover = locationId ? coverMap.get(locationId) : undefined;
+
+        if (relativeCover !== undefined) {
+          const fillColor = this.getCoralCoverColor(relativeCover, stats);
+          const strokeColor = this.getCoralCoverColor(relativeCover, stats);
+
+          return {
+            stroke: {
+              color: strokeColor,
+              width: 1.5
+            },
+            fill: {
+              color: fillColor.replace('rgb', 'rgba').replace(')', ', 0.7)')
+            }
+          };
+        } else {
+          // Default styling for locations without data
+          return {
+            stroke: {
+              color: '#999999',
+              width: 1
+            },
+            fill: {
+              color: 'rgba(153, 153, 153, 0.3)'
+            }
+          };
+        }
+      });
+
+      console.log(`[MapResultsView][${workspaceId}] Map styling updated successfully`);
+
+      // Show success message
+      this.snackBar.open('Map styled with coral cover data', 'Dismiss', {
+        duration: 2000,
+        horizontalPosition: 'right',
+        verticalPosition: 'bottom'
+      });
+
+    } catch (error: any) {
+      console.error(`[MapResultsView][${workspaceId}] Failed to update map styling:`, error);
+      this.snackBar.open('Failed to apply coral cover styling', 'Dismiss', {
+        duration: 3000,
+        horizontalPosition: 'right',
+        verticalPosition: 'bottom'
+      });
+    }
+  }
+
+  /**
    * Handle map click events
    */
   private handleMapClick(event: any): void {
     console.log(`[${this.workspaceId()}] Map clicked at:`, event.coordinate);
+
+    // Try to get feature information at click location
+    const features = this.mapService.getFeaturesAtPixel(event.pixel);
+    if (features && features.length > 0) {
+      const feature = features[0];
+      let locationId: number | undefined;
+
+      // Handle different feature types
+      if ('get' in feature && typeof feature.get === 'function') {
+        locationId = feature.get('location_id');
+      } else if ('getProperties' in feature && typeof feature.getProperties === 'function') {
+        const properties = feature.getProperties();
+        locationId = properties['location_id'];
+      }
+
+      const stats = this.coralCoverStats();
+
+      if (locationId && stats) {
+        const locationData = stats.locations.find(loc => loc.location_id === locationId);
+        if (locationData) {
+          console.log(`[${this.workspaceId()}] Clicked location ${locationId}:`, locationData);
+
+          // Show location info in snackbar
+          this.snackBar.open(
+            `Location ${locationId}: ${(locationData.mean_relative_cover * 100).toFixed(1)}% coral cover`,
+            'Dismiss',
+            { duration: 3000 }
+          );
+        }
+      }
+    }
+
     // Emit map interaction for parent component
     this.mapInteraction.emit({
       type: 'click',
       coordinate: event.coordinate,
-      pixel: event.pixel
+      pixel: event.pixel,
+      features: features
     });
   }
 
@@ -442,11 +887,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         });
       }
 
-      // TODO: Extract and process spatial metrics data for additional map display
-      // This could include:
-      // - Processing spatial_metrics_path parquet file
-      // - Adding point data or heatmaps based on metrics
-      // - Creating interactive popups with metric data
+      // TODO: Could add more processing here for additional map features
     } catch (error) {
       console.error(`[${this.workspaceId()}] Failed to process job results for map:`, error);
     }
@@ -463,8 +904,12 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     this.isMapLoading.set(true);
     this.mapError.set(null);
     this.isLoadingGeoData.set(false);
+    this.isLoadingCoralData.set(false);
     this.geoDataError.set(null);
+    this.coralDataError.set(null);
     this.geoDataLoaded.set(false);
+    this.coralDataLoaded.set(false);
+    this.coralCoverStats.set(null);
 
     // Destroy existing map
     this.mapService.destroyMap();

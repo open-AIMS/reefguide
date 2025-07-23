@@ -1,6 +1,6 @@
 // src/app/model-workflow/services/map.service.ts
 import { Injectable, signal } from '@angular/core';
-import { Map as OlMap, View } from 'ol';
+import { Map as OlMap, View, Feature } from 'ol';
 import { createEmpty } from 'ol/extent';
 import { GeoJSON } from 'ol/format';
 import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
@@ -28,6 +28,18 @@ export interface GeoJSONLayerOptions {
     };
   };
   zIndex?: number;
+}
+
+export interface StyleFunction {
+  (feature: Feature): {
+    stroke?: {
+      color: string;
+      width: number;
+    };
+    fill?: {
+      color: string;
+    };
+  };
 }
 
 @Injectable({
@@ -201,6 +213,78 @@ export class MapService {
     } catch (error) {
       console.error('[MapService] Failed to add GeoJSON layer:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Update styling for an existing GeoJSON layer using a style function
+   */
+  updateGeoJSONStyling(layerName: string, styleFunction: StyleFunction): void {
+    console.log(`[MapService] updateGeoJSONStyling() called for layer: ${layerName}`);
+
+    if (!this.map) {
+      console.warn('[MapService] Cannot update styling - no map instance');
+      return;
+    }
+
+    const layer = this.vectorLayers.get(layerName);
+    if (!layer) {
+      console.warn(`[MapService] Layer '${layerName}' not found for styling update`);
+      return;
+    }
+
+    try {
+      // Create OpenLayers style function that matches the expected signature
+      // TODO improve typing - typescript doesn't like this being Feature
+      const olStyleFunction = (feature: any) => {
+        const styleConfig = styleFunction(feature);
+
+        return new Style({
+          stroke: new Stroke({
+            color: styleConfig.stroke?.color || '#2196F3',
+            width: styleConfig.stroke?.width || 2
+          }),
+          fill: new Fill({
+            color: styleConfig.fill?.color || 'rgba(33, 150, 243, 0.1)'
+          })
+        });
+      };
+
+      // Update layer style
+      layer.setStyle(olStyleFunction);
+
+      console.log(`[MapService] Layer '${layerName}' styling updated successfully`);
+    } catch (error) {
+      console.error(`[MapService] Failed to update styling for layer '${layerName}':`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get features at a specific pixel location
+   */
+  getFeaturesAtPixel(pixel: [number, number]): Feature[] | null {
+    console.log('[MapService] getFeaturesAtPixel() called with pixel:', pixel);
+
+    if (!this.map) {
+      console.warn('[MapService] Cannot get features - no map instance');
+      return null;
+    }
+
+    try {
+      const features: Feature[] = [];
+
+      this.map.forEachFeatureAtPixel(pixel, feature => {
+        if (feature instanceof Feature) {
+          features.push(feature);
+        }
+      });
+
+      console.log(`[MapService] Found ${features.length} features at pixel`);
+      return features.length > 0 ? features : null;
+    } catch (error) {
+      console.error('[MapService] Failed to get features at pixel:', error);
+      return null;
     }
   }
 
