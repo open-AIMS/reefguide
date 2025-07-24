@@ -961,6 +961,16 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       // Find location data and immediately show the popup
       const locationData = stats.locations.find(loc => loc.location_id === locationId);
       if (locationData) {
+        // Clear previous chart data immediately
+        this.siteTimeSeriesData.set([]);
+        if (this.vegaView) {
+          this.vegaView.finalize();
+          this.vegaView = null;
+        }
+        if (this.siteChartContainer?.nativeElement) {
+          this.siteChartContainer.nativeElement.innerHTML = '';
+        }
+
         // Immediately show the popup with site info
         this.selectedSite.set({
           locationId: locationId,
