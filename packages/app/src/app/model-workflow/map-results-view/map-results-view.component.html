@@ -78,7 +78,7 @@
       <mat-card-title>
         <div class="title-row">
           <span>Location {{ selectedSite()!.locationId }} - Coral Cover Over Time</span>
-          <button mat-icon-button (click)="clearSelectedSite()" matTooltip="Close">
+          <button mat-icon-button (click)="clearSelectedSite()" matTooltip="Close" class="close-button">
             <mat-icon>close</mat-icon>
           </button>
         </div>
@@ -87,6 +87,11 @@
 
     <mat-card-content>
       <div class="chart-container" #siteChartContainer>
+        <!-- Loading state for chart -->
+        <div class="chart-loading" *ngIf="isLoadingSiteData()">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Loading time series data...</p>
+        </div>
         <!-- Vega-Lite chart will be rendered here -->
       </div>
 

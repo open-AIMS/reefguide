@@ -158,11 +158,13 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
   private geoDataLoaded = signal(false);
   private coralDataLoaded = signal(false);
   private coralCoverStats = signal<CoralCoverStats | null>(null);
+  private cachedArrowTable = signal<arrow.Table | null>(null);
   private resizeObserver?: ResizeObserver;
 
   // Site selection state
   public selectedSite = signal<SiteData | null>(null);
   private siteTimeSeriesData = signal<AggregatedTimeSeriesData[]>([]);
+  public isLoadingSiteData = signal(false);
   private vegaView: VegaResult | null = null;
 
   @ViewChild('siteChartContainer', { static: false })
@@ -254,6 +256,10 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
     }
+
+    // Clear cached data
+    this.cachedArrowTable.set(null);
+    this.coralCoverStats.set(null);
 
     // Destroy the map
     this.mapService.destroyMap();
@@ -596,7 +602,9 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       }
 
       // Read Parquet file to WASM Arrow table
+      console.log(`[MapResultsView][${workspaceId}] Reading Parquet file...`);
       const wasmTable = readParquet(uint8Array);
+      console.log(`[MapResultsView][${workspaceId}] Read Parquet file successfully`);
 
       // Convert WASM Arrow table to JS Arrow table
       const table = arrow.tableFromIPC(wasmTable.intoIPCStream());
@@ -606,6 +614,9 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         numCols: table.numCols,
         schema: table.schema.toString()
       });
+
+      // Cache the full Arrow table for later use
+      this.cachedArrowTable.set(table);
 
       // Process the data to calculate mean relative cover by location
       const coralCoverStats = this.processCoralCoverData(table, workspaceId);
@@ -937,46 +948,33 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
    */
   private async loadSiteTimeSeriesData(locationId: string): Promise<void> {
     const workspaceId = this.workspaceId();
-    const job = this.job();
+    const stats = this.coralCoverStats();
 
-    if (!job || !job.assignments || job.assignments.length === 0) {
-      console.warn(`[${workspaceId}] No job data available for time series`);
+    if (!stats) {
+      console.warn(`[${workspaceId}] No coral cover stats available`);
       return;
     }
 
     try {
-      const resultPayload = job.assignments[0].result?.result_payload as AdriaModelRunResult;
+      console.log(`[${workspaceId}] Setting up site info for location ${locationId}`);
 
-      if (!resultPayload || !resultPayload.spatial_metrics_path) {
-        console.warn(`[${workspaceId}] No spatial metrics path found`);
-        return;
-      }
+      // Find location data and immediately show the popup
+      const locationData = stats.locations.find(loc => loc.location_id === locationId);
+      if (locationData) {
+        // Immediately show the popup with site info
+        this.selectedSite.set({
+          locationId: locationId,
+          meanCover: locationData.mean_relative_cover,
+          timesteps: locationData.timestep_count,
+          scenarios: locationData.scenario_count,
+          dataPoints: locationData.timestep_count * locationData.scenario_count
+        });
 
-      // We already have the parquet data loaded, so we need to filter it
-      // This requires us to store the full dataset when we process it
-      // For now, we'll make another request to get the data
-
-      console.log(`[${workspaceId}] Loading time series data for location ${locationId}`);
-
-      // Since we already have the coral cover stats, we can use that to set up the site info
-      const stats = this.coralCoverStats();
-      if (stats) {
-        const locationData = stats.locations.find(loc => loc.location_id === locationId);
-        if (locationData) {
-          this.selectedSite.set({
-            locationId: locationId,
-            meanCover: locationData.mean_relative_cover,
-            timesteps: locationData.timestep_count,
-            scenarios: locationData.scenario_count,
-            dataPoints: locationData.timestep_count * locationData.scenario_count
-          });
-
-          // Load and render the time series chart
-          await this.loadAndRenderTimeSeriesChart(locationId);
-        }
+        // Start loading chart data asynchronously
+        this.loadAndRenderTimeSeriesChart(locationId);
       }
     } catch (error) {
-      console.error(`[${workspaceId}] Failed to load time series data:`, error);
+      console.error(`[${workspaceId}] Failed to load site data:`, error);
       this.snackBar.open('Failed to load site data', 'Dismiss', {
         duration: 3000,
         horizontalPosition: 'right',
@@ -986,71 +984,40 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Load, filter, and render time series chart for a specific location from the Parquet file.
+   * Load, filter, and render time series chart for a specific location using cached Arrow table.
    */
   private async loadAndRenderTimeSeriesChart(locationId: string): Promise<void> {
     const workspaceId = this.workspaceId();
-    const job = this.job();
+    const cachedTable = this.cachedArrowTable();
 
-    if (!job || !job.assignments || job.assignments.length === 0) {
-      this.snackBar.open('No job data available to load time series.', 'Dismiss', {
-        duration: 3000
-      });
+    // Check if we have the cached table
+    if (!cachedTable) {
+      this.snackBar.open(
+        'Data not yet loaded. Please wait for coral cover data to finish loading.',
+        'Dismiss',
+        {
+          duration: 3000
+        }
+      );
+      this.isLoadingSiteData.set(false);
       return;
     }
 
-    const resultPayload = job.assignments[0].result?.result_payload as AdriaModelRunResult;
-    if (!resultPayload || !resultPayload.spatial_metrics_path) {
-      this.snackBar.open('Spatial metrics file not found in job results.', 'Dismiss', {
-        duration: 3000
-      });
-      return;
-    }
+    console.log(`[${workspaceId}] Loading time series for location ${locationId} from cached data`);
+    this.isLoadingSiteData.set(true);
 
-    console.log(`[${workspaceId}] Loading time series for location ${locationId}`);
-    this.isLoadingCoralData.set(true); // Use coral data loader for visual feedback
-
-    try {
-      // Step 1: Get a presigned URL for the Parquet file
-      const spatialMetricsPath = resultPayload.spatial_metrics_path;
-      const response = await new Promise<any>((resolve, reject) => {
-        this.api
-          .downloadJobOutput(job.id, spatialMetricsPath)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: res => resolve(res),
-            error: err => reject(err)
-          });
-      });
-
-      if (!response || !response.files || !response.files[spatialMetricsPath]) {
-        throw new Error('Failed to get a valid download URL for the data file.');
-      }
-      const presignedUrl = response.files[spatialMetricsPath];
-
-      // Step 2: Download the Parquet file
-      const parquetResponse = await fetch(presignedUrl);
-      if (!parquetResponse.ok) {
-        throw new Error(`Failed to download data file: HTTP ${parquetResponse.status}`);
-      }
-      const arrayBuffer = await parquetResponse.arrayBuffer();
-
-      // Step 3: Initialize WASM and parse the Parquet file into an Arrow Table
-      // Note: initWasm() is idempotent, so it's safe to call again.
-      await initWasm();
-      const wasmTable = readParquet(new Uint8Array(arrayBuffer));
-      const table = arrow.tableFromIPC(wasmTable.intoIPCStream());
-
-      // Step 4: Filter the Arrow Table to get data only for the selected location
-      // The apache-arrow library uses a predicate system for filtering.
-      if (!table.schema.fields.some(f => f.name === 'location_id')) {
-        throw new Error("Column 'location_id' not found in the data file.");
+    // Use setTimeout to make this non-blocking and allow UI to update
+    setTimeout(async () => {
+      try {
+      // Use the cached Arrow table to filter data for the selected location
+      if (!cachedTable.schema.fields.some(f => f.name === 'location_id')) {
+        throw new Error("Column 'location_id' not found in the cached data.");
       }
 
-      const timestep = table.getChild('timestep')?.toArray() as number[];
-      const locationIds = table.getChild('location_id')?.toArray() as string[];
-      const relativeCover = table.getChild('relative_cover')?.toArray() as number[];
-      const scenarioType = table.getChild('scenario_type')?.toArray() as string[];
+      const timestep = cachedTable.getChild('timestep')?.toArray() as number[];
+      const locationIds = cachedTable.getChild('location_id')?.toArray() as string[];
+      const relativeCover = cachedTable.getChild('relative_cover')?.toArray() as number[];
+      const scenarioType = cachedTable.getChild('scenario_type')?.toArray() as string[];
       const timeSeries: TimeSeriesData[] = [];
 
       for (let i = 0; i < locationIds.length; i++) {
@@ -1060,36 +1027,34 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
             scenario_type: scenarioType[i],
             relative_cover: Number(relativeCover[i])
           };
-          if (entry.relative_cover === 0) console.log('ZERO ENTRY', entry);
           timeSeries.push(entry);
         }
       }
 
       this.siteTimeSeriesData.set(aggregateTimeSeriesData(timeSeries));
 
-      // Step 6: Render the chart
-      // Use a timeout to ensure the DOM updates before rendering the chart
-      setTimeout(() => {
-        this.renderVegaChart();
-      }, 100);
-    } catch (error: any) {
-      console.error(
-        `[${workspaceId}] Failed to load or process time series data for location ${locationId}:`,
-        error
-      );
-      this.snackBar.open(
-        `Error loading data for location ${locationId}: ${error.message}`,
-        'Dismiss',
-        {
-          duration: 5000,
-          panelClass: ['error-snackbar']
-        }
-      );
-      // Clear any previous data to avoid showing a stale chart
-      this.clearSelectedSite();
-    } finally {
-      this.isLoadingCoralData.set(false);
-    }
+        // Render the chart after a small delay to ensure DOM is ready
+        setTimeout(() => {
+          this.renderVegaChart();
+          this.isLoadingSiteData.set(false);
+        }, 100);
+      } catch (error: any) {
+        console.error(
+          `[${workspaceId}] Failed to process time series data for location ${locationId}:`,
+          error
+        );
+        this.snackBar.open(
+          `Error loading data for location ${locationId}: ${error.message}`,
+          'Dismiss',
+          {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          }
+        );
+        this.isLoadingSiteData.set(false);
+        this.clearSelectedSite();
+      }
+    }, 10);
   }
 
   /**
@@ -1217,6 +1182,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
   clearSelectedSite(): void {
     this.selectedSite.set(null);
     this.siteTimeSeriesData.set([]);
+    this.isLoadingSiteData.set(false);
 
     if (this.vegaView) {
       this.vegaView.finalize();
@@ -1326,6 +1292,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     this.geoDataLoaded.set(false);
     this.coralDataLoaded.set(false);
     this.coralCoverStats.set(null);
+    this.cachedArrowTable.set(null);
 
     // Destroy existing map
     this.mapService.destroyMap();
