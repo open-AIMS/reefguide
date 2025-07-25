@@ -1,190 +1,131 @@
-// src/app/model-workflow/map-results-view/map-results-view.component.scss
+/* Map Results View Component Styles */
 .map-results-container {
   display: flex;
   flex-direction: column;
   gap: 16px;
   height: 100%;
-  padding: 16px;
-  overflow-y: auto;
 }
 
+/* Map Card */
 .map-card {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 500px;
+}
 
-  mat-card-header {
-    margin-bottom: 16px;
-
-    .title-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-
-      .region-selector {
-        mat-form-field {
-          width: 200px;
-          margin: 0;
-        }
-      }
-    }
-  }
-
-  mat-card-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
+.map-card mat-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
 }
 
 .map-wrapper {
-  flex: 1;
   position: relative;
+  width: 100%;
+  flex: 1;
   min-height: 400px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-  overflow: hidden;
 }
 
 .map-container {
   width: 100%;
   height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-
-  &.hidden {
-    visibility: hidden;
-  }
+  min-height: 400px;
 }
 
-.map-loading,
-.map-error,
+.map-container.hidden {
+  display: none;
+}
+
+/* Loading State */
+.map-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+/* Error State */
+.map-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  color: #f44336;
+}
+
+.map-error mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+}
+
+/* No Results State */
 .map-empty {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  text-align: center;
-  color: rgba(0, 0, 0, 0.6);
-
-  mat-icon {
-    font-size: 48px;
-    width: 48px;
-    height: 48px;
-    margin-bottom: 16px;
-    opacity: 0.3;
-  }
-
-  p {
-    margin: 8px 0;
-    font-size: 16px;
-
-    &.hint {
-      font-size: 14px;
-      opacity: 0.7;
-    }
-  }
-}
-
-.map-error {
-  mat-icon {
-    color: #f44336;
-    opacity: 0.8;
-  }
-}
-
-.map-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  color: #757575;
 }
 
-// Site details card styles
+.map-empty mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+}
+
+.map-empty .hint {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Site Details Card */
 .site-details-card {
   position: relative;
-  
-  mat-card-header {
-    .title-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      
-      .close-button {
-        position: absolute;
-        top: -8px;
-        right: -8px;
-        z-index: 10;
-        background-color: rgba(255, 255, 255, 0.9);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        
-        &:hover {
-          background-color: rgba(244, 67, 54, 0.1);
-        }
-      }
-    }
-  }
-
-  .chart-container {
-    width: 100%;
-    height: 400px;
-    margin-bottom: 16px;
-    position: relative;
-    
-    .chart-loading {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      color: rgba(0, 0, 0, 0.6);
-      z-index: 10;
-      
-      mat-spinner {
-        margin-bottom: 16px;
-      }
-      
-      p {
-        margin: 8px 0;
-        font-size: 16px;
-      }
-    }
-  }
-
-  .site-info {
-    padding: 16px;
-    background-color: #f5f5f5;
-    border-radius: 4px;
-
-    p {
-      margin: 4px 0;
-      font-size: 14px;
-    }
-  }
 }
 
-// Responsive styles
-@media (max-width: 768px) {
-  .map-results-container {
-    padding: 8px;
-  }
+.title-row {
+  position: absolute;
+  top: -4px;
+  left: 0px;
+  z-index: 1;
+}
 
-  .map-card {
-    min-height: 400px;
-  }
+.close-button {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
 
-  .map-wrapper {
-    min-height: 300px;
-  }
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 30vh;
+}
 
-  .region-selector {
-    mat-form-field {
-      width: 150px !important;
-    }
-  }
+.chart-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
 }
