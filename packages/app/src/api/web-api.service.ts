@@ -324,4 +324,24 @@ export class WebApiService {
   getUserProjects(): Observable<GetProjectsResponse> {
     return this.http.get<GetProjectsResponse>(`${this.base}/projects/user/me`);
   }
+
+  /**
+   * Download a specific file from job output
+   * @param jobId - The job ID
+   * @param filename - The specific filename/path within the job output
+   * @param expirySeconds - Optional expiry time for the presigned URL (default: 3600)
+   * @returns Observable with presigned download URL
+   */
+  downloadJobOutput(
+    jobId: JobId,
+    filename: string,
+    expirySeconds: number = 3600
+  ): Observable<DownloadResponse> {
+    return this.http.get<DownloadResponse>(`${this.base}/jobs/${jobId}/download`, {
+      params: {
+        filterPrefix: filename,
+        expirySeconds: expirySeconds.toString()
+      }
+    });
+  }
 }
