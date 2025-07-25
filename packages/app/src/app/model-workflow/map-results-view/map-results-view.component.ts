@@ -29,6 +29,8 @@ import * as arrow from 'apache-arrow';
 import initWasm, { readParquet } from 'parquet-wasm';
 import embed, { Result as VegaResult, VisualizationSpec } from 'vega-embed';
 
+// ===================================TYPES AND INTERFACES======================================
+
 interface CoralCoverData {
   location_id: string;
   mean_relative_cover: number;
@@ -54,66 +56,37 @@ interface SiteData {
 interface TimeSeriesData {
   timestep: number;
   scenario_type: string;
-  relative_cover: number;
+  relative_cover_mean: number;
+  relative_cover_min: number;
+  relative_cover_max: number;
 }
+
+// =====================================================
+// MAIN COMPONENT
+// =====================================================
 
 /**
- * Aggregates time series data by timestep and scenario type.
+ * Map Results View Component
  *
- * For each group, it calculates the mean, min, and max of relative_cover.
- * This is perfect for summarizing ensemble model runs before visualization.
+ * This component provides a comprehensive view of model simulation results on an interactive map.
+ * It displays coral cover data, reef boundaries, and allows users to click on sites to view
+ * detailed time series charts.
  *
- * @param {TimeSeriesData[]} data - The raw, flat time series data.
- * @returns {AggregatedTimeSeriesData[]} - The aggregated data.
+ * Key Features:
+ * - Interactive OpenLayers map with zoom/pan controls
+ * - Efficient parquet data loading with in-memory caching
+ * - Click-to-view site details with time series charts
+ * - Real-time loading states and error handling
+ * - Responsive design with proper cleanup
+ *
+ * Data Flow:
+ * 1. Job completion triggers map initialization
+ * 2. Spatial (GeoJSON) and coral data (Parquet) load in parallel
+ * 3. Parquet data is cached for efficient site chart generation
+ * 4. Map styling updates based on coral cover statistics
+ * 5. Site clicks immediately show popup with loading spinner
+ * 6. Chart renders from cached data without re-downloading
  */
-interface AggregatedTimeSeriesData {
-  timestep: number;
-  scenario_type: string;
-  mean_cover: number;
-  min_cover: number;
-  max_cover: number;
-}
-
-function aggregateTimeSeriesData(data: TimeSeriesData[]): AggregatedTimeSeriesData[] {
-  if (!data || data.length === 0) {
-    return [];
-  }
-
-  // Use a Map to group data points by a composite key.
-  // Key format: "timestep-scenario_type" (e.g., "2025-guided")
-  const groupedData = new Map<string, number[]>();
-
-  for (const point of data) {
-    const key = `${point.timestep}-${point.scenario_type}`;
-    if (!groupedData.has(key)) {
-      groupedData.set(key, []);
-    }
-    groupedData.get(key)!.push(point.relative_cover);
-  }
-
-  // Now, process the grouped data to calculate statistics.
-  const aggregatedResult: AggregatedTimeSeriesData[] = [];
-  for (const [key, values] of groupedData.entries()) {
-    const [timestep, scenario_type] = key.split('-');
-
-    const sum = values.reduce((acc, val) => acc + val, 0);
-    const mean = sum / values.length;
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-
-    aggregatedResult.push({
-      timestep: Number(timestep),
-      scenario_type,
-      mean_cover: mean,
-      min_cover: min,
-      max_cover: max
-    });
-  }
-
-  // Sort the final result for clean line drawing (important for Vega-Lite)
-  return aggregatedResult.sort((a, b) => a.timestep - b.timestep);
-}
-
 @Component({
   selector: 'app-map-results-view',
   standalone: true,
@@ -163,7 +136,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
 
   // Site selection state
   public selectedSite = signal<SiteData | null>(null);
-  private siteTimeSeriesData = signal<AggregatedTimeSeriesData[]>([]);
+  private siteTimeSeriesData = signal<TimeSeriesData[]>([]);
   public isLoadingSiteData = signal(false);
   private vegaView: VegaResult | null = null;
 
@@ -268,169 +241,152 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  // =====================================================
+  // MAP INITIALIZATION METHODS
+  // =====================================================
+
   /**
-   * Initialize the OpenLayers map
+   * Initialize the OpenLayers map with validation and error handling
    */
   private initializeMap(): void {
     const workspaceId = this.workspaceId();
-    const isInitialized = this.mapInitialized();
 
-    console.log(`[MapResultsView][${workspaceId}] initializeMap() called`);
-    console.log(`[MapResultsView][${workspaceId}] Already initialized:`, isInitialized);
-
-    if (isInitialized) {
+    if (this.mapInitialized()) {
       console.log(`[MapResultsView][${workspaceId}] Map already initialized, skipping`);
       return;
     }
 
-    console.log(`[MapResultsView][${workspaceId}] Checking map container...`);
-
-    if (!this.mapContainer?.nativeElement) {
-      console.warn(`[MapResultsView][${workspaceId}] Map container not available`);
+    if (!this.validateMapContainer(workspaceId)) {
       return;
     }
 
-    const containerElement = this.mapContainer.nativeElement;
-    console.log(`[MapResultsView][${workspaceId}] Container element:`, containerElement);
+    this.setMapLoadingState(true);
 
-    // Check container dimensions
-    const rect = containerElement.getBoundingClientRect();
+    try {
+      const config = this.getMapConfiguration(workspaceId);
+      this.createMapInstance(config, workspaceId);
+    } catch (error: any) {
+      this.handleMapInitializationError(error, workspaceId);
+    }
+  }
+
+  /**
+   * Validate map container element and dimensions
+   */
+  private validateMapContainer(workspaceId: string): boolean {
+    if (!this.mapContainer?.nativeElement) {
+      console.warn(`[MapResultsView][${workspaceId}] Map container not available`);
+      return false;
+    }
+
+    const rect = this.mapContainer.nativeElement.getBoundingClientRect();
     console.log(`[MapResultsView][${workspaceId}] Container dimensions:`, {
       width: rect.width,
-      height: rect.height,
-      top: rect.top,
-      left: rect.left
+      height: rect.height
     });
 
     if (rect.width === 0 || rect.height === 0) {
       console.warn(`[MapResultsView][${workspaceId}] Container has zero dimensions!`);
     }
 
-    console.log(`[MapResultsView][${workspaceId}] Setting loading state...`);
-    this.isMapLoading.set(true);
-    this.mapError.set(null);
+    return true;
+  }
 
-    try {
-      console.log(`[MapResultsView][${workspaceId}] Getting region config...`);
-      // Get configuration for selected region
-      const regionConfigs = this.mapService.getRegionConfigs();
-      const selectedRegion = this.selectedRegion();
-      console.log(`[MapResultsView][${workspaceId}] Selected region:`, selectedRegion);
+  /**
+   * Get map configuration for selected region
+   */
+  private getMapConfiguration(workspaceId: string): any {
+    const regionConfigs = this.mapService.getRegionConfigs();
+    const selectedRegion = this.selectedRegion();
+    const config = regionConfigs[selectedRegion] || regionConfigs['gbr'];
 
-      const config = regionConfigs[selectedRegion] || regionConfigs['gbr'];
-      console.log(`[MapResultsView][${workspaceId}] Using config:`, config);
+    console.log(`[MapResultsView][${workspaceId}] Using config for region:`, selectedRegion);
+    return config;
+  }
 
-      console.log(`[MapResultsView][${workspaceId}] Initializing map via service...`);
-      // Initialize the map
-      const map = this.mapService.initializeMap(containerElement, config);
-      console.log(`[MapResultsView][${workspaceId}] Map service returned:`, map);
+  /**
+   * Create map instance and set up handlers
+   */
+  private createMapInstance(config: any, workspaceId: string): void {
+    const containerElement = this.mapContainer!.nativeElement;
+    const map = this.mapService.initializeMap(containerElement, config);
 
-      if (map) {
-        console.log(
-          `[MapResultsView][${workspaceId}] Map created successfully, setting up handlers...`
-        );
-        this.mapInitialized.set(true);
-        this.isMapLoading.set(false);
+    if (!map) {
+      throw new Error('Failed to create map instance');
+    }
 
-        // Add click handler for demonstration
-        console.log(`[MapResultsView][${workspaceId}] Adding click handler...`);
-        this.mapService.addClickHandler(this.handleMapClick.bind(this));
+    this.finalizeMapInitialization(workspaceId);
+  }
 
-        console.log(`[MapResultsView][${workspaceId}] Map initialization complete`);
+  /**
+   * Finalize map initialization and load data
+   */
+  private finalizeMapInitialization(workspaceId: string): void {
+    console.log(`[MapResultsView][${workspaceId}] Map created successfully`);
 
-        // Load data if we have a completed job
-        const currentJob = this.job();
-        if (currentJob && currentJob.status === 'SUCCEEDED') {
-          setTimeout(() => {
-            this.loadSpatialData(currentJob);
-            this.loadCoralCoverData(currentJob);
-          }, 100);
-        }
-      } else {
-        console.error(`[MapResultsView][${workspaceId}] Map service returned null/undefined`);
-        throw new Error('Failed to create map instance');
-      }
-    } catch (error: any) {
-      console.error(`[MapResultsView][${workspaceId}] Failed to initialize map:`, error);
-      console.error(`[MapResultsView][${workspaceId}] Error stack:`, error.stack);
-      this.mapError.set('Failed to initialize map: ' + error.message);
-      this.isMapLoading.set(false);
+    this.mapInitialized.set(true);
+    this.setMapLoadingState(false);
+
+    // Add click handler
+    this.mapService.addClickHandler(this.handleMapClick.bind(this));
+
+    // Load data if available
+    this.loadDataIfJobCompleted();
+  }
+
+  /**
+   * Load spatial and coral data if job is completed
+   */
+  private loadDataIfJobCompleted(): void {
+    const currentJob = this.job();
+    if (currentJob && currentJob.status === 'SUCCEEDED') {
+      setTimeout(() => {
+        this.loadSpatialData(currentJob);
+        this.loadCoralCoverData(currentJob);
+      }, 100);
     }
   }
+
+  /**
+   * Handle map initialization errors
+   */
+  private handleMapInitializationError(error: any, workspaceId: string): void {
+    console.error(`[MapResultsView][${workspaceId}] Failed to initialize map:`, error);
+    this.mapError.set('Failed to initialize map: ' + error.message);
+    this.setMapLoadingState(false);
+  }
+
+  /**
+   * Set map loading state and clear errors
+   */
+  private setMapLoadingState(loading: boolean): void {
+    this.isMapLoading.set(loading);
+    if (loading) {
+      this.mapError.set(null);
+    }
+  }
+
+  // =====================================================
+  // DATA LOADING METHODS
+  // =====================================================
 
   /**
    * Load spatial GeoJSON data from job results
    */
   private loadSpatialData(job: JobDetailsResponse['job']): void {
     const workspaceId = this.workspaceId();
-    console.log(`[MapResultsView][${workspaceId}] Loading spatial data for job:`, job.id);
 
-    if (!this.mapInitialized()) {
-      console.warn(
-        `[MapResultsView][${workspaceId}] Map not initialized, skipping spatial data load`
-      );
+    if (!this.validateDataLoadingPrerequisites(workspaceId, 'spatial')) {
       return;
     }
 
-    if (this.geoDataLoaded()) {
-      console.log(`[MapResultsView][${workspaceId}] Spatial data already loaded, skipping`);
+    const reefBoundariesPath = this.extractPathFromJob(job, 'reef_boundaries_path', workspaceId);
+    if (!reefBoundariesPath) {
       return;
     }
 
-    try {
-      if (!job.assignments || job.assignments.length === 0) {
-        console.warn(`[MapResultsView][${workspaceId}] No assignments found in job ${job.id}`);
-        return;
-      }
-
-      const resultPayload = job.assignments[0].result?.result_payload as AdriaModelRunResult;
-
-      if (!resultPayload || !resultPayload.reef_boundaries_path) {
-        console.warn(
-          `[MapResultsView][${workspaceId}] No reef boundaries path found in job results`
-        );
-        return;
-      }
-
-      const reefBoundariesPath = resultPayload.reef_boundaries_path;
-      console.log(
-        `[MapResultsView][${workspaceId}] Found reef boundaries path:`,
-        reefBoundariesPath
-      );
-
-      this.isLoadingGeoData.set(true);
-      this.geoDataError.set(null);
-
-      // Step 1: Get presigned URL for the GeoJSON file
-      console.log(
-        `[MapResultsView][${workspaceId}] Requesting presigned URL for:`,
-        reefBoundariesPath
-      );
-
-      this.api
-        .downloadJobOutput(job.id, reefBoundariesPath)
-        .pipe(
-          takeUntil(this.destroy$),
-          catchError(error => {
-            console.error(`[MapResultsView][${workspaceId}] Failed to get presigned URL:`, error);
-            this.geoDataError.set('Failed to get download URL for reef boundaries');
-            this.isLoadingGeoData.set(false);
-            return of(null);
-          })
-        )
-        .subscribe(response => {
-          if (!response) return;
-
-          console.log(`[MapResultsView][${workspaceId}] Got presigned URL response:`, response);
-
-          // Step 2: Download the GeoJSON file using the presigned URL
-          this.downloadGeoJSON(response.files[reefBoundariesPath], workspaceId);
-        });
-    } catch (error: any) {
-      console.error(`[MapResultsView][${workspaceId}] Failed to load spatial data:`, error);
-      this.geoDataError.set('Failed to load reef boundaries: ' + error.message);
-      this.isLoadingGeoData.set(false);
-    }
+    this.setGeoDataLoadingState(true);
+    this.requestPresignedUrl(job.id, reefBoundariesPath, workspaceId, 'spatial');
   }
 
   /**
@@ -438,72 +394,129 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
    */
   private loadCoralCoverData(job: JobDetailsResponse['job']): void {
     const workspaceId = this.workspaceId();
-    console.log(`[MapResultsView][${workspaceId}] Loading coral cover data for job:`, job.id);
 
     if (this.coralDataLoaded()) {
       console.log(`[MapResultsView][${workspaceId}] Coral data already loaded, skipping`);
       return;
     }
 
-    try {
-      if (!job.assignments || job.assignments.length === 0) {
-        console.warn(`[MapResultsView][${workspaceId}] No assignments found in job ${job.id}`);
-        return;
-      }
+    const spatialMetricsPath = this.extractPathFromJob(job, 'spatial_metrics_path', workspaceId);
+    if (!spatialMetricsPath) {
+      return;
+    }
 
-      const resultPayload = job.assignments[0].result?.result_payload as AdriaModelRunResult;
+    this.setCoralDataLoadingState(true);
+    this.requestPresignedUrl(job.id, spatialMetricsPath, workspaceId, 'coral');
+  }
 
-      if (!resultPayload || !resultPayload.spatial_metrics_path) {
+  /**
+   * Validate prerequisites for data loading
+   */
+  private validateDataLoadingPrerequisites(
+    workspaceId: string,
+    dataType: 'spatial' | 'coral'
+  ): boolean {
+    if (dataType === 'spatial') {
+      if (!this.mapInitialized()) {
         console.warn(
-          `[MapResultsView][${workspaceId}] No spatial metrics path found in job results`
+          `[MapResultsView][${workspaceId}] Map not initialized, skipping spatial data load`
         );
-        return;
+        return false;
       }
+      if (this.geoDataLoaded()) {
+        console.log(`[MapResultsView][${workspaceId}] Spatial data already loaded, skipping`);
+        return false;
+      }
+    }
+    return true;
+  }
 
-      const spatialMetricsPath = resultPayload.spatial_metrics_path;
-      console.log(
-        `[MapResultsView][${workspaceId}] Found spatial metrics path:`,
-        spatialMetricsPath
-      );
+  /**
+   * Extract file path from job result payload
+   */
+  private extractPathFromJob(
+    job: JobDetailsResponse['job'],
+    pathKey: string,
+    workspaceId: string
+  ): string | null {
+    if (!job.assignments || job.assignments.length === 0) {
+      console.warn(`[MapResultsView][${workspaceId}] No assignments found in job ${job.id}`);
+      return null;
+    }
 
-      this.isLoadingCoralData.set(true);
+    const resultPayload = job.assignments[0].result?.result_payload as AdriaModelRunResult;
+    const path = resultPayload?.[pathKey as keyof AdriaModelRunResult];
+
+    if (!path) {
+      console.warn(`[MapResultsView][${workspaceId}] No ${pathKey} found in job results`);
+      return null;
+    }
+
+    console.log(`[MapResultsView][${workspaceId}] Found ${pathKey}:`, path);
+    return path as string;
+  }
+
+  /**
+   * Request presigned URL for file download
+   */
+  private requestPresignedUrl(
+    jobId: number,
+    filePath: string,
+    workspaceId: string,
+    dataType: 'spatial' | 'coral'
+  ): void {
+    this.api
+      .downloadJobOutput(jobId, filePath)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(error => this.handlePresignedUrlError(error, workspaceId, dataType))
+      )
+      .subscribe(response => {
+        if (!response) return;
+
+        const presignedUrl = response.files[filePath];
+        if (dataType === 'spatial') {
+          this.downloadGeoJSON(presignedUrl, workspaceId);
+        } else {
+          this.downloadAndProcessParquet(presignedUrl, workspaceId);
+        }
+      });
+  }
+
+  /**
+   * Handle presigned URL request errors
+   */
+  private handlePresignedUrlError(error: any, workspaceId: string, dataType: 'spatial' | 'coral') {
+    console.error(`[MapResultsView][${workspaceId}] Failed to get presigned URL:`, error);
+
+    if (dataType === 'spatial') {
+      this.geoDataError.set('Failed to get download URL for reef boundaries');
+      this.setGeoDataLoadingState(false);
+    } else {
+      this.coralDataError.set('Failed to get download URL for coral cover data');
+      this.setCoralDataLoadingState(false);
+    }
+
+    return of(null);
+  }
+
+  /**
+   * Set geo data loading state
+   */
+  private setGeoDataLoadingState(loading: boolean): void {
+    this.isLoadingGeoData.set(loading);
+    if (loading) {
+      this.geoDataError.set(null);
+    }
+  }
+
+  /**
+   * Set coral data loading state
+   */
+  private setCoralDataLoadingState(loading: boolean): void {
+    this.isLoadingCoralData.set(loading);
+    if (loading) {
       this.coralDataError.set(null);
-
-      // Step 1: Get presigned URL for the Parquet file
-      console.log(
-        `[MapResultsView][${workspaceId}] Requesting presigned URL for:`,
-        spatialMetricsPath
-      );
-
-      this.api
-        .downloadJobOutput(job.id, spatialMetricsPath)
-        .pipe(
-          takeUntil(this.destroy$),
-          catchError(error => {
-            console.error(
-              `[MapResultsView][${workspaceId}] Failed to get presigned URL for coral data:`,
-              error
-            );
-            this.coralDataError.set('Failed to get download URL for coral cover data');
-            this.isLoadingCoralData.set(false);
-            return of(null);
-          })
-        )
-        .subscribe(response => {
-          if (!response) return;
-
-          console.log(
-            `[MapResultsView][${workspaceId}] Got coral data presigned URL response:`,
-            response
-          );
-
-          // Step 2: Download and process the Parquet file
-          this.downloadAndProcessParquet(response.files[spatialMetricsPath], workspaceId);
-        });
-    } catch (error: any) {
-      console.error(`[MapResultsView][${workspaceId}] Failed to load coral cover data:`, error);
-      this.coralDataError.set('Failed to load coral cover data: ' + error.message);
-      this.isLoadingCoralData.set(false);
     }
   }
 
@@ -632,14 +645,8 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       }
 
       // Show success message
-      this.snackBar.open(
-        `Coral cover data loaded (${coralCoverStats.locations.length} locations)`,
-        'Dismiss',
-        {
-          duration: 3000,
-          horizontalPosition: 'right',
-          verticalPosition: 'bottom'
-        }
+      this.showSuccessMessage(
+        `Coral cover data loaded (${coralCoverStats.locations.length} locations)`
       );
     } catch (error: any) {
       console.error(`[MapResultsView][${workspaceId}] Failed to process Parquet file:`, error);
@@ -647,11 +654,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       this.isLoadingCoralData.set(false);
 
       // Show error message
-      this.snackBar.open('Failed to load coral cover data', 'Dismiss', {
-        duration: 5000,
-        horizontalPosition: 'right',
-        verticalPosition: 'bottom'
-      });
+      this.showErrorMessage(`Failed to load coral cover data: ${error.message}`, 5000);
     }
   }
 
@@ -662,12 +665,21 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     console.log(`[MapResultsView][${workspaceId}] Processing coral cover data...`);
 
     // Extract columns using Apache Arrow API
-    const locationIds = table.getChild('location_id')?.toArray() as string[];
-    const relativeCover = table.getChild('relative_cover')?.toArray() as number[];
-    const timesteps = table.getChild('timestep')?.toArray() as number[];
-    const scenarioIds = table.getChild('scenario_id')?.toArray() as number[];
+    const locationIds = table.getChild('locations')?.toArray() as string[];
+    const relativeCoverMean = table.getChild('relative_cover_mean')?.toArray() as number[];
+    const relativeCoverMin = table.getChild('relative_cover_min')?.toArray() as number[];
+    const relativeCoverMax = table.getChild('relative_cover_max')?.toArray() as number[];
+    const timesteps = table.getChild('timesteps')?.toArray() as number[];
+    const scenarioTypes = table.getChild('scenario_types')?.toArray() as number[];
 
-    if (!locationIds || !relativeCover || !timesteps || !scenarioIds) {
+    if (
+      !locationIds ||
+      !relativeCoverMean ||
+      !relativeCoverMax ||
+      !relativeCoverMin ||
+      !timesteps ||
+      !scenarioTypes
+    ) {
       throw new Error('Required columns not found in Parquet data');
     }
 
@@ -675,7 +687,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       rows: table.numRows,
       uniqueLocations: new Set(locationIds).size,
       uniqueTimesteps: new Set(timesteps).size,
-      uniqueScenarios: new Set(scenarioIds).size
+      uniqueScenarios: new Set(scenarioTypes).size
     });
 
     // Group by location_id and calculate mean relative cover
@@ -684,20 +696,18 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       {
         coverValues: number[];
         timestepCount: number;
-        scenarioCount: number;
       }
     >();
 
     // Aggregate data by location
     for (let i = 0; i < locationIds.length; i++) {
       const locationId = locationIds[i];
-      const cover = relativeCover[i];
+      const cover = relativeCoverMean[i];
 
       if (!locationData.has(locationId)) {
         locationData.set(locationId, {
           coverValues: [],
-          timestepCount: 0,
-          scenarioCount: 0
+          timestepCount: 0
         });
       }
 
@@ -720,7 +730,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         location_id: locationId,
         mean_relative_cover: meanCover,
         timestep_count: new Set(timesteps.filter((_, i) => locationIds[i] === locationId)).size,
-        scenario_count: new Set(scenarioIds.filter((_, i) => locationIds[i] === locationId)).size
+        scenario_count: new Set(scenarioTypes.filter((_, i) => locationIds[i] === locationId)).size
       });
 
       globalMin = Math.min(globalMin, meanCover);
@@ -776,23 +786,13 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         }
 
         // Show success message
-        this.snackBar.open('Reef boundaries loaded successfully', 'Dismiss', {
-          duration: 3000,
-          horizontalPosition: 'right',
-          verticalPosition: 'bottom'
-        });
+        this.showSuccessMessage(`Reef boundaries loaded (${geoJsonData.features.length} features)`);
       })
       .catch(error => {
         console.error(`[MapResultsView][${workspaceId}] Failed to download GeoJSON:`, error);
         this.geoDataError.set('Failed to download reef boundaries: ' + error.message);
         this.isLoadingGeoData.set(false);
-
-        // Show error message
-        this.snackBar.open('Failed to load reef boundaries', 'Dismiss', {
-          duration: 5000,
-          horizontalPosition: 'right',
-          verticalPosition: 'bottom'
-        });
+        this.showErrorMessage(`Failed to load reef boundaries: ${error.message}`, 5000);
       });
   }
 
@@ -851,13 +851,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     } catch (error: any) {
       console.error(`[MapResultsView][${workspaceId}] Failed to add GeoJSON to map:`, error);
       this.geoDataError.set('Failed to display reef boundaries on map');
-
-      // Show error message
-      this.snackBar.open('Failed to display reef boundaries', 'Dismiss', {
-        duration: 5000,
-        horizontalPosition: 'right',
-        verticalPosition: 'bottom'
-      });
+      this.showErrorMessage(`Failed to display reef boundaries: ${error.message}`, 5000);
     }
   }
 
@@ -926,22 +920,15 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       });
 
       console.log(`[MapResultsView][${workspaceId}] Map styling updated successfully`);
-
-      // Show success message
-      this.snackBar.open('Map styled with coral cover data', 'Dismiss', {
-        duration: 2000,
-        horizontalPosition: 'right',
-        verticalPosition: 'bottom'
-      });
     } catch (error: any) {
       console.error(`[MapResultsView][${workspaceId}] Failed to update map styling:`, error);
-      this.snackBar.open('Failed to apply coral cover styling', 'Dismiss', {
-        duration: 3000,
-        horizontalPosition: 'right',
-        verticalPosition: 'bottom'
-      });
+      this.showErrorMessage(`Failed to apply coral cover styling: ${error.message}`, 5000);
     }
   }
+
+  // =====================================================
+  // SITE SELECTION AND CHART MANAGEMENT
+  // =====================================================
 
   /**
    * Load time series data for a specific location
@@ -950,47 +937,124 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     const workspaceId = this.workspaceId();
     const stats = this.coralCoverStats();
 
-    if (!stats) {
-      console.warn(`[${workspaceId}] No coral cover stats available`);
+    if (!this.validateSiteDataPrerequisites(stats, workspaceId)) {
       return;
     }
 
     try {
-      console.log(`[${workspaceId}] Setting up site info for location ${locationId}`);
-
-      // Find location data and immediately show the popup
-      const locationData = stats.locations.find(loc => loc.location_id === locationId);
+      const locationData = this.findLocationData(stats!, locationId);
       if (locationData) {
-        // Clear previous chart data immediately
-        this.siteTimeSeriesData.set([]);
-        if (this.vegaView) {
-          this.vegaView.finalize();
-          this.vegaView = null;
-        }
-        if (this.siteChartContainer?.nativeElement) {
-          this.siteChartContainer.nativeElement.innerHTML = '';
-        }
-
-        // Immediately show the popup with site info
-        this.selectedSite.set({
-          locationId: locationId,
-          meanCover: locationData.mean_relative_cover,
-          timesteps: locationData.timestep_count,
-          scenarios: locationData.scenario_count,
-          dataPoints: locationData.timestep_count * locationData.scenario_count
-        });
-
-        // Start loading chart data asynchronously
+        this.prepareSiteDisplay(locationId, locationData);
         this.loadAndRenderTimeSeriesChart(locationId);
       }
     } catch (error) {
-      console.error(`[${workspaceId}] Failed to load site data:`, error);
-      this.snackBar.open('Failed to load site data', 'Dismiss', {
-        duration: 3000,
-        horizontalPosition: 'right',
-        verticalPosition: 'bottom'
-      });
+      this.handleSiteDataError(error, workspaceId);
     }
+  }
+
+  /**
+   * Validate prerequisites for site data loading
+   */
+  private validateSiteDataPrerequisites(
+    stats: CoralCoverStats | null,
+    workspaceId: string
+  ): boolean {
+    if (!stats) {
+      console.warn(`[${workspaceId}] No coral cover stats available`);
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Find location data in coral cover stats
+   */
+  private findLocationData(stats: CoralCoverStats, locationId: string): CoralCoverData | undefined {
+    return stats.locations.find(loc => loc.location_id === locationId);
+  }
+
+  /**
+   * Prepare site display by clearing previous data and setting new site info
+   */
+  private prepareSiteDisplay(locationId: string, locationData: CoralCoverData): void {
+    // Clear previous chart data immediately
+    this.clearChartData();
+
+    // Immediately show the popup with site info
+    this.selectedSite.set({
+      locationId: locationId,
+      meanCover: locationData.mean_relative_cover,
+      timesteps: locationData.timestep_count,
+      scenarios: locationData.scenario_count,
+      dataPoints: locationData.timestep_count * locationData.scenario_count
+    });
+  }
+
+  /**
+   * Clear existing chart data and DOM elements
+   */
+  private clearChartData(): void {
+    this.siteTimeSeriesData.set([]);
+
+    if (this.vegaView) {
+      this.vegaView.finalize();
+      this.vegaView = null;
+    }
+
+    if (this.siteChartContainer?.nativeElement) {
+      this.siteChartContainer.nativeElement.innerHTML = '';
+    }
+  }
+
+  /**
+   * Handle site data loading errors
+   */
+  private handleSiteDataError(error: any, workspaceId: string): void {
+    console.error(`[${workspaceId}] Failed to load site data:`, error);
+    this.showErrorMessage('Failed to load site data');
+  }
+
+  // =====================================================
+  // UTILITY AND HELPER METHODS
+  // =====================================================
+
+  /**
+   * Show error message using snackbar
+   */
+  private showErrorMessage(message: string, duration: number = 3000): void {
+    this.snackBar.open(message, 'Dismiss', {
+      duration,
+      horizontalPosition: 'right',
+      verticalPosition: 'bottom'
+    });
+  }
+
+  /**
+   * Show success message using snackbar
+   */
+  private showSuccessMessage(message: string, duration: number = 3000): void {
+    this.snackBar.open(message, 'Dismiss', {
+      duration,
+      horizontalPosition: 'right',
+      verticalPosition: 'bottom'
+    });
+  }
+
+  /**
+   * Reset all component state to initial values
+   */
+  private resetComponentState(): void {
+    this.mapInitialized.set(false);
+    this.isMapLoading.set(true);
+    this.mapError.set(null);
+    this.isLoadingGeoData.set(false);
+    this.isLoadingCoralData.set(false);
+    this.geoDataError.set(null);
+    this.coralDataError.set(null);
+    this.geoDataLoaded.set(false);
+    this.coralDataLoaded.set(false);
+    this.coralCoverStats.set(null);
+    this.cachedArrowTable.set(null);
   }
 
   /**
@@ -1002,12 +1066,8 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
 
     // Check if we have the cached table
     if (!cachedTable) {
-      this.snackBar.open(
-        'Data not yet loaded. Please wait for coral cover data to finish loading.',
-        'Dismiss',
-        {
-          duration: 3000
-        }
+      this.showErrorMessage(
+        'Coral cover data not yet loaded. Please wait for coral cover data to finish loading'
       );
       this.isLoadingSiteData.set(false);
       return;
@@ -1019,29 +1079,30 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     // Use setTimeout to make this non-blocking and allow UI to update
     setTimeout(async () => {
       try {
-      // Use the cached Arrow table to filter data for the selected location
-      if (!cachedTable.schema.fields.some(f => f.name === 'location_id')) {
-        throw new Error("Column 'location_id' not found in the cached data.");
-      }
+        const timestep = cachedTable.getChild('timesteps')?.toArray() as number[];
+        const locationIds = cachedTable.getChild('locations')?.toArray() as string[];
+        const relativeCoverMean = cachedTable
+          .getChild('relative_cover_mean')
+          ?.toArray() as number[];
+        const relativeCoverMin = cachedTable.getChild('relative_cover_min')?.toArray() as number[];
+        const relativeCoverMax = cachedTable.getChild('relative_cover_max')?.toArray() as number[];
+        const scenarioType = cachedTable.getChild('scenario_types')?.toArray() as string[];
+        const timeSeries: TimeSeriesData[] = [];
 
-      const timestep = cachedTable.getChild('timestep')?.toArray() as number[];
-      const locationIds = cachedTable.getChild('location_id')?.toArray() as string[];
-      const relativeCover = cachedTable.getChild('relative_cover')?.toArray() as number[];
-      const scenarioType = cachedTable.getChild('scenario_type')?.toArray() as string[];
-      const timeSeries: TimeSeriesData[] = [];
-
-      for (let i = 0; i < locationIds.length; i++) {
-        if (locationIds[i] === locationId) {
-          const entry = {
-            timestep: Number(timestep[i]),
-            scenario_type: scenarioType[i],
-            relative_cover: Number(relativeCover[i])
-          };
-          timeSeries.push(entry);
+        for (let i = 0; i < locationIds.length; i++) {
+          if (locationIds[i] === locationId) {
+            const entry = {
+              timestep: Number(timestep[i]),
+              scenario_type: scenarioType[i],
+              relative_cover_mean: Number(relativeCoverMean[i]),
+              relative_cover_min: Number(relativeCoverMin[i]),
+              relative_cover_max: Number(relativeCoverMax[i])
+            };
+            timeSeries.push(entry);
+          }
         }
-      }
 
-      this.siteTimeSeriesData.set(aggregateTimeSeriesData(timeSeries));
+        this.siteTimeSeriesData.set(timeSeries);
 
         // Render the chart after a small delay to ensure DOM is ready
         setTimeout(() => {
@@ -1053,14 +1114,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
           `[${workspaceId}] Failed to process time series data for location ${locationId}:`,
           error
         );
-        this.snackBar.open(
-          `Error loading data for location ${locationId}: ${error.message}`,
-          'Dismiss',
-          {
-            duration: 5000,
-            panelClass: ['error-snackbar']
-          }
-        );
+        this.showErrorMessage(`Error loading data for location ${locationId}: ${error.message}`);
         this.isLoadingSiteData.set(false);
         this.clearSelectedSite();
       }
@@ -1078,6 +1132,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
 
     const container = this.siteChartContainer.nativeElement;
     const data = this.siteTimeSeriesData();
+    console.log(data);
 
     if (data.length === 0) {
       console.warn('No time series data to render');
@@ -1101,7 +1156,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         // Shared X-axis for all layers
         x: {
           field: 'timestep',
-          type: 'quantitative', // Quantitative is better for years than nominal/ordinal
+          type: 'ordinal',
           title: 'Year',
           axis: { format: 'd' },
           scale: { zero: false }
@@ -1128,12 +1183,12 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
           mark: { type: 'area', opacity: 0.3 },
           encoding: {
             y: {
-              field: 'min_cover', // Map to your pre-calculated min field
+              field: 'relative_cover_min',
               type: 'quantitative',
               title: 'Relative Coral Cover'
             },
             y2: {
-              field: 'max_cover' // Map to your pre-calculated max field
+              field: 'relative_cover_max' // Map to your pre-calculated max field
             }
           }
         },
@@ -1142,7 +1197,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
           mark: { type: 'line', strokeWidth: 2.5, interpolate: 'monotone' },
           encoding: {
             y: {
-              field: 'mean_cover', // Map to your pre-calculated mean field
+              field: 'relative_cover_mean',
               type: 'quantitative'
             }
           }
@@ -1154,9 +1209,24 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
             tooltip: [
               { field: 'timestep', type: 'quantitative', title: 'Year', format: 'd' },
               { field: 'scenario_type', type: 'nominal', title: 'Scenario' },
-              { field: 'mean_cover', type: 'quantitative', title: 'Mean Cover', format: '.1%' },
-              { field: 'min_cover', type: 'quantitative', title: 'Min Cover', format: '.1%' },
-              { field: 'max_cover', type: 'quantitative', title: 'Max Cover', format: '.1%' }
+              {
+                field: 'relative_cover_mean',
+                type: 'quantitative',
+                title: 'Mean Cover',
+                format: '.1%'
+              },
+              {
+                field: 'relative_cover_min',
+                type: 'quantitative',
+                title: 'Min Cover',
+                format: '.1%'
+              },
+              {
+                field: 'relative_cover_max',
+                type: 'quantitative',
+                title: 'Max Cover',
+                format: '.1%'
+              }
             ]
           }
         }
@@ -1235,10 +1305,8 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
           this.loadSiteTimeSeriesData(locationId);
 
           // Show location info in snackbar (keep existing behavior)
-          this.snackBar.open(
-            `Location ${locationId}: ${(locationData.mean_relative_cover * 100).toFixed(1)}% coral cover`,
-            'Dismiss',
-            { duration: 3000 }
+          this.showSuccessMessage(
+            `Location ${locationId}: ${(locationData.mean_relative_cover * 100).toFixed(1)}% coral cover`
           );
         }
       }
@@ -1256,33 +1324,51 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     });
   }
 
+  // =====================================================
+  // JOB PROCESSING METHODS
+  // =====================================================
+
   /**
-   * Process job results to extract map data
+   * Process job results to extract and log available data
    */
   private processJobResults(job: JobDetailsResponse['job']): void {
-    console.log(`[${this.workspaceId()}] Processing job results for map view:`, job.id);
+    const workspaceId = this.workspaceId();
+    console.log(`[${workspaceId}] Processing job results for map view:`, job.id);
 
     try {
-      if (!job.assignments || job.assignments.length === 0) {
-        console.warn(`[${this.workspaceId()}] No assignments found in job ${job.id}`);
-        return;
-      }
-
-      const resultPayload = job.assignments[0].result?.result_payload as AdriaModelRunResult;
-
-      console.log(`[${this.workspaceId()}] Job result payload:`, Object.keys(resultPayload || {}));
-
+      const resultPayload = this.extractResultPayload(job, workspaceId);
       if (resultPayload) {
-        console.log(`[${this.workspaceId()}] Available spatial data:`, {
-          spatial_metrics_path: resultPayload.spatial_metrics_path,
-          reef_boundaries_path: resultPayload.reef_boundaries_path
-        });
+        this.logAvailableData(resultPayload, workspaceId);
       }
-
-      // TODO: Could add more processing here for additional map features
     } catch (error) {
-      console.error(`[${this.workspaceId()}] Failed to process job results for map:`, error);
+      console.error(`[${workspaceId}] Failed to process job results for map:`, error);
     }
+  }
+
+  /**
+   * Extract result payload from job
+   */
+  private extractResultPayload(
+    job: JobDetailsResponse['job'],
+    workspaceId: string
+  ): AdriaModelRunResult | null {
+    if (!job.assignments || job.assignments.length === 0) {
+      console.warn(`[${workspaceId}] No assignments found in job ${job.id}`);
+      return null;
+    }
+
+    return job.assignments[0].result?.result_payload as AdriaModelRunResult;
+  }
+
+  /**
+   * Log available data paths from result payload
+   */
+  private logAvailableData(resultPayload: AdriaModelRunResult, workspaceId: string): void {
+    console.log(`[${workspaceId}] Job result payload:`, Object.keys(resultPayload || {}));
+    console.log(`[${workspaceId}] Available spatial data:`, {
+      spatial_metrics_path: resultPayload.spatial_metrics_path,
+      reef_boundaries_path: resultPayload.reef_boundaries_path
+    });
   }
 
   /**
@@ -1291,20 +1377,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
   private clearMapData(): void {
     console.log(`[${this.workspaceId()}] Clearing map data`);
 
-    // Reset state
-    this.mapInitialized.set(false);
-    this.isMapLoading.set(true);
-    this.mapError.set(null);
-    this.isLoadingGeoData.set(false);
-    this.isLoadingCoralData.set(false);
-    this.geoDataError.set(null);
-    this.coralDataError.set(null);
-    this.geoDataLoaded.set(false);
-    this.coralDataLoaded.set(false);
-    this.coralCoverStats.set(null);
-    this.cachedArrowTable.set(null);
-
-    // Destroy existing map
+    this.resetComponentState();
     this.mapService.destroyMap();
   }
 
