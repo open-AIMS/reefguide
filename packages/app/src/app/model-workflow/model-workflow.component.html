@@ -186,14 +186,16 @@
                 <mat-icon class="tab-icon">bar_chart</mat-icon>
                 <span>Charts</span>
               </ng-template>
-              <div class="tab-content">
-                <app-results-view
-                  [job]="getWorkspaceService(workspace.id)?.getJob() ?? undefined"
-                  [workspaceId]="workspace.id"
-                  [initialActiveCharts]="getActiveChartsForWorkspace(workspace.id)"
-                  (chartsChanged)="onChartsChanged(workspace.id, $event)"
-                />
-              </div>
+              <ng-template matTabContent>
+                <div class="tab-content">
+                  <app-results-view
+                    [job]="getWorkspaceService(workspace.id)?.getJob() ?? undefined"
+                    [workspaceId]="workspace.id"
+                    [initialActiveCharts]="getActiveChartsForWorkspace(workspace.id)"
+                    (chartsChanged)="onChartsChanged(workspace.id, $event)"
+                  />
+                </div>
+              </ng-template>
             </mat-tab>
 
             <!-- Map Tab -->
@@ -202,15 +204,17 @@
                 <mat-icon class="tab-icon">map</mat-icon>
                 <span>Map</span>
               </ng-template>
-              <div class="tab-content">
-                <app-map-results-view
-                  [job]="getWorkspaceService(workspace.id)?.getJob() ?? undefined"
-                  [workspaceId]="workspace.id"
-                  [initialMapConfig]="getMapConfigForWorkspace(workspace.id)"
-                  (mapInteraction)="onMapInteraction(workspace.id, $event)"
-                  (mapConfigChanged)="onMapConfigChanged(workspace.id, $event)"
-                />
-              </div>
+              <ng-template matTabContent>
+                <div class="tab-content">
+                  <app-map-results-view
+                    [job]="getWorkspaceService(workspace.id)?.getJob() ?? undefined"
+                    [workspaceId]="workspace.id"
+                    [initialMapConfig]="getMapConfigForWorkspace(workspace.id)"
+                    (mapInteraction)="onMapInteraction(workspace.id, $event)"
+                    (mapConfigChanged)="onMapConfigChanged(workspace.id, $event)"
+                  />
+                </div>
+              </ng-template>
             </mat-tab>
           </mat-tab-group>
         </div>
