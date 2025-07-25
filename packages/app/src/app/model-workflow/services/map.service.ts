@@ -1,6 +1,6 @@
 // src/app/model-workflow/services/map.service.ts
 import { Injectable, signal } from '@angular/core';
-import { Map as OlMap, View, Feature } from 'ol';
+import { Feature, Map as OlMap, View } from 'ol';
 import { createEmpty } from 'ol/extent';
 import { GeoJSON } from 'ol/format';
 import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
@@ -14,6 +14,13 @@ export interface MapConfiguration {
   zoom: number;
   minZoom?: number;
   maxZoom?: number;
+}
+
+export interface HighlightOptions {
+  strokeColor: string;
+  strokeWidth?: number;
+  fillColor?: string;
+  zIndex?: number;
 }
 
 export interface GeoJSONLayerOptions {
@@ -49,6 +56,10 @@ export class MapService {
   private map: OlMap | null = null;
   private isInitialized = signal(false);
   private vectorLayers: Map<string, VectorLayer<VectorSource>> = new Map();
+
+  private highlightLayer: VectorLayer<VectorSource> | null = null;
+  private highlightSource: VectorSource = new VectorSource();
+  private currentHighlightLocationId: string | null = null;
 
   // Observable for map state changes
   private mapInitializedSubject = new BehaviorSubject<boolean>(false);
@@ -135,6 +146,9 @@ export class MapService {
 
       console.log('[MapService] Map instance created successfully:', this.map);
 
+      // NEW: Setup highlight layer after map creation
+      this.setupHighlightLayer();
+
       this.isInitialized.set(true);
       this.mapInitializedSubject.next(true);
 
@@ -149,6 +163,102 @@ export class MapService {
       this.mapInitializedSubject.next(false);
       throw error;
     }
+  }
+
+  private setupHighlightLayer(): void {
+    console.log('[MapService] Setting up highlight layer');
+
+    if (!this.map) {
+      console.warn('[MapService] Cannot setup highlight layer - no map instance');
+      return;
+    }
+
+    try {
+      // Create highlight source and layer
+      this.highlightSource = new VectorSource();
+      this.highlightLayer = new VectorLayer({
+        source: this.highlightSource,
+        zIndex: 100, // Above all other layers
+        style: undefined // Style will be set per feature
+      });
+
+      // Add to map
+      this.map.addLayer(this.highlightLayer);
+      console.log('[MapService] Highlight layer added to map');
+    } catch (error) {
+      console.error('[MapService] Failed to setup highlight layer:', error);
+    }
+  }
+
+  highlightFeature(originalFeature: Feature, options: HighlightOptions): void {
+    console.log('[MapService] highlightFeature() called');
+    console.log('[MapService] Options:', options);
+
+    if (!this.highlightSource || !this.highlightLayer) {
+      console.warn('[MapService] Highlight layer not initialized');
+      return;
+    }
+
+    try {
+      // Clear any existing highlight
+      this.clearHighlight();
+
+      // Clone the geometry from the original feature
+      const geometry = originalFeature.getGeometry();
+      if (!geometry) {
+        console.warn('[MapService] Feature has no geometry to highlight');
+        return;
+      }
+
+      // Create highlight feature with cloned geometry
+      const highlightFeature = new Feature({
+        geometry: geometry.clone()
+      });
+
+      // Create style for the highlight
+      const highlightStyle = new Style({
+        stroke: new Stroke({
+          color: options.strokeColor,
+          width: options.strokeWidth || 5
+        }),
+        fill: options.fillColor
+          ? new Fill({
+              color: options.fillColor
+            })
+          : undefined
+      });
+
+      // Set style on the feature
+      highlightFeature.setStyle(highlightStyle);
+
+      // Add to highlight source
+      this.highlightSource.addFeature(highlightFeature);
+
+      console.log('[MapService] Feature highlighted successfully');
+    } catch (error) {
+      console.error('[MapService] Failed to highlight feature:', error);
+    }
+  }
+
+  // NEW: Clear highlight
+  clearHighlight(): void {
+    console.log('[MapService] clearHighlight() called');
+
+    if (this.highlightSource) {
+      this.highlightSource.clear();
+      this.currentHighlightLocationId = null;
+      console.log('[MapService] Highlight cleared');
+    }
+  }
+
+  // NEW: Get current highlighted location
+  getCurrentHighlightLocationId(): string | null {
+    return this.currentHighlightLocationId;
+  }
+
+  // NEW: Set highlighted location (for tracking)
+  setCurrentHighlightLocationId(locationId: string | null): void {
+    this.currentHighlightLocationId = locationId;
   }
 
   /**
@@ -460,6 +570,18 @@ export class MapService {
       });
       this.vectorLayers.clear();
 
+      // NEW: Clean up highlight layer
+      if (this.highlightLayer) {
+        console.log('[MapService] Removing highlight layer');
+        this.map.removeLayer(this.highlightLayer);
+        this.highlightLayer = null;
+      }
+      if (this.highlightSource) {
+        this.highlightSource.clear();
+        this.highlightSource = new VectorSource(); // Reset
+      }
+      this.currentHighlightLocationId = null;
+
       // Remove all event listeners
       console.log('[MapService] Removing event listeners');
       this.map.un('singleclick', this.handleMapClick);
@@ -548,5 +670,47 @@ export class MapService {
     };
     console.log('[MapService] getRegionConfigs() called, returning:', configs);
     return configs;
+  }
+
+  centerOnFeature(feature: Feature, zoom?: number): void {
+    console.log('[MapService] centerOnFeature() called');
+
+    if (!this.map || !feature) {
+      console.warn('[MapService] Cannot center on feature - no map instance or feature');
+      return;
+    }
+
+    try {
+      const geometry = feature.getGeometry();
+      if (!geometry) {
+        console.warn('[MapService] Feature has no geometry to center on');
+        return;
+      }
+
+      // Get the extent of the feature
+      const extent = geometry.getExtent();
+      console.log('[MapService] Feature extent:', extent);
+
+      // Calculate center point of the feature
+      const centerX = (extent[0] + extent[2]) / 2;
+      const centerY = (extent[1] + extent[3]) / 2;
+      const centerCoordinate = [centerX, centerY];
+
+      console.log('[MapService] Centering on coordinate:', centerCoordinate);
+
+      const view = this.map.getView();
+
+      // Animate to the center point
+      view.animate({
+        center: centerCoordinate,
+        zoom: zoom || view.getZoom(), // Keep current zoom unless specified
+        duration: 800, // Smooth 800ms animation
+        easing: t => 1 - Math.pow(1 - t, 3) // Ease-out cubic for smooth deceleration
+      });
+
+      console.log('[MapService] Center animation initiated');
+    } catch (error) {
+      console.error('[MapService] Failed to center on feature:', error);
+    }
   }
 }

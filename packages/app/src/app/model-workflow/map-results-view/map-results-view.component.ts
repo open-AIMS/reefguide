@@ -34,8 +34,6 @@ import embed, { Result as VegaResult, VisualizationSpec } from 'vega-embed';
 interface CoralCoverData {
   location_id: string;
   mean_relative_cover: number;
-  timestep_count: number;
-  scenario_count: number;
 }
 
 interface CoralCoverStats {
@@ -48,9 +46,6 @@ interface CoralCoverStats {
 interface SiteData {
   locationId: string;
   meanCover: number;
-  timesteps: number;
-  scenarios: number;
-  dataPoints: number;
 }
 
 interface TimeSeriesData {
@@ -59,6 +54,8 @@ interface TimeSeriesData {
   relative_cover_mean: number;
   relative_cover_min: number;
   relative_cover_max: number;
+  relative_cover_ci_lower: number;
+  relative_cover_ci_upper: number;
 }
 
 // =====================================================
@@ -666,20 +663,11 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
 
     // Extract columns using Apache Arrow API
     const locationIds = table.getChild('locations')?.toArray() as string[];
-    const relativeCoverMean = table.getChild('relative_cover_mean')?.toArray() as number[];
-    const relativeCoverMin = table.getChild('relative_cover_min')?.toArray() as number[];
-    const relativeCoverMax = table.getChild('relative_cover_max')?.toArray() as number[];
     const timesteps = table.getChild('timesteps')?.toArray() as number[];
-    const scenarioTypes = table.getChild('scenario_types')?.toArray() as number[];
+    const scenarioTypes = table.getChild('scenario_types')?.toArray() as string[];
+    const relativeCoverMean = table.getChild('relative_cover_mean')?.toArray() as number[];
 
-    if (
-      !locationIds ||
-      !relativeCoverMean ||
-      !relativeCoverMax ||
-      !relativeCoverMin ||
-      !timesteps ||
-      !scenarioTypes
-    ) {
+    if (!locationIds || !relativeCoverMean) {
       throw new Error('Required columns not found in Parquet data');
     }
 
@@ -728,9 +716,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
 
       locations.push({
         location_id: locationId,
-        mean_relative_cover: meanCover,
-        timestep_count: new Set(timesteps.filter((_, i) => locationIds[i] === locationId)).size,
-        scenario_count: new Set(scenarioTypes.filter((_, i) => locationIds[i] === locationId)).size
+        mean_relative_cover: meanCover
       });
 
       globalMin = Math.min(globalMin, meanCover);
@@ -784,9 +770,6 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         if (this.coralDataLoaded()) {
           this.updateMapStyling();
         }
-
-        // Show success message
-        this.showSuccessMessage(`Reef boundaries loaded (${geoJsonData.features.length} features)`);
       })
       .catch(error => {
         console.error(`[MapResultsView][${workspaceId}] Failed to download GeoJSON:`, error);
@@ -983,10 +966,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     // Immediately show the popup with site info
     this.selectedSite.set({
       locationId: locationId,
-      meanCover: locationData.mean_relative_cover,
-      timesteps: locationData.timestep_count,
-      scenarios: locationData.scenario_count,
-      dataPoints: locationData.timestep_count * locationData.scenario_count
+      meanCover: locationData.mean_relative_cover
     });
   }
 
@@ -1086,19 +1066,26 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
           ?.toArray() as number[];
         const relativeCoverMin = cachedTable.getChild('relative_cover_min')?.toArray() as number[];
         const relativeCoverMax = cachedTable.getChild('relative_cover_max')?.toArray() as number[];
+        const relativeCoverCiLower = cachedTable
+          .getChild('relative_cover_ci_lower')
+          ?.toArray() as number[];
+        const relativeCoverCiUpper = cachedTable
+          .getChild('relative_cover_ci_upper')
+          ?.toArray() as number[];
         const scenarioType = cachedTable.getChild('scenario_types')?.toArray() as string[];
         const timeSeries: TimeSeriesData[] = [];
 
         for (let i = 0; i < locationIds.length; i++) {
           if (locationIds[i] === locationId) {
-            const entry = {
+            timeSeries.push({
               timestep: Number(timestep[i]),
               scenario_type: scenarioType[i],
               relative_cover_mean: Number(relativeCoverMean[i]),
               relative_cover_min: Number(relativeCoverMin[i]),
-              relative_cover_max: Number(relativeCoverMax[i])
-            };
-            timeSeries.push(entry);
+              relative_cover_max: Number(relativeCoverMax[i]),
+              relative_cover_ci_lower: Number(relativeCoverCiLower[i]),
+              relative_cover_ci_upper: Number(relativeCoverCiUpper[i])
+            });
           }
         }
 
@@ -1179,16 +1166,16 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       },
       layer: [
         {
-          // Layer 1: Confidence Band (using the pre-calculated min/max fields)
+          // Layer 1: Confidence Band (using the pre-calculated ci fields)
           mark: { type: 'area', opacity: 0.3 },
           encoding: {
             y: {
-              field: 'relative_cover_min',
+              field: 'relative_cover_ci_lower',
               type: 'quantitative',
               title: 'Relative Coral Cover'
             },
             y2: {
-              field: 'relative_cover_max' // Map to your pre-calculated max field
+              field: 'relative_cover_ci_upper'
             }
           }
         },
@@ -1216,15 +1203,15 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
                 format: '.1%'
               },
               {
-                field: 'relative_cover_min',
+                field: 'relative_cover_ci_lower',
                 type: 'quantitative',
-                title: 'Min Cover',
+                title: 'CI Lower',
                 format: '.1%'
               },
               {
-                field: 'relative_cover_max',
+                field: 'relative_cover_ci_upper',
                 type: 'quantitative',
-                title: 'Max Cover',
+                title: 'CI Upper',
                 format: '.1%'
               }
             ]
@@ -1264,6 +1251,9 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     this.siteTimeSeriesData.set([]);
     this.isLoadingSiteData.set(false);
 
+    // NEW: Clear map highlight
+    this.mapService.clearHighlight();
+
     if (this.vegaView) {
       this.vegaView.finalize();
       this.vegaView = null;
@@ -1275,7 +1265,44 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Handle map click events
+   * Create a brighter version of a color for highlighting
+   */
+  private brightenColor(color: string, factor: number = 0.3): string {
+    // Parse RGB color string like "rgb(255, 170, 68)"
+    const rgbMatch = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    if (!rgbMatch) {
+      return color; // Return original if parsing fails
+    }
+
+    let [, r, g, b] = rgbMatch.map(Number);
+
+    // Brighten by moving towards white
+    r = Math.min(255, Math.round(r + (255 - r) * factor));
+    g = Math.min(255, Math.round(g + (255 - g) * factor));
+    b = Math.min(255, Math.round(b + (255 - b) * factor));
+
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  /**
+   * Get coral cover color for a location (EXTRACTED as separate method)
+   */
+  private getCoralCoverColorForLocation(locationId: string): string {
+    const stats = this.coralCoverStats();
+    if (!stats) {
+      return '#999999'; // Default gray
+    }
+
+    const locationData = stats.locations.find(loc => loc.location_id === locationId);
+    if (!locationData) {
+      return '#999999'; // Default gray
+    }
+
+    return this.getCoralCoverColor(locationData.mean_relative_cover, stats);
+  }
+
+  /**
+   * Handle map click events (MODIFIED)
    */
   private handleMapClick(event: any): void {
     console.log(`[${this.workspaceId()}] Map clicked at:`, event.coordinate);
@@ -1301,17 +1328,29 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         if (locationData) {
           console.log(`[${this.workspaceId()}] Clicked location ${locationId}:`, locationData);
 
+          // NEW: Center the map on the clicked feature
+          this.mapService.centerOnFeature(feature);
+
+          // NEW: Highlight the clicked feature with matching color
+          const baseColor = this.getCoralCoverColorForLocation(locationId);
+          const brightStrokeColor = this.brightenColor(baseColor, 0.4); // 40% brighter
+
+          this.mapService.highlightFeature(feature, {
+            strokeColor: brightStrokeColor,
+            strokeWidth: 4, // Thinner stroke
+            fillColor: undefined // No fill, just the boundary
+          });
+
+          // Track the highlighted location
+          this.mapService.setCurrentHighlightLocationId(locationId);
+
           // Load time series data for this location
           this.loadSiteTimeSeriesData(locationId);
-
-          // Show location info in snackbar (keep existing behavior)
-          this.showSuccessMessage(
-            `Location ${locationId}: ${(locationData.mean_relative_cover * 100).toFixed(1)}% coral cover`
-          );
         }
       }
     } else {
-      // Clear selection if clicking on empty space
+      // NEW: Clear selection if clicking on empty space
+      this.mapService.clearHighlight();
       this.clearSelectedSite();
     }
 

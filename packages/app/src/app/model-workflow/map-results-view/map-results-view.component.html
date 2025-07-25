@@ -2,27 +2,6 @@
 <div class="map-results-container">
   <!-- Map Card -->
   <mat-card class="map-card">
-    <mat-card-header>
-      <mat-card-title>
-        <div class="title-row">
-          <span>Spatial Analysis</span>
-          <div class="region-selector" *ngIf="mapInitialized() && !hasError()">
-            <mat-form-field appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Region</mat-label>
-              <mat-select
-                [value]="selectedRegion()"
-                (selectionChange)="onRegionChange($event.value)"
-              >
-                <mat-option *ngFor="let region of mapRegions" [value]="region.value">
-                  {{ region.label }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
-        </div>
-      </mat-card-title>
-    </mat-card-header>
-
     <mat-card-content>
       <!-- Map Container -->
       <div class="map-wrapper">
@@ -57,18 +36,6 @@
           <p class="hint">Run a model simulation to see spatial results</p>
         </div>
       </div>
-
-      <!-- Action Buttons -->
-      <div class="map-actions" *ngIf="mapInitialized() && !hasError()">
-        <button
-          mat-stroked-button
-          (click)="resetMapView()"
-          matTooltip="Reset map to default view"
-        >
-          <mat-icon>center_focus_strong</mat-icon>
-          Reset View
-        </button>
-      </div>
     </mat-card-content>
   </mat-card>
 
@@ -77,8 +44,12 @@
     <mat-card-header>
       <mat-card-title>
         <div class="title-row">
-          <span>Location {{ selectedSite()!.locationId }} - Coral Cover Over Time</span>
-          <button mat-icon-button (click)="clearSelectedSite()" matTooltip="Close" class="close-button">
+          <button
+            mat-icon-button
+            (click)="clearSelectedSite()"
+            matTooltip="Close"
+            class="close-button"
+          >
             <mat-icon>close</mat-icon>
           </button>
         </div>
@@ -93,11 +64,6 @@
           <p>Loading time series data...</p>
         </div>
         <!-- Vega-Lite chart will be rendered here -->
-      </div>
-
-      <div class="site-info" *ngIf="selectedSite()">
-        <p><strong>Mean Coral Cover:</strong> {{ (selectedSite()!.meanCover * 100).toFixed(1) }}%</p>
-        <p><strong>Data Points:</strong> {{ selectedSite()!.dataPoints }} ({{ selectedSite()!.timesteps }} timesteps × {{ selectedSite()!.scenarios }} scenarios)</p>
       </div>
     </mat-card-content>
   </mat-card>
