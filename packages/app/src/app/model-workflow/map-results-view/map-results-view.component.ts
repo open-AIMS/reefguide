@@ -1137,6 +1137,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       $schema: 'https://vega.github.io/schema/vega-lite/v6.json',
       width: 'container',
       height: 350,
+      title: 'Relative Coral Cover Over Time',
       // Use the pre-aggregated data
       data: { values: data },
       encoding: {
