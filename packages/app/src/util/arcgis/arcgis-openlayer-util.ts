@@ -1,17 +1,20 @@
 import WMTSCapabilities from 'ol/format/WMTSCapabilities';
 import WMTS, { optionsFromCapabilities } from 'ol/source/WMTS';
 import { LayerDef } from '@reefguide/types';
-import Layer from 'ol/layer/Layer';
+import Layer, { Options } from 'ol/layer/Layer';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { EsriJSON } from 'ol/format';
 import { LayerProperties } from '../../types/layer.type';
 import { tile as tileStrategy } from 'ol/loadingstrategy.js';
 import { createXYZ } from 'ol/tilegrid';
+import TileLayer from 'ol/layer/WebGLTile';
+import { Tile } from 'ol';
 
 /**
  * Create WMTS source based from capabilities XML file url.
  * Sets the title property based on layer metadata
+ * Sets tileLoadFunction to errorTilesLoader()
  * @param capabilitiesUrl URL to WMTS Capabilities XML file
  */
 export async function createSourceFromCapabilitiesXml(capabilitiesUrl: string): Promise<WMTS> {
@@ -34,21 +37,103 @@ export async function createSourceFromCapabilitiesXml(capabilitiesUrl: string): 
   // change to nearest neighbor, prevents darkened edge with default linear interpolation
   options.interpolate = false;
 
-  const wmts = new WMTS(options);
+  const wmts = new WMTS({
+    ...options,
+    tileLoadFunction: errorTilesLoader()
+  });
   wmts.set('title', layerDef.Title || layerDef.Identifier);
   return wmts;
 }
 
-export function createLayerFromDef(layerDef: LayerDef): Layer {
+export function standardErrorTilePredicate(resp: Response, tile: Tile): boolean {
+  return resp.status >= 400 && resp.status !== 404;
+}
+
+/**
+ * Returns a tileLoadFunction that requests the tile url with fetch and
+ * shows error tiles according to the predicate.
+ * Showing the error tile suppresses the tile load error.
+ * @param showErrorTile predicate that indicates should render error tile
+ */
+export function errorTilesLoader(
+  showErrorTile: (response: Response, tile: Tile) => boolean = standardErrorTilePredicate
+) {
+  return async (tile: Tile, src: string) => {
+    // @ts-expect-error getImage exists but is private
+    const img = tile.getImage() as HTMLImageElement;
+    // having trouble retrying onerror, so we fetch manually and check response
+    const response = await fetch(src);
+
+    if (showErrorTile(response, tile)) {
+      img.src = await getErrorTileUrl();
+    } else {
+      const blob = await response.blob();
+      const imageUrl = URL.createObjectURL(blob);
+      img.src = imageUrl;
+      setTimeout(() => {
+        URL.revokeObjectURL(imageUrl);
+      }, 5_000);
+    }
+  };
+}
+
+let errorTileObjectUrl: string | undefined = undefined;
+
+/**
+ * Get the permanent ObjectUrl for the red error tile.
+ * size is 256 square
+ * TODO support other sizes, caller should verify size
+ * TODO maybe could generate this instead of needing to create image files
+ */
+async function getErrorTileUrl(): Promise<string> {
+  if (errorTileObjectUrl == undefined) {
+    const errorTileUrl = 'http://localhost:4200/tiles/red256.png';
+    const resp = await fetch(errorTileUrl);
+    const blob = await resp.blob();
+    errorTileObjectUrl = URL.createObjectURL(blob);
+  }
+  return errorTileObjectUrl;
+}
+
+/**
+ * Create Layer from definition object.
+ * Source may be set async depending on the layer.
+ * @param layerDef layer definition
+ * @param mixin layer constructor properties to mixin
+ */
+export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mixin?: M): Layer {
+  const properties: LayerProperties = {
+    id: layerDef.id,
+    title: layerDef.title,
+    infoUrl: layerDef.infoUrl
+  };
+
   switch (layerDef.urlType) {
     case 'ArcGisFeatureServer':
+      // layerOptions as any to avoid type errors. It may be possible to create proper type
+      // mappings based on a layerDef.layerType, but not worth the effort at this time.
       return new VectorLayer({
-        properties: {
-          id: layerDef.id,
-          title: layerDef.title
-        } satisfies LayerProperties,
-        source: createVectorSourceForFeatureServer(layerDef.url)
+        properties,
+        source: createVectorSourceForFeatureServer(layerDef.url),
+        ...(layerDef.layerOptions as any),
+        ...mixin
       });
+
+    case 'WMTSCapabilitiesXml':
+      const layer = new TileLayer({
+        properties,
+        ...(layerDef.layerOptions as any),
+        ...mixin
+      });
+
+      setTimeout(() => {
+        createSourceFromCapabilitiesXml(layerDef.url).then(source => {
+          // OpenLayers types bug? WMTS source does work with TileLayer
+          // @ts-expect-error
+          layer.setSource(source);
+        });
+      }, 2_000);
+      return layer;
 
     default:
       throw new Error(`Unsupported urlType: ${layerDef.urlType}`);

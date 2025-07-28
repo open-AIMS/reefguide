@@ -253,20 +253,36 @@ export class WebApiService {
         title: 'EcoRRAP Site Locations',
         url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
         urlType: 'ArcGisFeatureServer'
-      }
-      // FIXME ImageServer not working
+      },
+      {
+        id: 'ssr_sentinel_2018',
+        title: 'SSR Sentinel 2018',
+        infoUrl:
+          'https://tiles.arcgis.com/tiles/ll1QQ2mI4WMXIXdm/arcgis/rest/services/SSR_Sentinel_2018/MapServer',
+        url: 'https://tiles.arcgis.com/tiles/ll1QQ2mI4WMXIXdm/arcgis/rest/services/SSR_Sentinel_2018/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+        urlType: 'WMTSCapabilitiesXml',
+        layerOptions: {
+          visible: false
+        }
+      },
+      // can zoom in approx to scale 36100, 134MB
       // {
-      //   id: 'ccgeo',
-      //   title: 'CC Geo',
-      //   url: 'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgCairns_Cooktown_hybrid_geomorphichyb/ImageServer',
-      //   urlType: 'TileArcGISRest'
+      //   id: 'hybrid_benthic_2',
+      //   title: 'Hybrid Benthic',
+      //   infoUrl:
+      //     'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/ExportTilecache/MapServer',
+      //   url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/ExportTilecache/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+      //   urlType: 'WMTSCapabilitiesXml'
       // },
-      // {
-      //   id: 'twbenth',
-      //   title: 'TSV Whit Benthic',
-      //   url: 'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgTownsville_Whitsunday_hybrid_benthichyb/ImageServer',
-      //   urlType: 'TileArcGISRest'
-      // }
+      // can zoom in approx to scale 18055, 443MB
+      {
+        id: 'hybrid_benthic',
+        title: 'Hybrid Benthic',
+        infoUrl:
+          'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer',
+        url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+        urlType: 'WMTSCapabilitiesXml'
+      }
     ];
   }
 

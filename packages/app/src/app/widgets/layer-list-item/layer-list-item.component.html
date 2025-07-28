@@ -1,7 +1,7 @@
 @let l = layer();
 @let props = layerController.getProperties();
-<!-- drag handle -->
-<ng-content/>
+<!-- drag handle from parent list component -->
+<ng-content />
 @if (props.downloadUrl) {
   <a mat-icon-button [href]="props.downloadUrl" download matTooltip="Download layer file">
     <mat-icon>download</mat-icon>
@@ -18,3 +18,16 @@
   <mat-icon>{{ layerController.visible() ? 'visibility' : 'visibility_off' }}</mat-icon>
 </button>
 <span class="title">{{ l.get('title') }}</span>
+@if (layerController.loading()) {
+  @let progress = layerController?.loadingProgress();
+  @let tilesLoading = layerController?.tilesLoading();
+  @if (progress !== undefined) {
+    <mat-progress-spinner
+      diameter="24"
+      [value]="progress * 100"
+      [matTooltip]="tilesLoading + ' tiles loading'"
+    ></mat-progress-spinner>
+  } @else {
+    <mat-progress-spinner diameter="24" mode="indeterminate"></mat-progress-spinner>
+  }
+}

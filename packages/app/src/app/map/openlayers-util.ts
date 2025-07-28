@@ -2,6 +2,11 @@ import Layer from 'ol/layer/Layer';
 import LayerGroup from 'ol/layer/Group';
 import { Collection } from 'ol';
 import BaseLayer from 'ol/layer/Base';
+import { fromEventPattern, Observable } from 'rxjs';
+import { EventsKey } from 'ol/events';
+import OLBaseEvent from 'ol/events/Event';
+import BaseObject, { ObjectEvent } from 'ol/Object';
+import { TileSourceEvent } from 'ol/source/Tile';
 
 /**
  * Call the function when the layer is disposed.
@@ -51,4 +56,23 @@ export function disposeLayerGroup(
     layerGroup.dispose();
     parentCollection.remove(layerGroup);
   }
+}
+
+/**
+ * Create an Observable from an OpenLayer's object event.
+ * @param obj
+ * @param eventName
+ *
+ * TODO fix V type, it can be ObjectEvent
+ */
+export function fromOpenLayersEvent<
+  O extends BaseObject,
+  E = Parameters<O['on']>[0],
+  V = OLBaseEvent | ObjectEvent | TileSourceEvent
+>(obj: O, eventName: E): Observable<V> {
+  return fromEventPattern<V>(
+    // TODO figure out whey eventName type check not happy
+    handler => obj.on(eventName as any, handler),
+    (handler, key: EventsKey) => obj.un(eventName as any, handler)
+  );
 }

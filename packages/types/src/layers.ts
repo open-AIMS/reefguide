@@ -1,3 +1,5 @@
+import { Options } from 'ol/layer/Layer';
+
 /**
  * Definition of a map layer that visualizes a criteria.
  * Should be greyscale, color and styling is done by the app.
@@ -33,4 +35,8 @@ export type LayerDef = {
    * Reverse criteria range values when applying pixel filter
    */
   reverseRange?: boolean;
+  /**
+   * Layer Options to mixin during construction.
+   */
+  layerOptions?: Partial<Omit<Options, 'source' | 'properties'>>;
 };

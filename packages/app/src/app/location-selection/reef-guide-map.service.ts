@@ -51,10 +51,7 @@ import { GeoJSON } from 'ol/format';
 import { Fill, Stroke, Style } from 'ol/style';
 import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
 import Layer from 'ol/layer/Layer';
-import {
-  createLayerFromDef,
-  createSourceFromCapabilitiesXml
-} from '../../util/arcgis/arcgis-openlayer-util';
+import { createLayerFromDef } from '../../util/arcgis/arcgis-openlayer-util';
 import { LayerController, LayerControllerOptions } from '../map/open-layers-model';
 import { LayerProperties } from '../../types/layer.type';
 
@@ -509,31 +506,14 @@ export class ReefGuideMapService {
     this.map.getLayers().push(layerGroup);
 
     for (let layerDef of layers) {
-      const { id, title, url, urlType, infoUrl } = layerDef;
-
-      const layer = new TileLayer({
-        properties: {
-          id: `criteria_${id}`,
-          title,
-          infoUrl
-        } satisfies LayerProperties,
+      const { id } = layerDef;
+      const layer = createLayerFromDef(layerDef, {
+        id: `criteria_${id}`,
         visible: false,
         opacity: 0.7
       });
+
       layerGroup.getLayers().push(layer);
-
-      if (urlType !== 'WMTSCapabilitiesXml') {
-        throw new Error('Unsupported url type');
-      }
-
-      createSourceFromCapabilitiesXml(url).then(source => {
-        // ignore OpenLayers types issue
-        // @ts-expect-error
-        layer.setSource(source);
-
-        // set the layer title to the source's title
-        // layer.set('title', source.get('title'));
-      });
 
       this.criteriaLayers[id] = this.createLayerController(layer, {
         criteriaLayerDef: layerDef
@@ -545,7 +525,6 @@ export class ReefGuideMapService {
     const infoLayerDefs = this.api.getInfoLayers();
     for (const layerDef of infoLayerDefs) {
       const layer = createLayerFromDef(layerDef);
-
       this.map.getLayers().push(layer);
     }
   }

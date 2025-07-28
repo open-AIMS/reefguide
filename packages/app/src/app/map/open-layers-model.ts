@@ -1,8 +1,12 @@
-import { effect, signal, WritableSignal } from '@angular/core';
+import { computed, effect, Signal, signal, WritableSignal } from '@angular/core';
 import type Layer from 'ol/layer/Layer';
 import { LayerProperties } from '../../types/layer.type';
 import TileLayer from 'ol/layer/WebGLTile';
 import { LayerDef } from '@reefguide/types';
+import { fromOpenLayersEvent } from './openlayers-util';
+import { debounceTime, map, of, shareReplay, Subject, switchMap, takeUntil } from 'rxjs';
+import { TileSourceEvent } from 'ol/source/Tile';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 type LayerStyleModes = 'default' | 'pixel-filtering';
 
@@ -15,25 +19,65 @@ export class LayerController {
   readonly visible: WritableSignal<boolean>;
   readonly opacity: WritableSignal<number>;
   readonly styleMode = signal<LayerStyleModes>('default');
+  readonly loading: Signal<boolean>;
+  /**
+   * Loading progress 0.0:1.0
+   * defined if progress supported for the layer/source
+   */
+  loadingProgress?: Signal<number>;
+
+  /**
+   * number of tiles currently loading.
+   * defined if TileLayer
+   */
+  tilesLoading?: Signal<number>;
+
+  private destroyed$ = new Subject<void>();
 
   constructor(
     public readonly layer: Layer,
     public readonly options?: LayerControllerOptions
   ) {
-    this.visible = signal(this.layer.getVisible());
-    this.opacity = signal(this.layer.getOpacity());
+    this.visible = signal(layer.getVisible());
+    this.opacity = signal(layer.getOpacity());
 
     // Sync signal to layer state
     effect(() => {
-      this.layer.setVisible(this.visible());
+      layer.setVisible(this.visible());
     });
     effect(() => {
-      this.layer.setOpacity(this.opacity());
+      layer.setOpacity(this.opacity());
     });
 
     // Sync layer to signal (if changed externally)
-    this.layer.on('change:visible', () => this.visible.set(this.layer.getVisible()));
-    this.layer.on('change:opacity', () => this.opacity.set(this.layer.getOpacity()));
+    fromOpenLayersEvent(layer, 'change:visible')
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(() => {
+        this.visible.set(layer.getVisible());
+      });
+    fromOpenLayersEvent(layer, 'change:opacity')
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(() => {
+        this.opacity.set(layer.getOpacity());
+      });
+
+    // setup loading/progress listeners
+    if (layer instanceof TileLayer) {
+      this.loading = this.setupTileLoadingListeners(layer);
+    } else {
+      // TODO if (layer instanceof VectorLayer) {
+      // const source: VectorSource = layer.getSource();
+      // source.on('featuresloadstart')
+      this.loading = signal(false);
+    }
+  }
+
+  /**
+   * Cleanup
+   */
+  public destroy() {
+    this.destroyed$.next();
+    this.destroyed$.complete();
   }
 
   /**
@@ -110,5 +154,72 @@ export class LayerController {
         color: flatColor
       });
     }
+  }
+
+  private setupTileLoadingListeners(layer: TileLayer): Signal<boolean> {
+    const originalSource = layer.getSource();
+    const sourceReady$ =
+      originalSource != null
+        ? of(originalSource)
+        : fromOpenLayersEvent(layer, 'sourceready').pipe(
+            map(() => {
+              const source = layer.getSource();
+              if (source == null) {
+                throw new Error(`sourceready emitted, but source null`);
+              }
+              return source;
+            }),
+            shareReplay(1)
+          );
+
+    const tileLoadStart$ = sourceReady$.pipe(
+      switchMap(source => fromOpenLayersEvent(source, 'tileloadstart')),
+      takeUntil(this.destroyed$)
+    );
+    const tileLoadEnd$ = sourceReady$.pipe(
+      switchMap(source => fromOpenLayersEvent(source, 'tileloadend')),
+      takeUntil(this.destroyed$)
+    );
+    const tileLoadError$ = sourceReady$.pipe(
+      switchMap(source => fromOpenLayersEvent(source, 'tileloaderror')),
+      takeUntil(this.destroyed$)
+    );
+
+    const tilesStarted = signal(0);
+    const tilesLoaded = signal(0);
+
+    tileLoadStart$.subscribe(e => {
+      tilesStarted.update(v => v + 1);
+    });
+    tileLoadEnd$.subscribe(e => {
+      tilesLoaded.update(v => v + 1);
+    });
+    tileLoadError$.subscribe(e => {
+      // not actually loaded, but for the purpose of progress consider this completed
+      tilesLoaded.update(v => v + 1);
+
+      // TODO log if not 404 error
+      // if (e instanceof TileSourceEvent) {
+      // console.warn(`tile load error coord=${e.tile.getTileCoord()}`, e);
+      // }
+    });
+
+    this.loadingProgress = computed(() =>
+      tilesStarted() === 0 ? 1.0 : tilesLoaded() / tilesStarted()
+    );
+
+    this.tilesLoading = computed(() => tilesStarted() - tilesLoaded());
+
+    toObservable(this.loadingProgress)
+      .pipe(debounceTime(500), takeUntil(this.destroyed$))
+      .subscribe(progress => {
+        if (progress >= 1.0) {
+          tilesLoaded.set(0);
+          tilesStarted.set(0);
+        }
+      });
+
+    // is loading signal
+    return computed(() => tilesLoaded() < tilesStarted());
   }
 }

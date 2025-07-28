@@ -12,17 +12,13 @@
     ></mat-progress-spinner>
   </mat-expansion-panel-header>
   @if (layers) {
-    <div
-      cdkDropList
-      [cdkDropListData]="layers"
-      (cdkDropListDropped)="onDrop($event)"
-    >
+    <div cdkDropList [cdkDropListData]="layers" (cdkDropListDropped)="onDrop($event)">
       @for (layer of layers; track layer) {
-          <app-layer-list-item cdkDrag [cdkDragData]="layer" [layer]="layer">
-<!--           like this 3-line drag better -->
-            <span class="drag-handle" cdkDragHandle>&#9776;</span>
-<!--            <mat-icon class="drag-handle" cdkDragHandle>drag_handle</mat-icon>-->
-          </app-layer-list-item>
+        <app-layer-list-item cdkDrag [cdkDragData]="layer" [layer]="layer">
+          <!-- this 3-line drag looks better -->
+          <span class="drag-handle" cdkDragHandle>&#9776;</span>
+          <!-- <mat-icon class="drag-handle" cdkDragHandle>drag_handle</mat-icon> -->
+        </app-layer-list-item>
       }
     </div>
   }

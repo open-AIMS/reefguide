@@ -302,6 +302,9 @@ importers:
       '@reefguide/db':
         specifier: workspace:*
         version: link:../db
+      ol:
+        specifier: ^10.6.1
+        version: 10.6.1
       zod:
         specifier: ^3.25.67
         version: 3.25.67
