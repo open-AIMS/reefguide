@@ -266,7 +266,8 @@ export class WebApiService {
         id: 'ecorrap_site_locations',
         title: 'EcoRRAP Site Locations',
         url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
-        urlType: 'ArcGisFeatureServer'
+        urlType: 'ArcGisFeatureServer',
+        cluster: true
       },
       // can zoom in approx to scale 36100, 134MB
       // {
@@ -286,7 +287,8 @@ export class WebApiService {
         url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
         urlType: 'WMTSCapabilitiesXml',
         layerOptions: {
-          opacity: 0.8
+          opacity: 0.8,
+          visible: false
         }
       }
     ];

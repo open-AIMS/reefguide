@@ -7,6 +7,10 @@ import { EventsKey } from 'ol/events';
 import OLBaseEvent from 'ol/events/Event';
 import BaseObject, { ObjectEvent } from 'ol/Object';
 import { TileSourceEvent } from 'ol/source/Tile';
+import VectorLayer from 'ol/layer/Vector';
+import { Fill, Stroke, Style, Text } from 'ol/style';
+import { Cluster } from 'ol/source';
+import CircleStyle from 'ol/style/Circle';
 
 /**
  * Call the function when the layer is disposed.
@@ -75,4 +79,46 @@ export function fromOpenLayersEvent<
     handler => obj.on(eventName as any, handler),
     (handler, key: EventsKey) => obj.un(eventName as any, handler)
   );
+}
+
+export function clusterLayerSource(layer: VectorLayer) {
+  const source = layer.getSource();
+  // TODO if source null, could wait on sourceready
+  if (source) {
+    const styleCache: Record<number, Style> = {};
+    const cluster = new Cluster({
+      source
+    });
+    layer.setSource(cluster);
+
+    layer.setStyle(feature => {
+      const size: number = feature.get('features').length;
+      let style = styleCache[size];
+      if (!style) {
+        style = new Style({
+          image: new CircleStyle({
+            radius: 10,
+            stroke: new Stroke({
+              color: '#fff'
+            }),
+            fill: new Fill({
+              color: '#3399CC'
+            })
+          })
+        });
+        if (size >= 2) {
+          style.setText(
+            new Text({
+              text: size.toString(),
+              fill: new Fill({
+                color: '#fff'
+              })
+            })
+          );
+        }
+        styleCache[size] = style;
+      }
+      return style;
+    });
+  }
 }

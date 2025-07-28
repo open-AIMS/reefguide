@@ -39,4 +39,9 @@ export type LayerDef = {
    * Layer Options to mixin during construction.
    */
   layerOptions?: Partial<Omit<Options, 'source' | 'properties'>>;
+
+  /**
+   * Wrap the VectorSource in a Cluster.
+   */
+  cluster?: boolean;
 };

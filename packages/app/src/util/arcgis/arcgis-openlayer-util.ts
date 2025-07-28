@@ -10,6 +10,7 @@ import { tile as tileStrategy } from 'ol/loadingstrategy.js';
 import { createXYZ } from 'ol/tilegrid';
 import TileLayer from 'ol/layer/WebGLTile';
 import { Tile } from 'ol';
+import { clusterLayerSource } from '../../app/map/openlayers-util';
 
 /**
  * Create WMTS source based from capabilities XML file url.
@@ -112,12 +113,18 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
     case 'ArcGisFeatureServer':
       // layerOptions as any to avoid type errors. It may be possible to create proper type
       // mappings based on a layerDef.layerType, but not worth the effort at this time.
-      return new VectorLayer({
+      const vectorLayer = new VectorLayer({
         properties,
         source: createVectorSourceForFeatureServer(layerDef.url),
         ...(layerDef.layerOptions as any),
         ...mixin
       });
+
+      if (layerDef.cluster) {
+        clusterLayerSource(vectorLayer);
+      }
+
+      return vectorLayer;
 
     case 'WMTSCapabilitiesXml':
       const layer = new TileLayer({
