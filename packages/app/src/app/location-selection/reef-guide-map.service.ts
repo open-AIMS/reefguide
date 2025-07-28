@@ -203,8 +203,8 @@ export class ReefGuideMapService {
   setMap(map: OLMap) {
     this.map = map;
 
-    void this.addCriteriaLayers();
     this.addInfoLayers();
+    void this.addCriteriaLayers();
   }
 
   /**
@@ -510,7 +510,7 @@ export class ReefGuideMapService {
       const layer = createLayerFromDef(layerDef, {
         id: `criteria_${id}`,
         visible: false,
-        opacity: 0.7
+        opacity: 0.8
       });
 
       layerGroup.getLayers().push(layer);

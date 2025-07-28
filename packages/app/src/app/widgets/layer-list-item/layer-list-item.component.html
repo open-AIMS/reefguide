@@ -19,8 +19,8 @@
 </button>
 <span class="title">{{ l.get('title') }}</span>
 @if (layerController.loading()) {
-  @let progress = layerController?.loadingProgress();
-  @let tilesLoading = layerController?.tilesLoading();
+  @let progress = layerController.loadingProgress?.();
+  @let tilesLoading = layerController.tilesLoading?.();
   @if (progress !== undefined) {
     <mat-progress-spinner
       diameter="24"

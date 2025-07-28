@@ -31,6 +31,7 @@ import {
 import { WebApiService } from '../../../api/web-api.service';
 import { CriteriaRangeOutput } from '@reefguide/types';
 import { MatTooltip } from '@angular/material/tooltip';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 // add app properties, but keep original from API readonly
 type CriteriaRangeOutput2 = Readonly<CriteriaRangeOutput[string]> & {
@@ -58,7 +59,8 @@ type CriteriaRangeList = Array<CriteriaRangeOutput2>;
     MatSlideToggle,
     ReactiveFormsModule,
     MatSelectModule,
-    MatTooltip
+    MatTooltip,
+    MatProgressSpinner
   ],
   templateUrl: './selection-criteria.component.html',
   styleUrl: './selection-criteria.component.scss'
@@ -154,7 +156,7 @@ export class SelectionCriteriaComponent {
 
       // use step 1 for large ranges, step 0.1 for smaller. (40 is arbitrary)
       const diff = c.max_val - c.min_val;
-      c.slider_step = diff > 40 ? 1 : 0.1;
+      c.slider_step = diff > 40 ? 1 : diff > 4 ? 0.1 : 0.02;
 
       // ensure that default values are not outside the slider range.
       const minValue = Math.max(c.slider_min, c.slider_default_min);

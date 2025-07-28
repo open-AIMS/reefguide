@@ -243,18 +243,6 @@ export class WebApiService {
   getInfoLayers(): Array<LayerDef> {
     return [
       {
-        id: 'canonical_reefs',
-        title: 'RRAP Canonical Reefs',
-        url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/RRAP_Canonical_Reefs/FeatureServer',
-        urlType: 'ArcGisFeatureServer'
-      },
-      {
-        id: 'ecorrap_site_locations',
-        title: 'EcoRRAP Site Locations',
-        url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
-        urlType: 'ArcGisFeatureServer'
-      },
-      {
         id: 'ssr_sentinel_2018',
         title: 'SSR Sentinel 2018',
         infoUrl:
@@ -264,6 +252,21 @@ export class WebApiService {
         layerOptions: {
           visible: false
         }
+      },
+      {
+        id: 'canonical_reefs',
+        title: 'RRAP Canonical Reefs',
+        url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/RRAP_Canonical_Reefs/FeatureServer',
+        urlType: 'ArcGisFeatureServer',
+        layerOptions: {
+          opacity: 0.6
+        }
+      },
+      {
+        id: 'ecorrap_site_locations',
+        title: 'EcoRRAP Site Locations',
+        url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
+        urlType: 'ArcGisFeatureServer'
       },
       // can zoom in approx to scale 36100, 134MB
       // {
@@ -281,7 +284,10 @@ export class WebApiService {
         infoUrl:
           'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer',
         url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
-        urlType: 'WMTSCapabilitiesXml'
+        urlType: 'WMTSCapabilitiesXml',
+        layerOptions: {
+          opacity: 0.8
+        }
       }
     ];
   }
