@@ -185,17 +185,17 @@ export class SelectionCriteriaComponent {
     for (const c of regionCriteriaRanges) {
       const layerController = this.mapService.criteriaLayers[c.id];
       if (layerController) {
-        const { min_val, max_val } = c;
-        const range = max_val - min_val;
+        const { slider_min, slider_max } = c;
+        const range = slider_max - slider_min;
         const minKey = `${c.payload_property_prefix}min`;
         const maxKey = `${c.payload_property_prefix}max`;
 
         const min$ = formGroup
           .get(minKey)!
-          .valueChanges.pipe(startWith(c.default_min_val)) as Observable<number>;
+          .valueChanges.pipe(startWith(c.slider_default_min)) as Observable<number>;
         const max$ = formGroup
           .get(maxKey)!
-          .valueChanges.pipe(startWith(c.default_max_val)) as Observable<number>;
+          .valueChanges.pipe(startWith(c.slider_default_max)) as Observable<number>;
 
         min$
           .pipe(combineLatestWith(max$))
@@ -207,8 +207,8 @@ export class SelectionCriteriaComponent {
             }
 
             // normalized 0:1
-            const nMin = (min - min_val) / range;
-            const nMax = (max - min_val) / range;
+            const nMin = (min - slider_min) / range;
+            const nMax = (max - slider_min) / range;
             layerController.filterLayerPixels(nMin, nMax);
           });
       }
