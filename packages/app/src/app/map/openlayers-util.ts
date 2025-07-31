@@ -122,3 +122,20 @@ export function clusterLayerSource(layer: VectorLayer) {
     });
   }
 }
+
+/**
+ * Create a TileLayer with TileDebug source.
+ * @param source use the projection and tileGrid from this source
+ */
+export function createTileDebugLayer(source?: DataTileSource | null): TileLayer {
+  return new TileLayer({
+    source: new TileDebug({
+      // template: 'z:{z} x:{x} y:{-y}',
+      // null not assignable
+      projection: source?.getProjection() ?? undefined,
+      tileGrid: source?.getTileGrid() ?? undefined,
+      // what tiles to use when between zoom levels
+      zDirection: 1
+    })
+  });
+}
