@@ -516,7 +516,7 @@ export class ReefGuideMapService {
       layerGroup.getLayers().push(layer);
 
       this.criteriaLayers[id] = this.createLayerController(layer, {
-        criteriaLayerDef: layerDef
+        layerDef
       });
     }
   }

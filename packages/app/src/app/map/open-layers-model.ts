@@ -11,7 +11,8 @@ import { toObservable } from '@angular/core/rxjs-interop';
 type LayerStyleModes = 'default' | 'pixel-filtering';
 
 export type LayerControllerOptions = {
-  criteriaLayerDef?: LayerDef;
+  // Layer definition used to create this layer
+  layerDef?: LayerDef;
 };
 
 // TODO lifecycle/dispose concerns, may need to cleanup listeners
@@ -132,7 +133,7 @@ export class LayerController {
     if (layer instanceof TileLayer) {
       // OpenLayers bands are normalized 0 to 1
       let metric: any[] = ['band', 1];
-      if (this.options?.criteriaLayerDef?.reverseRange) {
+      if (this.options?.layerDef?.reverseRange) {
         // invert to align with values from criteria UI
         metric = ['-', 1, metric];
       }

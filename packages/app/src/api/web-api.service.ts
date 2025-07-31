@@ -32,6 +32,7 @@ import {
 } from 'rxjs';
 import { environment } from '../environments/environment';
 import { retryHTTPErrors } from '../util/http-util';
+import { FlatStyleLike } from 'ol/style/flat';
 
 type JobId = CreateJobResponse['jobId'];
 
@@ -254,21 +255,48 @@ export class WebApiService {
         }
       },
       {
+        id: 'GBRMP_Zoning',
+        title: 'GBRMP Zoning',
+        // NAME exists, specific id like P-16-15, but TYPE more friendly text
+        labelProp: 'TYPE',
+        layerId: '53',
+        url: 'https://services8.arcgis.com/ll1QQ2mI4WMXIXdm/ArcGIS/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer',
+        urlType: 'ArcGisFeatureServer',
+        layerOptions: {
+          opacity: 0.7
+        }
+      },
+      {
         id: 'canonical_reefs',
         title: 'RRAP Canonical Reefs',
+        labelProp: 'reef_name',
         url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/RRAP_Canonical_Reefs/FeatureServer',
         urlType: 'ArcGisFeatureServer',
         layerOptions: {
-          opacity: 0.6
+          opacity: 0.8,
+          // @ts-expect-error
+          style: {
+            // need a fill for center of reef to be clickable
+            'fill-color': 'rgba(35,96,165,0.01)',
+            'stroke-color': 'rgba(35,96,165,0.6)',
+            'stroke-line-dash': [4, 6],
+            'stroke-width': 0,
+            'text-value': ['get', 'reef_name']
+            // TODO show more reef names at higher zoom, declutter isn't it
+            // https://openlayers.org/en/latest/apidoc/module-ol_style_Style.html#~DeclutterMode
+            // 'text-declutter-mode': 'none'
+          } as FlatStyleLike
         }
       },
       {
         id: 'ecorrap_site_locations',
         title: 'EcoRRAP Site Locations',
+        labelProp: 'Name',
         url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
         urlType: 'ArcGisFeatureServer',
         cluster: true
       },
+
       // can zoom in approx to scale 36100, 134MB
       // {
       //   id: 'hybrid_benthic_2',

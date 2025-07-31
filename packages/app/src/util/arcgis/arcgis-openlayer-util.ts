@@ -11,6 +11,7 @@ import { createXYZ } from 'ol/tilegrid';
 import TileLayer from 'ol/layer/WebGLTile';
 import { Tile } from 'ol';
 import { clusterLayerSource } from '../../app/map/openlayers-util';
+import { setupGBRMPZoning } from '../../app/map/openlayers-hardcoded';
 
 /**
  * Create WMTS source based from capabilities XML file url.
@@ -106,19 +107,34 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
   const properties: LayerProperties = {
     id: layerDef.id,
     title: layerDef.title,
-    infoUrl: layerDef.infoUrl
+    infoUrl: layerDef.infoUrl,
+    labelProp: layerDef.labelProp
   };
 
   switch (layerDef.urlType) {
     case 'ArcGisFeatureServer':
+      const source = createVectorSourceForFeatureServer(layerDef.url, layerDef.layerId);
       // layerOptions as any to avoid type errors. It may be possible to create proper type
       // mappings based on a layerDef.layerType, but not worth the effort at this time.
       const vectorLayer = new VectorLayer({
         properties,
-        source: createVectorSourceForFeatureServer(layerDef.url),
+        source,
+        // want to show new features while panning by default
+        updateWhileInteracting: true,
         ...(layerDef.layerOptions as any),
         ...mixin
       });
+
+      // set Layer on features so there's a way to get back to the layer when
+      // features are clicked
+      source.on('addfeature', event => {
+        event.feature?.set('__layer', vectorLayer);
+      });
+
+      // TODO generic support for ArcGis to OpenLayers style
+      if (layerDef.id === 'GBRMP_Zoning') {
+        setupGBRMPZoning(vectorLayer);
+      }
 
       if (layerDef.cluster) {
         clusterLayerSource(vectorLayer);
@@ -127,7 +143,7 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
       return vectorLayer;
 
     case 'WMTSCapabilitiesXml':
-      const layer = new TileLayer({
+      const tileLayer = new TileLayer({
         properties,
         ...(layerDef.layerOptions as any),
         ...mixin
@@ -137,10 +153,11 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
         createSourceFromCapabilitiesXml(layerDef.url).then(source => {
           // OpenLayers types bug? WMTS source does work with TileLayer
           // @ts-expect-error
-          layer.setSource(source);
+          tileLayer.setSource(source);
         });
       }, 2_000);
-      return layer;
+
+      return tileLayer;
 
     default:
       throw new Error(`Unsupported urlType: ${layerDef.urlType}`);
@@ -150,11 +167,10 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
 /**
  * Constructs a VectorSource for the ArcGIS feature server.
  * @param featureServerUrl ArcGIS .../FeatureServer URL
+ * @param layer layer ID to use /FeatureServer/{id}
  */
-function createVectorSourceForFeatureServer(featureServerUrl: string): VectorSource {
+function createVectorSourceForFeatureServer(featureServerUrl: string, layer = '0'): VectorSource {
   // see example: https://openlayers.org/en/latest/examples/vector-esri.html
-  const layer = '0';
-
   const vectorSource = new VectorSource({
     format: new EsriJSON(),
     url: function (extent, resolution, projection) {

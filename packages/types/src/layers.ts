@@ -27,6 +27,12 @@ export type LayerDef = {
   urlType: 'WMTSCapabilitiesXml' | 'ArcGisImageServer' | 'ArcGisMapServer' | 'ArcGisFeatureServer';
 
   /**
+   * layer to query within the service.
+   * Currently only applicable to ArcGisFeatureServer
+   */
+  layerId?: string;
+
+  /**
    * Web page where user can learn about the layer.
    */
   infoUrl?: string;
@@ -44,4 +50,9 @@ export type LayerDef = {
    * Wrap the VectorSource in a Cluster.
    */
   cluster?: boolean;
+
+  /**
+   * Feature property used as the primary label
+   */
+  labelProp?: string;
 };

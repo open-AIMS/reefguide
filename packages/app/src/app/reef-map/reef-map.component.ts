@@ -1,7 +1,7 @@
 import { AfterViewInit, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import Map from 'ol/Map';
 import View from 'ol/View';
-import TileLayer from 'ol/layer/Tile';
+import TileLayer from 'ol/layer/WebGLTile';
 import OSM from 'ol/source/OSM';
 import ScaleLine from 'ol/control/ScaleLine';
 import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
@@ -12,6 +12,10 @@ import LayerGroup from 'ol/layer/Group';
 import { LayerProperties } from '../../types/layer.type';
 import Layer from 'ol/layer/Layer';
 import { moveItemInArray } from '@angular/cdk/drag-drop';
+import { MapBrowserEvent } from 'ol';
+import { MatDialog } from '@angular/material/dialog';
+import { FeatureInfoDialogComponent } from '../widgets/feature-info-dialog/feature-info-dialog.component';
+import { FeatureLike } from 'ol/Feature';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -27,6 +31,7 @@ import { moveItemInArray } from '@angular/cdk/drag-drop';
   styleUrl: './reef-map.component.scss'
 })
 export class ReefMapComponent implements AfterViewInit {
+  private readonly dialog = inject(MatDialog);
   private mapEl = viewChild.required<ElementRef>('olMap');
 
   readonly mapService = inject(ReefGuideMapService, { optional: true });
@@ -75,6 +80,8 @@ export class ReefMapComponent implements AfterViewInit {
    */
   ngAfterViewInit() {
     const baseLayer = new TileLayer({
+      // @ts-expect-error this source works with WebGLTileLayer, ignore the type error
+      // https://github.com/openlayers/openlayers/issues/16794
       source: new OSM(),
       properties: {
         title: 'Base map (OSM)',
@@ -140,7 +147,7 @@ export class ReefMapComponent implements AfterViewInit {
     });
 
     map.on('click', event => {
-      console.log('Map click', event);
+      this.onClick(event);
     });
   }
 
@@ -176,6 +183,35 @@ export class ReefMapComponent implements AfterViewInit {
         layer.setZIndex(highest_zIndex);
       } else {
         highest_zIndex = Math.max(highest_zIndex, zIndex);
+      }
+    });
+  }
+
+  private onClick(event: MapBrowserEvent) {
+    console.log('map click', event);
+    const features: FeatureLike[] = [];
+    this.map.forEachFeatureAtPixel(event.pixel, feature => {
+      console.log('feature at click', feature.getProperties(), feature);
+      // Cluster point has child features
+      const childFeatures = feature.get('features');
+      if (childFeatures instanceof Array) {
+        for (const child of childFeatures) {
+          features.push(child);
+        }
+      } else {
+        features.push(feature);
+      }
+    });
+
+    if (features.length === 0) {
+      return;
+    }
+
+    this.dialog.open(FeatureInfoDialogComponent, {
+      // allows moving map under dialog, but no close on outside click
+      // hasBackdrop: false,
+      data: {
+        features
       }
     });
   }

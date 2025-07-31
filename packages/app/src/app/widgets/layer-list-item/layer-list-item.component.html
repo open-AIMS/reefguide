@@ -18,16 +18,20 @@
   <mat-icon>{{ layerController.visible() ? 'visibility' : 'visibility_off' }}</mat-icon>
 </button>
 <span class="title">{{ l.get('title') }}</span>
-@if (layerController.loading()) {
-  @let progress = layerController.loadingProgress?.();
-  @let tilesLoading = layerController.tilesLoading?.();
-  @if (progress !== undefined) {
-    <mat-progress-spinner
-      diameter="24"
-      [value]="progress * 100"
-      [matTooltip]="tilesLoading + ' tiles loading'"
-    ></mat-progress-spinner>
-  } @else {
-    <mat-progress-spinner diameter="24" mode="indeterminate"></mat-progress-spinner>
-  }
+@let visible = layerController.loading() ? 'visible' : 'hidden';
+@let progress = layerController.loadingProgress?.();
+@let tilesLoading = layerController.tilesLoading?.();
+@if (progress !== undefined) {
+  <mat-progress-spinner
+    [style.visibility]="visible"
+    diameter="24"
+    [value]="progress * 100"
+    [matTooltip]="tilesLoading + ' tiles loading'"
+  ></mat-progress-spinner>
+} @else {
+  <mat-progress-spinner
+    [style.visibility]="visible"
+    diameter="24"
+    mode="indeterminate"
+  ></mat-progress-spinner>
 }
