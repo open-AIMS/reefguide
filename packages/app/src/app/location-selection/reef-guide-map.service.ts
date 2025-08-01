@@ -52,8 +52,9 @@ import { Fill, Stroke, Style } from 'ol/style';
 import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
 import Layer from 'ol/layer/Layer';
 import { createLayerFromDef } from '../../util/arcgis/arcgis-openlayer-util';
-import { LayerController, LayerControllerOptions } from '../map/open-layers-model';
+import { LayerController, LayerControllerOptions } from '../map/openlayers-model';
 import { LayerProperties } from '../../types/layer.type';
+import { singleColorLayerStyle } from '../map/openlayers-styles';
 
 /**
  * Map UI actions implemented by the overall app design.
@@ -477,8 +478,12 @@ export class ReefGuideMapService {
           {
             url: region.cogUrl
           }
-        ]
-      })
+        ],
+        // prevent normalization so can work with band value 1
+        normalize: false
+      }),
+      opacity: 0.8,
+      style: singleColorLayerStyle([0, 255, 0, 1])
     });
 
     // free ObjectURL memory after layer disposed

@@ -5,7 +5,7 @@ import { MatSliderModule } from '@angular/material/slider';
 import Layer from 'ol/layer/Layer';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { ReefGuideMapService } from '../../location-selection/reef-guide-map.service';
-import { LayerController } from '../../map/open-layers-model';
+import { LayerController } from '../../map/openlayers-model';
 
 // TODO layer blend mode. was for ArcGis, but these are standard canvas blend modes
 const BLEND_MODES = [
