@@ -38,7 +38,7 @@ import {
   RegionDownloadResponse,
   RegionJobsManager
 } from './selection-criteria/region-jobs-manager';
-import { RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
+import { LayerDef, RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
 import { JobsManagerService } from '../jobs/jobs-manager.service';
 import { fromLonLat } from 'ol/proj';
 import LayerGroup from 'ol/layer/Group';
@@ -513,11 +513,9 @@ export class ReefGuideMapService {
         opacity: 0.8
       });
 
-      layerGroup.getLayers().push(layer);
+      this.criteriaLayers[id] = this.afterCreateLayer(layer, layerDef);
 
-      this.criteriaLayers[id] = this.createLayerController(layer, {
-        layerDef
-      });
+      layerGroup.getLayers().push(layer);
     }
   }
 
@@ -525,6 +523,7 @@ export class ReefGuideMapService {
     const infoLayerDefs = this.api.getInfoLayers();
     for (const layerDef of infoLayerDefs) {
       const layer = createLayerFromDef(layerDef);
+      this.afterCreateLayer(layer, layerDef);
       this.map.getLayers().push(layer);
     }
   }
@@ -561,5 +560,24 @@ export class ReefGuideMapService {
       throw new Error('LayerController not created!');
     }
     return controller;
+  }
+
+  /**
+   * Called after a Layer is created by this service, prior to adding to Map.
+   * @param layer
+   * @param layerDef
+   */
+  private afterCreateLayer(layer: Layer, layerDef: LayerDef): LayerController {
+    // TODO show error indicator in UI
+    layer.on('error', e => {
+      console.error('layer error', e);
+    });
+    layer.getSource()?.on('error', e => {
+      console.error('layer source error', e);
+    });
+
+    return this.createLayerController(layer, {
+      layerDef
+    });
   }
 }

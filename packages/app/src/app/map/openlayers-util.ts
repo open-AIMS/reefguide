@@ -9,8 +9,10 @@ import BaseObject, { ObjectEvent } from 'ol/Object';
 import { TileSourceEvent } from 'ol/source/Tile';
 import VectorLayer from 'ol/layer/Vector';
 import { Fill, Stroke, Style, Text } from 'ol/style';
-import { Cluster } from 'ol/source';
+import { Cluster, TileDebug } from 'ol/source';
 import CircleStyle from 'ol/style/Circle';
+import TileLayer from 'ol/layer/WebGLTile';
+import DataTileSource from 'ol/source/DataTile';
 
 /**
  * Call the function when the layer is disposed.
