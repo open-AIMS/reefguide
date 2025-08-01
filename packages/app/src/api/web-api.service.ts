@@ -288,15 +288,6 @@ export class WebApiService {
           } as FlatStyleLike
         }
       },
-      {
-        id: 'ecorrap_site_locations',
-        title: 'EcoRRAP Site Locations',
-        labelProp: 'Name',
-        url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
-        urlType: 'ArcGisFeatureServer',
-        cluster: true
-      },
-
       // can zoom in approx to scale 36100, 134MB
       // {
       //   id: 'hybrid_benthic_2',
@@ -318,6 +309,14 @@ export class WebApiService {
           opacity: 0.8,
           visible: false
         }
+      },
+      {
+        id: 'ecorrap_site_locations',
+        title: 'EcoRRAP Site Locations',
+        labelProp: 'Name',
+        url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
+        urlType: 'ArcGisFeatureServer',
+        cluster: true
       }
     ];
   }
