@@ -1,6 +1,7 @@
 import {
   computed,
   DestroyRef,
+  effect,
   inject,
   Injectable,
   InjectionToken,
@@ -55,6 +56,7 @@ import { createLayerFromDef } from '../../util/arcgis/arcgis-openlayer-util';
 import { LayerController, LayerControllerOptions } from '../map/openlayers-model';
 import { LayerProperties } from '../../types/layer.type';
 import { singleColorLayerStyle } from '../map/openlayers-styles';
+import { fromString as colorFromString } from 'ol/color';
 
 /**
  * Map UI actions implemented by the overall app design.
@@ -248,7 +250,7 @@ export class ReefGuideMapService {
       )
       .subscribe({
         next: readyRegion => {
-          this.addRegionLayer(readyRegion, layerGroup);
+          this.addRegionalAssessmentLayer(readyRegion, layerGroup);
         },
         complete: () => {
           this.regionAssessmentLoading.set(false);
@@ -285,7 +287,7 @@ export class ReefGuideMapService {
     forkJoin([region$, this.api.downloadJobResults(jobId)]).subscribe(([region, results]) => {
       const regionResults = { ...results, region };
       this.jobResultsToReadyRegion(regionResults).subscribe(readyRegion => {
-        this.addRegionLayer(readyRegion, layerGroup);
+        this.addRegionalAssessmentLayer(readyRegion, layerGroup);
       });
     });
   }
@@ -463,8 +465,10 @@ export class ReefGuideMapService {
     console.warn('TODO polygon notes openlayers');
   }
 
-  private async addRegionLayer(region: ReadyRegion, layerGroup: LayerGroup) {
-    console.log('addRegionLayer', region.region, region.originalUrl);
+  private async addRegionalAssessmentLayer(region: ReadyRegion, layerGroup: LayerGroup) {
+    console.log('addRegionalAssessmentLayer', region.region, region.originalUrl);
+
+    const color = '#27b51e';
 
     const layer = new TileLayer({
       properties: {
@@ -482,8 +486,7 @@ export class ReefGuideMapService {
         // prevent normalization so can work with band value 1
         normalize: false
       }),
-      opacity: 0.8,
-      style: singleColorLayerStyle([0, 255, 0, 1])
+      opacity: 0.8
     });
 
     // free ObjectURL memory after layer disposed
@@ -495,6 +498,16 @@ export class ReefGuideMapService {
         });
       });
     }
+
+    const layerController = this.afterCreateLayer(layer, { color });
+
+    // update style when color changes (and first init)
+    effect(
+      () => {
+        layer.setStyle(singleColorLayerStyle(colorFromString(layerController.color!())));
+      },
+      { injector: this.injector }
+    );
 
     layerGroup.getLayers().push(layer);
   }
@@ -518,7 +531,7 @@ export class ReefGuideMapService {
         opacity: 0.8
       });
 
-      this.criteriaLayers[id] = this.afterCreateLayer(layer, layerDef);
+      this.criteriaLayers[id] = this.afterCreateLayer(layer, { layerDef });
 
       layerGroup.getLayers().push(layer);
     }
@@ -528,7 +541,7 @@ export class ReefGuideMapService {
     const infoLayerDefs = this.api.getInfoLayers();
     for (const layerDef of infoLayerDefs) {
       const layer = createLayerFromDef(layerDef);
-      this.afterCreateLayer(layer, layerDef);
+      this.afterCreateLayer(layer, { layerDef });
       this.map.getLayers().push(layer);
     }
   }
@@ -570,9 +583,9 @@ export class ReefGuideMapService {
   /**
    * Called after a Layer is created by this service, prior to adding to Map.
    * @param layer
-   * @param layerDef
+   * @param options
    */
-  private afterCreateLayer(layer: Layer, layerDef: LayerDef): LayerController {
+  private afterCreateLayer(layer: Layer, options: LayerControllerOptions): LayerController {
     // TODO show error indicator in UI
     layer.on('error', e => {
       console.error('layer error', e);
@@ -581,8 +594,6 @@ export class ReefGuideMapService {
       console.error('layer source error', e);
     });
 
-    return this.createLayerController(layer, {
-      layerDef
-    });
+    return this.createLayerController(layer, options);
   }
 }

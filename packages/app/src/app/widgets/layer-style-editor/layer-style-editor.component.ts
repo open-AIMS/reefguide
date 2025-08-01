@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, inject, input, WritableSignal } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
@@ -61,29 +61,18 @@ export class LayerStyleEditorComponent {
 
   blendModes = BLEND_MODES;
 
-  supportsColor = signal(false);
-  // supportsColor = computed(() => {
-  //   // HACK until we abstract layers properly.
-  //   // TODO fix, use layer property instead (or LayerController)
-  //   // @ts-ignore
-  //   return this.layer().title.startsWith('Assessed Regions');
-  // });
-  //
-  // currentColor = computed(() => {
-  //   const layer = this.layer();
-  //   let color: string | undefined;
-  //   if (layer) {
-  //     this.iteratePolygonLayers(layer, graphicsLayer => {
-  //       color = getPolygonLayerColor(graphicsLayer);
-  //       return false;
-  //     });
-  //   }
-  //
-  //   return color;
-  // });
+  /**
+   * Defined if color supported
+   */
+  currentColor?: WritableSignal<string>;
 
   ngOnInit() {
-    this.layerController = this.mapService.getLayerController(this.layer());
+    const layer = this.layer();
+    this.layerController = this.mapService.getLayerController(layer);
+
+    if (this.layerController.color) {
+      this.currentColor = this.layerController.color;
+    }
   }
 
   // onBlendModeChange(value: BlendModes) {
@@ -97,12 +86,9 @@ export class LayerStyleEditorComponent {
     this.layer().setOpacity(opacityValue);
   }
 
-  // onColorChange(event: Event) {
-  //   const el = event.target! as HTMLInputElement;
-  //   const color = el.value;
-  //   this.iteratePolygonLayers(this.layer(), graphicsLayer => {
-  //     changePolygonLayerColor(graphicsLayer, color);
-  //     return true;
-  //   });
-  // }
+  onColorChange(event: Event) {
+    const el = event.target! as HTMLInputElement;
+    const colorString = el.value as string;
+    this.currentColor?.set(colorString);
+  }
 }

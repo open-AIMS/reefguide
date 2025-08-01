@@ -11,8 +11,14 @@ import { toObservable } from '@angular/core/rxjs-interop';
 type LayerStyleModes = 'default' | 'pixel-filtering';
 
 export type LayerControllerOptions = {
-  // Layer definition used to create this layer
+  /**
+   * Layer definition used to create this layer
+   */
   layerDef?: LayerDef;
+  /**
+   * create and set color value signal in LayerController
+   */
+  color?: string;
 };
 
 // TODO lifecycle/dispose concerns, may need to cleanup listeners
@@ -33,6 +39,11 @@ export class LayerController {
    */
   tilesLoading?: Signal<number>;
 
+  /**
+   * Primary color of this layer
+   */
+  color?: WritableSignal<string>;
+
   private destroyed$ = new Subject<void>();
 
   constructor(
@@ -41,6 +52,10 @@ export class LayerController {
   ) {
     this.visible = signal(layer.getVisible());
     this.opacity = signal(layer.getOpacity());
+
+    if (options?.color) {
+      this.color = signal(options.color);
+    }
 
     // Sync signal to layer state
     effect(() => {
