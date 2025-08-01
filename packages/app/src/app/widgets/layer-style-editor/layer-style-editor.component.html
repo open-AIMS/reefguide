@@ -3,19 +3,6 @@
 @if (title) {
   <h2>{{ title }}</h2>
 }
-<div class="row">
-  @if (supportsColor()) {
-    <!--    <input class="color" type="color" [value]="currentColor()" (input)="onColorChange($event)" />-->
-  }
-  <!--  <mat-form-field>-->
-  <!--    <mat-label>Blend Mode</mat-label>-->
-  <!--    <mat-select [value]="layer().blendMode" (selectionChange)="onBlendModeChange($event.value)">-->
-  <!--      @for (mode of blendModes; track mode) {-->
-  <!--        <mat-option [value]="mode">{{ mode }}</mat-option>-->
-  <!--      }-->
-  <!--    </mat-select>-->
-  <!--  </mat-form-field>-->
-</div>
 <mat-slide-toggle
   labelPosition="before"
   [checked]="layerController.visible()"
@@ -29,3 +16,18 @@
     <input matSliderThumb [value]="l.getOpacity()" (input)="onOpacityInput($event)" />
   </mat-slider>
 </div>
+@if (currentColor) {
+  <div class="row">
+    <header>Color</header>
+    <input class="color" type="color" [value]="currentColor()" (input)="onColorChange($event)" />
+
+    <!--  <mat-form-field>-->
+    <!--    <mat-label>Blend Mode</mat-label>-->
+    <!--    <mat-select [value]="layer().blendMode" (selectionChange)="onBlendModeChange($event.value)">-->
+    <!--      @for (mode of blendModes; track mode) {-->
+    <!--        <mat-option [value]="mode">{{ mode }}</mat-option>-->
+    <!--      }-->
+    <!--    </mat-select>-->
+    <!--  </mat-form-field>-->
+  </div>
+}

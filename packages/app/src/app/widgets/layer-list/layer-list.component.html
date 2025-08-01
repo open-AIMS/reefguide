@@ -1,18 +1,25 @@
-@let layers = mapComponent.layers$ | async;
+@let layers = mapComponent.sortedLayers$ | async;
 @let numLayers = layers?.length ?? 0;
 @let isLoading = mapComponent.loading();
 
 <mat-expansion-panel>
   <mat-expansion-panel-header>
     <span>{{ numLayers }} Layer{{ numLayers > 1 ? 's' : '' }}</span>
-
     <mat-progress-spinner
       mode="indeterminate"
       diameter="24"
       [style.visibility]="isLoading ? 'visible' : 'hidden'"
     ></mat-progress-spinner>
   </mat-expansion-panel-header>
-  @for (layer of layers; track layer) {
-    <app-layer-list-item [layer]="layer"></app-layer-list-item>
+  @if (layers) {
+    <div cdkDropList [cdkDropListData]="layers" (cdkDropListDropped)="onDrop($event)">
+      @for (layer of layers; track layer) {
+        <app-layer-list-item cdkDrag [cdkDragData]="layer" [layer]="layer">
+          <!-- this 3-line drag looks better -->
+          <span class="drag-handle" cdkDragHandle>&#9776;</span>
+          <!-- <mat-icon class="drag-handle" cdkDragHandle>drag_handle</mat-icon> -->
+        </app-layer-list-item>
+      }
+    </div>
   }
 </mat-expansion-panel>

@@ -1,8 +1,10 @@
+import { Options } from 'ol/layer/Layer';
+
 /**
  * Definition of a map layer that visualizes a criteria.
  * Should be greyscale, color and styling is done by the app.
  */
-export type CriteriaLayerDef = {
+export type LayerDef = {
   /**
    * Criteria ID corresponding to CriteriaRangeOutput.id
    */
@@ -12,7 +14,7 @@ export type CriteriaLayerDef = {
    */
   title: string;
   /**
-   * May layer URL
+   * layer URL
    */
   url: string;
 
@@ -20,8 +22,15 @@ export type CriteriaLayerDef = {
    * the kind of url
    *
    * WMTSCapabilitiesXml - URL of WMTSCapabilities.xml file
+   * ArcGisFeatureServer - .../FeatureServer URL
    */
-  urlType: 'WMTSCapabilitiesXml';
+  urlType: 'WMTSCapabilitiesXml' | 'ArcGisImageServer' | 'ArcGisMapServer' | 'ArcGisFeatureServer';
+
+  /**
+   * layer to query within the service.
+   * Currently only applicable to ArcGisFeatureServer
+   */
+  layerId?: string;
 
   /**
    * Web page where user can learn about the layer.
@@ -32,4 +41,18 @@ export type CriteriaLayerDef = {
    * Reverse criteria range values when applying pixel filter
    */
   reverseRange?: boolean;
+  /**
+   * Layer Options to mixin during construction.
+   */
+  layerOptions?: Partial<Omit<Options, 'source' | 'properties'>>;
+
+  /**
+   * Wrap the VectorSource in a Cluster.
+   */
+  cluster?: boolean;
+
+  /**
+   * Feature property used as the primary label
+   */
+  labelProp?: string;
 };
