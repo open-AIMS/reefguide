@@ -89,7 +89,7 @@ let errorTileObjectUrl: string | undefined = undefined;
  */
 async function getErrorTileUrl(): Promise<string> {
   if (errorTileObjectUrl == undefined) {
-    const errorTileUrl = 'http://localhost:4200/tiles/red256.png';
+    const errorTileUrl = '/tiles/red256.png';
     const resp = await fetch(errorTileUrl);
     const blob = await resp.blob();
     errorTileObjectUrl = URL.createObjectURL(blob);
