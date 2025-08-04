@@ -78,7 +78,7 @@ export const adriaModelRunInputSchema = z
       .describe('Number of scenarios to run (must be power of 2)'),
     model_params: z.array(modelParamSchema).describe('Array of model parameters for the run'),
     rcp_scenario: z
-      .string()
+      .enum(['26', '45', '60', '85'])
       .optional()
       .default('45')
       .describe('RCP scenario (e.g., "45" for RCP 4.5)')
