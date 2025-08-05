@@ -1,15 +1,29 @@
-import { AfterViewInit, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  inject,
+  input,
+  signal,
+  viewChild
+} from '@angular/core';
 import Map from 'ol/Map';
 import View from 'ol/View';
-import TileLayer from 'ol/layer/Tile';
+import TileLayer from 'ol/layer/WebGLTile';
 import OSM from 'ol/source/OSM';
 import ScaleLine from 'ol/control/ScaleLine';
 import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
 import { LayerListComponent } from '../widgets/layer-list/layer-list.component';
 import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
-import { debounceTime, map, Subject } from 'rxjs';
+import { debounceTime, map, Observable, Subject } from 'rxjs';
 import LayerGroup from 'ol/layer/Group';
 import { LayerProperties } from '../../types/layer.type';
+import Layer from 'ol/layer/Layer';
+import { moveItemInArray } from '@angular/cdk/drag-drop';
+import { MapBrowserEvent } from 'ol';
+import { MatDialog } from '@angular/material/dialog';
+import { FeatureInfoDialogComponent } from '../widgets/feature-info-dialog/feature-info-dialog.component';
+import { FeatureRef } from '../map/openlayers-types';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -25,8 +39,7 @@ import { LayerProperties } from '../../types/layer.type';
   styleUrl: './reef-map.component.scss'
 })
 export class ReefMapComponent implements AfterViewInit {
-  private mapEl = viewChild.required<ElementRef>('olMap');
-
+  private readonly dialog = inject(MatDialog);
   readonly mapService = inject(ReefGuideMapService, { optional: true });
 
   /**
@@ -41,18 +54,33 @@ export class ReefMapComponent implements AfterViewInit {
     // projection: 'EPSG:7844'
   });
 
+  /**
+   * Change visibility of left vertical toolbar
+   */
+  hideLeftToolbar = input<boolean>();
+
+  private mapEl = viewChild.required<ElementRef>('olMap');
+
   // will be defined after view init
   private map!: Map;
 
   private layersChange$ = new Subject<void>();
+  private _lastEmittedLayers?: Layer[];
 
-  public layers$ = this.layersChange$.pipe(
+  /**
+   * Flat list of all layers ordered by zIndex descending.
+   */
+  public sortedLayers$: Observable<Layer[]> = this.layersChange$.pipe(
     debounceTime(50),
     map(() => {
       // For now show all layers in flat list;
       // in future could display tree by recursing through getLayers()
       // getAllLayers will recursively get all leaf layers
-      return this.map.getAllLayers();
+      const allLayers = this.map.getAllLayers();
+      this.setMissingZindexes(allLayers);
+      allLayers.sort((a, b) => b.getZIndex()! - a.getZIndex()!);
+      this._lastEmittedLayers = allLayers;
+      return allLayers;
     })
   );
 
@@ -65,6 +93,8 @@ export class ReefMapComponent implements AfterViewInit {
    */
   ngAfterViewInit() {
     const baseLayer = new TileLayer({
+      // @ts-expect-error this source works with WebGLTileLayer, ignore the type error
+      // https://github.com/openlayers/openlayers/issues/16794
       source: new OSM(),
       properties: {
         title: 'Base map (OSM)',
@@ -85,6 +115,23 @@ export class ReefMapComponent implements AfterViewInit {
     this.setupMapControls(this.map);
 
     // trigger change to pickup base map layer
+    this.layersChange$.next();
+  }
+
+  /**
+   * Re-order the layer to this position in allLayers.
+   * Bumps the zIndex of other layers up
+   */
+  public reorderLayer(previousIndex: number, currentIndex: number) {
+    const allLayers = this._lastEmittedLayers!;
+    moveItemInArray(allLayers, previousIndex, currentIndex);
+
+    for (let i = 0; i < allLayers.length; i++) {
+      const layer = allLayers[i];
+      layer.setZIndex(allLayers.length - i);
+    }
+
+    // trigger sortedLayersChange$
     this.layersChange$.next();
   }
 
@@ -113,7 +160,7 @@ export class ReefMapComponent implements AfterViewInit {
     });
 
     map.on('click', event => {
-      console.log('Map click', event);
+      this.onClick(event);
     });
   }
 
@@ -136,6 +183,56 @@ export class ReefMapComponent implements AfterViewInit {
         });
         // TODO cleanup on LayerGroup remove
         this._listeningLayerGroups.add(layer);
+      }
+    });
+  }
+
+  private setMissingZindexes(allLayers: Layer[]) {
+    let highest_zIndex = 0;
+    allLayers.forEach(layer => {
+      const zIndex = layer.getZIndex();
+      if (zIndex === undefined) {
+        highest_zIndex++;
+        layer.setZIndex(highest_zIndex);
+      } else {
+        highest_zIndex = Math.max(highest_zIndex, zIndex);
+      }
+    });
+  }
+
+  private onClick(event: MapBrowserEvent) {
+    console.log('map click', event);
+    const features: FeatureRef[] = [];
+    this.map.forEachFeatureAtPixel(event.pixel, (feature, layer, geometry) => {
+      console.log('feature at click', feature.getProperties(), feature);
+      // Cluster point has child features
+      const childFeatures = feature.get('features');
+      if (childFeatures instanceof Array) {
+        for (const child of childFeatures) {
+          features.push({
+            feature: child,
+            layer,
+            geometry
+          });
+        }
+      } else {
+        features.push({
+          feature,
+          layer,
+          geometry
+        });
+      }
+    });
+
+    if (features.length === 0) {
+      return;
+    }
+
+    this.dialog.open(FeatureInfoDialogComponent, {
+      // allows moving map under dialog, but no close on outside click
+      // hasBackdrop: false,
+      data: {
+        features
       }
     });
   }

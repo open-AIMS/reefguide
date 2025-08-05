@@ -5,13 +5,13 @@ import {
   CreateJobResponse,
   CreateProjectInput,
   CreateProjectResponse,
-  CriteriaLayerDef,
   CriteriaRangeOutput,
   DeleteProjectResponse,
   DownloadResponse,
   GetProjectResponse,
   GetProjectsResponse,
   JobDetailsResponse,
+  LayerDef,
   ListJobsQuery,
   ListJobsResponse,
   ListMyJobsQuery,
@@ -199,7 +199,7 @@ export class WebApiService {
    * Get criteria visualization layer definitions.
    * TODO return from API instead of hardcoding in app code.
    */
-  getCriteriaLayers(): CriteriaLayerDef[] {
+  getCriteriaLayers(): LayerDef[] {
     return [
       {
         id: 'Depth',
@@ -233,6 +233,94 @@ export class WebApiService {
           'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
         url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
         urlType: 'WMTSCapabilitiesXml'
+      }
+    ];
+  }
+
+  /**
+   * Get informational layers
+   */
+  getInfoLayers(): Array<LayerDef> {
+    return [
+      {
+        id: 'ssr_sentinel_2018',
+        title: 'SSR Sentinel 2018',
+        infoUrl:
+          'https://tiles.arcgis.com/tiles/ll1QQ2mI4WMXIXdm/arcgis/rest/services/SSR_Sentinel_2018/MapServer',
+        url: 'https://tiles.arcgis.com/tiles/ll1QQ2mI4WMXIXdm/arcgis/rest/services/SSR_Sentinel_2018/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+        urlType: 'WMTSCapabilitiesXml',
+        layerOptions: {
+          visible: false
+        }
+      },
+      {
+        id: 'GBRMP_Zoning',
+        title: 'GBRMP Zoning',
+        // NAME exists, specific id like P-16-15, but TYPE more friendly text
+        labelProp: 'TYPE',
+        layerId: '53',
+        infoUrl:
+          'https://services8.arcgis.com/ll1QQ2mI4WMXIXdm/ArcGIS/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer',
+        url: 'https://services8.arcgis.com/ll1QQ2mI4WMXIXdm/ArcGIS/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer',
+        urlType: 'ArcGisFeatureServer',
+        layerOptions: {
+          opacity: 0.7
+        }
+      },
+      {
+        id: 'canonical_reefs',
+        title: 'RRAP Canonical Reefs',
+        labelProp: 'reef_name',
+        infoUrl:
+          'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/RRAP_Canonical_Reefs/FeatureServer',
+        url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/RRAP_Canonical_Reefs/FeatureServer',
+        urlType: 'ArcGisFeatureServer',
+        layerOptions: {
+          opacity: 0.8,
+          style: {
+            // need a fill for center of reef to be clickable
+            'fill-color': 'rgba(35,96,165,0.01)',
+            'stroke-color': 'rgba(35,96,165,0.6)',
+            'stroke-line-dash': [4, 6],
+            'stroke-width': 0,
+            'text-value': ['get', 'reef_name']
+            // TODO show more reef names at higher zoom, declutter isn't it
+            // https://openlayers.org/en/latest/apidoc/module-ol_style_Style.html#~DeclutterMode
+            // 'text-declutter-mode': 'none'
+          }
+        }
+      },
+      // can zoom in approx to scale 36100, 134MB
+      // {
+      //   id: 'hybrid_benthic_2',
+      //   title: 'Hybrid Benthic',
+      //   infoUrl:
+      //     'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/ExportTilecache/MapServer',
+      //   url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/ExportTilecache/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+      //   urlType: 'WMTSCapabilitiesXml'
+      // },
+      // can zoom in approx to scale 18055, 443MB
+      {
+        id: 'hybrid_benthic',
+        title: 'Hybrid Benthic',
+        infoUrl:
+          'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer',
+        url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+        urlType: 'WMTSCapabilitiesXml',
+        layerOptions: {
+          opacity: 0.8,
+          visible: false
+        }
+      },
+      {
+        id: 'ecorrap_site_locations',
+        title: 'EcoRRAP Site Locations',
+        labelProp: 'Name',
+        infoUrl:
+          'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
+        url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
+        urlType: 'ArcGisFeatureServer',
+        cluster: true
       }
     ];
   }

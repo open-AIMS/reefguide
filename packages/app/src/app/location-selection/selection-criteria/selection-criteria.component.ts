@@ -31,6 +31,7 @@ import {
 import { WebApiService } from '../../../api/web-api.service';
 import { CriteriaRangeOutput } from '@reefguide/types';
 import { MatTooltip } from '@angular/material/tooltip';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 // add app properties, but keep original from API readonly
 type CriteriaRangeOutput2 = Readonly<CriteriaRangeOutput[string]> & {
@@ -58,7 +59,8 @@ type CriteriaRangeList = Array<CriteriaRangeOutput2>;
     MatSlideToggle,
     ReactiveFormsModule,
     MatSelectModule,
-    MatTooltip
+    MatTooltip,
+    MatProgressSpinner
   ],
   templateUrl: './selection-criteria.component.html',
   styleUrl: './selection-criteria.component.scss'
@@ -154,7 +156,7 @@ export class SelectionCriteriaComponent {
 
       // use step 1 for large ranges, step 0.1 for smaller. (40 is arbitrary)
       const diff = c.max_val - c.min_val;
-      c.slider_step = diff > 40 ? 1 : 0.1;
+      c.slider_step = diff > 40 ? 1 : diff > 4 ? 0.1 : 0.02;
 
       // ensure that default values are not outside the slider range.
       const minValue = Math.max(c.slider_min, c.slider_default_min);
@@ -183,17 +185,17 @@ export class SelectionCriteriaComponent {
     for (const c of regionCriteriaRanges) {
       const layerController = this.mapService.criteriaLayers[c.id];
       if (layerController) {
-        const { min_val, max_val } = c;
-        const range = max_val - min_val;
+        const { slider_min, slider_max } = c;
+        const range = slider_max - slider_min;
         const minKey = `${c.payload_property_prefix}min`;
         const maxKey = `${c.payload_property_prefix}max`;
 
         const min$ = formGroup
           .get(minKey)!
-          .valueChanges.pipe(startWith(c.default_min_val)) as Observable<number>;
+          .valueChanges.pipe(startWith(c.slider_default_min)) as Observable<number>;
         const max$ = formGroup
           .get(maxKey)!
-          .valueChanges.pipe(startWith(c.default_max_val)) as Observable<number>;
+          .valueChanges.pipe(startWith(c.slider_default_max)) as Observable<number>;
 
         min$
           .pipe(combineLatestWith(max$))
@@ -205,8 +207,8 @@ export class SelectionCriteriaComponent {
             }
 
             // normalized 0:1
-            const nMin = (min - min_val) / range;
-            const nMax = (max - min_val) / range;
+            const nMin = (min - slider_min) / range;
+            const nMax = (max - slider_min) / range;
             layerController.filterLayerPixels(nMin, nMax);
           });
       }

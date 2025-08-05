@@ -1,11 +1,18 @@
 @let l = layer();
 @let props = layerController.getProperties();
+<!-- drag handle from parent list component -->
+<ng-content />
 @if (props.downloadUrl) {
   <a mat-icon-button [href]="props.downloadUrl" download matTooltip="Download layer file">
     <mat-icon>download</mat-icon>
   </a>
 } @else if (props.infoUrl) {
   <a mat-icon-button [href]="props.infoUrl" target="_blank" matTooltip="Layer source information">
+    <mat-icon>travel_explore</mat-icon>
+  </a>
+} @else {
+  <!-- always show an icon to maintain aligned layout -->
+  <a mat-icon-button disabled="true">
     <mat-icon>travel_explore</mat-icon>
   </a>
 }
@@ -16,3 +23,20 @@
   <mat-icon>{{ layerController.visible() ? 'visibility' : 'visibility_off' }}</mat-icon>
 </button>
 <span class="title">{{ l.get('title') }}</span>
+@let visible = layerController.loading() ? 'visible' : 'hidden';
+@let progress = layerController.loadingProgress?.();
+@let tilesLoading = layerController.tilesLoading?.();
+@if (progress !== undefined) {
+  <mat-progress-spinner
+    [style.visibility]="visible"
+    diameter="24"
+    [value]="progress * 100"
+    [matTooltip]="tilesLoading + ' tiles loading'"
+  ></mat-progress-spinner>
+} @else {
+  <mat-progress-spinner
+    [style.visibility]="visible"
+    diameter="24"
+    mode="indeterminate"
+  ></mat-progress-spinner>
+}

@@ -1,6 +1,7 @@
 import {
   computed,
   DestroyRef,
+  effect,
   inject,
   Injectable,
   InjectionToken,
@@ -51,9 +52,11 @@ import { GeoJSON } from 'ol/format';
 import { Fill, Stroke, Style } from 'ol/style';
 import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
 import Layer from 'ol/layer/Layer';
-import { createSourceFromCapabilitiesXml } from '../../util/arcgis/arcgis-openlayer-util';
-import { LayerController, LayerControllerOptions } from '../map/open-layers-model';
+import { createLayerFromDef } from '../../util/arcgis/arcgis-openlayer-util';
+import { LayerController, LayerControllerOptions } from '../map/openlayers-model';
 import { LayerProperties } from '../../types/layer.type';
+import { singleColorLayerStyle } from '../map/openlayers-styles';
+import { fromString as colorFromString } from 'ol/color';
 
 /**
  * Map UI actions implemented by the overall app design.
@@ -203,6 +206,7 @@ export class ReefGuideMapService {
   setMap(map: OLMap) {
     this.map = map;
 
+    this.addInfoLayers();
     void this.addCriteriaLayers();
   }
 
@@ -246,7 +250,7 @@ export class ReefGuideMapService {
       )
       .subscribe({
         next: readyRegion => {
-          this.addRegionLayer(readyRegion, layerGroup);
+          this.addRegionalAssessmentLayer(readyRegion, layerGroup);
         },
         complete: () => {
           this.regionAssessmentLoading.set(false);
@@ -283,7 +287,7 @@ export class ReefGuideMapService {
     forkJoin([region$, this.api.downloadJobResults(jobId)]).subscribe(([region, results]) => {
       const regionResults = { ...results, region };
       this.jobResultsToReadyRegion(regionResults).subscribe(readyRegion => {
-        this.addRegionLayer(readyRegion, layerGroup);
+        this.addRegionalAssessmentLayer(readyRegion, layerGroup);
       });
     });
   }
@@ -392,11 +396,14 @@ export class ReefGuideMapService {
         const layer = new VectorLayer({
           properties: {
             title: `${region} site suitability`,
-            downloadUrl: url
+            downloadUrl: url,
+            labelProp: 'row_ID'
           } satisfies LayerProperties,
           source,
           style
         });
+
+        this.afterCreateLayer(layer);
 
         layerGroup.getLayers().push(layer);
       });
@@ -461,8 +468,10 @@ export class ReefGuideMapService {
     console.warn('TODO polygon notes openlayers');
   }
 
-  private async addRegionLayer(region: ReadyRegion, layerGroup: LayerGroup) {
-    console.log('addRegionLayer', region.region, region.originalUrl);
+  private async addRegionalAssessmentLayer(region: ReadyRegion, layerGroup: LayerGroup) {
+    console.log('addRegionalAssessmentLayer', region.region, region.originalUrl);
+
+    const color = '#27b51e';
 
     const layer = new TileLayer({
       properties: {
@@ -471,12 +480,16 @@ export class ReefGuideMapService {
         downloadUrl: region.originalUrl
       } satisfies LayerProperties,
       source: new GeoTIFF({
+        interpolate: false,
         sources: [
           {
             url: region.cogUrl
           }
-        ]
-      })
+        ],
+        // prevent normalization so can work with band value 1
+        normalize: false
+      }),
+      opacity: 0.8
     });
 
     // free ObjectURL memory after layer disposed
@@ -488,6 +501,16 @@ export class ReefGuideMapService {
         });
       });
     }
+
+    const layerController = this.afterCreateLayer(layer, { color });
+
+    // update style when color changes (and first init)
+    effect(
+      () => {
+        layer.setStyle(singleColorLayerStyle(colorFromString(layerController.color!())));
+      },
+      { injector: this.injector }
+    );
 
     layerGroup.getLayers().push(layer);
   }
@@ -504,35 +527,25 @@ export class ReefGuideMapService {
     this.map.getLayers().push(layerGroup);
 
     for (let layerDef of layers) {
-      const { id, title, url, urlType, infoUrl } = layerDef;
-
-      const layer = new TileLayer({
-        properties: {
-          id: `criteria_${id}`,
-          title,
-          infoUrl
-        } satisfies LayerProperties,
+      const { id } = layerDef;
+      const layer = createLayerFromDef(layerDef, {
+        id: `criteria_${id}`,
         visible: false,
-        opacity: 0.7
+        opacity: 0.8
       });
+
+      this.criteriaLayers[id] = this.afterCreateLayer(layer, { layerDef });
+
       layerGroup.getLayers().push(layer);
+    }
+  }
 
-      if (urlType !== 'WMTSCapabilitiesXml') {
-        throw new Error('Unsupported url type');
-      }
-
-      createSourceFromCapabilitiesXml(url).then(source => {
-        // ignore OpenLayers types issue
-        // @ts-expect-error
-        layer.setSource(source);
-
-        // set the layer title to the source's title
-        // layer.set('title', source.get('title'));
-      });
-
-      this.criteriaLayers[id] = this.createLayerController(layer, {
-        criteriaLayerDef: layerDef
-      });
+  private addInfoLayers() {
+    const infoLayerDefs = this.api.getInfoLayers();
+    for (const layerDef of infoLayerDefs) {
+      const layer = createLayerFromDef(layerDef);
+      this.afterCreateLayer(layer, { layerDef });
+      this.map.getLayers().push(layer);
     }
   }
 
@@ -568,5 +581,23 @@ export class ReefGuideMapService {
       throw new Error('LayerController not created!');
     }
     return controller;
+  }
+
+  /**
+   * Called after a Layer is created by this service, prior to adding to Map.
+   * Hooks error handling and creates the LayerController.
+   * @param layer new Layer
+   * @param options should be provided if created from LayerDef
+   */
+  private afterCreateLayer(layer: Layer, options?: LayerControllerOptions): LayerController {
+    // TODO show error indicator in UI
+    layer.on('error', e => {
+      console.error('layer error', e);
+    });
+    layer.getSource()?.on('error', e => {
+      console.error('layer source error', e);
+    });
+
+    return this.createLayerController(layer, options);
   }
 }

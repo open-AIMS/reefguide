@@ -23,6 +23,7 @@
     },
     "dependencies": {
         "@reefguide/db": "workspace:*",
+        "ol": "^10.6.1",
         "zod": "^3.25.67"
     },
     "devDependencies": {

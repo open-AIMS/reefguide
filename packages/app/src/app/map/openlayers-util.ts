@@ -2,6 +2,17 @@ import Layer from 'ol/layer/Layer';
 import LayerGroup from 'ol/layer/Group';
 import { Collection } from 'ol';
 import BaseLayer from 'ol/layer/Base';
+import { fromEventPattern, Observable } from 'rxjs';
+import { EventsKey } from 'ol/events';
+import OLBaseEvent from 'ol/events/Event';
+import BaseObject, { ObjectEvent } from 'ol/Object';
+import { TileSourceEvent } from 'ol/source/Tile';
+import VectorLayer from 'ol/layer/Vector';
+import { Fill, Stroke, Style, Text } from 'ol/style';
+import { Cluster, TileDebug } from 'ol/source';
+import CircleStyle from 'ol/style/Circle';
+import TileLayer from 'ol/layer/WebGLTile';
+import DataTileSource from 'ol/source/DataTile';
 
 /**
  * Call the function when the layer is disposed.
@@ -51,4 +62,88 @@ export function disposeLayerGroup(
     layerGroup.dispose();
     parentCollection.remove(layerGroup);
   }
+}
+
+/**
+ * Create an Observable from an OpenLayer's object event.
+ * @param obj
+ * @param eventName
+ *
+ * TODO fix V type, it can be ObjectEvent
+ */
+export function fromOpenLayersEvent<
+  O extends BaseObject,
+  E = Parameters<O['on']>[0],
+  V = OLBaseEvent | ObjectEvent | TileSourceEvent
+>(obj: O, eventName: E): Observable<V> {
+  return fromEventPattern<V>(
+    // TODO figure out whey eventName type check not happy
+    handler => obj.on(eventName as any, handler),
+    (handler, key: EventsKey) => obj.un(eventName as any, handler)
+  );
+}
+
+/**
+ * Wrap the layer's current source with a new Cluster, which becomes the source.
+ * @param layer
+ */
+export function clusterLayerSource(layer: VectorLayer) {
+  const source = layer.getSource();
+  // TODO if source null, could wait on sourceready
+  if (source) {
+    const styleCache: Record<number, Style> = {};
+    const cluster = new Cluster({
+      source
+    });
+    layer.setSource(cluster);
+
+    layer.setStyle(feature => {
+      const size: number = feature.get('features').length;
+      let style = styleCache[size];
+      if (!style) {
+        style = new Style({
+          image: new CircleStyle({
+            radius: 10,
+            stroke: new Stroke({
+              color: '#fff'
+            }),
+            fill: new Fill({
+              color: '#3399CC'
+            })
+          })
+        });
+        if (size >= 2) {
+          style.setText(
+            new Text({
+              text: size.toString(),
+              fill: new Fill({
+                color: '#fff'
+              })
+            })
+          );
+        }
+        styleCache[size] = style;
+      }
+      return style;
+    });
+  } else {
+    console.warn('No source, clusterLayerSource has no effect!');
+  }
+}
+
+/**
+ * Create a TileLayer with TileDebug source.
+ * @param source use the projection and tileGrid from this source
+ */
+export function createTileDebugLayer(source?: DataTileSource | null): TileLayer {
+  return new TileLayer({
+    source: new TileDebug({
+      // template: 'z:{z} x:{x} y:{-y}',
+      // null not assignable
+      projection: source?.getProjection() ?? undefined,
+      tileGrid: source?.getTileGrid() ?? undefined,
+      // what tiles to use when between zoom levels
+      zDirection: 1
+    })
+  });
 }
