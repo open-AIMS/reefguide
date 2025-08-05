@@ -1,5 +1,5 @@
 <div #olMap class="map"></div>
-<div class="left-toolbar">
+<div class="left-toolbar" [style.visibility]="hideLeftToolbar() ? 'hidden' : 'visible'">
   <app-layer-list></app-layer-list>
   <!-- content from parent. if needed can use selectors to position first/last etc. -->
   <ng-content></ng-content>

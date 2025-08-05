@@ -59,7 +59,7 @@
     }
   </mat-drawer>
   <mat-drawer-content>
-    <app-reef-map>
+    <app-reef-map [hideLeftToolbar]="drawer.opened">
       @if (user) {
         <div class="map-buttons">
           <div class="row">

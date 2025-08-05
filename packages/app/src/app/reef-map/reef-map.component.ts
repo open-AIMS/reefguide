@@ -1,4 +1,12 @@
-import { AfterViewInit, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  inject,
+  input,
+  signal,
+  viewChild
+} from '@angular/core';
 import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/WebGLTile';
@@ -32,8 +40,6 @@ import { FeatureRef } from '../map/openlayers-types';
 })
 export class ReefMapComponent implements AfterViewInit {
   private readonly dialog = inject(MatDialog);
-  private mapEl = viewChild.required<ElementRef>('olMap');
-
   readonly mapService = inject(ReefGuideMapService, { optional: true });
 
   /**
@@ -47,6 +53,13 @@ export class ReefMapComponent implements AfterViewInit {
     // ideally would have basemap native to projection
     // projection: 'EPSG:7844'
   });
+
+  /**
+   * Change visibility of left vertical toolbar
+   */
+  hideLeftToolbar = input<boolean>();
+
+  private mapEl = viewChild.required<ElementRef>('olMap');
 
   // will be defined after view init
   private map!: Map;
