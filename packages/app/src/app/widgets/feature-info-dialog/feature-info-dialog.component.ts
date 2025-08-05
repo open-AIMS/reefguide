@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { FeatureLike } from 'ol/Feature';
 import { MatTabsModule } from '@angular/material/tabs';
+import { FeatureRef } from '../../map/openlayers-types';
 
 @Component({
   selector: 'app-feature-info-dialog',
@@ -12,7 +12,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 export class FeatureInfoDialogComponent {
   data = inject(MAT_DIALOG_DATA);
 
-  features: FeatureLike[];
+  features: FeatureRef[];
 
   excludedProperties = new Set<string>(['geometry', '__layer']);
 
@@ -20,17 +20,19 @@ export class FeatureInfoDialogComponent {
     this.features = this.data.features;
   }
 
-  getLabel(f: FeatureLike) {
-    const layer = f.get('__layer');
-    const labelProp = layer.get('labelProp');
+  getLabel(f: FeatureRef) {
+    const { feature, layer } = f;
+    const labelProp: string | undefined = layer.get('labelProp');
     if (labelProp) {
-      return f.get(labelProp);
+      return feature.get(labelProp);
     } else {
-      return `id=${f.getId()}`;
+      return `id=${feature.getId()}`;
     }
   }
 
-  getPropertyRows(f: FeatureLike) {
-    return Object.entries(f.getProperties()).filter(row => !this.excludedProperties.has(row[0]));
+  getPropertyRows(f: FeatureRef) {
+    return Object.entries(f.feature.getProperties()).filter(
+      row => !this.excludedProperties.has(row[0])
+    );
   }
 }

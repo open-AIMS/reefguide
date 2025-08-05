@@ -15,7 +15,7 @@ import { moveItemInArray } from '@angular/cdk/drag-drop';
 import { MapBrowserEvent } from 'ol';
 import { MatDialog } from '@angular/material/dialog';
 import { FeatureInfoDialogComponent } from '../widgets/feature-info-dialog/feature-info-dialog.component';
-import { FeatureLike } from 'ol/Feature';
+import { FeatureRef } from '../map/openlayers-types';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -189,17 +189,25 @@ export class ReefMapComponent implements AfterViewInit {
 
   private onClick(event: MapBrowserEvent) {
     console.log('map click', event);
-    const features: FeatureLike[] = [];
-    this.map.forEachFeatureAtPixel(event.pixel, feature => {
+    const features: FeatureRef[] = [];
+    this.map.forEachFeatureAtPixel(event.pixel, (feature, layer, geometry) => {
       console.log('feature at click', feature.getProperties(), feature);
       // Cluster point has child features
       const childFeatures = feature.get('features');
       if (childFeatures instanceof Array) {
         for (const child of childFeatures) {
-          features.push(child);
+          features.push({
+            feature: child,
+            layer,
+            geometry
+          });
         }
       } else {
-        features.push(feature);
+        features.push({
+          feature,
+          layer,
+          geometry
+        });
       }
     });
 

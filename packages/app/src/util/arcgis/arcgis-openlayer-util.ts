@@ -125,12 +125,6 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
         ...mixin
       });
 
-      // set Layer on features so there's a way to get back to the layer when
-      // features are clicked
-      source.on('addfeature', event => {
-        event.feature?.set('__layer', vectorLayer);
-      });
-
       // TODO generic support for ArcGis to OpenLayers style
       if (layerDef.id === 'GBRMP_Zoning') {
         setupGBRMPZoning(vectorLayer);

@@ -83,6 +83,10 @@ export function fromOpenLayersEvent<
   );
 }
 
+/**
+ * Wrap the layer's current source with a new Cluster, which becomes the source.
+ * @param layer
+ */
 export function clusterLayerSource(layer: VectorLayer) {
   const source = layer.getSource();
   // TODO if source null, could wait on sourceready
@@ -122,6 +126,8 @@ export function clusterLayerSource(layer: VectorLayer) {
       }
       return style;
     });
+  } else {
+    console.warn('No source, clusterLayerSource has no effect!');
   }
 }
 

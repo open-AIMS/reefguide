@@ -39,7 +39,7 @@ import {
   RegionDownloadResponse,
   RegionJobsManager
 } from './selection-criteria/region-jobs-manager';
-import { LayerDef, RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
+import { RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
 import { JobsManagerService } from '../jobs/jobs-manager.service';
 import { fromLonLat } from 'ol/proj';
 import LayerGroup from 'ol/layer/Group';
@@ -396,11 +396,14 @@ export class ReefGuideMapService {
         const layer = new VectorLayer({
           properties: {
             title: `${region} site suitability`,
-            downloadUrl: url
+            downloadUrl: url,
+            labelProp: 'row_ID'
           } satisfies LayerProperties,
           source,
           style
         });
+
+        this.afterCreateLayer(layer);
 
         layerGroup.getLayers().push(layer);
       });
@@ -582,10 +585,11 @@ export class ReefGuideMapService {
 
   /**
    * Called after a Layer is created by this service, prior to adding to Map.
-   * @param layer
-   * @param options
+   * Hooks error handling and creates the LayerController.
+   * @param layer new Layer
+   * @param options should be provided if created from LayerDef
    */
-  private afterCreateLayer(layer: Layer, options: LayerControllerOptions): LayerController {
+  private afterCreateLayer(layer: Layer, options?: LayerControllerOptions): LayerController {
     // TODO show error indicator in UI
     layer.on('error', e => {
       console.error('layer error', e);

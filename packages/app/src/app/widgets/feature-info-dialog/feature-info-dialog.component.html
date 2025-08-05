@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>{{ features.length >= 2 ? `${features.length} ` : '' }}Features at Click</h2>
 <mat-dialog-content>
   <mat-tab-group dynamicHeight>
-    @for (f of features; track f.getId()) {
+    @for (f of features; track f.feature.getId()) {
       <mat-tab [label]="getLabel(f)">
         <table>
           @let rows = getPropertyRows(f);
