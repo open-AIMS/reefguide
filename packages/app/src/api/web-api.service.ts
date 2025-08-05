@@ -260,6 +260,8 @@ export class WebApiService {
         // NAME exists, specific id like P-16-15, but TYPE more friendly text
         labelProp: 'TYPE',
         layerId: '53',
+        infoUrl:
+          'https://services8.arcgis.com/ll1QQ2mI4WMXIXdm/ArcGIS/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer',
         url: 'https://services8.arcgis.com/ll1QQ2mI4WMXIXdm/ArcGIS/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer',
         urlType: 'ArcGisFeatureServer',
         layerOptions: {
@@ -270,6 +272,8 @@ export class WebApiService {
         id: 'canonical_reefs',
         title: 'RRAP Canonical Reefs',
         labelProp: 'reef_name',
+        infoUrl:
+          'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/RRAP_Canonical_Reefs/FeatureServer',
         url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/RRAP_Canonical_Reefs/FeatureServer',
         urlType: 'ArcGisFeatureServer',
         layerOptions: {
@@ -314,6 +318,8 @@ export class WebApiService {
         id: 'ecorrap_site_locations',
         title: 'EcoRRAP Site Locations',
         labelProp: 'Name',
+        infoUrl:
+          'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
         url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
         urlType: 'ArcGisFeatureServer',
         cluster: true

@@ -10,6 +10,11 @@
   <a mat-icon-button [href]="props.infoUrl" target="_blank" matTooltip="Layer source information">
     <mat-icon>travel_explore</mat-icon>
   </a>
+} @else {
+  <!-- always show an icon to maintain aligned layout -->
+  <a mat-icon-button disabled="true">
+    <mat-icon>travel_explore</mat-icon>
+  </a>
 }
 <button mat-icon-button (click)="openStyleEditor()" matTooltip="Edit layer style">
   <mat-icon>brush</mat-icon>
