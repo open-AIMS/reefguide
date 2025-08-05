@@ -1,30 +1,27 @@
-import { Options } from 'ol/layer/Layer';
+import { Options as VectorLayerOptions } from 'ol/layer/Vector';
+import { Options as WebGLTileLayerOptions } from 'ol/layer/WebGLTile';
+
+type VectorOptions = Omit<VectorLayerOptions, 'source' | 'properties'>;
+type TileOptions = Omit<WebGLTileLayerOptions, 'source' | 'properties'>;
 
 /**
- * Definition of a map layer that visualizes a criteria.
- * Should be greyscale, color and styling is done by the app.
+ * Properties common to all layer definitions.
  */
-export type LayerDef = {
+type BaseLayerDef = {
   /**
    * Criteria ID corresponding to CriteriaRangeOutput.id
    */
   id: string;
+
   /**
    * Layer title text
    */
   title: string;
+
   /**
    * layer URL
    */
   url: string;
-
-  /**
-   * the kind of url
-   *
-   * WMTSCapabilitiesXml - URL of WMTSCapabilities.xml file
-   * ArcGisFeatureServer - .../FeatureServer URL
-   */
-  urlType: 'WMTSCapabilitiesXml' | 'ArcGisImageServer' | 'ArcGisMapServer' | 'ArcGisFeatureServer';
 
   /**
    * layer to query within the service.
@@ -41,10 +38,6 @@ export type LayerDef = {
    * Reverse criteria range values when applying pixel filter
    */
   reverseRange?: boolean;
-  /**
-   * Layer Options to mixin during construction.
-   */
-  layerOptions?: Partial<Omit<Options, 'source' | 'properties'>>;
 
   /**
    * Wrap the VectorSource in a Cluster.
@@ -56,3 +49,33 @@ export type LayerDef = {
    */
   labelProp?: string;
 };
+
+type VectorLayerDef = BaseLayerDef & {
+  /**
+   * the kind of url
+   *
+   * ArcGisFeatureServer - .../FeatureServer URL
+   */
+  urlType: 'ArcGisFeatureServer';
+
+  /**
+   * Layer Options to mixin during construction.
+   */
+  layerOptions?: VectorOptions;
+};
+
+type TileLayerDef = BaseLayerDef & {
+  /**
+   * the kind of url
+   *
+   * WMTSCapabilitiesXml - URL of WMTSCapabilities.xml file
+   */
+  urlType: 'WMTSCapabilitiesXml' | 'ArcGisImageServer' | 'ArcGisMapServer';
+
+  /**
+   * Layer Options to mixin during construction.
+   */
+  layerOptions?: TileOptions;
+};
+
+export type LayerDef = VectorLayerDef | TileLayerDef;

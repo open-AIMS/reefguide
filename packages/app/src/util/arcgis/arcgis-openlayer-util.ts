@@ -114,14 +114,12 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
   switch (layerDef.urlType) {
     case 'ArcGisFeatureServer':
       const source = createVectorSourceForFeatureServer(layerDef.url, layerDef.layerId);
-      // layerOptions as any to avoid type errors. It may be possible to create proper type
-      // mappings based on a layerDef.layerType, but not worth the effort at this time.
       const vectorLayer = new VectorLayer({
         properties,
         source,
         // want to show new features while panning by default
         updateWhileInteracting: true,
-        ...(layerDef.layerOptions as any),
+        ...layerDef.layerOptions,
         ...mixin
       });
 
@@ -139,7 +137,7 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
     case 'WMTSCapabilitiesXml':
       const tileLayer = new TileLayer({
         properties,
-        ...(layerDef.layerOptions as any),
+        ...layerDef.layerOptions,
         ...mixin
       });
 

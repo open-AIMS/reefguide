@@ -32,7 +32,6 @@ import {
 } from 'rxjs';
 import { environment } from '../environments/environment';
 import { retryHTTPErrors } from '../util/http-util';
-import { FlatStyleLike } from 'ol/style/flat';
 
 type JobId = CreateJobResponse['jobId'];
 
@@ -278,7 +277,6 @@ export class WebApiService {
         urlType: 'ArcGisFeatureServer',
         layerOptions: {
           opacity: 0.8,
-          // @ts-expect-error
           style: {
             // need a fill for center of reef to be clickable
             'fill-color': 'rgba(35,96,165,0.01)',
@@ -289,7 +287,7 @@ export class WebApiService {
             // TODO show more reef names at higher zoom, declutter isn't it
             // https://openlayers.org/en/latest/apidoc/module-ol_style_Style.html#~DeclutterMode
             // 'text-declutter-mode': 'none'
-          } as FlatStyleLike
+          }
         }
       },
       // can zoom in approx to scale 36100, 134MB
