@@ -450,16 +450,20 @@ export class ReefGuideMapService {
 
   /**
    * Show this criteria layer and hide others.
-   * @param criteria layer id
+   * @param criteriaId layer id
    * @param show show/hide layer
    */
-  showCriteriaLayer(criteria: string, show = true) {
+  showCriteriaLayer(criteriaId: string, show = true) {
     const criteriaLayerGroup = this.criteriaLayerGroup();
     if (criteriaLayerGroup) {
       criteriaLayerGroup.setVisible(true);
       for (let id in this.criteriaLayers) {
         const criteriaLayer = this.criteriaLayers[id];
-        criteriaLayer?.visible.set(id === criteria && show);
+        criteriaLayer?.visible.set(id === criteriaId && show);
+      }
+
+      if (!(criteriaId in this.criteriaLayers)) {
+        console.warn(`No "${criteriaId}" criteria layer`);
       }
     }
   }

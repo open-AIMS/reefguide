@@ -1,4 +1,4 @@
-@let criteriaRanges = enabledRegionCriteriaRanges();
+@let sliderDefs = enabledSliderDefs();
 <div class="scrollable">
   <form [formGroup]="form">
     <mat-form-field class="region-select">
@@ -9,10 +9,12 @@
         }
       </mat-select>
     </mat-form-field>
-    @if (criteriaRanges) {
+    @if (sliderDefs) {
       <div formGroupName="criteria">
-        @for (c of criteriaRanges; track c.id) {
-          @let criteriaLayer = mapService.criteriaLayers[c.id];
+        @for (sliderDef of sliderDefs; track sliderDef.criteria.id) {
+          @let c = sliderDef.criteria;
+          @let slider = sliderDef.slider;
+          @let criteriaLayer = slider.criteriaLayerId !== undefined ? mapService.criteriaLayers[slider.criteriaLayerId] : undefined;
           @let visible = criteriaLayer?.visible();
           @let loading = criteriaLayer?.loading();
           @let progress = criteriaLayer?.loadingProgress();
@@ -27,10 +29,17 @@
                 ></mat-progress-spinner>
               }
               @if (visible != null) {
+                @if (slider.previewAlert) {
+                  <mat-icon
+                    [matTooltip]="slider.previewAlert"
+                    matTooltipPosition="below">
+                    warning
+                  </mat-icon>
+                }
                 <button
                   mat-icon-button
                   class="visibility"
-                  (click)="mapService.showCriteriaLayer(c.id, !visible)"
+                  (click)="mapService.showCriteriaLayer(slider.criteriaLayerId, !visible)"
                 >
                   <mat-icon>{{ visible ? 'visibility' : 'visibility_off' }}</mat-icon>
                 </button>
@@ -38,19 +47,21 @@
             </div>
             <p class="subtitle mat-body-small">{{ c.display_subtitle }}</p>
             <mat-slider
-              [min]="c.slider_min"
-              [max]="c.slider_max"
+              [min]="slider.min"
+              [max]="slider.max"
               discrete="true"
-              [step]="c.slider_step"
+              [step]="slider.step"
             >
               <input
                 matSliderStartThumb
                 [formControlName]="`${c.payload_property_prefix}min`"
+                [matTooltip]="c.min_tooltip"
                 (blur)="onBlurSlider(c.id)"
               />
               <input
                 matSliderEndThumb
                 [formControlName]="`${c.payload_property_prefix}max`"
+                [matTooltip]="c.max_tooltip"
                 (blur)="onBlurSlider(c.id)"
               />
             </mat-slider>
