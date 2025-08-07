@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { MatSliderModule } from '@angular/material/slider';
 import {
   FormBuilder,
@@ -74,6 +74,21 @@ export class SelectionCriteriaComponent {
 
   regionCriteriaRanges = signal<CriteriaRangeList | undefined>(undefined);
 
+  regionCriteriaRangeMap = computed(() => {
+    const list = this.regionCriteriaRanges();
+    if (list) {
+      return list.reduce(
+        (acc, c) => {
+          acc[c.id] = c;
+          return acc;
+        },
+        {} as Record<string, CriteriaRangeOutput2>
+      );
+    } else {
+      return undefined;
+    }
+  });
+
   enableSiteSuitability = signal(true);
 
   /**
@@ -119,6 +134,11 @@ export class SelectionCriteriaComponent {
       });
   }
 
+  /**
+   * Build and set the FormGroup and controls.
+   * Sets regionCriteriaRanges signal.
+   * @param regionCriteria
+   */
   private buildCriteriaFormGroup(regionCriteria: CriteriaRangeOutput) {
     this.reset$.next();
 
@@ -247,6 +267,32 @@ export class SelectionCriteriaComponent {
       criteria[minKey] = Math.max(minValue, c.min_val);
       criteria[maxKey] = Math.min(maxValue, c.max_val);
     }
+
+    const criteriaRangeMap = this.regionCriteriaRangeMap()!;
+    const lowTideCriteria = criteriaRangeMap['LowTide'];
+    if (lowTideCriteria === undefined) {
+      throw new Error('LowTide criteria missing!');
+    }
+    const highTideCriteria = criteriaRangeMap['HighTide'];
+    if (highTideCriteria === undefined) {
+      throw new Error('HighTide criteria missing!');
+    }
+
+    // Low-High tide mode
+    // FUTURE Depth could toggle modes between LowTide, HighTide, MSL, and Low-High.
+    // in this context, depth is already negative-flipped so more negative is deeper
+
+    // depth_max is shallowest (least negative)
+    criteria['low_tide_max'] = criteria['depth_max'];
+    // omit low_tide_min, ReefGuideWorker will default to criteria bounds min.
+
+    // depth_min is deepest (most negative)
+    criteria['high_tide_min'] = criteria['depth_min'];
+    // omit high_tide_max, ReefGuideWorker will default to criteria bounds max.
+
+    // don't use MSL Depth when using Low-High tide mode.
+    delete criteria['depth_min'];
+    delete criteria['depth_max'];
 
     // console.log('criteria before/after', formValue.criteria, criteria);
 

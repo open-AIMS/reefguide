@@ -15,6 +15,22 @@ export const sharedCriteriaSchema = z.object({
     .number()
     .optional()
     .describe('The depth maximum (the shallower less negative value)'),
+  low_tide_min: z
+    .number()
+    .optional()
+    .describe('The deepest depth at low tide (the more negative value)'),
+  low_tide_max: z
+    .number()
+    .optional()
+    .describe('The shallowest depth at low tide (the less negative value)'),
+  high_tide_min: z
+    .number()
+    .optional()
+    .describe('The deepest depth at high tide (the more negative value)'),
+  high_tide_max: z
+    .number()
+    .optional()
+    .describe('The shallowest depth at high tide (the less negative value)'),
   slope_min: z.number().optional().describe('The slope range (min)'),
   slope_max: z.number().optional().describe('The slope range (max)'),
   rugosity_min: z.number().optional().describe('The rugosity range (min)'),
