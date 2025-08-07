@@ -76,18 +76,22 @@ type SliderDef = {
 export class SelectionCriteriaComponent {
   private readonly api = inject(WebApiService);
   private readonly formBuilder = inject(FormBuilder);
-  /**
-   * Do not show sliders for these criteria ids.
-   * Turbidity data is not ready for use.
-   * LowTide and HighTide are set by the Depth slider.
-   */
-  private disabledCriteria = new Set<string>(['Turbidity', 'LowTide', 'HighTide']);
   readonly mapService = inject(ReefGuideMapService);
 
   regions = ALL_REGIONS;
 
   sliderDefs = signal<SliderDef[] | undefined>(undefined);
-  enabledSliderDefs = computed(() => this.sliderDefs()?.filter(s => !s.slider.disabled));
+  enabledSliderDefs = computed(() => {
+    const sliderDefs = this.sliderDefs();
+    if (!sliderDefs) {
+      return undefined;
+    }
+
+    const idOrder = this.criteriaOrder;
+    return sliderDefs
+      .filter(s => !s.slider.disabled)
+      .sort((a, b) => idOrder.indexOf(a.criteria.id) - idOrder.indexOf(b.criteria.id));
+  });
 
   enableSiteSuitability = signal(true);
 
@@ -95,6 +99,29 @@ export class SelectionCriteriaComponent {
    * Criteria ID that is currently pixel-filtering.
    */
   previewingCriteriaFilter = signal<string | undefined>(undefined);
+
+  /**
+   * Slider order (criteria IDs)
+   * TODO specify order in ReefGuide.ASSESSMENT_CRITERIA
+   */
+  criteriaOrder = [
+    'Depth',
+    '_LowHighTideDepth',
+    'LowTide',
+    'HighTide',
+    'Slope',
+    'Rugosity',
+    'Turbidity',
+    'WavesHs',
+    'WavesTp'
+  ];
+
+  /**
+   * Do not show sliders for these criteria ids.
+   * Turbidity data is not ready for use.
+   * LowTide and HighTide are set by the Depth slider.
+   */
+  disabledCriteria = new Set<string>(['Turbidity', 'LowTide', 'HighTide']);
 
   /**
    * IDs of Criteria that are flipped to positive values for the UI.
