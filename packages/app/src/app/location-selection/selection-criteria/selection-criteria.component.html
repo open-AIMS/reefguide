@@ -15,7 +15,10 @@
         @for (sliderDef of sliderDefs; track sliderDef.criteria.id) {
           @let c = sliderDef.criteria;
           @let slider = sliderDef.slider;
-          @let criteriaLayer = slider.criteriaLayerId !== undefined ? mapService.criteriaLayers[slider.criteriaLayerId] : undefined;
+          @let criteriaLayer =
+            slider.criteriaLayerId !== undefined
+              ? mapService.criteriaLayers[slider.criteriaLayerId]
+              : undefined;
           @let visible = criteriaLayer?.visible();
           @let loading = criteriaLayer?.loading();
           @let progress = criteriaLayer?.loadingProgress();
@@ -31,9 +34,7 @@
               }
               @if (visible != null) {
                 @if (slider.previewAlert) {
-                  <mat-icon
-                    [matTooltip]="slider.previewAlert"
-                    matTooltipPosition="below">
+                  <mat-icon [matTooltip]="slider.previewAlert" matTooltipPosition="below">
                     warning
                   </mat-icon>
                 }
@@ -47,12 +48,7 @@
               }
             </div>
             <p class="subtitle mat-body-small">{{ c.display_subtitle }}</p>
-            <mat-slider
-              [min]="slider.min"
-              [max]="slider.max"
-              discrete="true"
-              [step]="slider.step"
-            >
+            <mat-slider [min]="slider.min" [max]="slider.max" discrete="true" [step]="slider.step">
               <input
                 matSliderStartThumb
                 [formControlName]="`${c.payload_property_prefix}min`"
