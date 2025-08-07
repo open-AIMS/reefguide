@@ -15,6 +15,7 @@ import {
   ListJobsQuery,
   ListJobsResponse,
   ListMyJobsQuery,
+  ListRegionsResponse,
   ListUserLogsResponse,
   LoginResponse,
   ProfileResponse,
@@ -323,6 +324,10 @@ export class WebApiService {
         cluster: true
       }
     ];
+  }
+
+  getRegions(): Observable<ListRegionsResponse> {
+    return this.http.get<ListRegionsResponse>(`${this.base}/admin/regions`);
   }
 
   getRegionCriteria(region: string): Observable<CriteriaRangeOutput> {

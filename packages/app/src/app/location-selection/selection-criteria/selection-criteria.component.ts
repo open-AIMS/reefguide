@@ -14,12 +14,12 @@ import { CriteriaPayloads, SiteSuitabilityCriteria } from '../reef-guide-api.typ
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
-import { ALL_REGIONS } from '../reef-guide-config.service';
 import { MatSelectModule } from '@angular/material/select';
 import {
   catchError,
   combineLatestWith,
   EMPTY,
+  map,
   Observable,
   skip,
   startWith,
@@ -33,6 +33,8 @@ import { CriteriaRangeOutput } from '@reefguide/types';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { LayerController } from '../../map/openlayers-model';
+import { retryHTTPErrors } from '../../../util/http-util';
+import { AsyncPipe } from '@angular/common';
 
 type SliderDef = {
   // original criteria definition from API
@@ -68,7 +70,8 @@ type SliderDef = {
     ReactiveFormsModule,
     MatSelectModule,
     MatTooltip,
-    MatProgressSpinner
+    MatProgressSpinner,
+    AsyncPipe
   ],
   templateUrl: './selection-criteria.component.html',
   styleUrl: './selection-criteria.component.scss'
@@ -78,7 +81,10 @@ export class SelectionCriteriaComponent {
   private readonly formBuilder = inject(FormBuilder);
   readonly mapService = inject(ReefGuideMapService);
 
-  regions = ALL_REGIONS;
+  regions$ = this.api.getRegions().pipe(
+    retryHTTPErrors(3),
+    map(resp => resp.regions)
+  );
 
   sliderDefs = signal<SliderDef[] | undefined>(undefined);
   enabledSliderDefs = computed(() => {
