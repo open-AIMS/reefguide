@@ -56,13 +56,13 @@
                 matSliderStartThumb
                 [formControlName]="`${c.payload_property_prefix}min`"
                 [matTooltip]="c.min_tooltip"
-                (blur)="onBlurSlider(c.id)"
+                (blur)="onBlurSlider(sliderDef)"
               />
               <input
                 matSliderEndThumb
                 [formControlName]="`${c.payload_property_prefix}max`"
                 [matTooltip]="c.max_tooltip"
-                (blur)="onBlurSlider(c.id)"
+                (blur)="onBlurSlider(sliderDef)"
               />
             </mat-slider>
           </div>

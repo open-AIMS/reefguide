@@ -32,6 +32,7 @@ import { WebApiService } from '../../../api/web-api.service';
 import { CriteriaRangeOutput } from '@reefguide/types';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { LayerController } from '../../map/openlayers-model';
 
 type SliderDef = {
   // original criteria definition from API
@@ -103,6 +104,10 @@ export class SelectionCriteriaComponent {
 
   form: FormGroup;
 
+  /**
+   * Criteria layer ID that was automatically set to visible for pixel filtering
+   */
+  private _autoVisible: string | undefined = undefined;
   private reset$ = new Subject<void>();
 
   constructor() {
@@ -270,7 +275,6 @@ export class SelectionCriteriaComponent {
 
       const layerController = layerId ? this.mapService.criteriaLayers[layerId] : undefined;
       if (layerController) {
-        const range = slider.max - slider.min;
         const minKey = `${criteria.payload_property_prefix}min`;
         const maxKey = `${criteria.payload_property_prefix}max`;
 
@@ -285,16 +289,7 @@ export class SelectionCriteriaComponent {
           .pipe(combineLatestWith(max$))
           .pipe(skip(1), takeUntil(this.reset$))
           .subscribe(([min, max]) => {
-            if (!layerController.visible()) {
-              layerController.visible.set(true);
-              this.mapService.showCriteriaLayer(layerId);
-            }
-
-            // normalized 0:1
-            const nMin = (min - slider.min) / range;
-            const nMax = (max - slider.min) / range;
-            layerController.filterLayerPixels(nMin, nMax);
-            this.previewingCriteriaFilter.set(criteria.id);
+            this.onSliderChange(def, layerController, min, max);
           });
       }
     }
@@ -393,9 +388,30 @@ export class SelectionCriteriaComponent {
     // TODO reset site suitability?
   }
 
-  onBlurSlider(criteriaId: string) {
-    const lc = this.mapService.criteriaLayers[criteriaId];
-    lc?.resetStyle();
+  onSliderChange(sliderDef: SliderDef, layerController: LayerController, min: number, max: number) {
+    const { criteria, slider } = sliderDef;
+    if (!layerController.visible()) {
+      layerController.visible.set(true);
+      this.mapService.showCriteriaLayer(slider.criteriaLayerId);
+      this._autoVisible = slider.criteriaLayerId;
+    }
+
+    const range = slider.max - slider.min;
+    // normalized 0:1
+    const nMin = (min - slider.min) / range;
+    const nMax = (max - slider.min) / range;
+    layerController.filterLayerPixels(nMin, nMax);
+    this.previewingCriteriaFilter.set(criteria.id);
+  }
+
+  // stop pixel filtering and reset layer style and visibility
+  onBlurSlider(sliderDef: SliderDef) {
     this.previewingCriteriaFilter.set(undefined);
+    const lc = this.mapService.criteriaLayers[sliderDef.slider.criteriaLayerId];
+    lc?.resetStyle();
+    if (this._autoVisible === sliderDef.slider.criteriaLayerId) {
+      lc?.visible.set(false);
+      this._autoVisible = undefined;
+    }
   }
 }
