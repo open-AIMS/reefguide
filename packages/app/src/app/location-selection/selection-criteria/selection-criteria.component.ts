@@ -43,6 +43,8 @@ type CriteriaRangeOutput2 = Readonly<CriteriaRangeOutput[string]> & {
   slider_default_max: number;
   // currently determined by app code, though could define server-side
   slider_step: number;
+  // user is not allowed to set this criteria via the UI.
+  disabled: boolean;
 };
 
 type CriteriaRangeList = Array<CriteriaRangeOutput2>;
@@ -68,11 +70,20 @@ type CriteriaRangeList = Array<CriteriaRangeOutput2>;
 export class SelectionCriteriaComponent {
   private readonly api = inject(WebApiService);
   private readonly formBuilder = inject(FormBuilder);
+  /**
+   * Do not show sliders for these criteria ids.
+   * Turbidity data is not ready for use.
+   * LowTide and HighTide are set by the Depth slider.
+   */
+  private disabledCriteria = new Set<string>(['Turbidity', 'LowTide', 'HighTide']);
   readonly mapService = inject(ReefGuideMapService);
 
   regions = ALL_REGIONS;
 
   regionCriteriaRanges = signal<CriteriaRangeList | undefined>(undefined);
+  enabledRegionCriteriaRanges = computed(() =>
+    this.regionCriteriaRanges()?.filter(c => !c.disabled)
+  );
 
   regionCriteriaRangeMap = computed(() => {
     const list = this.regionCriteriaRanges();
@@ -158,6 +169,8 @@ export class SelectionCriteriaComponent {
         console.warn(`criteria ${c.id} default_max_val=${default_max_val} > max_val=${max_val}`);
       }
 
+      c.disabled = this.disabledCriteria.has(c.id);
+
       // this feature is for criteria like Depth
       // round the min/max outward, otherwise the slider step values will be long
       // floating point numbers that are visible to user on slider thumb.
@@ -178,12 +191,14 @@ export class SelectionCriteriaComponent {
       const diff = c.max_val - c.min_val;
       c.slider_step = diff > 40 ? 1 : diff > 4 ? 0.1 : 0.02;
 
-      // ensure that default values are not outside the slider range.
-      const minValue = Math.max(c.slider_min, c.slider_default_min);
-      const maxValue = Math.min(c.slider_max, c.slider_default_max);
+      if (!c.disabled) {
+        // ensure that default values are not outside the slider range.
+        const minValue = Math.max(c.slider_min, c.slider_default_min);
+        const maxValue = Math.min(c.slider_max, c.slider_default_max);
 
-      criteriaControlDefs[`${c.payload_property_prefix}min`] = [minValue];
-      criteriaControlDefs[`${c.payload_property_prefix}max`] = [maxValue];
+        criteriaControlDefs[`${c.payload_property_prefix}min`] = [minValue];
+        criteriaControlDefs[`${c.payload_property_prefix}max`] = [maxValue];
+      }
     }
 
     const formGroup = this.formBuilder.group(criteriaControlDefs);
@@ -241,7 +256,7 @@ export class SelectionCriteriaComponent {
    */
   getCriteriaPayloads(): CriteriaPayloads {
     const formValue = this.form.value;
-    const criteriaRanges = this.regionCriteriaRanges()!;
+    const criteriaRanges = this.enabledRegionCriteriaRanges()!;
 
     if (!this.form.valid) {
       // this causes required form inputs to show error state
