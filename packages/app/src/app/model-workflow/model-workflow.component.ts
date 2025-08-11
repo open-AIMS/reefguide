@@ -30,6 +30,7 @@ import {
   ModelParameters
 } from './parameter-config/parameter-config.component';
 import { ResultsViewComponent } from './results-view/results-view.component';
+import { MapResultsViewComponent } from './map-results-view/map-results-view.component';
 import { WorkspaceNameDialogComponent } from './workspace-name-dialog/workspace-name-dialog.component';
 import {
   WorkspacePersistenceService,
@@ -49,9 +50,11 @@ interface Workspace {
   lastModified: Date;
   submittedJobId?: number;
   activeCharts?: string[];
+  // Track selected results tab (0 = Charts, 1 = Map)
+  selectedResultsTab?: number;
+  mapConfig?: any;
 }
 
-// Isolated workspace service - one instance per workspace
 class WorkspaceService {
   private job = signal<JobDetailsResponse['job'] | null>(null);
   private workflowState = signal<WorkflowState>('configuring');
@@ -67,7 +70,6 @@ class WorkspaceService {
   isMonitoring = computed(() => this.workflowState() === 'monitoring');
   isViewing = computed(() => this.workflowState() === 'viewing');
 
-  // Get current state
   getJob() {
     return this.job();
   }
@@ -80,7 +82,7 @@ class WorkspaceService {
     parameters: ModelParameters,
     onSubmitted: ((job: JobDetailsResponse['job']) => void) | undefined = undefined
   ): void {
-    console.log(`[${this.workspaceId}] Submitting job with parameters:`, parameters);
+    console.debug(`[${this.workspaceId}] Submitting job with parameters:`, parameters);
 
     this.workflowState.set('submitting');
 
@@ -88,7 +90,7 @@ class WorkspaceService {
 
     this.api.startJob('ADRIA_MODEL_RUN', payload).subscribe({
       next: job => {
-        console.log(`[${this.workspaceId}] Job started:`, job);
+        console.debug(`[${this.workspaceId}] Job started:`, job);
         this.job.set(job);
         this.workflowState.set('monitoring');
         if (onSubmitted) {
@@ -104,7 +106,7 @@ class WorkspaceService {
 
   // Handle job completion for this workspace only
   onJobCompleted(job: JobDetailsResponse['job']): void {
-    console.log(`[${this.workspaceId}] Job completed:`, job);
+    console.debug(`[${this.workspaceId}] Job completed:`, job);
 
     this.job.set(job);
 
@@ -118,7 +120,7 @@ class WorkspaceService {
 
   // Reset this workspace only
   reset(): void {
-    console.log(`[${this.workspaceId}] Resetting workspace`);
+    console.debug(`[${this.workspaceId}] Resetting workspace`);
     this.workflowState.set('configuring');
     this.job.set(null);
   }
@@ -144,13 +146,13 @@ class WorkspaceService {
   }
 
   restoreJobFromId(jobId: number): void {
-    console.log(`[${this.workspaceId}] Restoring job ${jobId} from persistence`);
+    console.debug(`[${this.workspaceId}] Restoring job ${jobId} from persistence`);
 
     // Fetch the job details from the API
     this.api.getJob(jobId).subscribe({
       next: response => {
         const job = response.job;
-        console.log(`[${this.workspaceId}] Restored job:`, job);
+        console.debug(`[${this.workspaceId}] Restored job:`, job);
         this.job.set(job);
 
         // Set workflow state based on job status
@@ -188,7 +190,8 @@ class WorkspaceService {
     MatDialogModule,
     ParameterConfigComponent,
     JobStatusComponent,
-    ResultsViewComponent
+    ResultsViewComponent,
+    MapResultsViewComponent
   ],
   templateUrl: './model-workflow.component.html',
   styleUrl: './model-workflow.component.scss'
@@ -273,7 +276,7 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.isLoading.set(false);
-          console.log('Workspace initialization complete');
+          console.debug('Workspace initialization complete');
         },
         error: error => {
           console.error('Failed to initialize workspaces:', error);
@@ -353,12 +356,12 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
             this.getWorkspaceService(workspace.id);
           });
 
-          // NEW: Restore jobs for workspaces that have submitted job IDs
+          // Restore jobs for workspaces that have submitted job IDs
           setTimeout(() => {
             this.restoreJobsForWorkspaces();
           }, 100); // Small delay to ensure services are initialized
 
-          console.log(`Restored ${runtimeWorkspaces.length} workspaces from persistence`);
+          console.debug(`Restored ${runtimeWorkspaces.length} workspaces from persistence`);
         } else {
           // No saved state, create default workspace
           this.createWorkspaceWithName('Workspace 1');
@@ -390,7 +393,7 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
-            console.log('Workspace state saved successfully');
+            console.debug('Workspace state saved successfully');
           },
           error: error => {
             console.warn('Failed to save workspace state:', error);
@@ -429,7 +432,6 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
   }
 
   // Create workspace with given name
-  // Update createWorkspaceWithName method:
   private createWorkspaceWithName(name: string): void {
     const counter = this.workspaceCounter();
     const newWorkspace: Workspace = {
@@ -441,7 +443,9 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
       createdAt: new Date(),
       lastModified: new Date(),
       submittedJobId: undefined,
-      activeCharts: undefined
+      activeCharts: undefined,
+      selectedResultsTab: 0, // Default to Charts tab
+      mapConfig: undefined
     };
 
     this.workspaceCounter.set(counter + 1);
@@ -527,7 +531,9 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
       createdAt: new Date(),
       lastModified: new Date(),
       submittedJobId: undefined,
-      activeCharts: undefined
+      activeCharts: undefined,
+      selectedResultsTab: 0, // Default to Charts tab
+      mapConfig: undefined
     };
 
     this.workspaceCounter.set(counter + 1);
@@ -655,6 +661,43 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
     this.triggerSave();
   }
 
+  onResultsTabChange(workspaceId: string, tabIndex: number): void {
+    console.debug(`[${workspaceId}] Results tab changed to: ${tabIndex === 0 ? 'Charts' : 'Map'}`);
+
+    this.updateWorkspace(workspaceId, {
+      selectedResultsTab: tabIndex,
+      lastModified: new Date()
+    });
+
+    this.triggerSave();
+  }
+
+  // Get selected results tab for workspace
+  getSelectedResultsTab(workspaceId: string): number {
+    const workspace = this.workspaces().find(w => w.id === workspaceId);
+    return workspace?.selectedResultsTab ?? 0; // Default to Charts tab
+  }
+
+  onMapInteraction(workspaceId: string, interaction: any): void {
+    console.debug(`[${workspaceId}] Map interaction:`, interaction);
+  }
+
+  onMapConfigChanged(workspaceId: string, config: any): void {
+    console.debug(`[${workspaceId}] Map config changed:`, config);
+
+    this.updateWorkspace(workspaceId, {
+      mapConfig: config,
+      lastModified: new Date()
+    });
+
+    this.triggerSave();
+  }
+
+  getMapConfigForWorkspace(workspaceId: string): any {
+    const workspace = this.workspaces().find(w => w.id === workspaceId);
+    return workspace?.mapConfig || null;
+  }
+
   // Helper method to get job config for template
   getJobConfigForWorkspace(
     workspaceId: string,
@@ -668,13 +711,11 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
     return this.getDefaultJobConfig();
   }
 
-  // Helper method to check if should show job status
   shouldShowJobStatus(workspaceId: string): boolean {
     const service = this.getWorkspaceService(workspaceId);
     return service ? service.isSubmitting() || service.isMonitoring() : false;
   }
 
-  // Helper method to update a workspace
   private updateWorkspace(workspaceId: string, updates: Partial<Workspace>): void {
     const currentWorkspaces = this.workspaces();
     const updatedWorkspaces = currentWorkspaces.map(workspace =>
@@ -683,7 +724,6 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
     this.workspaces.set(updatedWorkspaces);
   }
 
-  // Trigger save for specific operations
   private triggerSave(): void {
     this.saveWorkspacesToPersistence();
   }
@@ -765,7 +805,7 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
       if (workspace.submittedJobId) {
         const service = this.getWorkspaceService(workspace.id);
         if (service) {
-          console.log(`Restoring job ${workspace.submittedJobId} for workspace ${workspace.id}`);
+          console.debug(`Restoring job ${workspace.submittedJobId} for workspace ${workspace.id}`);
           service.restoreJobFromId(workspace.submittedJobId);
         }
       }
@@ -803,7 +843,7 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
       newCharts.some(chart => !currentCharts.includes(chart));
 
     if (hasChanged) {
-      console.log(`[${workspaceId}] Updating active charts:`, newCharts);
+      console.debug(`[${workspaceId}] Updating active charts:`, newCharts);
       this.updateWorkspace(workspaceId, {
         activeCharts: newCharts,
         lastModified: new Date()

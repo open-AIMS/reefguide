@@ -1,20 +1,21 @@
-// src/app/model-workflow/services/workspace-persistence.types.ts
-
 // Helper functions to convert between runtime and persisted workspace formats
+import { JobDetailsResponse } from '@reefguide/types';
 import { ModelParameters } from '../parameter-config/parameter-config.component';
 
 export interface RuntimeWorkspace {
   id: string;
   name: string;
   parameters: ModelParameters | null;
-  job: any | null; // JobDetailsResponse['job'] - we don't persist this
+  // we don't persist this - reload from server
+  job: JobDetailsResponse['job'] | null;
   workflowState: 'configuring' | 'submitting' | 'monitoring' | 'viewing';
   createdAt: Date;
   lastModified: Date;
-  // NEW: Track the submitted job ID for persistence
   submittedJobId?: number;
-  // NEW: Track active charts for persistence
   activeCharts?: string[];
+  // (0 = Charts, 1 = Map)
+  selectedResultsTab?: number;
+  mapConfig?: any;
 }
 
 export interface PersistedWorkspace {
@@ -23,10 +24,14 @@ export interface PersistedWorkspace {
   parameters: ModelParameters | null;
   createdAt: string; // ISO string
   lastModified: string; // ISO string
-  // NEW: Persisted job ID
+  // Persisted job ID
   submittedJobId?: number;
-  // NEW: Persisted active chart titles
+  // Persisted active chart titles
   activeCharts?: string[];
+  // Persisted selected results tab
+  selectedResultsTab?: number;
+  // Persisted map configuration
+  mapConfig?: any;
 }
 
 // Convert runtime workspace to persisted format
@@ -38,7 +43,9 @@ export function toPersistedWorkspace(workspace: RuntimeWorkspace): PersistedWork
     createdAt: workspace.createdAt.toISOString(),
     lastModified: workspace.lastModified.toISOString(),
     submittedJobId: workspace.submittedJobId,
-    activeCharts: workspace.activeCharts ? [...workspace.activeCharts] : undefined
+    activeCharts: workspace.activeCharts ? [...workspace.activeCharts] : undefined,
+    selectedResultsTab: workspace.selectedResultsTab,
+    mapConfig: workspace.mapConfig ? { ...workspace.mapConfig } : undefined
   };
 }
 
@@ -48,11 +55,13 @@ export function toRuntimeWorkspace(persisted: PersistedWorkspace): RuntimeWorksp
     id: persisted.id,
     name: persisted.name,
     parameters: persisted.parameters ? { ...persisted.parameters } : null, // Deep copy
-    job: null, // Always start with no job - this will be loaded separately
+    job: null,
     workflowState: 'configuring', // Will be updated based on job status
     createdAt: new Date(persisted.createdAt),
     lastModified: new Date(persisted.lastModified),
     submittedJobId: persisted.submittedJobId,
-    activeCharts: persisted.activeCharts ? [...persisted.activeCharts] : undefined
+    activeCharts: persisted.activeCharts ? [...persisted.activeCharts] : undefined,
+    selectedResultsTab: persisted.selectedResultsTab ?? 0, // Default to Charts tab
+    mapConfig: persisted.mapConfig ? { ...persisted.mapConfig } : undefined
   };
 }

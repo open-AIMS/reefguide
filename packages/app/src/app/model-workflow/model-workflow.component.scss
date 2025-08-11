@@ -433,20 +433,57 @@
   flex-direction: column;
 }
 
-// Results Container
 .results-container {
-  height: 100%;
+  flex: 1;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 
-  app-results-view {
-    height: 100%;
-    display: block;
-  }
+  .results-tabs {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 
-  .workspace-indicator {
-    font-size: 12px;
-    opacity: 0.7;
-    font-weight: normal;
+    ::ng-deep .mat-mdc-tab-header {
+      border-bottom: 1px solid var(--mat-divider-color);
+      background-color: var(--mat-app-background);
+      flex-shrink: 0;
+
+      .mat-mdc-tab-label-container {
+        .mat-mdc-tab-list {
+          .mat-mdc-tab {
+            min-width: 120px;
+
+            .tab-icon {
+              margin-right: 0.5rem;
+              font-size: 18px;
+              width: 18px;
+              height: 18px;
+            }
+          }
+        }
+      }
+    }
+
+    ::ng-deep .mat-mdc-tab-body-wrapper {
+      flex: 1;
+      overflow: hidden;
+
+      .mat-mdc-tab-body {
+        height: 100%;
+
+        .mat-mdc-tab-body-content {
+          height: 100%;
+          overflow: hidden;
+
+          .tab-content {
+            height: 100%;
+            overflow: hidden;
+          }
+        }
+      }
+    }
   }
 }
 
