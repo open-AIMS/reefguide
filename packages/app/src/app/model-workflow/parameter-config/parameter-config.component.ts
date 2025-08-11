@@ -17,6 +17,18 @@ import { debounceTime, distinctUntilChanged, tap } from 'rxjs/operators';
 type DataPackage = 'MOORE' | 'GBR';
 type RcpScenario = AdriaModelRunInput['rcp_scenario'];
 
+const DEFAULT_RCP : RcpScenario = '45';
+
+function availableScenariosFromDataPackage(
+  dataPackage: DataPackage | null | undefined
+): RcpScenario[] {
+  if (dataPackage === 'MOORE') {
+    return ['26', '45', '60', '85'];
+  } else {
+    return ['26', '45', '85'];
+  }
+}
+
 interface ParameterRange {
   lower: number;
   upper: number;
@@ -352,7 +364,7 @@ export class ParameterConfigComponent {
   configForm = new FormGroup({
     runName: new FormControl('example_run', [Validators.required]),
     dataPackage: new FormControl<DataPackage>('MOORE', [Validators.required]),
-    rcpScenario: new FormControl<RcpScenario>('45', [Validators.required]),
+    rcpScenario: new FormControl<RcpScenario>(DEFAULT_RCP, [Validators.required]),
 
     numScenarios: new FormControl(64, [Validators.required]),
 
@@ -402,11 +414,7 @@ export class ParameterConfigComponent {
   // Computed signals for range displays
   dataPackage = signal<DataPackage>('MOORE');
   rcpScenarioOptions = computed(() => {
-    if (this.dataPackage() === 'MOORE') {
-      return this.baseRCPScenarioOptions;
-    } else {
-      return this.rmeRCPScenarioOptions;
-    }
+    return availableScenariosFromDataPackage(this.dataPackage());
   });
 
   taRange = signal<ParameterRange>({ lower: 0, upper: 1000000 });
@@ -445,18 +453,12 @@ export class ParameterConfigComponent {
       )
       .subscribe(formValue => {
         const currentRcpScenario = formValue.rcpScenario;
-
-        let availableScenarios: RcpScenario[] = [];
-        if (formValue.dataPackage === 'MOORE') {
-          availableScenarios = this.baseRCPScenarioOptions;
-        } else {
-          availableScenarios = this.rmeRCPScenarioOptions;
-        }
+        const availableScenarios = availableScenariosFromDataPackage(formValue.dataPackage);
 
         // If current RCP scenario is not available for the selected data package
         if (currentRcpScenario && !availableScenarios.includes(currentRcpScenario)) {
           // Reset to the first available scenario (or a sensible default)
-          const defaultScenario = availableScenarios.includes('45') ? '45' : availableScenarios[0];
+          const defaultScenario = availableScenarios.includes(DEFAULT_RCP) ? DEFAULT_RCP : availableScenarios[0];
           this.configForm.patchValue({ rcpScenario: defaultScenario });
         }
 
@@ -607,7 +609,7 @@ export class ParameterConfigComponent {
     const defaultValues: any = {
       runName: 'example_run',
       dataPackage: 'MOORE',
-      rcpScenario: '45',
+      rcpScenario: DEFAULT_RCP,
       numScenarios: 64
     };
 
