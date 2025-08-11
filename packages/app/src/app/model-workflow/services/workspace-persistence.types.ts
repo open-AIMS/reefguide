@@ -1,23 +1,20 @@
-// src/app/model-workflow/services/workspace-persistence.types.ts
-
 // Helper functions to convert between runtime and persisted workspace formats
+import { JobDetailsResponse } from '@reefguide/types';
 import { ModelParameters } from '../parameter-config/parameter-config.component';
 
 export interface RuntimeWorkspace {
   id: string;
   name: string;
   parameters: ModelParameters | null;
-  job: any | null; // JobDetailsResponse['job'] - we don't persist this
+  // we don't persist this - reload from server
+  job: JobDetailsResponse['job'] | null;
   workflowState: 'configuring' | 'submitting' | 'monitoring' | 'viewing';
   createdAt: Date;
   lastModified: Date;
-  // Track the submitted job ID for persistence
   submittedJobId?: number;
-  // Track active charts for persistence
   activeCharts?: string[];
-  // NEW: Track selected results tab (0 = Charts, 1 = Map)
+  // (0 = Charts, 1 = Map)
   selectedResultsTab?: number;
-  // NEW: Track map configuration
   mapConfig?: any;
 }
 
@@ -31,9 +28,9 @@ export interface PersistedWorkspace {
   submittedJobId?: number;
   // Persisted active chart titles
   activeCharts?: string[];
-  // NEW: Persisted selected results tab
+  // Persisted selected results tab
   selectedResultsTab?: number;
-  // NEW: Persisted map configuration
+  // Persisted map configuration
   mapConfig?: any;
 }
 
@@ -58,7 +55,7 @@ export function toRuntimeWorkspace(persisted: PersistedWorkspace): RuntimeWorksp
     id: persisted.id,
     name: persisted.name,
     parameters: persisted.parameters ? { ...persisted.parameters } : null, // Deep copy
-    job: null, // Always start with no job - this will be loaded separately
+    job: null,
     workflowState: 'configuring', // Will be updated based on job status
     createdAt: new Date(persisted.createdAt),
     lastModified: new Date(persisted.lastModified),

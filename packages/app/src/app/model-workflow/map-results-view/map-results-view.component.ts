@@ -24,7 +24,6 @@ import { AdriaModelRunResult, JobDetailsResponse } from '@reefguide/types';
 import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { MapService } from '../services/map.service';
 import { WebApiService } from '../../../api/web-api.service';
-// Import both libraries for Parquet → Arrow conversion
 import * as arrow from 'apache-arrow';
 import initWasm, { readParquet } from 'parquet-wasm';
 import embed, { Result as VegaResult, VisualizationSpec } from 'vega-embed';
@@ -151,11 +150,11 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     () => this.mapError() || this.geoDataError() || this.coralDataError() || ''
   );
   hasJobResults = computed(() => {
-    console.log(`[MapResultsView] Checking for job results`);
+    console.debug(`[MapResultsView] Checking for job results`);
     const currentJob = this.job();
     const hasJobs = currentJob && currentJob.status === 'SUCCEEDED';
-    console.log(`[MapResultsView] Job has results:`, hasJobs);
-    console.log(`[MapResultsView] Current job:`, currentJob);
+    console.debug(`[MapResultsView] Job has results:`, hasJobs);
+    console.debug(`[MapResultsView] Current job:`, currentJob);
     return hasJobs;
   });
 
@@ -185,7 +184,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     // Effect to handle job changes and load geodata
     effect(() => {
       const currentJob = this.job();
-      console.log(`[${this.workspaceId()}] Map view job changed:`, currentJob?.id);
+      console.debug(`[${this.workspaceId()}] Map view job changed:`, currentJob?.id);
 
       if (currentJob && currentJob.status === 'SUCCEEDED') {
         this.processJobResults(currentJob);
@@ -215,7 +214,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    console.log(`[${this.workspaceId()}] Destroying map view component`);
+    console.debug(`[${this.workspaceId()}] Destroying map view component`);
 
     // Clean up Vega chart if exists
     if (this.vegaView) {
@@ -249,7 +248,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     const workspaceId = this.workspaceId();
 
     if (this.mapInitialized()) {
-      console.log(`[MapResultsView][${workspaceId}] Map already initialized, skipping`);
+      console.debug(`[MapResultsView][${workspaceId}] Map already initialized, skipping`);
       return;
     }
 
@@ -277,7 +276,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     }
 
     const rect = this.mapContainer.nativeElement.getBoundingClientRect();
-    console.log(`[MapResultsView][${workspaceId}] Container dimensions:`, {
+    console.debug(`[MapResultsView][${workspaceId}] Container dimensions:`, {
       width: rect.width,
       height: rect.height
     });
@@ -297,7 +296,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     const selectedRegion = this.selectedRegion();
     const config = regionConfigs[selectedRegion] || regionConfigs['gbr'];
 
-    console.log(`[MapResultsView][${workspaceId}] Using config for region:`, selectedRegion);
+    console.debug(`[MapResultsView][${workspaceId}] Using config for region:`, selectedRegion);
     return config;
   }
 
@@ -319,7 +318,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
    * Finalize map initialization and load data
    */
   private finalizeMapInitialization(workspaceId: string): void {
-    console.log(`[MapResultsView][${workspaceId}] Map created successfully`);
+    console.debug(`[MapResultsView][${workspaceId}] Map created successfully`);
 
     this.mapInitialized.set(true);
     this.setMapLoadingState(false);
@@ -393,7 +392,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     const workspaceId = this.workspaceId();
 
     if (this.coralDataLoaded()) {
-      console.log(`[MapResultsView][${workspaceId}] Coral data already loaded, skipping`);
+      console.debug(`[MapResultsView][${workspaceId}] Coral data already loaded, skipping`);
       return;
     }
 
@@ -421,7 +420,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         return false;
       }
       if (this.geoDataLoaded()) {
-        console.log(`[MapResultsView][${workspaceId}] Spatial data already loaded, skipping`);
+        console.debug(`[MapResultsView][${workspaceId}] Spatial data already loaded, skipping`);
         return false;
       }
     }
@@ -449,7 +448,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       return null;
     }
 
-    console.log(`[MapResultsView][${workspaceId}] Found ${pathKey}:`, path);
+    console.debug(`[MapResultsView][${workspaceId}] Found ${pathKey}:`, path);
     return path as string;
   }
 
@@ -463,7 +462,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     dataType: 'spatial' | 'coral'
   ): void {
     this.api
-      .downloadJobOutput(jobId, filePath)
+      .downloadJobResults(jobId, undefined, filePath)
       .pipe(
         takeUntil(this.destroy$),
         catchError(error => this.handlePresignedUrlError(error, workspaceId, dataType))
@@ -524,7 +523,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     presignedUrl: string,
     workspaceId: string
   ): Promise<void> {
-    console.log(`[MapResultsView][${workspaceId}] Downloading Parquet from:`, presignedUrl);
+    console.debug(`[MapResultsView][${workspaceId}] Downloading Parquet from:`, presignedUrl);
 
     try {
       // Download the Parquet file as ArrayBuffer
@@ -534,7 +533,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       }
 
       const arrayBuffer = await response.arrayBuffer();
-      console.log(
+      console.debug(
         `[MapResultsView][${workspaceId}] Downloaded file, size:`,
         arrayBuffer.byteLength
       );
@@ -546,8 +545,8 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         .join(' ');
       const firstChars = new TextDecoder().decode(uint8Array.slice(0, 100));
 
-      console.log(`[MapResultsView][${workspaceId}] First 16 bytes (hex):`, firstBytes);
-      console.log(`[MapResultsView][${workspaceId}] First 100 chars:`, firstChars);
+      console.debug(`[MapResultsView][${workspaceId}] First 16 bytes (hex):`, firstBytes);
+      console.debug(`[MapResultsView][${workspaceId}] First 100 chars:`, firstChars);
 
       // Check if this looks like HTML (error page)
       if (
@@ -561,12 +560,12 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
 
       // Check for Parquet magic bytes (should start with 'PAR1')
       const parquetMagic = new TextDecoder().decode(uint8Array.slice(0, 4));
-      console.log(`[MapResultsView][${workspaceId}] File magic bytes:`, parquetMagic);
+      console.debug(`[MapResultsView][${workspaceId}] File magic bytes:`, parquetMagic);
 
       if (parquetMagic !== 'PAR1') {
         // Check if it might be at the end (Parquet files have magic bytes at both ends)
         const endMagic = new TextDecoder().decode(uint8Array.slice(-4));
-        console.log(`[MapResultsView][${workspaceId}] End magic bytes:`, endMagic);
+        console.debug(`[MapResultsView][${workspaceId}] End magic bytes:`, endMagic);
 
         if (endMagic !== 'PAR1') {
           throw new Error(
@@ -577,23 +576,23 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
 
       // Initialize parquet-wasm with local WASM file
       try {
-        console.log(`[MapResultsView][${workspaceId}] Attempting to initialize parquet-wasm...`);
+        console.debug(`[MapResultsView][${workspaceId}] Attempting to initialize parquet-wasm...`);
 
         // Try to load from assets directory first
         try {
           const wasmResponse = await fetch('wasm/parquet_wasm_bg.wasm');
           if (wasmResponse.ok) {
             await initWasm(wasmResponse);
-            console.log(`[MapResultsView][${workspaceId}] parquet-wasm initialized from public`);
+            console.debug(`[MapResultsView][${workspaceId}] parquet-wasm initialized from public`);
           } else {
             throw new Error('WASM file not found in public');
           }
         } catch (assetsError) {
-          console.log(
+          console.debug(
             `[MapResultsView][${workspaceId}] Assets WASM failed, trying default init...`
           );
           await initWasm();
-          console.log(
+          console.debug(
             `[MapResultsView][${workspaceId}] parquet-wasm initialized with default method`
           );
         }
@@ -612,14 +611,14 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       }
 
       // Read Parquet file to WASM Arrow table
-      console.log(`[MapResultsView][${workspaceId}] Reading Parquet file...`);
+      console.debug(`[MapResultsView][${workspaceId}] Reading Parquet file...`);
       const wasmTable = readParquet(uint8Array);
-      console.log(`[MapResultsView][${workspaceId}] Read Parquet file successfully`);
+      console.debug(`[MapResultsView][${workspaceId}] Read Parquet file successfully`);
 
       // Convert WASM Arrow table to JS Arrow table
       const table = arrow.tableFromIPC(wasmTable.intoIPCStream());
 
-      console.log(`[MapResultsView][${workspaceId}] Parsed Arrow table:`, {
+      console.debug(`[MapResultsView][${workspaceId}] Parsed Arrow table:`, {
         numRows: table.numRows,
         numCols: table.numCols,
         schema: table.schema.toString()
@@ -659,7 +658,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
    * Process coral cover data from Arrow table to calculate location-based statistics
    */
   private processCoralCoverData(table: arrow.Table, workspaceId: string): CoralCoverStats {
-    console.log(`[MapResultsView][${workspaceId}] Processing coral cover data...`);
+    console.debug(`[MapResultsView][${workspaceId}] Processing coral cover data...`);
 
     // Extract columns using Apache Arrow API
     const locationIds = table.getChild('locations')?.toArray() as string[];
@@ -671,7 +670,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       throw new Error('Required columns not found in Parquet data');
     }
 
-    console.log(`[MapResultsView][${workspaceId}] Data dimensions:`, {
+    console.debug(`[MapResultsView][${workspaceId}] Data dimensions:`, {
       rows: table.numRows,
       uniqueLocations: new Set(locationIds).size,
       uniqueTimesteps: new Set(timesteps).size,
@@ -732,7 +731,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       locations: locations
     };
 
-    console.log(`[MapResultsView][${workspaceId}] Coral cover statistics:`, {
+    console.debug(`[MapResultsView][${workspaceId}] Coral cover statistics:`, {
       locations: stats.locations.length,
       coverRange: [stats.min, stats.max],
       meanCover: stats.mean
@@ -745,7 +744,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
    * Download GeoJSON file and add to map
    */
   private downloadGeoJSON(presignedUrl: string, workspaceId: string): void {
-    console.log(`[MapResultsView][${workspaceId}] Downloading GeoJSON from:`, presignedUrl);
+    console.debug(`[MapResultsView][${workspaceId}] Downloading GeoJSON from:`, presignedUrl);
 
     fetch(presignedUrl)
       .then(response => {
@@ -755,7 +754,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         return response.json();
       })
       .then(geoJsonData => {
-        console.log(
+        console.debug(
           `[MapResultsView][${workspaceId}] Successfully downloaded GeoJSON:`,
           geoJsonData
         );
@@ -809,7 +808,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
    * Add GeoJSON data as a layer to the OpenLayers map with coral cover styling
    */
   private addGeoJSONToMap(geoJsonData: any, workspaceId: string): void {
-    console.log(`[MapResultsView][${workspaceId}] Adding GeoJSON layer to map`);
+    console.debug(`[MapResultsView][${workspaceId}] Adding GeoJSON layer to map`);
 
     try {
       // Add the GeoJSON layer through the map service
@@ -830,7 +829,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       // Optionally fit the map view to the GeoJSON extent
       this.mapService.fitToGeoJSONExtent(geoJsonData);
 
-      console.log(`[MapResultsView][${workspaceId}] GeoJSON layer added successfully`);
+      console.debug(`[MapResultsView][${workspaceId}] GeoJSON layer added successfully`);
     } catch (error: any) {
       console.error(`[MapResultsView][${workspaceId}] Failed to add GeoJSON to map:`, error);
       this.geoDataError.set('Failed to display reef boundaries on map');
@@ -850,7 +849,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    console.log(`[MapResultsView][${workspaceId}] Updating map styling with coral cover data`);
+    console.debug(`[MapResultsView][${workspaceId}] Updating map styling with coral cover data`);
 
     try {
       // Create a map of location_id to coral cover for quick lookup
@@ -902,7 +901,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         }
       });
 
-      console.log(`[MapResultsView][${workspaceId}] Map styling updated successfully`);
+      console.debug(`[MapResultsView][${workspaceId}] Map styling updated successfully`);
     } catch (error: any) {
       console.error(`[MapResultsView][${workspaceId}] Failed to update map styling:`, error);
       this.showErrorMessage(`Failed to apply coral cover styling: ${error.message}`, 5000);
@@ -1053,7 +1052,9 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    console.log(`[${workspaceId}] Loading time series for location ${locationId} from cached data`);
+    console.debug(
+      `[${workspaceId}] Loading time series for location ${locationId} from cached data`
+    );
     this.isLoadingSiteData.set(true);
 
     // Use setTimeout to make this non-blocking and allow UI to update
@@ -1119,7 +1120,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
 
     const container = this.siteChartContainer.nativeElement;
     const data = this.siteTimeSeriesData();
-    console.log(data);
+    console.debug(data);
 
     if (data.length === 0) {
       console.warn('No time series data to render');
@@ -1237,7 +1238,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     })
       .then(result => {
         this.vegaView = result;
-        console.log('Vega chart rendered successfully');
+        console.debug('Vega chart rendered successfully');
       })
       .catch(error => {
         console.error('Failed to render Vega chart:', error);
@@ -1252,7 +1253,6 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     this.siteTimeSeriesData.set([]);
     this.isLoadingSiteData.set(false);
 
-    // NEW: Clear map highlight
     this.mapService.clearHighlight();
 
     if (this.vegaView) {
@@ -1306,7 +1306,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
    * Handle map click events (MODIFIED)
    */
   private handleMapClick(event: any): void {
-    console.log(`[${this.workspaceId()}] Map clicked at:`, event.coordinate);
+    console.debug(`[${this.workspaceId()}] Map clicked at:`, event.coordinate);
 
     // Try to get feature information at click location
     const features = this.mapService.getFeaturesAtPixel(event.pixel);
@@ -1327,12 +1327,12 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
       if (locationId && stats) {
         const locationData = stats.locations.find(loc => loc.location_id === locationId);
         if (locationData) {
-          console.log(`[${this.workspaceId()}] Clicked location ${locationId}:`, locationData);
+          console.debug(`[${this.workspaceId()}] Clicked location ${locationId}:`, locationData);
 
-          // NEW: Center the map on the clicked feature
+          // Center the map on the clicked feature
           this.mapService.centerOnFeature(feature);
 
-          // NEW: Highlight the clicked feature with matching color
+          // Highlight the clicked feature with matching color
           const baseColor = this.getCoralCoverColorForLocation(locationId);
           const brightStrokeColor = this.brightenColor(baseColor, 0.4); // 40% brighter
 
@@ -1350,7 +1350,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
         }
       }
     } else {
-      // NEW: Clear selection if clicking on empty space
+      // Clear selection if clicking on empty space
       this.mapService.clearHighlight();
       this.clearSelectedSite();
     }
@@ -1373,7 +1373,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
    */
   private processJobResults(job: JobDetailsResponse['job']): void {
     const workspaceId = this.workspaceId();
-    console.log(`[${workspaceId}] Processing job results for map view:`, job.id);
+    console.debug(`[${workspaceId}] Processing job results for map view:`, job.id);
 
     try {
       const resultPayload = this.extractResultPayload(job, workspaceId);
@@ -1404,8 +1404,8 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
    * Log available data paths from result payload
    */
   private logAvailableData(resultPayload: AdriaModelRunResult, workspaceId: string): void {
-    console.log(`[${workspaceId}] Job result payload:`, Object.keys(resultPayload || {}));
-    console.log(`[${workspaceId}] Available spatial data:`, {
+    console.debug(`[${workspaceId}] Job result payload:`, Object.keys(resultPayload || {}));
+    console.debug(`[${workspaceId}] Available spatial data:`, {
       spatial_metrics_path: resultPayload.spatial_metrics_path,
       reef_boundaries_path: resultPayload.reef_boundaries_path
     });
@@ -1415,7 +1415,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
    * Clear map data when job changes
    */
   private clearMapData(): void {
-    console.log(`[${this.workspaceId()}] Clearing map data`);
+    console.debug(`[${this.workspaceId()}] Clearing map data`);
 
     this.resetComponentState();
     this.mapService.destroyMap();
@@ -1426,7 +1426,7 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
    */
   private setupResizeObserver(): void {
     const workspaceId = this.workspaceId();
-    console.log(`[MapResultsView][${workspaceId}] Setting up ResizeObserver`);
+    console.debug(`[MapResultsView][${workspaceId}] Setting up ResizeObserver`);
 
     if (typeof ResizeObserver === 'undefined') {
       console.warn(`[MapResultsView][${workspaceId}] ResizeObserver not supported`);
@@ -1434,12 +1434,12 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     }
 
     this.resizeObserver = new ResizeObserver(entries => {
-      console.log(`[MapResultsView][${workspaceId}] ResizeObserver triggered`);
-      console.log(`[MapResultsView][${workspaceId}] Resize entries:`, entries);
+      console.debug(`[MapResultsView][${workspaceId}] ResizeObserver triggered`);
+      console.debug(`[MapResultsView][${workspaceId}] Resize entries:`, entries);
 
       // Check if any of the observed elements have changed size
       entries.forEach((entry, index) => {
-        console.log(`[MapResultsView][${workspaceId}] Entry ${index}:`, {
+        console.debug(`[MapResultsView][${workspaceId}] Entry ${index}:`, {
           target: entry.target,
           contentRect: entry.contentRect,
           borderBoxSize: entry.borderBoxSize,
@@ -1457,10 +1457,10 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
     }
 
     const element = this.mapContainer.nativeElement;
-    console.log(`[MapResultsView][${workspaceId}] Observing element:`, element);
+    console.debug(`[MapResultsView][${workspaceId}] Observing element:`, element);
 
     this.resizeObserver.observe(element);
-    console.log(`[MapResultsView][${workspaceId}] ResizeObserver attached to map container`);
+    console.debug(`[MapResultsView][${workspaceId}] ResizeObserver attached to map container`);
   }
 
   /**
@@ -1468,33 +1468,33 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
    */
   onRegionChange(region: string): void {
     const workspaceId = this.workspaceId();
-    console.log(`[MapResultsView][${workspaceId}] Region change requested`);
-    console.log(`[MapResultsView][${workspaceId}] New region:`, region);
-    console.log(`[MapResultsView][${workspaceId}] Current region:`, this.selectedRegion());
-    console.log(`[MapResultsView][${workspaceId}] Map initialized:`, this.mapInitialized());
+    console.debug(`[MapResultsView][${workspaceId}] Region change requested`);
+    console.debug(`[MapResultsView][${workspaceId}] New region:`, region);
+    console.debug(`[MapResultsView][${workspaceId}] Current region:`, this.selectedRegion());
+    console.debug(`[MapResultsView][${workspaceId}] Map initialized:`, this.mapInitialized());
 
     this.selectedRegion.set(region);
-    console.log(`[MapResultsView][${workspaceId}] Region signal updated`);
+    console.debug(`[MapResultsView][${workspaceId}] Region signal updated`);
 
     if (this.mapInitialized()) {
-      console.log(`[MapResultsView][${workspaceId}] Map is initialized, updating view...`);
+      console.debug(`[MapResultsView][${workspaceId}] Map is initialized, updating view...`);
       // Update map center based on selected region
       const regionConfigs = this.mapService.getRegionConfigs();
       const config = regionConfigs[region];
-      console.log(`[MapResultsView][${workspaceId}] Region config:`, config);
+      console.debug(`[MapResultsView][${workspaceId}] Region config:`, config);
 
       if (config) {
-        console.log(`[MapResultsView][${workspaceId}] Setting map center...`);
+        console.debug(`[MapResultsView][${workspaceId}] Setting map center...`);
         this.mapService.setCenter(config.center, config.zoom);
 
         const configEvent = { region, config };
-        console.log(`[MapResultsView][${workspaceId}] Emitting map config changed:`, configEvent);
+        console.debug(`[MapResultsView][${workspaceId}] Emitting map config changed:`, configEvent);
         this.mapConfigChanged.emit(configEvent);
       } else {
         console.warn(`[MapResultsView][${workspaceId}] No config found for region:`, region);
       }
     } else {
-      console.log(
+      console.debug(
         `[MapResultsView][${workspaceId}] Map not initialized, region change will apply on next init`
       );
     }
@@ -1505,12 +1505,12 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
    */
   retryMapInitialization(): void {
     const workspaceId = this.workspaceId();
-    console.log(`[MapResultsView][${workspaceId}] Retry map initialization requested`);
+    console.debug(`[MapResultsView][${workspaceId}] Retry map initialization requested`);
 
     this.clearMapData();
 
     setTimeout(() => {
-      console.log(`[MapResultsView][${workspaceId}] Executing retry initialization...`);
+      console.debug(`[MapResultsView][${workspaceId}] Executing retry initialization...`);
       this.initializeMap();
     }, 100);
   }
@@ -1520,17 +1520,17 @@ export class MapResultsViewComponent implements AfterViewInit, OnDestroy {
    */
   resetMapView(): void {
     const workspaceId = this.workspaceId();
-    console.log(`[MapResultsView][${workspaceId}] Reset map view requested`);
-    console.log(`[MapResultsView][${workspaceId}] Map initialized:`, this.mapInitialized());
-    console.log(`[MapResultsView][${workspaceId}] Selected region:`, this.selectedRegion());
+    console.debug(`[MapResultsView][${workspaceId}] Reset map view requested`);
+    console.debug(`[MapResultsView][${workspaceId}] Map initialized:`, this.mapInitialized());
+    console.debug(`[MapResultsView][${workspaceId}] Selected region:`, this.selectedRegion());
 
     if (this.mapInitialized()) {
       const regionConfigs = this.mapService.getRegionConfigs();
       const config = regionConfigs[this.selectedRegion()];
-      console.log(`[MapResultsView][${workspaceId}] Reset config:`, config);
+      console.debug(`[MapResultsView][${workspaceId}] Reset config:`, config);
 
       if (config) {
-        console.log(
+        console.debug(
           `[MapResultsView][${workspaceId}] Resetting to center:`,
           config.center,
           'zoom:',
