@@ -1,8 +1,10 @@
+require("./instrument");
 import app from './apiSetup';
 import { config } from './config';
 import { getCronService } from './cron/cronService';
 import { initialiseAdmins } from './initialise';
 import { initializeS3Service } from './services/s3Storage';
+import * as Sentry from '@sentry/node';
 
 console.log('Initializing admins...');
 initialiseAdmins();
@@ -15,6 +17,13 @@ const cronService = getCronService();
 cronService.start();
 
 const port = config.port || 5000;
+
+app.get("/debug-sentry", function mainHandler(req, res) {
+  throw new Error("My first Sentry error!");
+});
+
+Sentry.setupExpressErrorHandler(app);
+
 app.listen(port, () => {
   console.log(`Listening: http://localhost:${port}`);
 });

@@ -30,6 +30,7 @@
         "@codegenie/serverless-express": "^4.16.0",
         "@reefguide/db": "workspace:*",
         "@reefguide/types": "workspace:*",
+        "@sentry/node": "^10.1.0",
         "@types/aws-lambda": "^8.10.150",
         "aws-cdk-lib": "2.202.0",
         "axios": "^1.10.0",
