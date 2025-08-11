@@ -17,7 +17,7 @@ import { debounceTime, distinctUntilChanged, tap } from 'rxjs/operators';
 type DataPackage = 'MOORE' | 'GBR';
 type RcpScenario = AdriaModelRunInput['rcp_scenario'];
 
-const DEFAULT_RCP : RcpScenario = '45';
+const DEFAULT_RCP: RcpScenario = '45';
 
 function availableScenariosFromDataPackage(
   dataPackage: DataPackage | null | undefined
@@ -458,7 +458,9 @@ export class ParameterConfigComponent {
         // If current RCP scenario is not available for the selected data package
         if (currentRcpScenario && !availableScenarios.includes(currentRcpScenario)) {
           // Reset to the first available scenario (or a sensible default)
-          const defaultScenario = availableScenarios.includes(DEFAULT_RCP) ? DEFAULT_RCP : availableScenarios[0];
+          const defaultScenario = availableScenarios.includes(DEFAULT_RCP)
+            ? DEFAULT_RCP
+            : availableScenarios[0];
           this.configForm.patchValue({ rcpScenario: defaultScenario });
         }
 
