@@ -12,4 +12,8 @@ export type LayerProperties = {
    * Informational page about the layer.
    */
   infoUrl?: string;
+  /**
+   * Feature property to use for labels.
+   */
+  labelProp?: string;
 };

@@ -33,7 +33,7 @@ importers:
         specifier: ^20.0.6
         version: 20.0.6(@angular/common@20.0.6(@angular/core@20.0.6(@angular/compiler@20.0.6)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.0.6(@angular/compiler@20.0.6)(rxjs@7.8.2)(zone.js@0.15.1))
       '@angular/cdk':
-        specifier: ^20.0.4
+        specifier: ^20.0.5
         version: 20.0.5(@angular/common@20.0.6(@angular/core@20.0.6(@angular/compiler@20.0.6)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.0.6(@angular/compiler@20.0.6)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
       '@angular/common':
         specifier: ^20.0.6
@@ -308,6 +308,9 @@ importers:
       '@reefguide/db':
         specifier: workspace:*
         version: link:../db
+      ol:
+        specifier: ^10.6.1
+        version: 10.6.1
       zod:
         specifier: ^3.25.67
         version: 3.25.67

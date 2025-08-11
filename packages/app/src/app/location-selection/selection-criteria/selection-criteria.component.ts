@@ -31,9 +31,20 @@ import {
 import { WebApiService } from '../../../api/web-api.service';
 import { CriteriaRangeOutput } from '@reefguide/types';
 import { MatTooltip } from '@angular/material/tooltip';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
-// add properties calculated here
-type CriteriaRangeOutput2 = CriteriaRangeOutput[string] & { step: number };
+// add app properties, but keep original from API readonly
+type CriteriaRangeOutput2 = Readonly<CriteriaRangeOutput[string]> & {
+  // slider code may change these, min/max are rounded
+  slider_min: number;
+  slider_max: number;
+  // default values may differ due to negativeFlippedCriteria
+  slider_default_min: number;
+  slider_default_max: number;
+  // currently determined by app code, though could define server-side
+  slider_step: number;
+};
+
 type CriteriaRangeList = Array<CriteriaRangeOutput2>;
 
 @Component({
@@ -48,7 +59,8 @@ type CriteriaRangeList = Array<CriteriaRangeOutput2>;
     MatSlideToggle,
     ReactiveFormsModule,
     MatSelectModule,
-    MatTooltip
+    MatTooltip,
+    MatProgressSpinner
   ],
   templateUrl: './selection-criteria.component.html',
   styleUrl: './selection-criteria.component.scss'
@@ -103,6 +115,7 @@ export class SelectionCriteriaComponent {
       )
       .subscribe(regionCriteria => {
         this.buildCriteriaFormGroup(regionCriteria);
+        this.setupLayerPixelFiltering();
       });
   }
 
@@ -112,46 +125,77 @@ export class SelectionCriteriaComponent {
     // TODO order?
     const regionCriteriaRanges = Object.values(regionCriteria) as CriteriaRangeList;
 
+    // formBuilder definitions for 'criteria' group
     const criteriaControlDefs: Record<string, any> = {};
 
     for (const c of regionCriteriaRanges) {
       const { min_val, max_val, default_min_val, default_max_val } = c;
-      if (this.negativeFlippedCriteria.has(c.id)) {
-        c.min_val = -max_val;
-        c.max_val = -min_val;
-        c.default_min_val = -default_max_val;
-        c.default_max_val = -default_min_val;
+      if (default_min_val < min_val) {
+        console.warn(`criteria ${c.id} default_min_val=${default_min_val} < min_val=${min_val}`);
       }
 
-      c.min_val = Math.floor(c.min_val);
-      c.max_val = Math.ceil(c.max_val);
-      const diff = c.max_val - c.min_val;
-      c.step = diff > 40 ? 1 : 0.1;
+      if (default_max_val > max_val) {
+        console.warn(`criteria ${c.id} default_max_val=${default_max_val} > max_val=${max_val}`);
+      }
 
-      criteriaControlDefs[`${c.payload_property_prefix}min`] = [c.default_min_val];
-      criteriaControlDefs[`${c.payload_property_prefix}max`] = [c.default_max_val];
+      // this feature is for criteria like Depth
+      // round the min/max outward, otherwise the slider step values will be long
+      // floating point numbers that are visible to user on slider thumb.
+      // Note that values will be clamped by getCriteriaPayloads
+      if (this.negativeFlippedCriteria.has(c.id)) {
+        c.slider_min = Math.floor(-max_val);
+        c.slider_max = Math.ceil(-min_val);
+        c.slider_default_min = -default_max_val;
+        c.slider_default_max = -default_min_val;
+      } else {
+        c.slider_min = Math.floor(min_val);
+        c.slider_max = Math.ceil(max_val);
+        c.slider_default_min = default_min_val;
+        c.slider_default_max = default_max_val;
+      }
+
+      // use step 1 for large ranges, step 0.1 for smaller. (40 is arbitrary)
+      const diff = c.max_val - c.min_val;
+      c.slider_step = diff > 40 ? 1 : diff > 4 ? 0.1 : 0.02;
+
+      // ensure that default values are not outside the slider range.
+      const minValue = Math.max(c.slider_min, c.slider_default_min);
+      const maxValue = Math.min(c.slider_max, c.slider_default_max);
+
+      criteriaControlDefs[`${c.payload_property_prefix}min`] = [minValue];
+      criteriaControlDefs[`${c.payload_property_prefix}max`] = [maxValue];
     }
 
     const formGroup = this.formBuilder.group(criteriaControlDefs);
     this.form.setControl('criteria', formGroup);
 
     this.regionCriteriaRanges.set(regionCriteriaRanges);
+  }
 
-    // for criteria with layers
+  /**
+   * For criteria with a map layer, listen to slider min/max changes and pixel-filter.
+   * Sets layer visible (exclusive to other criteria layers) on min|max change
+   */
+  private setupLayerPixelFiltering() {
+    const regionCriteriaRanges = this.regionCriteriaRanges();
+    const formGroup = this.form.get('criteria');
+    if (!regionCriteriaRanges || !formGroup) {
+      return;
+    }
     for (const c of regionCriteriaRanges) {
       const layerController = this.mapService.criteriaLayers[c.id];
       if (layerController) {
-        const { min_val, max_val } = c;
-        const range = max_val - min_val;
+        const { slider_min, slider_max } = c;
+        const range = slider_max - slider_min;
         const minKey = `${c.payload_property_prefix}min`;
         const maxKey = `${c.payload_property_prefix}max`;
 
         const min$ = formGroup
           .get(minKey)!
-          .valueChanges.pipe(startWith(c.default_min_val)) as Observable<number>;
+          .valueChanges.pipe(startWith(c.slider_default_min)) as Observable<number>;
         const max$ = formGroup
           .get(maxKey)!
-          .valueChanges.pipe(startWith(c.default_max_val)) as Observable<number>;
+          .valueChanges.pipe(startWith(c.slider_default_max)) as Observable<number>;
 
         min$
           .pipe(combineLatestWith(max$))
@@ -163,8 +207,8 @@ export class SelectionCriteriaComponent {
             }
 
             // normalized 0:1
-            const nMin = (min - min_val) / range;
-            const nMax = (max - min_val) / range;
+            const nMin = (min - slider_min) / range;
+            const nMax = (max - slider_min) / range;
             layerController.filterLayerPixels(nMin, nMax);
           });
       }
@@ -173,6 +217,7 @@ export class SelectionCriteriaComponent {
 
   /**
    * Get Job payload criteria values
+   * Ensures that values are within criteria min/max
    */
   getCriteriaPayloads(): CriteriaPayloads {
     const formValue = this.form.value;
@@ -190,16 +235,20 @@ export class SelectionCriteriaComponent {
 
     // fix values of negative-flipped criteria
     for (const c of criteriaRanges) {
-      if (this.negativeFlippedCriteria.has(c.id)) {
-        const minKey = `${c.payload_property_prefix}min`;
-        const minValue = criteria[minKey]!;
-        const maxKey = `${c.payload_property_prefix}max`;
-        const maxValue = criteria[maxKey]!;
+      const isFlipped = this.negativeFlippedCriteria.has(c.id);
+      const minKey = `${c.payload_property_prefix}min`;
+      const maxKey = `${c.payload_property_prefix}max`;
 
-        criteria[minKey] = -maxValue;
-        criteria[maxKey] = -minValue;
-      }
+      // convert back to un-flipped criteria coordinates if needed
+      const minValue = isFlipped ? -criteria[maxKey]! : criteria[minKey]!;
+      const maxValue = isFlipped ? -criteria[minKey]! : criteria[maxKey]!;
+
+      // clamp values since could be outside range due to slider floor(min), ceil(max)
+      criteria[minKey] = Math.max(minValue, c.min_val);
+      criteria[maxKey] = Math.min(maxValue, c.max_val);
     }
+
+    // console.log('criteria before/after', formValue.criteria, criteria);
 
     let siteSuitability: SiteSuitabilityCriteria | undefined = undefined;
     const siteForm = this.form.get('siteSuitability')!;
@@ -230,9 +279,9 @@ export class SelectionCriteriaComponent {
     for (const c of criteriaRanges) {
       // don't need to worry about negative-flipping here since we mutated min/max values
       const minControl = criteriaFormGroup.get(`${c.payload_property_prefix}min`);
-      minControl?.setValue(c.default_min_val);
+      minControl?.setValue(c.slider_default_min);
       const maxControl = criteriaFormGroup.get(`${c.payload_property_prefix}max`);
-      maxControl?.setValue(c.default_max_val);
+      maxControl?.setValue(c.slider_default_max);
     }
 
     // TODO reset site suitability?

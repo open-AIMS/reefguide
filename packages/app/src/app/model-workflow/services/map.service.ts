@@ -146,7 +146,7 @@ export class MapService {
 
       console.log('[MapService] Map instance created successfully:', this.map);
 
-      // NEW: Setup highlight layer after map creation
+      // Setup highlight layer after map creation
       this.setupHighlightLayer();
 
       this.isInitialized.set(true);
@@ -240,7 +240,7 @@ export class MapService {
     }
   }
 
-  // NEW: Clear highlight
+  // Clear highlight
   clearHighlight(): void {
     console.log('[MapService] clearHighlight() called');
 
@@ -251,12 +251,12 @@ export class MapService {
     }
   }
 
-  // NEW: Get current highlighted location
+  // Get current highlighted location
   getCurrentHighlightLocationId(): string | null {
     return this.currentHighlightLocationId;
   }
 
-  // NEW: Set highlighted location (for tracking)
+  // Set highlighted location (for tracking)
   setCurrentHighlightLocationId(locationId: string | null): void {
     this.currentHighlightLocationId = locationId;
   }
@@ -570,7 +570,7 @@ export class MapService {
       });
       this.vectorLayers.clear();
 
-      // NEW: Clean up highlight layer
+      // Clean up highlight layer
       if (this.highlightLayer) {
         console.log('[MapService] Removing highlight layer');
         this.map.removeLayer(this.highlightLayer);
