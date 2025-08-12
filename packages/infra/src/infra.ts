@@ -213,7 +213,8 @@ export class ReefguideStack extends cdk.Stack {
       capacityManager: {
         cpu: capacityManager.cpu,
         memoryLimitMiB: capacityManager.memoryLimitMiB,
-        pollIntervalMs: capacityManager.pollIntervalMs
+        pollIntervalMs: capacityManager.pollIntervalMs,
+        sentryDsn: config.monitoring?.capacityManagerSentryDsn
       },
       workers: [
         // Reefguide Worker

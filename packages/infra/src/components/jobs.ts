@@ -88,6 +88,7 @@ export interface JobSystemProps {
     cpu: number;
     memoryLimitMiB: number;
     pollIntervalMs: number;
+    sentryDsn?: string;
   };
 
   // Configuration for each job type
@@ -270,7 +271,9 @@ export class JobSystem extends Construct {
         // Which vpc to deploy into
         VPC_ID: props.vpc.vpcId,
         // Log level for manager
-        LOG_LEVEL: 'info'
+        LOG_LEVEL: 'info',
+        // Sentry DSN if enabled
+        ...(props.capacityManager.sentryDsn ? { SENTRY_DSN: props.capacityManager.sentryDsn } : {})
       },
       // pass in the manager creds
       secrets: {
