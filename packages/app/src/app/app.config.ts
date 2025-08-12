@@ -15,7 +15,7 @@ if (enableSentry) {
   Sentry.init({
     dsn: environment.sentryDsn,
     sendDefaultPii: false,
-    integrations: [],
+    integrations: [Sentry.captureConsoleIntegration({ levels: ['error'] })],
     // was specified in bugsink documentation.
     tracesSampleRate: 0
   });
