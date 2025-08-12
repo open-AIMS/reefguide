@@ -1,3 +1,4 @@
+require('./sentry-instrument');
 import express from 'express';
 import { config } from './config';
 import { CapacityManager } from './manager';

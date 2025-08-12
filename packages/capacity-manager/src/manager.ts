@@ -84,6 +84,7 @@ export class CapacityManager {
 
     try {
       logger.info('Poll started', { timestamp: new Date().toISOString() });
+      logger.error(new Error('This is an erro'));
       logger.debug('Current tracked workers status', {
         count: this.trackedWorkers.length
       });

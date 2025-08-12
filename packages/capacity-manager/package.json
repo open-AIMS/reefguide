@@ -28,7 +28,7 @@
         "express": "^4.21.1",
         "jwt-decode": "^4.0.0",
         "winston": "^3.17.0",
-        "winston-transport-sentry-node": "^3.0.0",
+        "winston-transport": "^4.9.0",
         "zod": "^3.25.67"
     },
     "devDependencies": {

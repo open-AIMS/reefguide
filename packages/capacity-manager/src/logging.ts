@@ -1,6 +1,8 @@
 import winston from 'winston';
 import { config } from './config';
-const Sentry = require('winston-transport-sentry-node').default;
+import Sentry from '@sentry/node';
+import Transport from 'winston-transport';
+import TransportStream from 'winston-transport';
 
 /**
  * Winston logger configuration
@@ -22,21 +24,17 @@ const Sentry = require('winston-transport-sentry-node').default;
  * error and warn logs, but not info, http, etc.
  */
 
-let possibleSentry: typeof Sentry | undefined = undefined;
+let winstonSentryTransport: Transport | undefined = undefined;
 if (config.sentryDsn) {
   console.log('Setting up sentry logger integration');
-  const options = {
-    // What log level?
-    level: 'warn',
-    sentry: {
-      dsn: config.sentryDsn
-    },
-    // https://docs.sentry.io/platforms/javascript/guides/node/configuration/options/#sendDefaultPii
-    sendDefaultPii: false,
-    // Bugsink prefers no traces
-    tracesSampleRate: 0
-  };
-  possibleSentry = new Sentry(options);
+  winstonSentryTransport = new (Sentry.createSentryWinstonTransport(TransportStream, {
+    //levels: ['error', 'warn', 'info']
+  }))();
+}
+let transports: Transport[] = [new winston.transports.Console()];
+if (winstonSentryTransport !== undefined) {
+  console.log('Adding winston sentry transport');
+  transports.push(winstonSentryTransport);
 }
 
 /**
@@ -61,7 +59,5 @@ export const logger = winston.createLogger({
   ),
 
   // Define where logs are sent - console for basic setup
-  transports: [new winston.transports.Console()].concat(
-    possibleSentry !== undefined ? [possibleSentry] : []
-  )
+  transports
 });
