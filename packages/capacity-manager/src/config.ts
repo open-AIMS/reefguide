@@ -1,6 +1,5 @@
 import { JobType } from '@reefguide/db';
 import { z } from 'zod';
-import { logger } from './logging';
 
 /**
  * Helper function to create a number validator that also accepts string inputs
@@ -99,7 +98,8 @@ export const BaseEnvConfigSchema = z.object({
   AWS_REGION: z.string().min(1, 'AWS region is required'),
   API_USERNAME: z.string().min(1, 'API username is required'),
   API_PASSWORD: z.string().min(1, 'API password is required'),
-  VPC_ID: z.string().min(1, 'VPC ID is required')
+  VPC_ID: z.string().min(1, 'VPC ID is required'),
+  SENTRY_DSN: z.string().url().optional().describe('Sentry DSN, if desired')
 });
 
 export const JobTypeConfigSchema = RawJobTypeConfigSchema.extend({
@@ -123,7 +123,8 @@ export const ConfigSchema = z.object({
     email: z.string().min(1, 'Email is required'),
     password: z.string().min(1, 'Password is required')
   }),
-  vpcId: z.string().min(1, 'VPC ID is required')
+  vpcId: z.string().min(1, 'VPC ID is required'),
+  sentryDsn: z.string().url().optional().describe('Sentry DSN, if desired')
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -140,7 +141,7 @@ function buildJobTypeConfig(
   env: Record<string, string | number>,
   jobType: string
 ): RawJobTypeConfig {
-  logger.debug(`Building config for job type: ${jobType}`);
+  console.debug(`Building config for job type: ${jobType}`);
 
   const optimisticParse = {
     taskDefinitionArn: env[`${jobType}_TASK_DEF`] as string,
@@ -157,10 +158,10 @@ function buildJobTypeConfig(
 
   try {
     const validatedConfig = RawJobTypeConfigSchema.parse(optimisticParse);
-    logger.debug(`Validated config for job type: ${jobType}`);
+    console.debug(`Validated config for job type: ${jobType}`);
     return validatedConfig;
   } catch (e) {
-    logger.error(`Job type ${jobType} did not have valid environment variables`, { error: e });
+    console.error(`Job type ${jobType} did not have valid environment variables`, { error: e });
     throw e;
   }
 }
@@ -173,7 +174,7 @@ function buildJobTypeConfig(
  * @throws Error if configuration validation fails
  */
 export function loadConfig(): Config {
-  logger.info('Loading application configuration');
+  console.info('Loading application configuration');
 
   try {
     // Force types here as we zod process everything!
@@ -184,12 +185,12 @@ export function loadConfig(): Config {
     // Build configuration for each job type
     Object.values(JobType).forEach(jobType => {
       const typeString = jobType.toString();
-      logger.debug(`Processing job type: ${typeString}`);
+      console.debug(`Processing job type: ${typeString}`);
       jobTypesConfig[typeString] = buildJobTypeConfig(env, typeString);
     });
 
     // Group the job types by task ARN
-    logger.debug('Grouping job types by task ARN');
+    console.debug('Grouping job types by task ARN');
     const arnToTypes: Map<string, JobType[]> = new Map();
     for (const [jobType, config] of Object.entries(jobTypesConfig)) {
       arnToTypes.set(
@@ -213,13 +214,14 @@ export function loadConfig(): Config {
         email: env.API_USERNAME as string,
         password: env.API_PASSWORD as string
       },
-      vpcId: env.VPC_ID as string
+      vpcId: env.VPC_ID as string,
+      sentryDsn: env.SENTRY_DSN as string | undefined
     };
 
     // Validate the entire config object
-    logger.debug('Validating complete configuration');
+    console.debug('Validating complete configuration');
     const validatedConfig = ConfigSchema.parse(config);
-    logger.info('Configuration successfully loaded and validated');
+    console.info('Configuration successfully loaded and validated');
     return validatedConfig;
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -227,12 +229,31 @@ export function loadConfig(): Config {
       const formattedErrors = error.errors
         .map(err => `${err.path.join('.')}: ${err.message}`)
         .join('\n');
-      logger.error('Configuration validation failed', {
+      console.error('Configuration validation failed', {
         errors: formattedErrors
       });
       throw new Error(`Configuration validation failed:\n${formattedErrors}`);
     }
-    logger.error('Failed to load configuration', { error });
+    console.error('Failed to load configuration', { error });
     throw new Error(`Failed to load configuration: ${error}`);
   }
 }
+
+function setupConfig(): Config {
+  console.log('Setting up config');
+  try {
+    console.log('Validating configuration');
+    // Load and validate configuration from environment variables
+    return loadConfig();
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      console.error('Configuration validation failed:', { errors: error.errors });
+    } else {
+      console.error('Failed to load configuration:', { error });
+    }
+    // Exit with error code if configuration cannot be loaded
+    process.exit(1);
+  }
+}
+
+export const config = setupConfig();

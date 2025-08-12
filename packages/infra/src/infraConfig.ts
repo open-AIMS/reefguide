@@ -7,7 +7,9 @@ export const MonitoringSchema = z.object({
   /** The ARN of the Sentry DSN for the web API */
   webApiSentryDsn: z.string().url().optional(),
   /** The ARN of the Sentry DSN for the app */
-  appSentryDsn: z.string().url().optional()
+  appSentryDsn: z.string().url().optional(),
+  /** The ARN of the Sentry DSN for the capacity manager service */
+  capacityManagerSentryDsn: z.string().url().optional()
 });
 export type MonitoringConfig = z.infer<typeof MonitoringSchema>;
 

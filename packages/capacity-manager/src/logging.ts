@@ -1,4 +1,6 @@
 import winston from 'winston';
+import { config } from './config';
+const Sentry = require('winston-transport-sentry-node').default;
 
 /**
  * Winston logger configuration
@@ -19,6 +21,23 @@ import winston from 'winston';
  * and below (less verbose). For example, setting LOG_LEVEL=warn will include
  * error and warn logs, but not info, http, etc.
  */
+
+let possibleSentry: typeof Sentry | undefined = undefined;
+if (config.sentryDsn) {
+  console.log('Setting up sentry logger integration');
+  const options = {
+    // What log level?
+    level: 'warn',
+    sentry: {
+      dsn: config.sentryDsn
+    },
+    // https://docs.sentry.io/platforms/javascript/guides/node/configuration/options/#sendDefaultPii
+    sendDefaultPii: false,
+    // Bugsink prefers no traces
+    tracesSampleRate: 0
+  };
+  possibleSentry = new Sentry(options);
+}
 
 /**
  * Creates a configured winston logger instance
@@ -42,5 +61,7 @@ export const logger = winston.createLogger({
   ),
 
   // Define where logs are sent - console for basic setup
-  transports: [new winston.transports.Console()]
+  transports: [new winston.transports.Console()].concat(
+    possibleSentry !== undefined ? [possibleSentry] : []
+  )
 });
