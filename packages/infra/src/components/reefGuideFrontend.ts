@@ -34,6 +34,8 @@ export interface ReefGuideFrontendProps {
   adminEmail: string;
   /** App name to display in login panel */
   appName: string;
+  /** The Sentry DSN for the app */
+  sentryDsn?: string;
 }
 
 /**
@@ -114,7 +116,9 @@ export class ReefGuideFrontend extends Construct {
       NG_APP_SPLASH_APP_NAME: props.appName,
       NG_APP_SPLASH_SHOW_BACKGROUND_MAP: 'true',
       NG_APP_DOCUMENTATION_LINK: 'https://open-aims.github.io/reefguide',
-      NG_APP_ABOUT_LINK: 'https://github.com/open-AIMS/reefguide'
+      NG_APP_ABOUT_LINK: 'https://github.com/open-AIMS/reefguide',
+      // Sentry DSN
+      ...(props.sentryDsn ? { NG_APP_SENTRY_DSN: props.sentryDsn } : {})
     };
 
     // Setup deployment with build process

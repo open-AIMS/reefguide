@@ -3,6 +3,14 @@ import * as path from 'path';
 import * as z from 'zod';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
+export const MonitoringSchema = z.object({
+  /** The ARN of the Sentry DSN for the web API */
+  webApiSentryDsn: z.string().url().optional(),
+  /** The ARN of the Sentry DSN for the app */
+  appSentryDsn: z.string().url().optional()
+});
+export type MonitoringConfig = z.infer<typeof MonitoringSchema>;
+
 export const ReefGuideFrontendConfigSchema = z.object({
   /** The index document of the website */
   indexDocument: z.string().default('index.html'),
@@ -196,7 +204,10 @@ export const DeploymentConfigSchema = z.object({
   db: DatabaseConfigSchema.optional(),
 
   // Job system configuration
-  jobSystem: JobSystemConfigSchema.default({})
+  jobSystem: JobSystemConfigSchema.default({}),
+
+  // Monitoring configuration
+  monitoring: MonitoringSchema.optional()
 });
 export type DeploymentConfig = z.infer<typeof DeploymentConfigSchema>;
 

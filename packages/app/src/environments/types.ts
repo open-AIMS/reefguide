@@ -21,7 +21,8 @@ export const envSchema = z.object({
     .transform(val => val === 'true')
     .default('true'),
   DOCUMENTATION_LINK: z.string().url().default('https://github.com/open-AIMS/reefguide'),
-  ABOUT_LINK: z.string().url().default('https://github.com/open-AIMS/reefguide')
+  ABOUT_LINK: z.string().url().default('https://github.com/open-AIMS/reefguide'),
+  SENTRY_DSN: z.string().url().optional().describe('Sentry DSN for error tracking')
 });
 
 // Interface for the structured environment configuration
@@ -30,6 +31,7 @@ export interface EnvironmentConfig {
   adriaApiUrl: string;
   webApiUrl: string;
   splashConfig: SplashConfig;
+  sentryDsn?: string;
 }
 
 // Type for raw environment variables
@@ -44,7 +46,8 @@ export function buildConfig(): EnvironmentConfig {
     SPLASH_APP_NAME: import.meta.env.NG_APP_SPLASH_APP_NAME,
     SPLASH_SHOW_BACKGROUND_MAP: import.meta.env.NG_APP_SPLASH_SHOW_BACKGROUND_MAP,
     DOCUMENTATION_LINK: import.meta.env.NG_APP_DOCUMENTATION_LINK,
-    ABOUT_LINK: import.meta.env.NG_APP_ABOUT_LINK
+    ABOUT_LINK: import.meta.env.NG_APP_ABOUT_LINK,
+    SENTRY_DSN: import.meta.env.NG_APP_SENTRY_DSN
   };
 
   // Validate environment variables using Zod (with defaults applied)
@@ -64,6 +67,7 @@ export function buildConfig(): EnvironmentConfig {
         'Your account needs analyst or administrator access to use this application.',
       aboutLink: validatedEnv.ABOUT_LINK,
       documentationLink: validatedEnv.DOCUMENTATION_LINK
-    }
+    },
+    sentryDsn: validatedEnv.SENTRY_DSN
   };
 }

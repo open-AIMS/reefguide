@@ -38,6 +38,8 @@ export interface ECSWebAPIProps {
   adminCreds: sm.Secret;
   /** The name of jobs system s3 bucket to store in */
   storageBucket: s3.IBucket;
+  /** The Sentry DSN for the web API */
+  sentryDsn?: string;
 }
 
 /**
@@ -129,7 +131,10 @@ export class ECSWebAPI extends Construct {
         AWS_REGION: cdk.Stack.of(this).region,
 
         // Storage bucket name
-        S3_BUCKET_NAME: props.storageBucket.bucketName
+        S3_BUCKET_NAME: props.storageBucket.bucketName,
+
+        // Sentry DSN
+        ...(props.sentryDsn ? { SENTRY_DSN: props.sentryDsn } : {})
       },
       secrets: {
         // API Secret

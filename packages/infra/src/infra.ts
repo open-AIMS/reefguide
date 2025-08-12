@@ -167,7 +167,8 @@ export class ReefguideStack extends cdk.Stack {
         adminCreds: adminCreds,
         cluster: cluster,
         sharedBalancer: networking.sharedBalancer,
-        vpc: networking.vpc
+        vpc: networking.vpc,
+        sentryDsn: config.monitoring?.webApiSentryDsn
       });
     } else {
       // Lambda mode
@@ -196,7 +197,8 @@ export class ReefguideStack extends cdk.Stack {
       ].concat(ARC_GIS_ENDPOINTS),
       webApiEndpoint: webAPI.endpoint,
       adminEmail: config.frontend.adminEmail,
-      appName: config.frontend.appName
+      appName: config.frontend.appName,
+      sentryDsn: config.monitoring?.appSentryDsn
     });
 
     const { jobSystem } = config;

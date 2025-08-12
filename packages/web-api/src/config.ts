@@ -47,7 +47,8 @@ const envSchema = z.object({
     .transform(val => parseInt(val, 10))
     .refine(val => !isNaN(val) && val > 0, {
       message: 'REFRESH_TOKEN_EXPIRY_MINUTES must be a positive number'
-    })
+    }),
+  SENTRY_DSN: z.string().url().optional().describe('Sentry DSN for error tracking')
 });
 
 /**
@@ -89,6 +90,8 @@ export interface Config {
     accessTokenExpirySeconds: number; // Computed convenience property
   };
   disableCache: boolean;
+  // Optional Sentry DSN for error tracking
+  sentryDsn?: string;
 }
 
 /**
@@ -155,7 +158,8 @@ export function getConfig(): Config {
       // Computed convenience property for seconds
       accessTokenExpirySeconds: env.ACCESS_TOKEN_EXPIRY_MINUTES * 60
     },
-    disableCache: env.DISABLE_CACHE
+    disableCache: env.DISABLE_CACHE,
+    sentryDsn: env.SENTRY_DSN
   };
 
   // Log configuration in non-production environments (excluding sensitive data)
