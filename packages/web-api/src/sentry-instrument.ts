@@ -8,9 +8,9 @@ if (config.sentryDsn) {
   Sentry.init({
     dsn: config.sentryDsn,
     // https://docs.sentry.io/platforms/javascript/guides/node/configuration/options/#sendDefaultPii
-    sendDefaultPii: true,
-    // Enable logs to be sent to Sentry
-    enableLogs: true
+    sendDefaultPii: false,
+    // Bugsink prefers no traces
+    tracesSampleRate: 0
   });
   console.log('Sentry initialized successfully.');
 }
