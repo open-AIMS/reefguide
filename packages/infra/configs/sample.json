@@ -79,5 +79,9 @@
                 }
             }
         }
+    },
+    "monitoring": {
+        "webApiSentryDsn": "https://example.com",
+        "appSentryDsn": "https://example.com"
     }
 }
