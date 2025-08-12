@@ -26,6 +26,7 @@
     "@ngx-env/builder": "^19.0.4",
     "@reefguide/db": "workspace:*",
     "@reefguide/types": "workspace:*",
+    "@sentry/angular": "^10.4.0",
     "apache-arrow": "^21.0.0",
     "jwt-decode": "^4.0.0",
     "ol": "^10.6.1",
