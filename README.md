@@ -71,7 +71,21 @@ Make sure you have `nvm` and `docker` (rootless) installed, then run
 ./local-dev.sh
 ```
 
-This will set everything up with reasonable defaults for a local dev.
+This will set everything up with reasonable defaults for a local dev, but additional
+local configuration is needed (see below).
+
+### Local setup
+
+Environment files for the `web-api` and `cli` need to be created.
+
+Inside both `packages/web-api` and `packages/cli`, run:
+
+```
+cp .env.dist .env
+```
+
+Repeat for other ReefGuide repositories, ensuring locations for data files and datapackages
+are suitably defined and correct.
 
 ## Manual setup
 
@@ -139,7 +153,7 @@ Then
 turbo dev
 ```
 
-Or just
+Again, the convenience setup script will handle all the above for you.
 
 ```
 ./local-dev.sh
