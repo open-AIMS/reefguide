@@ -71,12 +71,10 @@ Make sure you have `nvm` and `docker` (rootless) installed, then run
 ./local-dev.sh
 ```
 
-This will set everything up with reasonable defaults for a local dev, but additional
-local configuration is needed (see below).
+This will set the project up with reasonable defaults for a local dev.
 
-### Local setup
-
-Environment files for the `web-api` and `cli` need to be created.
+To run the ReefGuide webapp, environment files for the `web-api` and `cli` need to be
+created.
 
 Inside both `packages/web-api` and `packages/cli`, run:
 
@@ -86,6 +84,26 @@ cp .env.dist .env
 
 Repeat for other ReefGuide repositories, ensuring locations for data files and datapackages
 are suitably defined and correct.
+
+To launch the web app, start the Julia services (see repo relationship diagram above)
+and then:
+
+```
+pnpm run dev
+```
+
+This will launch the web app, defaulting to http://localhost:4200/.
+
+A commandline tool called `reefguide-cli` to aid in managing the database is also provided.
+
+If pnpm is not configured globally, the `reefguide-cli` tool can be invoked under
+`packages/cli` like so:
+
+```
+pnpm exec reefguide-cli
+```
+
+See the README in `packages/cli` for further detail.
 
 ## Manual setup
 
