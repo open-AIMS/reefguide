@@ -4,12 +4,16 @@ import * as z from 'zod';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
 export const MonitoringSchema = z.object({
-  /** The ARN of the Sentry DSN for the web API */
+  /** The Sentry DSN for the web API */
   webApiSentryDsn: z.string().url().optional(),
-  /** The ARN of the Sentry DSN for the app */
+  /** The Sentry DSN for the app */
   appSentryDsn: z.string().url().optional(),
-  /** The ARN of the Sentry DSN for the capacity manager service */
-  capacityManagerSentryDsn: z.string().url().optional()
+  /** The Sentry DSN for the capacity manager service */
+  capacityManagerSentryDsn: z.string().url().optional(),
+  /** The Sentry DSN for the ADRIA worker */
+  adriaWorkerSentryDsn: z.string().url().optional(),
+  /** The Sentry DSN for the reefguide worker */
+  reefguideWorkerSentryDsn: z.string().url().optional()
 });
 export type MonitoringConfig = z.infer<typeof MonitoringSchema>;
 

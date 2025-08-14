@@ -274,7 +274,11 @@ export class ReefguideStack extends cdk.Stack {
             CONFIG_PATH: '/data/reefguide/config.toml',
             JULIA_DEBUG: 'ReefGuideWorker',
             DATA_PATH: '/data/reefguide',
-            CACHE_PATH: '/data/reefguide/cache'
+            CACHE_PATH: '/data/reefguide/cache',
+            // Sentry DSN
+            ...(config.monitoring?.reefguideWorkerSentryDsn
+              ? { SENTRY_DSN: config.monitoring.reefguideWorkerSentryDsn }
+              : {})
           },
 
           // Mount up the reefguide API shared storage
@@ -330,7 +334,12 @@ export class ReefguideStack extends cdk.Stack {
             // GBR RME cluster data package
             GBR_DATA_PACKAGE_PATH: '/data/reefguide/adria/datapackages/rme_ml_2024_01_08',
             // Don't use network FS for this - to speed up IO and reduce $
-            DATA_SCRATCH_SPACE: '/tmp/reefguide'
+            DATA_SCRATCH_SPACE: '/tmp/reefguide',
+
+            // Sentry DSN
+            ...(config.monitoring?.adriaWorkerSentryDsn
+              ? { SENTRY_DSN: config.monitoring.adriaWorkerSentryDsn }
+              : {})
           },
 
           // Mount up the reefguide API shared storage

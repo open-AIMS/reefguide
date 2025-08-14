@@ -83,6 +83,8 @@
     "monitoring": {
         "webApiSentryDsn": "https://example.com",
         "appSentryDsn": "https://example.com",
-        "capacityManagerSentryDsn": "https://example.com"
+        "capacityManagerSentryDsn": "https://example.com",
+        "adriaWorkerSentryDsn": "https://example.com",
+        "reefguideWorkerSentryDsn": "https://example.com"
     }
 }
