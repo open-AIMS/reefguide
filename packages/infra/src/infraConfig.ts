@@ -26,7 +26,9 @@ export const ReefGuideFrontendConfigSchema = z.object({
   appName: z.string().min(1, 'App name must not be empty').default('ReefGuide'),
   /** The email address of the admin user displayed as a contact email for
    * requesting access */
-  adminEmail: z.string().email()
+  adminEmail: z.string().email(),
+  /** If you would like to add additional CSP whitelists for script sources */
+  additionalCspWhitelists: z.array(z.string()).optional()
 });
 export type ReefGuideFrontendConfig = z.infer<typeof ReefGuideFrontendConfigSchema>;
 
