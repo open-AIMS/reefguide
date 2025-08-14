@@ -1,6 +1,6 @@
 import Layer from 'ol/layer/Layer';
 import LayerGroup from 'ol/layer/Group';
-import { Collection } from 'ol';
+import { Collection, Feature } from 'ol';
 import BaseLayer from 'ol/layer/Base';
 import { fromEventPattern, Observable } from 'rxjs';
 import { EventsKey } from 'ol/events';
@@ -146,4 +146,40 @@ export function createTileDebugLayer(source?: DataTileSource | null): TileLayer 
       zDirection: 1
     })
   });
+}
+
+/**
+ * Log information about features as they are loaded, track distinct values of props.
+ * @param layer
+ * @param props
+ */
+export function logFeaturesInfo(layer: VectorLayer, props: string[]) {
+  const source = layer.getSource();
+  if (source) {
+    // gather stats
+    const distinctValues = new Map<string, Set<string>>();
+    for (const prop of props) {
+      distinctValues.set(prop, new Set());
+    }
+
+    let totalCount = 0;
+    source.on('featuresloadend', () => {
+      let eventCount = 0;
+      for (const feature of source.getFeatures()) {
+        if (feature instanceof Feature) {
+          eventCount++;
+          totalCount++;
+
+          for (const prop of props) {
+            const value = feature.get(prop);
+            if (value != null) {
+              distinctValues.get(prop)!.add(String(value));
+            }
+          }
+        }
+      }
+
+      console.log(`GBRMPZoning ${totalCount} features. ALT_ZONEs, TYPEs`, distinctValues);
+    });
+  }
 }

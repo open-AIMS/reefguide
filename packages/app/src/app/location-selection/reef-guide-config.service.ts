@@ -26,13 +26,6 @@ const configVarGetters: Partial<Record<keyof StoredConfig, (val: string) => any>
   enableCOGBlob: getBoolean
 };
 
-export const ALL_REGIONS = [
-  'Townsville-Whitsunday',
-  'Cairns-Cooktown',
-  'Mackay-Capricorn',
-  'FarNorthern'
-];
-
 @Injectable({
   providedIn: 'root'
 })
