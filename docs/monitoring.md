@@ -38,15 +38,12 @@ We utilise it to integrate into our components using the Sentry SDK:
 - web-api (express API monitoring)
 - capacity-manager (monitors errors/logged issues)
 - app (Angular SDK integration reports errors/console errors)
-
-We also plan to extend this monitoring into the following Julia components to report worker side errors
-
-- [ReefGuideWorker.jl](https://github.com/open-AIMS/ReefGuideWorker.jl) - Julia Job Worker to run ReefGuide algorithms
-- [ADRIAReefGuideWorker.jl](https://github.com/open-AIMS/ADRIAReefGuideWorker.jl) - Julia Job Worker to run ADRIA algorithms for ReefGuide
+- [ReefGuideWorker.jl](https://github.com/open-AIMS/ReefGuideWorker.jl) - Julia Job Worker to run ReefGuide algorithms (reports errors)
+- [ADRIAReefGuideWorker.jl](https://github.com/open-AIMS/ADRIAReefGuideWorker.jl) - Julia Job Worker to run ADRIA algorithms for ReefGuide (reports errors)
 
 ## Deployment
 
-The deployment of these systems is not part of `ReefGuide` in this repository. We intentionally keep this as a separate component to encourage plugging in/out your desired monitoring stack. AWS CDK is used to deploy both components to a single EC2 node with HTTPS and persistent storage, behind a reverse proxy. The details of this deployment is available at:
+The deployment of these systems is not part of `ReefGuide`, nor documented in this repository. We intentionally keep this as a separate component to encourage plugging in/out your desired (currently) sentry-compatible monitoring stack. AWS CDK is used to deploy both components to a single EC2 node with HTTPS and persistent storage, behind a reverse proxy. The details of this deployment is available at:
 
 [cdk-monitoring-stack](https://github.com/csiro/cdk-monitoring-stack)
 
@@ -58,6 +55,8 @@ To configure Sentry SDK error monitoring for ReefGuide - simply set the sentry D
     "monitoring": {
         "webApiSentryDsn": "https://example.com",
         "appSentryDsn": "https://example.com",
-        "capacityManagerSentryDsn": "https://example.com"
+        "capacityManagerSentryDsn": "https://example.com",
+        "adriaWorkerSentryDsn": "https://example.com",
+        "reefguideWorkerSentryDsn": "https://example.com"
     }
 ```
