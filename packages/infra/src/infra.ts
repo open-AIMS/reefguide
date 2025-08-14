@@ -38,7 +38,14 @@ const ARC_GIS_ENDPOINTS = ['https://*.arcgis.com', 'https://*.arcgisonline.com']
  * @returns Array of Sentry DSN URLs to whitelist in Content Security Policy
  */
 export function getSentryUrlsForCSP(config: MonitoringConfig): string[] {
-  return Object.values(config).filter(dsn => dsn !== undefined);
+  const relevantUrls = [
+    config.adriaWorkerSentryDsn,
+    config.appSentryDsn,
+    config.capacityManagerSentryDsn,
+    config.reefguideWorkerSentryDsn,
+    config.webApiSentryDsn
+  ];
+  return relevantUrls.filter(dsn => dsn !== undefined);
 }
 
 export interface ReefguideWebApiProps extends cdk.StackProps {
