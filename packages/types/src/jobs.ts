@@ -10,11 +10,42 @@ export const sharedCriteriaSchema = z.object({
   region: z.string().describe('Region for assessment'),
   reef_type: z.string().describe('The type of reef, slopes or flats'),
   // Criteria - all optional to match the Union{Float64,Nothing} in worker
-  depth_min: z.number().optional().describe('The depth minimum (the deeper more negative value)'),
+  depth_min: z
+    .number()
+    .optional()
+    .describe(
+      'Depth minimum (negative values, relative to sea surface where values further away from 0 is deeper)'
+    ),
   depth_max: z
     .number()
     .optional()
-    .describe('The depth maximum (the shallower less negative value)'),
+    .describe(
+      'Depth maximum (negative values, relative to sea surface where values closer to 0 is shallower)'
+    ),
+  low_tide_min: z
+    .number()
+    .optional()
+    .describe(
+      'Low tide minimum (negative values, relative to sea surface where values further away from 0 is deeper)'
+    ),
+  low_tide_max: z
+    .number()
+    .optional()
+    .describe(
+      'Low tide maximum (negative values, relative to sea surface where values closer to 0 is shallower)'
+    ),
+  high_tide_min: z
+    .number()
+    .optional()
+    .describe(
+      'High tide minimum (negative values, relative to sea surface where values further away from 0 is deeper)'
+    ),
+  high_tide_max: z
+    .number()
+    .optional()
+    .describe(
+      'High tide maximum (negative values, relative to sea surface where values closer to 0 is shallower)'
+    ),
   slope_min: z.number().optional().describe('The slope range (min)'),
   slope_max: z.number().optional().describe('The slope range (max)'),
   rugosity_min: z.number().optional().describe('The rugosity range (min)'),
