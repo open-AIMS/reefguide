@@ -86,7 +86,15 @@ export class SelectionCriteriaComponent {
     map(resp => resp.regions)
   );
 
+  /**
+   * The slider definitions in the original order from the API.
+   */
   sliderDefs = signal<SliderDef[] | undefined>(undefined);
+
+  /**
+   * Slider definitions that are enabled, ordered according to criteriaOrder.
+   * The template uses this to render sliders.
+   */
   enabledSliderDefs = computed(() => {
     const sliderDefs = this.sliderDefs();
     if (!sliderDefs) {
@@ -190,7 +198,6 @@ export class SelectionCriteriaComponent {
 
     const availableCriteria = Object.values(regionCriteria);
 
-    // TODO order?
     const regionCriteriaRanges: SliderDef[] = [];
 
     // this a virtual criteria that will set
