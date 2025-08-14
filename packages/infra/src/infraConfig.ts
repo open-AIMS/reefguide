@@ -4,12 +4,16 @@ import * as z from 'zod';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
 export const MonitoringSchema = z.object({
-  /** The ARN of the Sentry DSN for the web API */
+  /** The Sentry DSN for the web API */
   webApiSentryDsn: z.string().url().optional(),
-  /** The ARN of the Sentry DSN for the app */
+  /** The Sentry DSN for the app */
   appSentryDsn: z.string().url().optional(),
-  /** The ARN of the Sentry DSN for the capacity manager service */
-  capacityManagerSentryDsn: z.string().url().optional()
+  /** The Sentry DSN for the capacity manager service */
+  capacityManagerSentryDsn: z.string().url().optional(),
+  /** The Sentry DSN for the ADRIA worker */
+  adriaWorkerSentryDsn: z.string().url().optional(),
+  /** The Sentry DSN for the reefguide worker */
+  reefguideWorkerSentryDsn: z.string().url().optional()
 });
 export type MonitoringConfig = z.infer<typeof MonitoringSchema>;
 
@@ -22,7 +26,9 @@ export const ReefGuideFrontendConfigSchema = z.object({
   appName: z.string().min(1, 'App name must not be empty').default('ReefGuide'),
   /** The email address of the admin user displayed as a contact email for
    * requesting access */
-  adminEmail: z.string().email()
+  adminEmail: z.string().email(),
+  /** If you would like to add additional CSP whitelists for script sources */
+  additionalCspWhitelists: z.array(z.string()).optional()
 });
 export type ReefGuideFrontendConfig = z.infer<typeof ReefGuideFrontendConfigSchema>;
 
