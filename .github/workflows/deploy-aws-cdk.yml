@@ -1,5 +1,5 @@
-# acknowledging reuse from OSS https://github.com/FAIMS/FAIMS3
-name: CDK Deploy reef guide web API to AWS
+# acknowledging extended from OSS https://github.com/FAIMS/FAIMS3
+name: CDK Deploy ReefGuide to AWS
 on:
   # Manually run deploy
   workflow_dispatch:
@@ -41,17 +41,17 @@ jobs:
           echo "Branch/Ref: ${{ github.ref }}"
           echo "Run ID: ${{ github.run_id }}"
           echo "========================================="
-          
+
       - name: Checkout main code
         uses: actions/checkout@v4
-        
+
       - name: Display Repository Info
         run: |
           echo "📁 Main repository cloned"
           echo "Commit SHA: ${{ github.sha }}"
           echo "Working directory contents:"
           ls -la
-          
+
       - name: Checkout config code
         uses: actions/checkout@v4
         with:
@@ -61,14 +61,14 @@ jobs:
           token: ${{ secrets.CDK_CONFIG_REPO_TOKEN }}
           # Where to clone the repo to
           path: packages/infra/config_repo
-          
+
       - name: Display Config Repository Info
         run: |
           echo "📁 Config repository checked out"
           echo "Config repo path: ${{ vars.CDK_CONFIG_REPO_PATH }}"
           echo "Config directory contents:"
           ls -la packages/infra/config_repo/ || echo "Config directory not found"
-          
+
       - name: Display CDK Configuration Variables
         run: |
           echo "========================================="
@@ -80,7 +80,7 @@ jobs:
           echo "CDK Config Repo Path: ${{ vars.CDK_CONFIG_REPO_PATH }}"
           echo "CDK Deploy GA Role ARN: ${{ vars.CDK_DEPLOY_GA_ROLE_ARN }}"
           echo "========================================="
-          
+
       - name: Run CDK Config Setup Action
         uses: ./.github/actions/config
         id: cdk-config-setup
@@ -89,7 +89,7 @@ jobs:
           environment: ${{ vars.CDK_DEPLOY_ENVIRONMENT }}
           branch: ${{ vars.CDK_DEPLOY_BRANCH }}
           config-repo-path: config_repo
-          
+
       - name: Display AWS Target Details
         run: |
           echo "========================================="
@@ -99,54 +99,54 @@ jobs:
           echo "AWS Account: ${{ steps.cdk-config-setup.outputs.aws-account }}"
           echo "Role to Assume: ${{ vars.CDK_DEPLOY_GA_ROLE_ARN }}"
           echo "========================================="
-          
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ vars.CDK_DEPLOY_GA_ROLE_ARN }}
           aws-region: ${{ steps.cdk-config-setup.outputs.aws-region }}
-          
+
       - name: Verify AWS Configuration
         run: |
           echo "🔐 Verifying AWS credentials..."
           aws sts get-caller-identity
           echo "Current AWS region: $(aws configure get region)"
-          
+
       - id: install-aws-cli
         uses: unfor19/install-aws-cli-action@v1
-        
+
       - name: Display AWS CLI Version
         run: |
           echo "📦 AWS CLI installed:"
           aws --version
-          
+
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          
+
       - name: Display Node.js Version
         run: |
           echo "📦 Node.js setup complete:"
           echo "Node version: $(node --version)"
           echo "NPM version: $(npm --version)"
-          
+
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 10
-          
+
       - name: Display pnpm Version
         run: |
           echo "📦 pnpm installed:"
           echo "pnpm version: $(pnpm --version)"
-          
+
       - name: Get pnpm store directory
         shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
           echo "📁 pnpm store path: $(pnpm store path --silent)"
-          
+
       - name: Setup pnpm cache
         uses: actions/cache@v3
         with:
@@ -154,19 +154,19 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-            
+
       - name: Install dependencies
         run: |
           echo "📦 Installing project dependencies..."
           pnpm install
           echo "✅ Dependencies installed successfully"
-          
+
       - name: Build the infra package
         run: |
           echo "🏗️  Building infrastructure package..."
           pnpm exec turbo run build --filter=@reefguide/infra
           echo "✅ Infrastructure package built successfully"
-          
+
       - name: Display Final Configuration Before CDK
         working-directory: packages/infra
         run: |
@@ -182,13 +182,13 @@ jobs:
           echo "Contents:"
           ls -la
           echo "========================================="
-          
+
       - name: Run CDK Command
         working-directory: packages/infra
         run: |
           export CONFIG_FILE_NAME=${{ vars.CDK_DEPLOY_ENVIRONMENT }}.json
           echo "🎯 CONFIG_FILE_NAME set to: $CONFIG_FILE_NAME"
-          
+
           if [ "${{ github.event.inputs.action }}" = "deploy" ]; then
             echo "🚀 Starting CDK deployment..."
             echo "Command: pnpm exec cdk deploy --require-approval never"
