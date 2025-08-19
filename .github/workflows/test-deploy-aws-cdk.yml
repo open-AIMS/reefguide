@@ -1,0 +1,95 @@
+# acknowledging reuse from OSS https://github.com/FAIMS/FAIMS3
+name: (Test) CDK Deploy reef guide web API to AWS
+on:
+  # Manually run deploy
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Choose action to perform'
+        required: true
+        default: 'diff'
+        type: choice
+        options:
+          - deploy
+          - diff
+      environment:
+        description: 'Which GitHub environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - test
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  cdk-deploy:
+    # This means the workflow can only run from dev protected branches e.g. main
+    environment: ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main code
+        uses: actions/checkout@v4
+      - name: Checkout config code
+        uses: actions/checkout@v4
+        with:
+          # e.g. org/repo-name
+          repository: ${{ vars.CDK_CONFIG_REPO_PATH }}
+          # The OAuth token providing access
+          token: ${{ secrets.CDK_CONFIG_REPO_TOKEN }}
+          # Where to clone the repo to
+          path: packages/infra/config_repo
+      - name: Run CDK Config Setup Action
+        uses: ./.github/actions/config
+        id: cdk-config-setup
+        with:
+          namespace: ${{ vars.CDK_DEPLOY_NAMESPACE }}
+          environment: ${{ vars.CDK_DEPLOY_ENVIRONMENT }}
+          branch: ${{ vars.CDK_DEPLOY_BRANCH }}
+          config-repo-path: config_repo
+      - name: Display AWS Target Details
+        run: |
+          echo "Deploying to:"
+          echo "AWS Region: ${{ steps.cdk-config-setup.outputs.aws-region }}"
+          echo "AWS Account: ${{ steps.cdk-config-setup.outputs.aws-account }}"
+        # You can now use these outputs in subsequent steps for AWS configuration
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ vars.CDK_DEPLOY_GA_ROLE_ARN }}
+          aws-region: ${{ steps.cdk-config-setup.outputs.aws-region }}
+      - id: install-aws-cli
+        uses: unfor19/install-aws-cli-action@v1
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: Install dependencies
+        run: pnpm install
+      - name: Build the infra package
+        run: |
+          pnpm exec turbo run build --filter=@reefguide/infra
+      - name: Install dependencies and run CDK deploy
+        working-directory: packages/infra
+        run: |
+          export CONFIG_FILE_NAME=${{ vars.CDK_DEPLOY_ENVIRONMENT }}.json
+          if [ "${{ github.event.inputs.action }}" = "deploy" ]; then
+            pnpm exec cdk deploy --require-approval never
+          else
+            pnpm exec cdk diff
+          fi
