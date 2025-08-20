@@ -4,7 +4,6 @@ on:
     branches:
       - main
       - chirpy-theme
-
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -21,38 +20,40 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
+          
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v4
-
+        
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.3
           bundler-cache: true
-
+          working-directory: ./docs
+          
       - name: Build site
-        run: cd docs && bundle exec jekyll b -d "_site${{ steps.pages.outputs.base_path }}"
+        run: bundle exec jekyll b -d "_site${{ steps.pages.outputs.base_path }}"
+        working-directory: ./docs
         env:
           JEKYLL_ENV: "production"
-
+          
       - name: Test site
         run: |
-          cd docs && bundle exec htmlproofer _site \
-            \-\-disable-external \
-            \-\-ignore-urls "/^http:\/\/127.0.0.1/,/^http:\/\/0.0.0.0/,/^http:\/\/localhost/"
-
+          bundle exec htmlproofer _site \
+            --disable-external \
+            --ignore-urls "/^http:\/\/127.0.0.1/,/^http:\/\/0.0.0.0/,/^http:\/\/localhost/"
+        working-directory: ./docs
+        
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "_site${{ steps.pages.outputs.base_path }}"
+          path: "docs/_site${{ steps.pages.outputs.base_path }}"
 
   deploy:
     environment:
