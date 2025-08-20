@@ -92,4 +92,4 @@ To debug, if something goes wrong, consider
 
 If the job never, runs, is something going wrong with ECS?
 
-See [debugging ReefGuide](./debugging-reefguide#debugging-ecs-worker-nodes) for details on how to monitor/debug ECS nodes that won't start, or fail.
+See [debugging ReefGuide](./debugging-reefguide#debugging-ecs-services-and-tasks) for details on how to monitor/debug ECS nodes that won't start, or fail.
