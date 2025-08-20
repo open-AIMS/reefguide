@@ -31,6 +31,7 @@ A REST API to support Reef Guide (AIMS), built with Express, TypeScript, Zod and
 - [Security](#security-1)
 - [Notes](#notes-1)
 - [Troubleshooting](#troubleshooting)
+- [EFS Management Scripts](#efs-management-scripts)
 
 ## CDK Infrastructure
 
