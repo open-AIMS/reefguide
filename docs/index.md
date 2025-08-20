@@ -1,5 +1,6 @@
 ---
 title: ReefGuide Documentation
+layout: home
 ---
 
 Documentation for ReefGuide, a cloud-based platform for reef management and analysis, deployed on AWS infrastructure.
