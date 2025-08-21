@@ -12,6 +12,12 @@ Guide to deploying ReefGuide infrastructure using AWS CDK, including prerequisit
 
 ## Operations & Management
 
+### [Managing Users](./managing-user-access.md)
+
+How to manage user registration, roles and bulk changes.
+
+**Use cases:** Helping users register, pre-authorising users, managing users in bulk
+
 ### [Managing EFS Data](./managing-efs-data.md)
 
 Instructions for reading, writing, and managing files in the shared job system storage using AWS Elastic File System (EFS).
