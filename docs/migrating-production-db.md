@@ -99,3 +99,41 @@ pnpm prisma migrate status
 # Optionally run Prisma Studio to inspect the database
 pnpm prisma studio
 ```
+
+## Running psql shell commands
+
+You can also manually connect to the pg db using the psql CLI commands.
+
+First, install the PostgreSQL client tools, on ubuntu systems, for example:
+
+```bash
+sudo apt update
+sudo apt install postgresql-client
+```
+
+Then you can use the `db` package scripts available in `packages/db`.
+
+First, setup the .env file
+
+```
+cd packages/db
+cp .env.dist .env
+```
+
+Then update the `DATABASE_URL` in the `.env` file - this process is detailed above in [migrating production DB](#fill-out-env-with-db-connection-details).
+
+You may need to remove some of the unsupported parameters from the connection string.
+
+This format works:
+
+```
+DATABASE_URL=postgresql://reefguide:PASSWORD@HOSTNAME/reefguide?sslmode=require
+```
+
+Then run
+
+```bash
+pnpm run db:shell
+```
+
+This will provide a `psql` shell, if needed for custom queries/ops.
