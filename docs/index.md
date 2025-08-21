@@ -24,6 +24,12 @@ Guide for migrating databases using the Prisma ORM, including credential managem
 
 **When to use:** Schema updates, production database changes
 
+### [Database Backup and Restore](./backup-and-restore-db.md)
+
+Guide for dumping and restoring data from the PostgreSQL application database.
+
+**When to use:** Taking backups, restoring from backups, disaster recovery
+
 ### [Setting up the ReefGuide CLI](./setting-up-reefguide-cli.md)
 
 Configure the administrative command-line interface for managing ReefGuide instances, including user management and system operations.
