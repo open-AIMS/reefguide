@@ -1,5 +1,3 @@
-import { withFetch } from '@angular/common/http';
-
 export interface ResultSetInfo {
   id: string;
   title: string;
