@@ -5,21 +5,8 @@
   font-weight: 400;
 }
 
-.dialog-content {
-  padding: 24px !important;
-  margin: 0;
-  max-width: none;
-  min-height: 450px;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
 .form-section {
-  margin-bottom: 32px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
+  padding-bottom: 32px;
 
   h3 {
     margin: 0 0 20px 0;
@@ -103,8 +90,7 @@
 }
 
 .project-type-content {
-  padding: 24px;
-  padding-right: 72px; // Increased space for radio button + margin
+  padding: 16px;
   width: 100%;
   background-color: white;
   border-radius: 10px;
@@ -207,10 +193,12 @@
   }
 }
 
-// Dialog title styling to ensure proper padding
-::ng-deep .mat-mdc-dialog-title {
-  padding: 16px 24px 0 24px !important;
-  margin: 0 !important;
+[mat-dialog-title] {
+  // title is within dialog content, so remove padding
+  padding: 0 0 16px 0;
+   h2 {
+     margin: 0;
+   }
 }
 
 // Ensure dialog container can grow

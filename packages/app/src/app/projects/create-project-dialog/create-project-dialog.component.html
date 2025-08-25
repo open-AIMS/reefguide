@@ -1,12 +1,13 @@
 <form [formGroup]="createForm" (ngSubmit)="onSubmit()">
-  <div mat-dialog-title>
-    <h2>Create New Project</h2>
-    <p class="dialog-subtitle">
-      Choose a project type and provide basic information to get started.
-    </p>
-  </div>
-
   <div mat-dialog-content class="dialog-content">
+
+    <div mat-dialog-title>
+      <h2>Create New Project</h2>
+      <p class="dialog-subtitle">
+        Choose a project type and provide basic information to get started.
+      </p>
+    </div>
+
     <!-- Project Type Selection -->
     <div class="form-section">
       <h3>Project Type</h3>
