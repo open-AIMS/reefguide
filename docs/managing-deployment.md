@@ -10,6 +10,20 @@ CDK compiles or 'synths' to Cloudformation templates, which AWS's CloudFormation
 
 ReefGuide has it's infrastructure defined in a stack in the `packages/infra` folder.
 
+## How to update your stack
+
+Usually, after merging changes to whatever git source you are deploying from, updating ReefGuide is a matter of:
+
+- ensuring git is updated/pushed
+- running the CDK deploy pipeline
+- running any DB migrations if needed - see [here](./migrating-production-db.md)
+- managing any data changes needed - see [here](./managing-efs-data.md)
+
+The process below explains the two methods to run the CDK deploy operation:
+
+- [manually](#manual-cdk-operations)
+- [GH actions pipeline](#github-actions-and-cdk)
+
 ## Manual CDK operations
 
 To run manual CDK operations, refer to the extensive guide [here](./deploying-with-cdk). If you have an existing deployment, you can skip to [CDK operations](./deploying-with-cdk#cdk-operations).

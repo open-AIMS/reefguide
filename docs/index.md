@@ -8,9 +8,13 @@ Documentation for ReefGuide, a cloud-based platform for reef management and anal
 
 ### [Deploying with CDK](./deploying-with-cdk.md)
 
-Guide to deploying ReefGuide infrastructure using AWS CDK, including prerequisites, configuration setup, and deployment operations.
+Guide to deploying ReefGuide infrastructure 'from-scratch' using AWS CDK, including prerequisites, configuration setup, and deployment operations.
 
 ## Operations & Management
+
+### [Performing CDK operations on ReefGuide](./managing-deployment.md)
+
+Once you have a deployed CDK ReefGuide stack, how do you maintain it i.e. run CDK deploy, diff, destroy. This guide explains the high level steps to deploy an update to ReefGuide.
 
 ### [Managing Users](./managing-user-access.md)
 
