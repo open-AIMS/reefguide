@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { User, UserRole } from '@reefguide/db';
 import { WebApiService } from '../../../../api/web-api.service';
+import { ALL_USER_ROLES } from '../../../../util/user-util';
 
 @Component({
   selector: 'app-user-edit-roles-dialog',
@@ -24,7 +25,7 @@ import { WebApiService } from '../../../../api/web-api.service';
 export class UserEditRolesDialogComponent {
   readonly webApiService = inject(WebApiService);
   readonly dialogRef = inject(MatDialogRef<UserEditRolesDialogComponent>);
-  readonly availableRoles: UserRole[] = ['ADMIN'];
+  readonly availableRoles: UserRole[] = ALL_USER_ROLES;
 
   data = inject<{ user?: User }>(MAT_DIALOG_DATA);
 

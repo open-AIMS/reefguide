@@ -14,6 +14,7 @@ import { of } from 'rxjs';
 import { MatIconModule } from '@angular/material/icon';
 import { WebApiService } from '../../../../api/web-api.service';
 import { UserRole } from '@reefguide/db';
+import { ALL_USER_ROLES } from '../../../../util/user-util';
 
 interface CreateUserForm {
   email: FormControl<string>;
@@ -43,7 +44,7 @@ export class AdminCreateUserDialogComponent {
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly availableRoles: UserRole[] = ['ADMIN'];
+  readonly availableRoles: UserRole[] = ALL_USER_ROLES;
   readonly isSubmitting = signal(false);
   hidePassword = true;
 
