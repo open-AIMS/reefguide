@@ -1,5 +1,5 @@
 import { JobType } from '@reefguide/db';
-import { Annotations, Duration, IgnoreMode, Stack } from 'aws-cdk-lib';
+import { Annotations, CfnOutput, Duration, IgnoreMode, Stack } from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as efs from 'aws-cdk-lib/aws-efs';
@@ -9,6 +9,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as sm from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 import { STANDARD_EXCLUSIONS } from '../infra';
+import { slugify } from './networking';
 
 // Define job type configuration
 export interface JobTypeConfig {
@@ -201,13 +202,13 @@ export class JobSystem extends Construct {
     }
 
     // Create task definition for capacity manager
-    const capacityManagerTask = new ecs.FargateTaskDefinition(this, 'capacity-manager-task', {
+    const capacityManagerTaskDfn = new ecs.FargateTaskDefinition(this, 'capacity-manager-task', {
       cpu: props.capacityManager.cpu,
       memoryLimitMiB: props.capacityManager.memoryLimitMiB
     });
 
     // Grant capacity manager permissions to manage ECS tasks
-    capacityManagerTask.addToTaskRolePolicy(
+    capacityManagerTaskDfn.addToTaskRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['ecs:RunTask', 'ecs:StopTask', 'ecs:DescribeTasks', 'ecs:ListTasks'],
@@ -216,7 +217,7 @@ export class JobSystem extends Construct {
     );
 
     // Also enable describing subnets
-    capacityManagerTask.addToTaskRolePolicy(
+    capacityManagerTaskDfn.addToTaskRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['ec2:DescribeSubnets'],
@@ -225,7 +226,7 @@ export class JobSystem extends Construct {
     );
 
     // Add permissions to pass the task execution and task roles
-    capacityManagerTask.addToTaskRolePolicy(
+    capacityManagerTaskDfn.addToTaskRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['iam:PassRole'],
@@ -248,7 +249,7 @@ export class JobSystem extends Construct {
     );
 
     // Add capacity manager container
-    capacityManagerTask.addContainer('capacity-manager', {
+    capacityManagerTaskDfn.addContainer('capacity-manager', {
       // Docker command - node entrypoint
       command: ['packages/capacity-manager/build/src/index.js'],
       image: ecs.ContainerImage.fromAsset('../..', {
@@ -309,7 +310,7 @@ export class JobSystem extends Construct {
     // Create the capacity manager service
     this.capacityManagerService = new ecs.FargateService(this, 'capacity-manager', {
       cluster: props.cluster,
-      taskDefinition: capacityManagerTask,
+      taskDefinition: capacityManagerTaskDfn,
       desiredCount: 1, // We only need one instance
       securityGroups: [capacityManagerSg],
       assignPublicIp: true,
@@ -340,11 +341,17 @@ export class JobSystem extends Construct {
     }
 
     // Update capacity manager container with task definition configurations
-    const capacityManagerContainer = capacityManagerTask.findContainer('capacity-manager');
+    const capacityManagerContainer = capacityManagerTaskDfn.findContainer('capacity-manager');
     if (capacityManagerContainer) {
       Object.entries(taskDefEnvVars).forEach(([key, value]) => {
         capacityManagerContainer.addEnvironment(key, value);
       });
     }
+
+    // Outputs
+    new CfnOutput(this, 'task-dfn-output', {
+      value: capacityManagerTaskDfn.taskDefinitionArn,
+      key: slugify(Stack.of(this).stackName) + 'capacityManagerTaskDfn'
+    });
   }
 }

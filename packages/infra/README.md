@@ -32,6 +32,7 @@ A REST API to support Reef Guide (AIMS), built with Express, TypeScript, Zod and
 - [Notes](#notes-1)
 - [Troubleshooting](#troubleshooting)
 - [EFS Management Scripts](#efs-management-scripts)
+- [Environment Configuration Scripts](#environment-configuration-scripts)
 
 ## CDK Infrastructure
 
@@ -426,3 +427,44 @@ ls -la /home/ubuntu/efs/
 #### Instance States
 
 Scripts automatically handle starting stopped EC2 instances and waiting for SSM connectivity.
+
+## Environment Configuration Scripts
+
+You can use the below script to bootstrap an `.env` file for the targeted AWS deployment, allowing for local development against real ECS resources.
+
+### `build-capacity-env.sh` - Generate .env from ECS Task Definition
+
+Automatically generates a `.env` file by extracting environment variables and secrets from a deployed ECS task definition. This script fetches the task definition from CloudFormation outputs and resolves AWS Secrets Manager references to their actual values.
+
+#### Usage
+
+```bash
+# Using config file (recommended)
+CONFIG_FILE_NAME=test.json ./build-capacity-env.sh
+
+# Using config file with custom output path
+CONFIG_FILE_NAME=prod.json ./build-capacity-env.sh '' ./configs/capacity.env
+
+# Override with specific stack name
+./build-capacity-env.sh my-stack-name
+
+# Custom stack and output file
+./build-capacity-env.sh my-stack-name ./capacity-manager/.env
+```
+
+#### Arguments
+
+- `stack-name` (optional): CloudFormation stack name. If not provided, reads from config file using `CONFIG_FILE_NAME`
+- `output-file` (optional): Output .env file path (default: `../../capacity-manager/.env`)
+
+#### Environment Variables
+
+- `CONFIG_FILE_NAME`: Config file name (e.g., `test.json`, `prod.json`)
+- `AWS_REGION`: AWS region (uses AWS CLI default if not set)
+
+#### What it does
+
+1. **Discovers task definition** from CloudFormation stack outputs
+2. **Extracts environment variables** from the ECS task definition
+3. **Resolves AWS Secrets Manager references** to actual secret values
+4. **Generates .env file** with all variables ready for local development
