@@ -201,9 +201,9 @@ form {
 [mat-dialog-title] {
   // title is within dialog content, so remove padding
   padding: 0 0 16px 0;
-   h2 {
-     margin: 0;
-   }
+  h2 {
+    margin: 0;
+  }
 }
 
 // Ensure dialog container can grow
