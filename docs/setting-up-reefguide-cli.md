@@ -1,4 +1,6 @@
-# Setting up the ReefGuide CLI
+---
+title: Setting up the ReefGuide CLI
+---
 
 The CLI provides administrative management functions for operating a running ReefGuide instance. It requires some quick setup.
 
