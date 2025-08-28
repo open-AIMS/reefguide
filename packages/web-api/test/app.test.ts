@@ -2317,9 +2317,6 @@ describe('API', () => {
           .send({ email: user1Email })
           .expect(200);
 
-        // Wait slightly to avoid rate limit
-        await new Promise(resolve => setTimeout(resolve, 5001));
-
         // Create second reset code
         await request(app)
           .post('/api/password-reset/request')
@@ -2466,9 +2463,6 @@ describe('API', () => {
       });
 
       it('should invalidate all other user reset codes when one is used', async () => {
-        // Create multiple reset codes for the user
-        await new Promise(resolve => setTimeout(resolve, 5001)); // Wait to avoid rate limit
-
         await request(app)
           .post('/api/password-reset/request')
           .send({ email: user1Email })
