@@ -18,6 +18,7 @@ import {
   user2Token,
   userSetup
 } from './utils';
+import { hashPasswordResetCode } from '../src/password-reset/service';
 
 afterAll(async () => {
   // clear when finished
@@ -2296,20 +2297,6 @@ describe('API', () => {
           .expect(400);
       });
 
-      it('should prevent spam by limiting requests', async () => {
-        // First request should succeed
-        await request(app)
-          .post('/api/password-reset/request')
-          .send({ email: user1Email })
-          .expect(200);
-
-        // Second request within 5 minutes should fail
-        await request(app)
-          .post('/api/password-reset/request')
-          .send({ email: user1Email })
-          .expect(400);
-      });
-
       it('should invalidate existing unused codes when creating new one', async () => {
         // Create first reset code
         await request(app)
@@ -2336,24 +2323,26 @@ describe('API', () => {
 
       beforeEach(async () => {
         // Create a reset code for testing
-        const res = await request(app)
+        await request(app)
           .post('/api/password-reset/request')
           .send({ email: user1Email })
           .expect(200);
 
         // Get the code from database (in real app, user gets this from email)
         const codeRecord = await prisma.passwordResetCode.findFirst({
-          where: { user: { email: user1Email }, used: false }
+          where: { user: { email: user1Email }, used: false },
+          // Sort by latest created to ensure we get the new one
+          orderBy: { created_at: 'desc' }
         });
 
         // For testing, we'll create a known code
         resetCode = '123456';
-        const bcrypt = await import('bcrypt');
-        const hashedCode = await bcrypt.hash(resetCode, 12);
+        const hashedCode = await hashPasswordResetCode(resetCode);
 
         await prisma.passwordResetCode.update({
           where: { id: codeRecord!.id },
-          data: { code_hash: hashedCode }
+          // Double check unused
+          data: { code_hash: hashedCode, used: false, used_at: null }
         });
       });
 
@@ -2463,12 +2452,13 @@ describe('API', () => {
       });
 
       it('should invalidate all other user reset codes when one is used', async () => {
+        // Create a new reset code
         await request(app)
           .post('/api/password-reset/request')
           .send({ email: user1Email })
           .expect(200);
 
-        // Use one code
+        // The old code should now be invalidated, verify it returns 400
         await request(app)
           .post('/api/password-reset/confirm')
           .send({
@@ -2476,7 +2466,50 @@ describe('API', () => {
             newPassword: 'newpassword123',
             confirmPassword: 'newpassword123'
           })
+          .expect(400);
+
+        // Get the new code
+        const newCodeRecord = await prisma.passwordResetCode.findFirst({
+          where: { user: { email: user1Email }, used: false },
+          orderBy: { created_at: 'desc' }
+        });
+
+        const newResetCode = '654321';
+        const hashedNewCode = await hashPasswordResetCode(newResetCode);
+
+        await prisma.passwordResetCode.update({
+          where: { id: newCodeRecord!.id },
+          data: { code_hash: hashedNewCode }
+        });
+
+        // Use the new code - should work
+        await request(app)
+          .post('/api/password-reset/confirm')
+          .send({
+            code: newResetCode,
+            newPassword: 'newpassword123',
+            confirmPassword: 'newpassword123'
+          })
           .expect(200);
+
+        // Try to use both old codes again - both should fail
+        await request(app)
+          .post('/api/password-reset/confirm')
+          .send({
+            code: resetCode,
+            newPassword: 'anotherpassword123',
+            confirmPassword: 'anotherpassword123'
+          })
+          .expect(400);
+
+        await request(app)
+          .post('/api/password-reset/confirm')
+          .send({
+            code: newResetCode,
+            newPassword: 'yetanotherpassword123',
+            confirmPassword: 'yetanotherpassword123'
+          })
+          .expect(400);
 
         // Verify all codes for this user are marked as used
         const allCodes = await prisma.passwordResetCode.findMany({

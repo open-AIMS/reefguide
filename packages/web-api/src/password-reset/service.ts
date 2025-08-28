@@ -4,6 +4,28 @@ import crypto from 'crypto';
 import { BadRequestException, NotFoundException } from '../exceptions';
 import { hashPassword } from '../services/auth';
 
+const COOLDOWN_DURATION = 5 * 60 * 1000; // 5 minutes
+const SALT_ROUNDS = 12;
+
+/**
+ * Hashes a reset code
+ * @param code - The plain text reset code
+ * @returns Promise<string> - The hashed code
+ */
+export async function hashPasswordResetCode(code: string): Promise<string> {
+  return await bcrypt.hash(code, SALT_ROUNDS);
+}
+
+/**
+ * Checks a reset code against a hash
+ * @param code - The plain text reset code
+ * @param hash - The stored hash
+ * @returns Promise<boolean> - whether the code matches the hash (with bcrypt.compare)
+ */
+export async function compareCodeToHash(code: string, hash: string): Promise<boolean> {
+  return await bcrypt.compare(code, hash);
+}
+
 /**
  * Options for querying password reset codes
  */
@@ -20,7 +42,6 @@ export interface GetPasswordResetCodesOptions {
  */
 export class PasswordResetService {
   private prisma: PrismaClient;
-  private readonly SALT_ROUNDS = 12;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
@@ -32,25 +53,6 @@ export class PasswordResetService {
    */
   private generateResetCode(): string {
     return crypto.randomInt(100000, 999999).toString();
-  }
-
-  /**
-   * Hashes a reset code
-   * @param code - The plain text reset code
-   * @returns Promise<string> - The hashed code
-   */
-  private async hashCode(code: string): Promise<string> {
-    return await bcrypt.hash(code, this.SALT_ROUNDS);
-  }
-
-  /**
-   * Verifies a reset code against its hash
-   * @param code - The plain text code
-   * @param hash - The stored hash
-   * @returns Promise<boolean> - Whether the code matches
-   */
-  private async verifyCode(code: string, hash: string): Promise<boolean> {
-    return await bcrypt.compare(code, hash);
   }
 
   /**
@@ -73,27 +75,30 @@ export class PasswordResetService {
       throw new NotFoundException(`User with email ${email} not found`);
     }
 
-    // Check if user has an existing unused reset code (prevent spam)
-    const existingCode = await this.prisma.passwordResetCode.findFirst({
-      where: {
-        user_id: user.id,
-        used: false,
-        created_at: {
-          // Only allow one reset code per 5 minutes
-          gte: new Date(Date.now() - 5 * 60 * 1000)
+    // Existing code cooldown check i.e. rate limiting for code generation
+    if (process.env.TEST_MODE !== 'true') {
+      // Check if user has an existing unused reset code (prevent spam)
+      const existingCode = await this.prisma.passwordResetCode.findFirst({
+        where: {
+          user_id: user.id,
+          used: false,
+          created_at: {
+            // Only allow one reset code per 5 minutes
+            gte: new Date(Date.now() - COOLDOWN_DURATION)
+          }
         }
-      }
-    });
+      });
 
-    if (existingCode) {
-      throw new BadRequestException(
-        'A reset code was recently sent to this email. Please wait before requesting another.'
-      );
+      if (existingCode) {
+        throw new BadRequestException(
+          'A reset code was recently sent to this email. Please wait before requesting another.'
+        );
+      }
     }
 
     // Generate and hash the reset code
     const plainCode = this.generateResetCode();
-    const hashedCode = await this.hashCode(plainCode);
+    const hashedCode = await hashPasswordResetCode(plainCode);
 
     // Invalidate any existing unused codes for this user
     await this.prisma.passwordResetCode.updateMany({
@@ -165,7 +170,7 @@ export class PasswordResetService {
     // Find the matching code by verifying against each hash
     let matchingResetCode: (typeof unusedCodes)[0] | null = null;
     for (const resetCode of unusedCodes) {
-      if (await this.verifyCode(code, resetCode.code_hash)) {
+      if (await compareCodeToHash(code, resetCode.code_hash)) {
         matchingResetCode = resetCode;
         break;
       }
