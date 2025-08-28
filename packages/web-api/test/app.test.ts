@@ -2256,4 +2256,240 @@ describe('API', () => {
       });
     });
   });
+  describe('Password Reset', () => {
+    describe('POST /api/password-reset/request', () => {
+      it('should create a reset code for valid email', async () => {
+        const res = await request(app)
+          .post('/api/password-reset/request')
+          .send({ email: user1Email })
+          .expect(200);
+
+        expect(res.body.message).toContain('reset code has been sent');
+
+        // Verify reset code was created in database
+        const resetCode = await prisma.passwordResetCode.findFirst({
+          where: { user: { email: user1Email }, used: false }
+        });
+        expect(resetCode).toBeTruthy();
+        expect(resetCode?.expires_at.getTime()).toBeGreaterThan(Date.now());
+      });
+
+      it('should return same message for non-existent email (security)', async () => {
+        const res = await request(app)
+          .post('/api/password-reset/request')
+          .send({ email: 'nonexistent@example.com' })
+          .expect(200);
+
+        expect(res.body.message).toContain('reset code has been sent');
+
+        // Verify no reset code was created
+        const resetCode = await prisma.passwordResetCode.findFirst({
+          where: { user: { email: 'nonexistent@example.com' } }
+        });
+        expect(resetCode).toBeNull();
+      });
+
+      it('should return 400 for invalid email format', async () => {
+        await request(app)
+          .post('/api/password-reset/request')
+          .send({ email: 'invalid-email' })
+          .expect(400);
+      });
+
+      it('should prevent spam by limiting requests', async () => {
+        // First request should succeed
+        await request(app)
+          .post('/api/password-reset/request')
+          .send({ email: user1Email })
+          .expect(200);
+
+        // Second request within 5 minutes should fail
+        await request(app)
+          .post('/api/password-reset/request')
+          .send({ email: user1Email })
+          .expect(400);
+      });
+
+      it('should invalidate existing unused codes when creating new one', async () => {
+        // Create first reset code
+        await request(app)
+          .post('/api/password-reset/request')
+          .send({ email: user1Email })
+          .expect(200);
+
+        // Wait slightly to avoid rate limit
+        await new Promise(resolve => setTimeout(resolve, 5001));
+
+        // Create second reset code
+        await request(app)
+          .post('/api/password-reset/request')
+          .send({ email: user1Email })
+          .expect(200);
+
+        // Verify only one unused code exists
+        const unusedCodes = await prisma.passwordResetCode.findMany({
+          where: { user: { email: user1Email }, used: false }
+        });
+        expect(unusedCodes).toHaveLength(1);
+      });
+    });
+
+    describe('POST /api/password-reset/confirm', () => {
+      let resetCode: string;
+
+      beforeEach(async () => {
+        // Create a reset code for testing
+        const res = await request(app)
+          .post('/api/password-reset/request')
+          .send({ email: user1Email })
+          .expect(200);
+
+        // Get the code from database (in real app, user gets this from email)
+        const codeRecord = await prisma.passwordResetCode.findFirst({
+          where: { user: { email: user1Email }, used: false }
+        });
+
+        // For testing, we'll create a known code
+        resetCode = '123456';
+        const bcrypt = await import('bcrypt');
+        const hashedCode = await bcrypt.hash(resetCode, 12);
+
+        await prisma.passwordResetCode.update({
+          where: { id: codeRecord!.id },
+          data: { code_hash: hashedCode }
+        });
+      });
+
+      it('should reset password with valid code', async () => {
+        const newPassword = 'newpassword123';
+
+        const res = await request(app)
+          .post('/api/password-reset/confirm')
+          .send({
+            code: resetCode,
+            newPassword,
+            confirmPassword: newPassword
+          })
+          .expect(200);
+
+        expect(res.body.message).toContain('Password has been successfully reset');
+
+        // Verify password was updated by trying to login
+        await request(app)
+          .post('/api/auth/login')
+          .send({ email: user1Email, password: newPassword })
+          .expect(200);
+
+        // Verify reset code was marked as used
+        const usedCode = await prisma.passwordResetCode.findFirst({
+          where: { user: { email: user1Email } },
+          orderBy: { created_at: 'desc' }
+        });
+        expect(usedCode?.used).toBe(true);
+        expect(usedCode?.used_at).toBeTruthy();
+      });
+
+      it('should return 400 for invalid reset code', async () => {
+        await request(app)
+          .post('/api/password-reset/confirm')
+          .send({
+            code: '999999',
+            newPassword: 'newpassword123',
+            confirmPassword: 'newpassword123'
+          })
+          .expect(400);
+      });
+
+      it('should return 400 for expired reset code', async () => {
+        // Update code to be expired
+        const codeRecord = await prisma.passwordResetCode.findFirst({
+          where: { user: { email: user1Email }, used: false }
+        });
+
+        await prisma.passwordResetCode.update({
+          where: { id: codeRecord!.id },
+          data: { expires_at: new Date(Date.now() - 1000) } // 1 second ago
+        });
+
+        await request(app)
+          .post('/api/password-reset/confirm')
+          .send({
+            code: resetCode,
+            newPassword: 'newpassword123',
+            confirmPassword: 'newpassword123'
+          })
+          .expect(400);
+      });
+
+      it('should return 400 for already used reset code', async () => {
+        // Use the code once
+        await request(app)
+          .post('/api/password-reset/confirm')
+          .send({
+            code: resetCode,
+            newPassword: 'newpassword123',
+            confirmPassword: 'newpassword123'
+          })
+          .expect(200);
+
+        // Try to use it again
+        await request(app)
+          .post('/api/password-reset/confirm')
+          .send({
+            code: resetCode,
+            newPassword: 'anotherpassword123',
+            confirmPassword: 'anotherpassword123'
+          })
+          .expect(400);
+      });
+
+      it('should return 400 for password confirmation mismatch', async () => {
+        await request(app)
+          .post('/api/password-reset/confirm')
+          .send({
+            code: resetCode,
+            newPassword: 'newpassword123',
+            confirmPassword: 'differentpassword123'
+          })
+          .expect(400);
+      });
+
+      it('should return 400 for weak password', async () => {
+        await request(app)
+          .post('/api/password-reset/confirm')
+          .send({
+            code: resetCode,
+            newPassword: 'weak',
+            confirmPassword: 'weak'
+          })
+          .expect(400);
+      });
+
+      it('should invalidate all other user reset codes when one is used', async () => {
+        // Create multiple reset codes for the user
+        await new Promise(resolve => setTimeout(resolve, 5001)); // Wait to avoid rate limit
+
+        await request(app)
+          .post('/api/password-reset/request')
+          .send({ email: user1Email })
+          .expect(200);
+
+        // Use one code
+        await request(app)
+          .post('/api/password-reset/confirm')
+          .send({
+            code: resetCode,
+            newPassword: 'newpassword123',
+            confirmPassword: 'newpassword123'
+          })
+          .expect(200);
+
+        // Verify all codes for this user are marked as used
+        const allCodes = await prisma.passwordResetCode.findMany({
+          where: { user: { email: user1Email } }
+        });
+        expect(allCodes.every(code => code.used)).toBe(true);
+      });
+    });
+  });
 });
