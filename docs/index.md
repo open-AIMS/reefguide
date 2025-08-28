@@ -10,6 +10,10 @@ Documentation for ReefGuide, a cloud-based platform for reef management and anal
 
 Guide to deploying ReefGuide infrastructure 'from-scratch' using AWS CDK, including prerequisites, configuration setup, and deployment operations.
 
+### [Component overview](./component-overview.md)
+
+Provides a high level description of the pieces that form ReefGuide.
+
 ## Development
 
 ### [Locally developing the capacity manager](./locally-developing-capacity-manager.md)
@@ -17,6 +21,10 @@ Guide to deploying ReefGuide infrastructure 'from-scratch' using AWS CDK, includ
 Guide for developing and debugging the capacity manager locally against AWS infrastructure, including environment setup and configuration generation.
 
 **Use cases:** Developing capacity manager features, debugging job system issues, testing worker scaling
+
+### [Unit tests and linting](./unit-tests-and-linting.md)
+
+How to run the unit tests, format and lint code, locally.
 
 ## Operations & Management
 
@@ -35,6 +43,12 @@ How to manage user registration, roles and bulk changes.
 Instructions for reading, writing, and managing files in the shared job system storage using AWS Elastic File System (EFS).
 
 **Use cases:** Updating data files, managing worker node data, file system operations
+
+### [Clearing the job cache](./clearing-job-cache.md)
+
+Instructions on how to invalidate jobs from the cache when data becomes stale.
+
+**Use cases:** Invalidating individual job types, invalidating all job types, invalidate cache
 
 ### [Database Migration](./migrating-production-db.md)
 
