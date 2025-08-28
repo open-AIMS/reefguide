@@ -1,6 +1,4 @@
----
-title: Clearing job cache
----
+# Clearing the job cache
 
 ## What is the job cache?
 

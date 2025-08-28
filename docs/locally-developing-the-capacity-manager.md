@@ -1,6 +1,4 @@
----
-title: Locally developing the capacity manager
----
+# Locally developing the capacity manager
 
 ## Purpose
 

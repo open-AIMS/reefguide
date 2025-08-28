@@ -1,4 +1,4 @@
-# ReefGuide Monitoring
+# ReefGuide monitoring
 
 ReefGuide is a complex system which includes multiple components. Each can produce errors, or experience issues/downtime. For production systems, where we care about user experience, it is good to add external monitoring services which can
 

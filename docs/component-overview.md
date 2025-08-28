@@ -1,6 +1,4 @@
----
-title: Component overview
----
+# ReefGuide component overview
 
 ReefGuide is an AWS cloud based system composed of four main components:
 

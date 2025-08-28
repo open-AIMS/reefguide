@@ -1,6 +1,4 @@
----
-title: Running unit tests and linting checks
----
+# Unit tests and linting
 
 ## Unit tests
 

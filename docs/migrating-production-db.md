@@ -1,4 +1,4 @@
-# Database Migration Guide
+# Database migration guide
 
 This guide will describe how to use our ORM `prisma`, to migrate your production database.
 

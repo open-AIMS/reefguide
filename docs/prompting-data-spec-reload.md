@@ -1,4 +1,4 @@
-# Prompting a data specification reload
+# Data specification reload procedure
 
 The `ReefGuide` system provides information about parameters available to the frontend through an object called the `data spec`. This is updated daily as a cron-job, however, currently, you need to perform a cleanup process of the cached Regional Data to see these changes reflected.
 

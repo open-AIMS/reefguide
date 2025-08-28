@@ -1,4 +1,4 @@
-# Backup and Restore ReefGuide PostgreSQL Database
+# Database backup and restore
 
 ## Table of Contents
 

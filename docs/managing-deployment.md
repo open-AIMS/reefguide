@@ -1,6 +1,4 @@
----
-title: Using CDK to manage a ReefGuide AWS deployment
----
+# Using CDK to manage a ReefGuide AWS deployment
 
 ## What is CDK?
 

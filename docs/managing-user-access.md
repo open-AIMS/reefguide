@@ -1,6 +1,4 @@
----
-title: Managing ReefGuide Users
----
+# Managing ReefGuide user
 
 ## User Roles
 
