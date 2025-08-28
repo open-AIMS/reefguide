@@ -10,6 +10,14 @@ Documentation for ReefGuide, a cloud-based platform for reef management and anal
 
 Guide to deploying ReefGuide infrastructure 'from-scratch' using AWS CDK, including prerequisites, configuration setup, and deployment operations.
 
+## Development
+
+### [Locally developing the capacity manager](./locally-developing-capacity-manager.md)
+
+Guide for developing and debugging the capacity manager locally against AWS infrastructure, including environment setup and configuration generation.
+
+**Use cases:** Developing capacity manager features, debugging job system issues, testing worker scaling
+
 ## Operations & Management
 
 ### [Performing CDK operations on ReefGuide](./managing-deployment.md)
