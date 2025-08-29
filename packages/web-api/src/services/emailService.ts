@@ -123,7 +123,6 @@ interface SMTPEmailServiceParams {
  */
 export class SMTPEmailService extends BaseEmailService {
   private smtpConfig: SMTPEmailServiceConfig;
-  private transporter: Transporter<SMTPTransport.SentMessageInfo> | null = null;
   private cache: NodeCache;
   private readonly TRANSPORTER_CACHE_KEY = 'smtp-transporter';
 
@@ -161,7 +160,11 @@ export class SMTPEmailService extends BaseEmailService {
       auth: {
         user: this.smtpConfig.auth.user,
         pass: this.smtpConfig.auth.pass
-      }
+      },
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      dnsTimeout: 3000,
+      socketTimeout: 3000
     });
 
     // Verify the connection

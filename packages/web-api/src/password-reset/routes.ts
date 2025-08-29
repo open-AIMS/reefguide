@@ -28,11 +28,15 @@ router.post(
       const { email } = req.body;
       const resetService = new PasswordResetService(prisma);
 
+      console.log('Received password reset request for email:', email);
       const { code, resetCode } = await resetService.createResetCode({ email });
+      console.log('Generated reset code for email:', email);
 
       // Send email with reset code
       try {
-        await EMAIL_SERVICE.sendEmail({
+        console.log('Sending password reset email to:', email);
+        // Let this work in the background, don't await
+        EMAIL_SERVICE.sendEmail({
           options: {
             to: email,
             subject: 'ReefGuide: Password Reset Request',
@@ -59,9 +63,13 @@ This code will expire in 30 minutes. If you did not request this reset, please i
               </div>
             `
           }
-        });
-
-        console.log(`Password reset code sent to ${email} (Code ID: ${resetCode.id})`);
+        })
+          .then(() => {
+            console.log(`Password reset code sent to ${email} (Code ID: ${resetCode.id})`);
+          })
+          .catch(err => {
+            console.error('Error sending password reset email:', err);
+          });
       } catch (emailError) {
         console.error('Failed to send reset email:', emailError);
         // Don't expose email sending errors to users for security

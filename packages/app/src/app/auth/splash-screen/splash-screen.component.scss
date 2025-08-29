@@ -366,9 +366,34 @@ $blur-amount: 12px;
   border-left: 3px solid #f44336;
 
   .mat-icon {
+    font-size: 1.5rem;
+    width: 3.5rem;
+    height: 2rem;
+    background-color: aqua;
+  }
+}
+
+// =====================================
+// Success Message Styles
+// =====================================
+
+.success-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2e7d32;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: rgba(#4caf50, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid #4caf50;
+
+  .mat-icon {
     font-size: 1.2rem;
     width: 1.2rem;
     height: 1.2rem;
+    color: #4caf50;
   }
 }
 
@@ -401,14 +426,27 @@ $blur-amount: 12px;
 
   p {
     color: rgba($ocean-dark, 0.7);
-    margin: 0;
+    margin: 0 0 0.5rem;
     font-size: 0.9rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
   }
 
   .switch-button {
     font-weight: 500 !important;
     text-transform: none !important;
   }
+}
+
+// =====================================
+// Reset Link Specific Styles
+// =====================================
+
+.reset-link {
+  margin-top: 0.5rem !important;
+  font-size: 0.85rem !important;
 }
 
 // =====================================

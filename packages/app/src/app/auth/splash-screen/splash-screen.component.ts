@@ -15,17 +15,17 @@ import { WebApiService } from '../../../api/web-api.service';
 import { AuthService } from '../auth.service';
 import { SplashConfig, UserAccessState } from '../auth.types';
 
-type AuthMode = 'login' | 'register';
+type AuthMode = 'login' | 'register' | 'resetRequest' | 'resetConfirm';
 type Credentials = { email: string; password: string };
+type ResetRequest = { email: string };
+type ResetConfirm = { code: string; newPassword: string; confirmPassword: string };
 
 /**
  * Splash Screen Component
  *
  * This component serves as the main entry point for user authentication and
  * authorization. It displays different panels based on the user's access state
- * and handles the login/register flow.
- *
- * ```
+ * and handles the login/register/password reset flow.
  */
 @Component({
   selector: 'app-splash-screen',
@@ -61,7 +61,7 @@ export class SplashScreenComponent {
   /** Emitted when splash screen should be dismissed */
   dismissed = output<void>();
 
-  /** Current authentication mode (login or register) */
+  /** Current authentication mode */
   authMode = signal<AuthMode>('login');
 
   /** Whether authentication request is in progress */
@@ -70,11 +70,21 @@ export class SplashScreenComponent {
   /** Current error message to display */
   errorMessage = signal<string | undefined>(undefined);
 
+  /** Success message for password reset request */
+  successMessage = signal<string | undefined>(undefined);
+
   /** Whether password field is visible */
   hidePassword = signal(true);
 
+  /** Whether confirm password field is visible */
+  hideConfirmPassword = signal(true);
+
   /** Signal to track form validity */
   private formValid = signal(false);
+
+  /** Signal to track request form validity */
+  private requestFormValid = signal(false);
+  private submitResetFormValid = signal(false);
 
   /** Signal to track form disabled state */
   private formDisabled = signal(false);
@@ -87,14 +97,42 @@ export class SplashScreenComponent {
     password: new FormControl('', [Validators.required, Validators.minLength(8)])
   });
 
+  /**
+   * Reactive form for password reset request
+   */
+  resetRequestForm = new FormGroup({
+    email: new FormControl('', [Validators.required, Validators.email])
+  });
+
+  /**
+   * Reactive form for password reset confirmation
+   */
+  resetConfirmForm = new FormGroup({
+    code: new FormControl('', [
+      Validators.required,
+      Validators.minLength(6),
+      Validators.maxLength(10)
+    ]),
+    newPassword: new FormControl('', [Validators.required, Validators.minLength(8)]),
+    confirmPassword: new FormControl('', [Validators.required])
+  });
+
   constructor() {
     // Initialize form state signals
     this.formValid.set(this.authForm.valid);
+    this.requestFormValid.set(this.resetRequestForm.valid);
+    this.submitResetFormValid.set(this.resetConfirmForm.valid);
     this.formDisabled.set(this.authForm.disabled);
 
     // Subscribe to form changes and update signals
     this.authForm.valueChanges.subscribe(() => {
       this.formValid.set(this.authForm.valid);
+    });
+    this.resetRequestForm.valueChanges.subscribe(() => {
+      this.requestFormValid.set(this.resetRequestForm.valid);
+    });
+    this.resetConfirmForm.valueChanges.subscribe(() => {
+      this.submitResetFormValid.set(this.resetConfirmForm.valid);
     });
 
     this.authForm.statusChanges.subscribe(() => {
@@ -102,11 +140,31 @@ export class SplashScreenComponent {
       this.formDisabled.set(this.authForm.disabled);
     });
 
+    // Add password confirmation validator for reset form
+    this.resetConfirmForm.get('confirmPassword')?.addValidators(control => {
+      const newPassword = this.resetConfirmForm.get('newPassword')?.value;
+      const confirmPassword = control.value;
+      return newPassword === confirmPassword ? null : { mismatch: true };
+    });
+
+    // Update confirm password validation when new password changes
+    this.resetConfirmForm.get('newPassword')?.valueChanges.subscribe(() => {
+      this.resetConfirmForm.get('confirmPassword')?.updateValueAndValidity();
+    });
+
     // Effect to ensure form is enabled by default
     effect(() => {
-      if (!this.isAuthenticating() && this.authForm.disabled) {
-        this.authForm.enable();
-        this.formDisabled.set(false);
+      if (!this.isAuthenticating()) {
+        if (this.authForm.disabled) {
+          this.authForm.enable();
+          this.formDisabled.set(false);
+        }
+        if (this.resetRequestForm.disabled) {
+          this.resetRequestForm.enable();
+        }
+        if (this.resetConfirmForm.disabled) {
+          this.resetConfirmForm.enable();
+        }
       }
     });
   }
@@ -116,12 +174,24 @@ export class SplashScreenComponent {
    */
   isLoginMode = computed(() => this.authMode() === 'login');
   isRegisterMode = computed(() => this.authMode() === 'register');
-  canSubmit = computed(() => {
-    const formValid = this.formValid();
-    const notAuthenticating = !this.isAuthenticating();
-    const formEnabled = !this.formDisabled();
+  isResetRequestMode = computed(() => this.authMode() === 'resetRequest');
+  isResetConfirmMode = computed(() => this.authMode() === 'resetConfirm');
 
-    return formValid && notAuthenticating && formEnabled;
+  canSubmit = computed(() => {
+    const notAuthenticating = !this.isAuthenticating();
+    const mode = this.authMode();
+
+    switch (mode) {
+      case 'login':
+      case 'register':
+        return this.formValid() && notAuthenticating && !this.formDisabled();
+      case 'resetRequest':
+        return this.requestFormValid() && notAuthenticating;
+      case 'resetConfirm':
+        return this.resetConfirmForm.valid && notAuthenticating;
+      default:
+        return false;
+    }
   });
 
   /**
@@ -129,13 +199,23 @@ export class SplashScreenComponent {
    */
   getTitle = computed(() => {
     const state = this.userState();
+    const mode = this.authMode();
     const appName = this.config().appName || 'Reef Guide';
+
+    if (state === 'unauthenticated') {
+      switch (mode) {
+        case 'resetRequest':
+          return 'Reset Password';
+        case 'resetConfirm':
+          return 'Set New Password';
+        default:
+          return `Welcome to ${appName}`;
+      }
+    }
 
     switch (state) {
       case 'loading':
         return `Loading ${appName}...`;
-      case 'unauthenticated':
-        return `Welcome to ${appName}`;
       case 'unauthorized':
         return 'Access Required';
       default:
@@ -148,13 +228,23 @@ export class SplashScreenComponent {
    */
   getMessage = computed(() => {
     const state = this.userState();
+    const mode = this.authMode();
     const config = this.config();
+
+    if (state === 'unauthenticated') {
+      switch (mode) {
+        case 'resetRequest':
+          return 'Enter your email address to receive a password reset code';
+        case 'resetConfirm':
+          return 'Enter the reset code from your email and your new password';
+        default:
+          return 'Please sign in to access the platform.';
+      }
+    }
 
     switch (state) {
       case 'loading':
         return 'Checking your access permissions...';
-      case 'unauthenticated':
-        return `Please sign in to access the platform.`;
       case 'unauthorized':
         return (
           config.unauthorizedMessage ||
@@ -169,34 +259,64 @@ export class SplashScreenComponent {
    * Get the current form button text
    */
   getButtonText = computed(() => {
+    const mode = this.authMode();
+
     if (this.isAuthenticating()) {
-      return this.isLoginMode() ? 'Signing in...' : 'Creating account...';
+      switch (mode) {
+        case 'resetRequest':
+          return 'Sending reset code...';
+        case 'resetConfirm':
+          return 'Updating password...';
+        case 'register':
+          return 'Creating account...';
+        default:
+          return 'Signing in...';
+      }
     }
-    return this.isLoginMode() ? 'Sign In' : 'Create Account';
+
+    switch (mode) {
+      case 'resetRequest':
+        return 'Send Reset Code';
+      case 'resetConfirm':
+        return 'Update Password';
+      case 'register':
+        return 'Create Account';
+      default:
+        return 'Sign In';
+    }
   });
 
   /**
-   * Handle form submission for login or register
+   * Handle form submission for login, register, or password reset
    */
   onSubmit(): void {
     if (!this.canSubmit()) return;
 
-    this.resetErrors();
-    const credentials = this.authForm.value as Credentials;
+    this.resetMessages();
+    const mode = this.authMode();
 
-    if (this.isRegisterMode()) {
-      this.register(credentials);
-    } else {
-      this.login(credentials);
+    switch (mode) {
+      case 'login':
+        this.login(this.authForm.value as Credentials);
+        break;
+      case 'register':
+        this.register(this.authForm.value as Credentials);
+        break;
+      case 'resetRequest':
+        this.requestPasswordReset(this.resetRequestForm.value as ResetRequest);
+        break;
+      case 'resetConfirm':
+        this.confirmPasswordReset(this.resetConfirmForm.value as ResetConfirm);
+        break;
     }
   }
 
   /**
-   * Switch between login and register modes
+   * Switch between different authentication modes
    */
-  switchMode(): void {
-    this.resetErrors();
-    this.authMode.set(this.isLoginMode() ? 'register' : 'login');
+  switchMode(mode: AuthMode): void {
+    this.resetMessages();
+    this.authMode.set(mode);
   }
 
   /**
@@ -204,6 +324,13 @@ export class SplashScreenComponent {
    */
   togglePasswordVisibility(): void {
     this.hidePassword.update(hidden => !hidden);
+  }
+
+  /**
+   * Toggle confirm password visibility
+   */
+  toggleConfirmPasswordVisibility(): void {
+    this.hideConfirmPassword.update(hidden => !hidden);
   }
 
   /**
@@ -241,6 +368,47 @@ export class SplashScreenComponent {
   }
 
   /**
+   * Handle password reset request
+   */
+  private requestPasswordReset(resetRequest: ResetRequest): void {
+    this.setAuthenticating(true);
+
+    this.webApiService.requestPasswordReset(resetRequest).subscribe({
+      next: response => {
+        this.setAuthenticating(false);
+        this.successMessage.set(response.message);
+        this.authMode.set('resetConfirm');
+      },
+      error: error => {
+        this.handlePasswordResetError(error);
+      }
+    });
+  }
+
+  /**
+   * Handle password reset confirmation
+   */
+  private confirmPasswordReset(resetConfirm: ResetConfirm): void {
+    this.setAuthenticating(true);
+
+    this.webApiService.confirmPasswordReset(resetConfirm).subscribe({
+      next: response => {
+        this.setAuthenticating(false);
+        this.successMessage.set(response.message);
+
+        // After successful password reset, switch to login mode
+        setTimeout(() => {
+          this.authMode.set('login');
+          this.resetMessages();
+        }, 2000);
+      },
+      error: error => {
+        this.handlePasswordResetError(error);
+      }
+    });
+  }
+
+  /**
    * Handle authentication errors with user-friendly messages
    */
   private handleError(error: any): void {
@@ -258,6 +426,26 @@ export class SplashScreenComponent {
       email.setErrors({ serverError: true });
       password.setErrors({ serverError: true });
       this.clearErrorOnChange(email, password);
+    }
+  }
+
+  /**
+   * Handle password reset specific errors
+   */
+  private handlePasswordResetError(error: any): void {
+    this.setAuthenticating(false);
+    const errorMessage = extractErrorMessage(error);
+
+    // For password reset errors, show a more user-friendly message
+    if (
+      errorMessage.toLowerCase().includes('network') ||
+      errorMessage.toLowerCase().includes('server')
+    ) {
+      this.errorMessage.set(
+        'Unable to process request. Please contact the system administrator for assistance.'
+      );
+    } else {
+      this.errorMessage.set(errorMessage);
     }
   }
 
@@ -284,15 +472,17 @@ export class SplashScreenComponent {
     merge(...valueChanges)
       .pipe(take(1))
       .subscribe(() => {
-        this.resetErrors();
+        this.resetMessages();
       });
   }
 
   /**
-   * Reset all error states
+   * Reset all error and success messages
    */
-  private resetErrors(): void {
+  private resetMessages(): void {
     this.errorMessage.set(undefined);
+    this.successMessage.set(undefined);
+
     const { email, password } = this.authForm.controls;
 
     // Clear server errors while preserving validation errors
@@ -324,12 +514,19 @@ export class SplashScreenComponent {
 
     if (authenticating) {
       this.authForm.disable();
+      this.resetRequestForm.disable();
+      this.resetConfirmForm.disable();
       this.formDisabled.set(true);
     } else {
       this.authForm.enable();
+      this.resetRequestForm.enable();
+      this.resetConfirmForm.enable();
       this.formDisabled.set(false);
+
       // Force validation update after re-enabling
       this.authForm.updateValueAndValidity();
+      this.resetRequestForm.updateValueAndValidity();
+      this.resetConfirmForm.updateValueAndValidity();
       this.formValid.set(this.authForm.valid);
     }
   }
