@@ -188,7 +188,7 @@ export class SplashScreenComponent {
       case 'resetRequest':
         return this.requestFormValid() && notAuthenticating;
       case 'resetConfirm':
-        return this.resetConfirmForm.valid && notAuthenticating;
+        return this.requestFormValid() && notAuthenticating;
       default:
         return false;
     }

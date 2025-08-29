@@ -242,7 +242,8 @@ export class MockEmailService extends BaseEmailService {
       console.log('[MockEmailService] Sending email:', {
         from: `${this.config.fromName} <${this.config.fromEmail}>`,
         to: options.to,
-        subject: options.subject
+        subject: options.subject,
+        body: options.text
       });
     }
 

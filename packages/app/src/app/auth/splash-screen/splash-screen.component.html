@@ -39,9 +39,15 @@
           <div class="splash-icon">
             <mat-icon>
               @switch (authMode()) {
-                @case ('resetRequest') { lock_reset }
-                @case ('resetConfirm') { lock }
-                @default { waves }
+                @case ('resetRequest') {
+                  lock_reset
+                }
+                @case ('resetConfirm') {
+                  lock
+                }
+                @default {
+                  waves
+                }
               }
             </mat-icon>
           </div>
@@ -49,7 +55,6 @@
           <mat-card-subtitle>{{ getMessage() }}</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-
           <!-- Login/Register Form -->
           @if (isLoginMode() || isRegisterMode()) {
             <form [formGroup]="authForm" (ngSubmit)="onSubmit()" class="auth-form" novalidate>
@@ -87,7 +92,9 @@
                   formControlName="password"
                   placeholder="Enter your password"
                   [autocomplete]="isLoginMode() ? 'current-password' : 'new-password'"
-                  [attr.aria-describedby]="authForm.get('password')?.errors ? 'password-error' : null"
+                  [attr.aria-describedby]="
+                    authForm.get('password')?.errors ? 'password-error' : null
+                  "
                 />
                 <button
                   mat-icon-button
@@ -201,7 +208,12 @@
 
           <!-- Password Reset Request Form -->
           @if (isResetRequestMode()) {
-            <form [formGroup]="resetRequestForm" (ngSubmit)="onSubmit()" class="auth-form" novalidate>
+            <form
+              [formGroup]="resetRequestForm"
+              (ngSubmit)="onSubmit()"
+              class="auth-form"
+              novalidate
+            >
               <!-- Email Field -->
               <mat-form-field appearance="outline" class="full-width form-field">
                 <mat-label>Email Address</mat-label>
@@ -252,6 +264,20 @@
             <mat-divider class="auth-divider"></mat-divider>
             <div class="mode-switch">
               <p>
+                Already have a reset code?
+                <button
+                  mat-button
+                  color="primary"
+                  type="button"
+                  (click)="switchMode('resetConfirm')"
+                  class="switch-button"
+                >
+                  Enter my reset code
+                </button>
+              </p>
+            </div>
+            <div class="mode-switch">
+              <p>
                 Remember your password?
                 <button
                   mat-button
@@ -276,7 +302,12 @@
               </div>
             }
 
-            <form [formGroup]="resetConfirmForm" (ngSubmit)="onSubmit()" class="auth-form" novalidate>
+            <form
+              [formGroup]="resetConfirmForm"
+              (ngSubmit)="onSubmit()"
+              class="auth-form"
+              novalidate
+            >
               <!-- Reset Code Field -->
               <mat-form-field appearance="outline" class="full-width form-field">
                 <mat-label>Reset Code</mat-label>
@@ -386,6 +417,18 @@
             <mat-divider class="auth-divider"></mat-divider>
             <div class="mode-switch">
               <p>
+                Need to start again?
+                <button
+                  mat-button
+                  color="primary"
+                  type="button"
+                  (click)="switchMode('resetRequest')"
+                  class="switch-button"
+                >
+                  Forgotten my password
+                </button>
+              </p>
+              <p>
                 Remember your password?
                 <button
                   mat-button
@@ -399,7 +442,6 @@
               </p>
             </div>
           }
-
         </mat-card-content>
       </mat-card>
     }
