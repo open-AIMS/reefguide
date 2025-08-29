@@ -1,1 +1,135 @@
-<p>splash-dialog works!</p>
+<!-- Loading State -->
+@if (userState() === 'loading') {
+  <mat-card class="dialog-card">
+    <mat-card-header class="dialog-header">
+      <div class="dialog-icon">
+        <mat-icon>water</mat-icon>
+      </div>
+      <mat-card-title>{{ getTitle() }}</mat-card-title>
+      <mat-card-subtitle>{{ getMessage() }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      <p>Initializing {{ config().appName }} platform...</p>
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- Unauthenticated State - Show Auth Forms -->
+@if (userState() === 'unauthenticated') {
+  <mat-card class="dialog-card">
+    <mat-card-header class="dialog-header">
+      <div class="dialog-icon">
+        <mat-icon>
+          @switch (authMode()) {
+            @case ('resetRequest') {
+              lock_reset
+            }
+            @case ('resetConfirm') {
+              lock
+            }
+            @default {
+              waves
+            }
+          }
+        </mat-icon>
+      </div>
+      <mat-card-title>{{ getTitle() }}</mat-card-title>
+      <mat-card-subtitle>{{ getMessage() }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @switch (authMode()) {
+        @case ('login') {
+          <app-login (loginSuccess)="onLoginSuccess()" (switchMode)="switchMode($event)" />
+        }
+        @case ('register') {
+          <app-register
+            (registerSuccess)="onRegisterSuccess($event)"
+            (switchMode)="switchMode($event)"
+          />
+        }
+        @case ('resetRequest') {
+          <app-forgot-password-request
+            (resetRequestSuccess)="onResetRequestSuccess()"
+            (switchMode)="switchMode($event)"
+          />
+        }
+        @case ('resetConfirm') {
+          <app-forgot-password-confirm
+            (resetConfirmSuccess)="onResetConfirmSuccess()"
+            (switchMode)="switchMode($event)"
+          />
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- Unauthorized State -->
+@if (userState() === 'unauthorized') {
+  <mat-card class="dialog-card">
+    <mat-card-header class="dialog-header">
+      <div class="dialog-icon unauthorized">
+        <mat-icon>no_accounts</mat-icon>
+      </div>
+      <mat-card-title>{{ getTitle() }}</mat-card-title>
+      <mat-card-subtitle>{{ getMessage() }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="access-info">
+        <mat-icon>info</mat-icon>
+        <div>
+          <h3>Access Levels Required</h3>
+          <p>This application requires Analyst or Administrator access.</p>
+        </div>
+      </div>
+
+      <div class="contact-info">
+        <mat-icon>contact_support</mat-icon>
+        <div>
+          <h4>Request Access</h4>
+          <p>{{ getContactInfo() }}</p>
+          <button mat-raised-button color="accent" (click)="openEmailClient()">
+            <mat-icon>email</mat-icon>
+            Request Access
+          </button>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button
+          mat-raised-button
+          color="accent"
+          (click)="refreshSession()"
+          [disabled]="isRefreshing()"
+        >
+          @if (isRefreshing()) {
+            <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
+          } @else {
+            <mat-icon>refresh</mat-icon>
+          }
+          {{ isRefreshing() ? 'Refreshing...' : 'Refresh Access' }}
+        </button>
+        <button mat-stroked-button (click)="authService.logout()">
+          <mat-icon>logout</mat-icon>
+          Sign Out
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- Footer -->
+<div class="dialog-footer">
+  <p>{{ config().appName || 'ReefGuide' }} - A platform for coral deployment site assessment</p>
+  <div class="footer-links">
+    <a [href]="config().documentationLink" target="_blank">
+      <mat-icon>help</mat-icon>
+      Help
+    </a>
+    <a [href]="config().aboutLink" target="_blank">
+      <mat-icon>info</mat-icon>
+      About
+    </a>
+  </div>
+</div>
