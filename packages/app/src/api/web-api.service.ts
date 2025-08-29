@@ -18,6 +18,10 @@ import {
   ListRegionsResponse,
   ListUserLogsResponse,
   LoginResponse,
+  PostCreateResetRequest,
+  PostCreateResetResponse,
+  PostUseResetCodeRequest,
+  PostUseResetCodeResponse,
   ProfileResponse,
   UpdateProjectInput,
   UpdateProjectResponse
@@ -416,5 +420,14 @@ export class WebApiService {
 
   getUserProjects(): Observable<GetProjectsResponse> {
     return this.http.get<GetProjectsResponse>(`${this.base}/projects/user/me`);
+  }
+
+  // Reset actions (don't require auth)
+  requestPasswordReset(payload: PostCreateResetRequest): Observable<PostCreateResetResponse> {
+    return this.http.post<PostCreateResetResponse>(`${this.base}/password-reset/request`, payload);
+  }
+
+  confirmPasswordReset(payload: PostUseResetCodeRequest): Observable<PostUseResetCodeResponse> {
+    return this.http.post<PostUseResetCodeResponse>(`${this.base}/password-reset/confirm`, payload);
   }
 }

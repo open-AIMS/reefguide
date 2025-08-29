@@ -571,3 +571,39 @@ export type BulkCreateProjectsResponse = {
     totalErrors: number;
   };
 };
+
+// Password reset schemas
+export const PostCreateResetRequestSchema = z.object({
+  email: z.string().email('Invalid email address')
+});
+
+export const PostUseResetCodeRequestSchema = z
+  .object({
+    code: z
+      .string()
+      .min(6, 'Reset code must be at least 6 characters')
+      .max(10, 'Reset code too long'),
+    newPassword: z.string().min(8, 'Password must be at least 8 characters long'),
+    confirmPassword: z.string()
+  })
+  .refine(data => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword']
+  });
+
+// Response schemas
+export const PostCreateResetResponseSchema = z.object({
+  message: z.string()
+});
+
+export const PostUseResetCodeResponseSchema = z.object({
+  message: z.string()
+});
+
+// Inferred types for request schemas
+export type PostCreateResetRequest = z.infer<typeof PostCreateResetRequestSchema>;
+export type PostUseResetCodeRequest = z.infer<typeof PostUseResetCodeRequestSchema>;
+
+// Inferred types for response schemas
+export type PostCreateResetResponse = z.infer<typeof PostCreateResetResponseSchema>;
+export type PostUseResetCodeResponse = z.infer<typeof PostUseResetCodeResponseSchema>;
