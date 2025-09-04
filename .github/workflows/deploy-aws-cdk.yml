@@ -167,6 +167,23 @@ jobs:
           pnpm exec turbo run build --filter=@reefguide/infra
           echo "✅ Infrastructure package built successfully"
 
+      - name: Upload web-api and capacity manager Sourcemaps to BugSink
+        env:
+          SENTRY_URL: ${{ secrets.SENTRY_URL }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          if [ -z "$SENTRY_URL" ] || [ -z "$SENTRY_AUTH_TOKEN" ]; then
+            echo "⚠️  Skipping sourcemap upload - SENTRY_URL or SENTRY_AUTH_TOKEN not configured"
+            echo "   To enable sourcemap uploads, add these secrets to your repository:"
+            echo "   - SENTRY_URL (your BugSink deployment URL)"
+            echo "   - SENTRY_AUTH_TOKEN (auth token from BugSink admin panel)"
+            exit 0
+          fi
+          echo "🗺️  Uploading sourcemaps to BugSink..."
+          echo "BugSink URL: $SENTRY_URL"
+          pnpm exec turbo sourcemaps --force
+          echo "✅ Sourcemaps uploaded successfully"
+
       - name: Display Final Configuration Before CDK
         working-directory: packages/infra
         run: |
