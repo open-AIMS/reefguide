@@ -45,7 +45,15 @@ export function getSentryUrlsForCSP(config: MonitoringConfig): string[] {
     config.reefguideWorkerSentryDsn,
     config.webApiSentryDsn
   ];
-  return relevantUrls.filter(dsn => dsn !== undefined);
+  // Return the unique origin only as CSP is invalid for full URLs
+  return Array.from(
+    new Set(
+      relevantUrls
+        .filter(dsn => dsn !== undefined)
+        .map(dsn => URL.parse(dsn)?.origin)
+        .filter(dsn => dsn !== undefined)
+    )
+  );
 }
 
 export interface ReefguideWebApiProps extends cdk.StackProps {
