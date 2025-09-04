@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { MinioConfig } from './services/s3Storage';
 import { JobType } from '@reefguide/db';
+import { createEmailService, IEmailService, EmailServiceType } from './services/emailService';
 
 /**
  * Environment variable schema definition using Zod
@@ -83,8 +84,54 @@ const envSchema = z.object({
     .refine(val => !isNaN(val) && val > 0, {
       message: 'REFRESH_TOKEN_EXPIRY_MINUTES must be a positive number'
     }),
-  SENTRY_DSN: z.string().url().optional().describe('Sentry DSN for error tracking')
+  SENTRY_DSN: z.string().url().optional().describe('Sentry DSN for error tracking'),
+  // Email configuration
+  EMAIL_SERVICE_MODE: z.enum(['SMTP', 'MOCK']).default('MOCK'),
+  EMAIL_FROM_ADDRESS: z.string().email().optional().default('noreply@example.com'),
+  EMAIL_FROM_NAME: z.string().optional().default('ReefGuide Notification System'),
+  EMAIL_REPLY_TO: z.string().email().optional(),
+  // SMTP configuration - only required when EMAIL_SERVICE_MODE is SMTP
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().regex(/^\d+$/).transform(Number).optional(),
+  SMTP_SECURE: z
+    .string()
+    .optional()
+    .default('false')
+    .transform(val => val === 'true'),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  SMTP_CACHE_EXPIRY_SECONDS: z
+    .string()
+    .optional()
+    .default('300')
+    .transform(val => parseInt(val, 10))
+    .refine(val => !isNaN(val) && val > 0, {
+      message: 'SMTP_CACHE_EXPIRY_SECONDS must be a positive number'
+    })
 });
+
+/**
+ * Email configuration interface
+ */
+export interface EmailConfig {
+  fromEmail: string;
+  fromName: string;
+  replyTo?: string;
+}
+
+/**
+ * SMTP configuration interface
+ */
+export interface SMTPConfig {
+  host: string;
+  port: number;
+  secure: boolean;
+  auth: {
+    user: string;
+    pass: string;
+  };
+  cacheExpirySeconds: number;
+}
 
 /**
  * Configuration interface derived from the environment schema
@@ -128,6 +175,11 @@ export interface Config {
     disableCache: boolean;
     disableSpecificCaches?: JobType[];
   };
+  email: {
+    serviceMode: EmailServiceType;
+    config: EmailConfig;
+    smtp?: SMTPConfig;
+  };
   // Optional Sentry DSN for error tracking
   sentryDsn?: string;
 }
@@ -156,6 +208,52 @@ export function getConfig(): Config {
       endpoint: env.MINIO_ENDPOINT,
       username: env.MINIO_USERNAME,
       password: env.MINIO_PASSWORD
+    };
+  }
+
+  // Configure email settings
+  const emailServiceMode =
+    env.EMAIL_SERVICE_MODE === 'SMTP' ? EmailServiceType.SMTP : EmailServiceType.MOCK;
+
+  const emailConfig: EmailConfig = {
+    fromEmail: env.EMAIL_FROM_ADDRESS,
+    fromName: env.EMAIL_FROM_NAME,
+    replyTo: env.EMAIL_REPLY_TO
+  };
+
+  let smtpConfig: SMTPConfig | undefined = undefined;
+  if (emailServiceMode === EmailServiceType.SMTP) {
+    if (!env.SMTP_HOST || !env.SMTP_PORT || !env.SMTP_USER || !env.SMTP_PASSWORD) {
+      const missingConfig = [];
+      if (!env.SMTP_HOST) missingConfig.push('SMTP_HOST');
+      if (!env.SMTP_PORT) missingConfig.push('SMTP_PORT');
+      if (!env.SMTP_USER) missingConfig.push('SMTP_USER');
+      if (!env.SMTP_PASSWORD) missingConfig.push('SMTP_PASSWORD');
+
+      const providedConfig = {
+        EMAIL_SERVICE_MODE: env.EMAIL_SERVICE_MODE,
+        SMTP_HOST: env.SMTP_HOST || '[missing]',
+        SMTP_PORT: env.SMTP_PORT || '[missing]',
+        SMTP_SECURE: env.SMTP_SECURE.toString(),
+        SMTP_USER: env.SMTP_USER ? '[provided]' : '[missing]',
+        SMTP_PASSWORD: env.SMTP_PASSWORD ? '[provided]' : '[missing]',
+        SMTP_CACHE_EXPIRY_SECONDS: env.SMTP_CACHE_EXPIRY_SECONDS.toString()
+      };
+
+      throw new Error(
+        `SMTP configuration is incomplete when EMAIL_SERVICE_MODE is 'SMTP'. Missing required values: ${missingConfig.join(', ')}.\n` +
+          `Provided configuration: ${JSON.stringify(providedConfig, null, 2)}`
+      );
+    }
+    smtpConfig = {
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      secure: env.SMTP_SECURE,
+      auth: {
+        user: env.SMTP_USER,
+        pass: env.SMTP_PASSWORD
+      },
+      cacheExpirySeconds: env.SMTP_CACHE_EXPIRY_SECONDS
     };
   }
 
@@ -200,6 +298,11 @@ export function getConfig(): Config {
       disableCache: env.DISABLE_CACHE,
       disableSpecificCaches: env.DISABLE_SPECIFIC_CACHES
     },
+    email: {
+      serviceMode: emailServiceMode,
+      config: emailConfig,
+      smtp: smtpConfig
+    },
     sentryDsn: env.SENTRY_DSN
   };
 
@@ -208,7 +311,20 @@ export function getConfig(): Config {
     const logConfig = {
       ...config,
       jwt: { keyId: config.jwt.keyId }, // Only log key ID, not the actual keys
-      creds: '[HIDDEN]' // Hide credentials from logs
+      creds: '[HIDDEN]', // Hide credentials from logs
+      email: {
+        serviceMode: config.email.serviceMode,
+        config: config.email.config,
+        smtp: config.email.smtp
+          ? {
+              host: config.email.smtp.host,
+              port: config.email.smtp.port,
+              secure: config.email.smtp.secure,
+              auth: '[HIDDEN]', // Hide SMTP credentials
+              cacheExpirySeconds: config.email.smtp.cacheExpirySeconds
+            }
+          : undefined
+      }
     };
     console.debug('API Configuration:', JSON.stringify(logConfig, null, 2));
   }
@@ -226,3 +342,10 @@ export const config = getConfig();
 export const TOKEN_EXPIRY = config.tokens.accessTokenExpirySeconds;
 export const REFRESH_DURATION_MINUTES = config.tokens.refreshTokenExpiryMinutes;
 export const REFRESH_DURATION_SECONDS = config.tokens.refreshTokenExpiryMinutes * 60;
+
+// Export email service configuration and instance
+export const EMAIL_SERVICE: IEmailService = createEmailService({
+  serviceType: config.email.serviceMode,
+  emailConfig: config.email.config,
+  serviceConfig: config.email.smtp
+});

@@ -468,3 +468,47 @@ CONFIG_FILE_NAME=prod.json ./build-capacity-env.sh '' ./configs/capacity.env
 2. **Extracts environment variables** from the ECS task definition
 3. **Resolves AWS Secrets Manager references** to actual secret values
 4. **Generates .env file** with all variables ready for local development
+
+## Email Configuration
+
+### SMTP Setup
+
+The Web API supports email notifications through SMTP or MOCK mode. SMTP email configuration is managed through the deployment configuration and AWS Secrets Manager.
+
+#### Configuration Structure
+
+Add the following to your deployment configuration file (`configs/your-env.json`):
+
+```json
+{
+  "email": {
+    "serviceMode": "SMTP",
+    "fromAddress": "noreply@reefguide.org",
+    "fromName": "ReefGuide Notification System",
+    "replyTo": "support@reefguide.org",
+    "smtpCredentialsArn": "arn:aws:secretsmanager:region:account:secret:smtp-credentials-xxxx",
+    "smtpCacheExpirySeconds": 300
+  }
+}
+```
+
+#### SMTP Credentials Secret
+
+Create an AWS Secrets Manager secret containing your SMTP server details:
+
+```json
+{
+  "host": "your-smtp-host",
+  "port": "587",
+  "secure": "true",
+  "username": "noreply@reefguide.org",
+  "password": "your-smtp-password"
+}
+```
+
+**Note**: All values in the secret must be strings, including numeric and boolean values.
+
+#### Modes
+
+- **SMTP**: Uses configured SMTP server for sending emails
+- **MOCK**: Logs email content without sending (useful for development)
