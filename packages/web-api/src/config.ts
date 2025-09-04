@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { MinioConfig } from './services/s3Storage';
+import { JobType } from '@reefguide/db';
 
 /**
  * Environment variable schema definition using Zod
@@ -30,6 +31,40 @@ const envSchema = z.object({
     .string()
     .default('false')
     .transform(val => ['true'].includes(val.toLowerCase())),
+  // Comma separated list of job types to not cache
+  DISABLE_SPECIFIC_CACHES: z
+    .string()
+    .optional()
+    .transform((val, ctx) => {
+      // If provided, split and parse into job types
+      if (val) {
+        const validJobTypes: JobType[] = [];
+        for (const item of val.split(',')) {
+          try {
+            const cleanedJobType = item.trim().toUpperCase();
+            const jobType = JobType[cleanedJobType as keyof typeof JobType];
+
+            if (jobType !== undefined) {
+              validJobTypes.push(jobType);
+            } else {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `Invalid job type: ${cleanedJobType}`
+              });
+              return z.NEVER;
+            }
+          } catch (error) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `Error processing job type: ${item.trim()}`
+            });
+            return z.NEVER;
+          }
+        }
+        return validJobTypes;
+      }
+      return undefined;
+    }),
   // Token configuration - with proper defaults
   ACCESS_TOKEN_EXPIRY_MINUTES: z
     .string()
@@ -89,7 +124,10 @@ export interface Config {
     refreshTokenExpiryMinutes: number;
     accessTokenExpirySeconds: number; // Computed convenience property
   };
-  disableCache: boolean;
+  cacheOptions: {
+    disableCache: boolean;
+    disableSpecificCaches?: JobType[];
+  };
   // Optional Sentry DSN for error tracking
   sentryDsn?: string;
 }
@@ -158,7 +196,10 @@ export function getConfig(): Config {
       // Computed convenience property for seconds
       accessTokenExpirySeconds: env.ACCESS_TOKEN_EXPIRY_MINUTES * 60
     },
-    disableCache: env.DISABLE_CACHE,
+    cacheOptions: {
+      disableCache: env.DISABLE_CACHE,
+      disableSpecificCaches: env.DISABLE_SPECIFIC_CACHES
+    },
     sentryDsn: env.SENTRY_DSN
   };
 

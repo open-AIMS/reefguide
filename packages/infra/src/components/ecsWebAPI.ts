@@ -13,6 +13,7 @@ import { Construct } from 'constructs';
 import { WebAPIConfig } from '../infraConfig';
 import { SharedBalancer } from './networking';
 import { STANDARD_EXCLUSIONS } from '../infra';
+import { JobType } from '@reefguide/db';
 
 /**
  * Properties for the WebAPI construct
@@ -132,6 +133,9 @@ export class ECSWebAPI extends Construct {
 
         // Storage bucket name
         S3_BUCKET_NAME: props.storageBucket.bucketName,
+
+        // Cache setup (disable data spec reload cache)
+        DISABLE_SPECIFIC_CACHES: [JobType.DATA_SPECIFICATION_UPDATE.toString()].join(','),
 
         // Sentry DSN
         ...(props.sentryDsn ? { SENTRY_DSN: props.sentryDsn } : {})
