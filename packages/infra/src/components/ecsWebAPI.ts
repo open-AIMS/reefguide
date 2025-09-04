@@ -10,7 +10,7 @@ import * as r53 from 'aws-cdk-lib/aws-route53';
 import * as r53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
-import { WebAPIConfig } from '../infraConfig';
+import { EmailConfig, WebAPIConfig } from '../infraConfig';
 import { SharedBalancer } from './networking';
 import { STANDARD_EXCLUSIONS } from '../infra';
 
@@ -40,6 +40,8 @@ export interface ECSWebAPIProps {
   storageBucket: s3.IBucket;
   /** The Sentry DSN for the web API */
   sentryDsn?: string;
+  /** Email configuration for the web API */
+  emailConfig: EmailConfig;
 }
 
 /**
@@ -109,6 +111,16 @@ export class ECSWebAPI extends Construct {
     // DB secrets and JWT key info
     const apiSecrets = sm.Secret.fromSecretCompleteArn(this, 'db-creds', config.apiSecretsArn);
 
+    // SMTP secrets (if using SMTP mode)
+    let smtpSecrets: sm.ISecret | undefined;
+    if (props.emailConfig.serviceMode === 'SMTP' && props.emailConfig.smtpCredentialsArn) {
+      smtpSecrets = sm.Secret.fromSecretCompleteArn(
+        this,
+        'smtp-creds',
+        props.emailConfig.smtpCredentialsArn
+      );
+    }
+
     // Attach container to task definition
     this.taskDefinition.addContainer('web-api-container-dfn', {
       image,
@@ -133,6 +145,13 @@ export class ECSWebAPI extends Construct {
         // Storage bucket name
         S3_BUCKET_NAME: props.storageBucket.bucketName,
 
+        // Email configuration
+        EMAIL_SERVICE_MODE: props.emailConfig.serviceMode,
+        EMAIL_FROM_ADDRESS: props.emailConfig.fromAddress,
+        EMAIL_FROM_NAME: props.emailConfig.fromName,
+        ...(props.emailConfig.replyTo ? { EMAIL_REPLY_TO: props.emailConfig.replyTo } : {}),
+        SMTP_CACHE_EXPIRY_SECONDS: String(props.emailConfig.smtpCacheExpirySeconds),
+
         // Sentry DSN
         ...(props.sentryDsn ? { SENTRY_DSN: props.sentryDsn } : {})
       },
@@ -151,7 +170,18 @@ export class ECSWebAPI extends Construct {
         WORKER_USERNAME: ecs.Secret.fromSecretsManager(props.workerCreds, 'username'),
         WORKER_PASSWORD: ecs.Secret.fromSecretsManager(props.workerCreds, 'password'),
         ADMIN_USERNAME: ecs.Secret.fromSecretsManager(props.adminCreds, 'username'),
-        ADMIN_PASSWORD: ecs.Secret.fromSecretsManager(props.adminCreds, 'password')
+        ADMIN_PASSWORD: ecs.Secret.fromSecretsManager(props.adminCreds, 'password'),
+
+        // SMTP secrets (only when using SMTP mode)
+        ...(smtpSecrets
+          ? {
+              SMTP_HOST: ecs.Secret.fromSecretsManager(smtpSecrets, 'host'),
+              SMTP_PORT: ecs.Secret.fromSecretsManager(smtpSecrets, 'port'),
+              SMTP_SECURE: ecs.Secret.fromSecretsManager(smtpSecrets, 'secure'),
+              SMTP_USER: ecs.Secret.fromSecretsManager(smtpSecrets, 'username'),
+              SMTP_PASSWORD: ecs.Secret.fromSecretsManager(smtpSecrets, 'password')
+            }
+          : {})
       },
       logging: ecs.LogDriver.awsLogs({
         streamPrefix: 'webapi',

@@ -1,0 +1,146 @@
+.dialog-card {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.95);
+  margin-bottom: 1.5rem;
+}
+
+.dialog-header {
+  text-align: center;
+  padding: 1.5rem 1.5rem 0.5rem;
+}
+
+.dialog-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0077be, #00a8cc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem;
+  box-shadow: 0 4px 16px rgba(0, 119, 190, 0.3);
+}
+
+.dialog-icon.unauthorized {
+  background: linear-gradient(135deg, #f44336, #e91e63);
+}
+
+.dialog-icon .mat-icon {
+  font-size: 1.75rem;
+  color: white;
+}
+
+mat-card-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #003d5c;
+  margin-bottom: 0.5rem;
+}
+
+mat-card-subtitle {
+  color: rgba(0, 61, 92, 0.7);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+mat-card-content {
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+.access-info,
+.contact-info {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.access-info .mat-icon,
+.contact-info .mat-icon {
+  color: #00a8cc;
+  font-size: 1.4rem;
+  margin-top: 0.2rem;
+}
+
+.access-info h3,
+.contact-info h4 {
+  margin: 0 0 0.4rem;
+  color: #003d5c;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.access-info p,
+.contact-info p {
+  margin: 0 0 0.6rem;
+  color: rgba(0, 61, 92, 0.7);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 119, 190, 0.1);
+}
+
+.action-buttons button {
+  flex: 1;
+  min-height: 40px;
+}
+
+.dialog-footer {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+}
+
+.dialog-footer p {
+  margin: 0 0 0.75rem;
+  line-height: 1.4;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.footer-links a {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.75rem;
+  transition: color 0.2s ease;
+}
+
+.footer-links a:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.footer-links .mat-icon {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 480px) {
+  .dialog-card {
+    max-width: 100%;
+  }
+
+  .dialog-header {
+    padding: 1rem 1rem 0.5rem;
+  }
+
+  mat-card-title {
+    font-size: 1.2rem;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+}

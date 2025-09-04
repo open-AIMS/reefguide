@@ -175,6 +175,7 @@ export class ReefguideStack extends cdk.Stack {
     // ECS mode
     if (config.webAPI.mode.ecs !== undefined) {
       webAPI = new ECSWebAPI(this, 'web-api', {
+        emailConfig: config.email,
         certificate: primaryCert,
         config: config.webAPI,
         storageBucket,

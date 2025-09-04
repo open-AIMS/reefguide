@@ -1,18 +1,18 @@
 import { Component, input, output } from '@angular/core';
-import { SplashOverlayComponent } from './splash-overlay/splash-overlay.component';
-import { SplashConfig, UserAccessState } from '../auth.types';
+import { SplashDialogComponent } from '../splash-dialog/splash-dialog.component';
+import { SplashConfig, UserAccessState } from '../../auth.types';
 
 /**
- * Main Splash Screen Component - Entry point that manages the overlay
+ * Splash Overlay Component - Manages the overlay backdrop and contains the dialog
  */
 @Component({
-  selector: 'app-splash-screen',
+  selector: 'app-splash-overlay',
   standalone: true,
-  imports: [SplashOverlayComponent],
-  templateUrl: './splash-screen.component.html',
-  styleUrl: './splash-screen.component.scss'
+  imports: [SplashDialogComponent],
+  templateUrl: './splash-overlay.component.html',
+  styleUrl: './splash-overlay.component.scss'
 })
-export class SplashScreenComponent {
+export class SplashOverlayComponent {
   /** Current user access state */
   userState = input.required<UserAccessState>();
 
@@ -31,5 +31,10 @@ export class SplashScreenComponent {
 
   onDismissed(): void {
     this.dismissed.emit();
+  }
+
+  onKeyDown(event: KeyboardEvent): void {
+    // Allow dialog to handle key events
+    event.stopPropagation();
   }
 }

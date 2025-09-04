@@ -22,11 +22,11 @@ enum ProjectType {
 
 // User - linked to passport js
 model User {
-    id              Int               @id @default(autoincrement())
-    email           String            @unique
+    id              Int                 @id @default(autoincrement())
+    email           String              @unique
     password        String
     // What roles does the user have?
-    roles           UserRole[]        @default([])
+    roles           UserRole[]          @default([])
     polygons        Polygon[]
     notes           PolygonNote[]
     refreshTokens   RefreshToken[]
@@ -35,6 +35,7 @@ model User {
     log             UserLog[]
     PreApprovedUser PreApprovedUser[]
     projects        Project[]
+    resetCodes      PasswordResetCode[]
 }
 
 enum UserAction {
@@ -316,4 +317,27 @@ model RegionalCriteria {
     // Ensure each criteria appears only once per region
     @@unique([region_id, criteria_id])
     @@map("regional_criteria")
+}
+
+model PasswordResetCode {
+    id         Int       @id @default(autoincrement())
+    // Hashed version of the reset code for security
+    code_hash  String    @unique
+    created_at DateTime  @default(now())
+    // When this code expires (typically 15-60 minutes from creation)
+    expires_at DateTime
+    // Has this code been used?
+    used       Boolean   @default(false)
+    // When was it used (if applicable)
+    used_at    DateTime?
+    // Optional: track attempts to use this code
+    attempts   Int       @default(0)
+
+    // Link to the user who requested the reset
+    user    User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    user_id Int
+
+    // Index on code_hash for fast lookup during verification
+    @@index([code_hash])
+    @@map("password_reset_codes")
 }
