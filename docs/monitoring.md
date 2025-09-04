@@ -60,3 +60,10 @@ To configure Sentry SDK error monitoring for ReefGuide - simply set the sentry D
         "reefguideWorkerSentryDsn": "https://example.com"
     }
 ```
+
+## Sourcemap upload
+
+Setup the following GitHub secrets and the CDK deployment workflows (see [here](./deploying-with-cdk)) will upload sourcemaps for the TS build files.
+
+- `SENTRY_URL`: the URL of the bugsink deployment e.g. `https://bugs.com.au/`
+- `SENTRY_AUTH_TOKEN`: the auth token from your bugsink admin panel (you need to be the root user to generate these)

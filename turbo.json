@@ -76,6 +76,12 @@
         },
         "clean": {
             "cache": false
+        },
+        "sourcemaps": {
+            "env": [
+                "SENTRY_URL",
+                "SENTRY_AUTH_TOKEN"
+            ]
         }
     }
 }
