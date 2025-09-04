@@ -1,0 +1,36 @@
+.mode-switch {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.mode-switch p {
+  color: rgba(0, 61, 92, 0.7);
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.mode-switch button {
+  font-weight: 500;
+  text-transform: none;
+}
+
+.auth-button {
+  height: 48px;
+  border-radius: 8px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  .mat-form-field {
+    width: 100%;
+  }
+}

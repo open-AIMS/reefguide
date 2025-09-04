@@ -30,7 +30,7 @@ type AuthMode = 'login' | 'register' | 'resetRequest' | 'resetConfirm';
     MatDividerModule
   ],
   templateUrl: './forgot-password-confirm.component.html',
-  styleUrl: './forgot-password-confirm.component.scss'
+  styleUrls: ['./forgot-password-confirm.component.scss', '../form-styles.scss']
 })
 export class ForgotPasswordConfirmComponent {
   private readonly webApiService = inject(WebApiService);

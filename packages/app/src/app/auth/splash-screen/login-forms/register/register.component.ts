@@ -29,7 +29,7 @@ type AuthMode = 'login' | 'register' | 'resetRequest' | 'resetConfirm';
     MatDividerModule
   ],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.scss'
+  styleUrls: ['./register.component.scss', '../form-styles.scss']
 })
 export class RegisterComponent {
   private readonly webApiService = inject(WebApiService);

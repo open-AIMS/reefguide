@@ -1,0 +1,48 @@
+/*
+* Contains info, error message etc styles
+* Imported in global style sheet ../styles.scss
+*/
+
+// Base message class
+.message-base {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+
+  .mat-icon {
+    scale: 1.2;
+  }
+}
+
+.error-message {
+  @extend .message-base;
+  color: #f44336;
+  background: rgba(244, 67, 54, 0.1);
+  border-left-color: #f44336;
+}
+
+.info-message {
+  @extend .message-base;
+  color: rgba(0, 61, 92, 0.6);
+  background: rgba(230, 247, 255, 0.5);
+  border-left-color: #00a8cc;
+  .mat-icon {
+    color: #00a8cc;
+  }
+}
+
+.success-message {
+  @extend .message-base;
+  color: #2e7d32;
+  margin-bottom: 1rem;
+  background: rgba(76, 175, 80, 0.1);
+  border-left-color: #4caf50;
+
+  .mat-icon {
+    color: #4caf50;
+  }
+}

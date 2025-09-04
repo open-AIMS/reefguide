@@ -30,7 +30,7 @@ type AuthMode = 'login' | 'register' | 'resetRequest' | 'resetConfirm';
     MatDividerModule
   ],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  styleUrls: ['./login.component.scss', '../form-styles.scss']
 })
 export class LoginComponent {
   private readonly authService = inject(AuthService);
