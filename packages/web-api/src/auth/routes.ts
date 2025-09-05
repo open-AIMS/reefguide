@@ -278,7 +278,7 @@ router.post(
     });
 
     // Complete 200OK
-    res.sendStatus(200);
+    res.status(200).json({ message: 'Successfully changed password.' });
   }
 );
 

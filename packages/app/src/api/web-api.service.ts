@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { JobType, Polygon, PolygonNote, User, UserRole } from '@reefguide/db';
 import {
+  ChangePasswordInput,
   CreateJobResponse,
   CreateProjectInput,
   CreateProjectResponse,
@@ -429,5 +430,10 @@ export class WebApiService {
 
   confirmPasswordReset(payload: PostUseResetCodeRequest): Observable<PostUseResetCodeResponse> {
     return this.http.post<PostUseResetCodeResponse>(`${this.base}/password-reset/confirm`, payload);
+  }
+
+  // Change password
+  changePassword(payload: ChangePasswordInput): Observable<void> {
+    return this.http.post<void>(`${this.base}/auth/change-password`, payload);
   }
 }
