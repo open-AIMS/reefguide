@@ -10,7 +10,7 @@ import { AsyncPipe } from '@angular/common';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatTabsModule } from '@angular/material/tabs';
 import { AuthService } from '../../auth/auth.service';
-import { ChangeMyPasswordComponent } from "../../auth/change-my-password/change-my-password.component";
+import { ChangeMyPasswordComponent } from '../../auth/change-my-password/change-my-password.component';
 
 @Component({
   selector: 'app-config-dialog',
@@ -25,7 +25,7 @@ import { ChangeMyPasswordComponent } from "../../auth/change-my-password/change-
     MatCheckbox,
     MatTabsModule,
     ChangeMyPasswordComponent
-],
+  ],
   templateUrl: './config-dialog.component.html',
   styleUrl: './config-dialog.component.scss'
 })
