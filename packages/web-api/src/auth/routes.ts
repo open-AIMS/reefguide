@@ -2,6 +2,7 @@ import { prisma, UserRole } from '@reefguide/db';
 import {
   BulkCreatePreApprovedUsersInputSchema,
   BulkCreatePreApprovedUsersResponse,
+  ChangePasswordInputSchema,
   CreatePreApprovedUserInputSchema,
   CreatePreApprovedUserResponse,
   DeletePreApprovedUserResponse,
@@ -21,9 +22,13 @@ import {
 } from '@reefguide/types';
 import bcryptjs from 'bcrypt';
 import express, { Request, Response, Router } from 'express';
+import rateLimit from 'express-rate-limit';
+import z from 'zod';
 import { processRequest } from 'zod-express-middleware';
 import * as Exceptions from '../exceptions';
-import { registerUser } from '../services/auth';
+import { logSentryMessage } from '../sentry-instrument';
+import { hashPassword, registerUser } from '../services/auth';
+import { PreApprovedUserService } from '../services/preApproval';
 import { generateRefreshToken, signJwt } from './jwtUtils';
 import { passport } from './passportConfig';
 import {
@@ -32,8 +37,6 @@ import {
   getRefreshTokenObject,
   isRefreshTokenValid as validateRefreshToken
 } from './utils';
-import z from 'zod';
-import { PreApprovedUserService } from '../services/preApproval';
 
 require('express-async-errors');
 export const router: Router = express.Router();
@@ -41,11 +44,34 @@ export const router: Router = express.Router();
 // All users are granted this role by default
 export const BASE_ROLES: UserRole[] = [UserRole.DEFAULT];
 
+// Rate limiting for password routes
+const authRateLimit = (per15Minutes: number) => {
+  // If in test mode, return a pass-through middleware
+  if (process.env.TEST_MODE === 'true') {
+    return (req: any, res: any, next: any) => next();
+  }
+
+  return rateLimit({
+    // 15 true
+    windowMs: 15 * 60 * 1000,
+    // configurable attempts within 15 minutes
+    max: per15Minutes,
+    keyGenerator: async req => {
+      // Rate limit by user ID then IP then unknown as backup
+      return req.user?.id.toString() ?? req.ip ?? 'unknown';
+    },
+    message: {
+      error: 'Too many attempts.'
+    }
+  });
+};
+
 /**
  * Register a new user
  */
 router.post(
   '/register',
+  authRateLimit(3),
   processRequest({ body: RegisterInputSchema }),
   async (req: Request, res: Response<RegisterResponse>) => {
     const { password, email } = req.body;
@@ -70,10 +96,11 @@ router.post(
   }
 );
 /**
- * Login user
+ * Login user (5 attempts per 15 minutes max)
  */
 router.post(
   '/login',
+  authRateLimit(5),
   processRequest({ body: LoginInputSchema }),
   async (req, res: Response<LoginResponse>) => {
     const { email, password: submittedPassword } = req.body;
@@ -167,6 +194,91 @@ router.get(
     }
     // The user is attached to the request by Passport
     res.json({ user: req.user });
+  }
+);
+
+/**
+ * Change user password
+ */
+router.post(
+  '/change-password',
+  authRateLimit(5),
+  passport.authenticate('jwt', { session: false }),
+  processRequest({ body: ChangePasswordInputSchema }),
+  async (req, res: Response) => {
+    const { confirmPassword, newPassword, oldPassword } = req.body;
+
+    // check passwords match
+    if (newPassword !== confirmPassword) {
+      throw new Exceptions.BadRequestException('New password and confirmation do not match.');
+    }
+
+    const user = req.user;
+    if (!user) {
+      throw new Exceptions.UnauthorizedException('Invalid credentials.');
+    }
+
+    // Lookup user from DB
+    const userDb = await prisma.user.findUnique({
+      where: { email: user.email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        roles: true
+      }
+    });
+
+    if (!userDb) {
+      // This is actually a weird state - log in sentry but reject
+      logSentryMessage(
+        `User who had valid token tried to change password but email didn't exist! Info: ${{ tokenEmail: user.email }}`,
+        'warning'
+      );
+      throw new Exceptions.UnauthorizedException('Invalid credentials.');
+    }
+
+    // Check password against db (latest)
+    const isPasswordValid = await bcryptjs.compare(oldPassword, userDb.password);
+
+    if (!isPasswordValid) {
+      throw new Exceptions.UnauthorizedException('Invalid credentials');
+    }
+
+    // Hash the new password
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update password
+    await prisma.user.update({
+      where: { email: user.email },
+      data: { password: hashedPassword }
+    });
+
+    // and add login to log
+    await prisma.userLog.create({
+      data: { action: 'CHANGE_PASSWORD', userId: user.id }
+    });
+
+    // Invalidate any refresh tokens which are not expired to invalidate them
+    await prisma.refreshToken.updateMany({
+      where: {
+        AND: [
+          // Is owned by the user
+          {
+            user_id: user.id
+          },
+          // Is still valid
+          { valid: true },
+          // Is not expired yet (i.e. expiry > current time)
+          { expiry_time: { gt: Math.floor(Date.now() / 1000) } }
+        ]
+      },
+      // Set valid to false
+      data: { valid: false }
+    });
+
+    // Complete 200OK
+    res.sendStatus(200);
   }
 );
 
