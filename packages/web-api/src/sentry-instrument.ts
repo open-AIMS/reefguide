@@ -25,6 +25,6 @@ export function logSentryMessage(message: string, level: 'info' | 'warning' | 'e
     const Sentry = require('@sentry/node');
     Sentry.captureMessage(message, level);
   } else {
-    console.log('Swalling sentry log since DSN is not configured. ', { message, level });
+    console.log('Swallowing sentry log since DSN is not configured. ', { message, level });
   }
 }

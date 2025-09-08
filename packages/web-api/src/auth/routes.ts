@@ -45,7 +45,7 @@ export const router: Router = express.Router();
 export const BASE_ROLES: UserRole[] = [UserRole.DEFAULT];
 
 // Rate limiting for password routes
-const authRateLimit = (per15Minutes: number) => {
+const authRateLimit = (windowMinutes: number, perWindowThreshold: number) => {
   // If in test mode, return a pass-through middleware
   if (process.env.TEST_MODE === 'true') {
     return (req: any, res: any, next: any) => next();
@@ -53,12 +53,17 @@ const authRateLimit = (per15Minutes: number) => {
 
   return rateLimit({
     // 15 true
-    windowMs: 15 * 60 * 1000,
+    windowMs: windowMinutes * 60 * 1000,
     // configurable attempts within 15 minutes
-    max: per15Minutes,
+    max: perWindowThreshold,
     keyGenerator: async req => {
       // Rate limit by user ID then IP then unknown as backup
-      return req.user?.id.toString() ?? req.ip ?? 'unknown';
+      if (!req.user?.id && !req.ip) {
+        throw new Exceptions.InternalServerError(
+          'Request is appearing with no IP address nor user ID. Uncertain how to proceed to rate limit reliably.'
+        );
+      }
+      return (req.user?.id.toString() ?? req.ip)!;
     },
     message: {
       error: 'Too many attempts.'
@@ -71,7 +76,8 @@ const authRateLimit = (per15Minutes: number) => {
  */
 router.post(
   '/register',
-  authRateLimit(3),
+  // 3 requests per 15 minutes
+  authRateLimit(15, 3),
   processRequest({ body: RegisterInputSchema }),
   async (req: Request, res: Response<RegisterResponse>) => {
     const { password, email } = req.body;
@@ -100,7 +106,8 @@ router.post(
  */
 router.post(
   '/login',
-  authRateLimit(5),
+  // 5 requests per 15 minutes
+  authRateLimit(15, 5),
   processRequest({ body: LoginInputSchema }),
   async (req, res: Response<LoginResponse>) => {
     const { email, password: submittedPassword } = req.body;
@@ -202,7 +209,8 @@ router.get(
  */
 router.post(
   '/change-password',
-  authRateLimit(5),
+  // 5 requests per 15 minutes
+  authRateLimit(15, 5),
   passport.authenticate('jwt', { session: false }),
   processRequest({ body: ChangePasswordInputSchema }),
   async (req, res: Response) => {
@@ -239,9 +247,9 @@ router.post(
     }
 
     // Check password against db (latest)
-    const isPasswordValid = await bcryptjs.compare(oldPassword, userDb.password);
+    const oldPasswordMatchesDb = await bcryptjs.compare(oldPassword, userDb.password);
 
-    if (!isPasswordValid) {
+    if (!oldPasswordMatchesDb) {
       throw new Exceptions.UnauthorizedException('Invalid credentials');
     }
 
@@ -277,7 +285,7 @@ router.post(
       data: { valid: false }
     });
 
-    // Complete 200OK
+    // Complete 200 OK
     res.status(200).json({ message: 'Successfully changed password.' });
   }
 );
