@@ -14,3 +14,17 @@ if (config.sentryDsn) {
   });
   console.log('Sentry initialized successfully.');
 }
+
+/**
+ * Custom sentry logger
+ * @param message The message
+ * @param level the log level
+ */
+export function logSentryMessage(message: string, level: 'info' | 'warning' | 'error') {
+  if (config.sentryDsn) {
+    const Sentry = require('@sentry/node');
+    Sentry.captureMessage(message, level);
+  } else {
+    console.log('Swallowing sentry log since DSN is not configured. ', { message, level });
+  }
+}
