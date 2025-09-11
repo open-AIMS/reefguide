@@ -15,17 +15,17 @@ on:
       environment:
         description: 'Which GitHub environment to deploy to'
         required: true
-        default: 'dev'
+        default: 'test'
         type: choice
         options:
-          - dev
           - test
+          - prod
 permissions:
   id-token: write
   contents: read
 jobs:
   cdk-deploy:
-    # This means the workflow can only run from dev protected branches e.g. main
+    # This means the workflow can only run from the selected environments branches
     environment: ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
     steps:
