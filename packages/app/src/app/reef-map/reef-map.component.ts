@@ -24,6 +24,9 @@ import { MapBrowserEvent } from 'ol';
 import { MatDialog } from '@angular/material/dialog';
 import { FeatureInfoDialogComponent } from '../widgets/feature-info-dialog/feature-info-dialog.component';
 import { FeatureRef } from '../map/openlayers-types';
+import { Router } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -35,12 +38,14 @@ import { FeatureRef } from '../map/openlayers-types';
 @Component({
   selector: 'app-reef-map',
   templateUrl: './reef-map.component.html',
-  imports: [LayerListComponent, JobStatusListComponent],
+  imports: [LayerListComponent, JobStatusListComponent, MatIconModule, MatButtonModule],
   styleUrl: './reef-map.component.scss'
 })
 export class ReefMapComponent implements AfterViewInit {
   private readonly dialog = inject(MatDialog);
   readonly mapService = inject(ReefGuideMapService, { optional: true });
+
+  private readonly router = inject(Router);
 
   /**
    * View that is associated with OpenLayers Map.
@@ -235,5 +240,10 @@ export class ReefMapComponent implements AfterViewInit {
         features
       }
     });
+  }
+
+  // return home
+  goBack() {
+    this.router.navigate(['/']);
   }
 }

@@ -1,5 +1,17 @@
 <div #olMap class="map"></div>
 <div class="left-toolbar" [style.visibility]="hideLeftToolbar() ? 'hidden' : 'visible'">
+  <!--- Return to the projects page-->
+  <div class="back-button">
+    <button
+      mat-icon-button
+      class="back-button"
+      matTooltip="Back to projects"
+      (click)="goBack()"
+    >
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span class="back-button-text">Return to projects</span>
+  </div>
   <app-layer-list></app-layer-list>
   <!-- content from parent. if needed can use selectors to position first/last etc. -->
   <ng-content></ng-content>
