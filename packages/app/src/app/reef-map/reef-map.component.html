@@ -2,12 +2,7 @@
 <div class="left-toolbar" [style.visibility]="hideLeftToolbar() ? 'hidden' : 'visible'">
   <!--- Return to the projects page-->
   <div class="back-button">
-    <button
-      mat-icon-button
-      class="back-button"
-      matTooltip="Back to projects"
-      (click)="goBack()"
-    >
+    <button mat-icon-button class="back-button" matTooltip="Back to projects" (click)="goBack()">
       <mat-icon>arrow_back</mat-icon>
     </button>
     <span class="back-button-text">Return to projects</span>
