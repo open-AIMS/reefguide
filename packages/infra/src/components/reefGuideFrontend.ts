@@ -127,6 +127,8 @@ export class ReefGuideFrontend extends Construct {
       // Setup with distribution so that deployment will invalidate cache
       distribution: this.distribution,
       distributionPaths: ['/*'],
+      // Reasonable memory limit - 128MB is default which is extremely poro
+      memoryLimit: 2048,
       sources: [
         s3deploy.Source.asset(buildPath, {
           // Exclude common directories that shouldn't be included
