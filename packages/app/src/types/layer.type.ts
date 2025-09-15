@@ -16,4 +16,12 @@ export type LayerProperties = {
    * Feature property to use for labels.
    */
   labelProp?: string;
+  /**
+   * Text to prepend to all feature labels in this layer.
+   */
+  layerPrefix?: string;
+  /**
+   * Text to append to all feature labels in this layer.
+   */
+  layerPostfix?: string;
 };

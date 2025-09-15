@@ -1,4 +1,5 @@
 import { HttpClient } from '@angular/common/http';
+import { Options as VectorLayerOptions } from 'ol/layer/Vector';
 import { inject, Injectable } from '@angular/core';
 import { JobType, Polygon, PolygonNote, User, UserRole } from '@reefguide/db';
 import {
@@ -275,6 +276,7 @@ export class WebApiService {
       {
         id: 'canonical_reefs',
         title: 'RRAP Canonical Reefs',
+        layerPrefix: 'Reef: ',
         labelProp: 'reef_name',
         infoUrl:
           'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/RRAP_Canonical_Reefs/FeatureServer',
@@ -320,11 +322,31 @@ export class WebApiService {
       {
         id: 'ecorrap_site_locations',
         title: 'EcoRRAP Site Locations',
+        layerPrefix: 'EcoRRAP Site: ',
         labelProp: 'Name',
         infoUrl:
           'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
         url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
         urlType: 'ArcGisFeatureServer',
+        cluster: true
+      },
+      // QPWS Moorings -
+      // https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer/20
+      {
+        id: 'parks_marine_moorings',
+        title: 'QPWS Moorings',
+        layerPrefix: 'QPWS Mooring: ',
+        labelProp: 'site_and_mooring_reference_numb',
+        infoUrl:
+          'https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer',
+        url: 'https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer',
+        urlType: 'ArcGisFeatureServer',
+        layerOptions: {
+          visible: true
+        },
+        // This is the layer to target - notice stripped from URL above
+        layerId: '20',
+        // Clustering enabled
         cluster: true
       }
     ];

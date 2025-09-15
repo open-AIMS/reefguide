@@ -48,6 +48,16 @@ type BaseLayerDef = {
    * Feature property used as the primary label
    */
   labelProp?: string;
+
+  /**
+   * Text to prepend to all feature labels in this layer.
+   */
+  layerPrefix?: string;
+
+  /**
+   * Text to append to all feature labels in this layer.
+   */
+  layerPostfix?: string;
 };
 
 type VectorLayerDef = BaseLayerDef & {
