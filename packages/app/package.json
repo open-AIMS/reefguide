@@ -9,7 +9,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "format:check": "prettier --check \"src/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
-    "format:write": "prettier --write \"src/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\""
+    "format:write": "prettier --write \"src/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
+    "sourcemaps": "pnpm run build && ./node_modules/@sentry/cli/bin/sentry-cli sourcemaps inject dist/adria-app && ./node_modules/@sentry/cli/bin/sentry-cli --url ${SENTRY_URL} sourcemaps --org none --project none upload dist/adria-app"
   },
   "private": true,
   "dependencies": {
@@ -38,6 +39,7 @@
     "zod": "^3.25.62"
   },
   "devDependencies": {
+    "@sentry/cli": "^2.53.0",
     "@angular-devkit/build-angular": "^20.2.0",
     "@angular/cli": "^20.2.0",
     "@angular/compiler-cli": "^20.2.1",

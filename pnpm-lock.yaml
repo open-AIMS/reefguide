@@ -108,6 +108,9 @@ importers:
       '@angular/compiler-cli':
         specifier: ^20.2.1
         version: 20.2.1(@angular/compiler@20.2.1)(typescript@5.8.3)
+      '@sentry/cli':
+        specifier: ^2.53.0
+        version: 2.53.0(encoding@0.1.13)
       '@types/jasmine':
         specifier: ~5.1.0
         version: 5.1.8
