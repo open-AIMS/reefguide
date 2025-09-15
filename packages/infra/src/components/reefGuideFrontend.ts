@@ -166,8 +166,8 @@ export class ReefGuideFrontend extends Construct {
                 # Build the specific package using turbo
                 npx turbo build --filter=${packageName}
                 
-                # Copy built files to output
-                cp -r ${outputPath}/* /asset-output/
+                # Copy built files to output, excluding map files
+                find ${outputPath} -type f ! -name "*.js.map" ! -name "*.css.map" -exec cp --parents {} /asset-output/ \\;
               `
             ],
             // Local bundling for faster development
@@ -202,8 +202,8 @@ export class ReefGuideFrontend extends Construct {
                     'rm -f packages/app/.env',
                     // Build the app using turbo
                     `npx turbo build --filter=${packageName}`,
-                    // Copy output files
-                    `cp -r ${outputPath}/* ${outputDir}/`,
+                    // Copy output files excluding map files
+                    `find ${outputPath} -type f ! -name "*.js.map" ! -name "*.css.map" -exec cp --parents {} ${outputDir}/ \\;`,
                     // Restore backup if it exists
                     '[ -f packages/app/backup.env ] && cp packages/app/backup.env packages/app/.env && rm packages/app/backup.env || echo "No .env backup to restore"'
                   ];
