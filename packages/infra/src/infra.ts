@@ -28,7 +28,13 @@ export const STANDARD_EXCLUSIONS = [
 ];
 
 // All of these endpoints need to be added to CSP for front-end
-const ARC_GIS_ENDPOINTS = ['https://*.arcgis.com', 'https://*.arcgisonline.com'];
+const ARC_GIS_ENDPOINTS = [
+  'https://*.arcgis.com',
+  'https://*.arcgisonline.com',
+  'https://spatial-gis.information.qld.gov.au',
+  'https://*.information.qld.gov.au',
+  'https://*.qld.gov.au'
+];
 
 /**
  * Extracts Sentry DSN URLs from monitoring configuration for CSP whitelisting.
