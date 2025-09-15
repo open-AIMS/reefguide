@@ -8,7 +8,7 @@ Below is documented the current reefguide contextual layers, and their associate
 | WavesHs                | [ArcGIS](https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_wave_Hs_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml) | Working         |
 | Slope                  | [ArcGIS](https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_slope_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml)   | Working         |
 | Depth                  | [ArcGIS](https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_bathymetry/MapServer/WMTS/1.0.0/WMTSCapabilities.xml)   | Working         |
-| **QPWS Moorings**      | [ArcGIS](https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer)                       | **Not Working** |
+| QPWS Moorings          | [ArcGIS](https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer)                       | Working         |
 | EcoRRAP Site Locations | [ArcGIS](https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer)                         | Working         |
 | Hybrid Benthic         | [ArcGIS](https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer/WMTS/1.0.0/WMTSCapabilities.xml)   | Working         |
 | RRAP Canonical Reefs   | [ArcGIS](https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/RRAP_Canonical_Reefs/FeatureServer)                           | Working         |
