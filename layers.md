@@ -1,5 +1,7 @@
 # ReefGuide layer sources
 
+Below is documented the current reefguide contextual layers, and their associated status and data source.
+
 | Title                  | Source (URL)                                                                                                                              | Status          |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
 | WavesTp                | [ArcGIS](https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml)     | Working         |
