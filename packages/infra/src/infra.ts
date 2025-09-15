@@ -362,8 +362,8 @@ export class ReefguideStack extends cdk.Stack {
             JULIA_DEBUG: 'ADRIAReefGuideWorker',
             // Moore cluster data package
             MOORE_DATA_PACKAGE_PATH: '/data/reefguide/adria/datapackages/Moore_2025-01-17_v070_rc1',
-            // GBR RME cluster data package
-            GBR_DATA_PACKAGE_PATH: '/data/reefguide/adria/datapackages/rme_ml_2024_01_08',
+            // GBR RME cluster data package - new version
+            GBR_DATA_PACKAGE_PATH: '/data/reefguide/adria/datapackages/rme_ml_2025_06_05',
             // Don't use network FS for this - to speed up IO and reduce $
             DATA_SCRATCH_SPACE: '/tmp/reefguide',
 
