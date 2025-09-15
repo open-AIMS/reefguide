@@ -167,7 +167,7 @@ jobs:
           pnpm exec turbo run build --filter=@reefguide/infra
           echo "✅ Infrastructure package built successfully"
 
-      - name: Upload web-api and capacity manager Sourcemaps to BugSink
+      - name: Upload TS and Angular sourcemaps to BugSink
         env:
           SENTRY_URL: ${{ secrets.SENTRY_URL }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
