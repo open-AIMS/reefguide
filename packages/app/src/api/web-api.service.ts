@@ -1,5 +1,4 @@
 import { HttpClient } from '@angular/common/http';
-import { Options as VectorLayerOptions } from 'ol/layer/Vector';
 import { inject, Injectable } from '@angular/core';
 import { JobType, Polygon, PolygonNote, User, UserRole } from '@reefguide/db';
 import {
@@ -38,6 +37,9 @@ import {
 } from 'rxjs';
 import { environment } from '../environments/environment';
 import { retryHTTPErrors } from '../util/http-util';
+import Style, { StyleFunction } from 'ol/style/Style';
+import { Fill, Stroke } from 'ol/style';
+import { gbrmpZoneStyleFunction } from './styling-helpers';
 
 type JobId = CreateJobResponse['jobId'];
 
@@ -252,25 +254,27 @@ export class WebApiService {
         id: 'ssr_sentinel_2018',
         title: 'SSR Sentinel 2018',
         infoUrl:
-          'https://tiles.arcgis.com/tiles/ll1QQ2mI4WMXIXdm/arcgis/rest/services/SSR_Sentinel_2018/MapServer',
-        url: 'https://tiles.arcgis.com/tiles/ll1QQ2mI4WMXIXdm/arcgis/rest/services/SSR_Sentinel_2018/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+          'https://tiles-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/SSR_Sentinel_2018/MapServer',
+        url: 'https://tiles-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/SSR_Sentinel_2018/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
         urlType: 'WMTSCapabilitiesXml',
         layerOptions: {
           visible: false
         }
       },
       {
-        id: 'GBRMP_Zoning',
-        title: 'GBRMP Zoning',
+        id: 'GBRMPA_Zoning',
+        title: 'GBRMPA Zoning',
         // NAME exists, specific id like P-16-15, but TYPE more friendly text
         labelProp: 'TYPE',
         layerId: '53',
         infoUrl:
-          'https://services8.arcgis.com/ll1QQ2mI4WMXIXdm/ArcGIS/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer',
-        url: 'https://services8.arcgis.com/ll1QQ2mI4WMXIXdm/ArcGIS/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer',
+          'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer/',
+        url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer/',
         urlType: 'ArcGisFeatureServer',
         layerOptions: {
-          opacity: 0.7
+          visible: false,
+          opacity: 0.5,
+          style: gbrmpZoneStyleFunction
         }
       },
       {
@@ -283,20 +287,18 @@ export class WebApiService {
         url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/RRAP_Canonical_Reefs/FeatureServer',
         urlType: 'ArcGisFeatureServer',
         layerOptions: {
+          visible: true,
           opacity: 0.8,
           style: {
-            // need a fill for center of reef to be clickable
             'fill-color': 'rgba(35,96,165,0.01)',
             'stroke-color': 'rgba(35,96,165,0.6)',
             'stroke-line-dash': [4, 6],
             'stroke-width': 0,
             'text-value': ['get', 'reef_name']
-            // TODO show more reef names at higher zoom, declutter isn't it
-            // https://openlayers.org/en/latest/apidoc/module-ol_style_Style.html#~DeclutterMode
-            // 'text-declutter-mode': 'none'
           }
         }
       },
+
       // can zoom in approx to scale 36100, 134MB
       // {
       //   id: 'hybrid_benthic_2',
@@ -342,12 +344,160 @@ export class WebApiService {
         url: 'https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer',
         urlType: 'ArcGisFeatureServer',
         layerOptions: {
-          visible: true
+          visible: false
         },
         // This is the layer to target - notice stripped from URL above
         layerId: '20',
         // Clustering enabled
         cluster: true
+      },
+      // QPWS Protection Markers -
+      // https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer/10
+      {
+        id: 'parks_protection_markers',
+        title: 'GPWS Reef Protection Markers',
+        layerPrefix: 'QPWS Protection Markers: ',
+        labelProp: 'site_rpm_label',
+        infoUrl:
+          'https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer',
+        url: 'https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer',
+        urlType: 'ArcGisFeatureServer',
+        layerOptions: {
+          visible: false
+        },
+        // This is the layer to target - notice stripped from URL above
+        layerId: '10',
+        // Clustering enabled
+        cluster: true
+      },
+      {
+        id: 'gbrmpa_management_regions',
+        title: 'GBRMPA Management Regions',
+        layerPrefix: 'Management Region: ',
+        labelProp: 'AREA_DESCR',
+        layerId: '59',
+        infoUrl:
+          'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Management_Areas_20/FeatureServer',
+        url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Management_Areas_20/FeatureServer',
+        urlType: 'ArcGisFeatureServer',
+        layerOptions: {
+          visible: false,
+          opacity: 0.8,
+          style: {
+            'fill-color': 'rgba(24, 113, 214, 0.04)',
+            'stroke-color': 'rgba(0, 255, 4, 0.34)',
+            'stroke-line-dash': [4, 6],
+            'stroke-width': 5,
+            'text-value': ['get', 'AREA_DESCR']
+          }
+        }
+      },
+
+      {
+        id: 'cruiseship_transit_lanes',
+        title: 'GBRMPA Cruise Ship Transit Lanes',
+        layerPrefix: 'Cruiseship Lanes: ',
+        labelProp: 'AREA_DESCR',
+        layerId: '61',
+        infoUrl:
+          'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Cruise_Ship_Transit_Lanes_20/FeatureServer',
+        url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Cruise_Ship_Transit_Lanes_20/FeatureServer',
+        urlType: 'ArcGisFeatureServer',
+        layerOptions: {
+          visible: false,
+          opacity: 0.8,
+          style: {
+            'fill-color': 'rgba(30, 30, 235, 0.15)',
+            'stroke-color': 'rgba(13, 13, 239, 0.45)',
+            'stroke-line-dash': [4, 6],
+            'stroke-width': 3,
+            'text-value': ['concat', 'Cruiseship Transit Lane: ', ['get', 'AREA_DESCR']]
+          }
+        }
+      },
+      {
+        id: 'maritime_safety_port_limits',
+        title: 'Maritime Safety Port Limits',
+        layerPrefix: 'Port Limits: ',
+        labelProp: 'NAME',
+        layerId: '0',
+        infoUrl:
+          'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Maritime_Safety_Port_Limits/FeatureServer/',
+        url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Maritime_Safety_Port_Limits/FeatureServer/',
+        urlType: 'ArcGisFeatureServer',
+        layerOptions: {
+          visible: false,
+          opacity: 0.8,
+          style: {
+            'fill-color': 'rgba(238, 12, 140, 0.15)',
+            'stroke-color': 'rgba(229, 14, 136, 0.88)',
+            'stroke-line-dash': [4, 6],
+            'stroke-width': 2,
+            'text-value': ['get', 'NAME']
+          }
+        }
+      },
+      {
+        id: 'tumra_agreement',
+        title: 'Traditional Use of Marine Resources Agreement',
+        layerPrefix: 'TUMRA: ',
+        labelProp: 'NAME',
+        layerId: '55',
+        infoUrl:
+          'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Traditional_Use_of_Marine_Resources_TUMRA_20/FeatureServer',
+        url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Traditional_Use_of_Marine_Resources_TUMRA_20/FeatureServer',
+        urlType: 'ArcGisFeatureServer',
+        layerOptions: {
+          visible: false,
+          opacity: 0.8,
+          style: {
+            'fill-color': 'rgba(235, 154, 33, 0.17)',
+            'stroke-color': 'rgba(244, 149, 7, 0.57)',
+            'stroke-line-dash': [4, 6],
+            'stroke-width': 3,
+            'text-value': ['get', 'NAME']
+          }
+        }
+      },
+      {
+        id: 'designated_shipping_areas',
+        title: 'Designated Shipping Areas',
+        layerPrefix: 'Shipping Area: ',
+        labelProp: 'NAME',
+        layerId: '74',
+        infoUrl:
+          'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Designated_Shipping_Areas_201/FeatureServer',
+        url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Designated_Shipping_Areas_201/FeatureServer',
+        urlType: 'ArcGisFeatureServer',
+        layerOptions: {
+          visible: false,
+          opacity: 0.8,
+          style: function (feature, resolution) {
+            if (feature.get('OBJECTID') == 1) {
+              return new Style({
+                fill: new Fill({
+                  color: 'rgba(149, 246, 22, 0.14)'
+                }),
+                stroke: new Stroke({
+                  color: 'rgba(129, 209, 16, 0.28)',
+                  lineDash: [4, 6],
+                  width: 2
+                })
+              });
+            } else {
+              return new Style({
+                fill: new Fill({
+                  color: 'rgba(255, 94, 0, 0.2)'
+                }),
+                stroke: new Stroke({
+                  color: 'rgba(255, 4, 0, 0.48)',
+                  lineDash: [4, 6],
+                  width: 2
+                })
+              });
+            }
+          } satisfies StyleFunction
+        }
       }
     ];
   }
