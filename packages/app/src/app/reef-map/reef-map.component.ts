@@ -27,6 +27,7 @@ import { FeatureRef } from '../map/openlayers-types';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { ReefSearchComponent } from "./reef-search/reef-search.component";
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -38,7 +39,7 @@ import { MatButtonModule } from '@angular/material/button';
 @Component({
   selector: 'app-reef-map',
   templateUrl: './reef-map.component.html',
-  imports: [LayerListComponent, JobStatusListComponent, MatIconModule, MatButtonModule],
+  imports: [LayerListComponent, JobStatusListComponent, MatIconModule, MatButtonModule, ReefSearchComponent],
   styleUrl: './reef-map.component.scss'
 })
 export class ReefMapComponent implements AfterViewInit {

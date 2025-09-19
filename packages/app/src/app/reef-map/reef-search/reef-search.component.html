@@ -1,0 +1,42 @@
+<div class="reef-search-container">
+  <mat-form-field appearance="outline" class="search-field">
+    <mat-label>Search for reefs</mat-label>
+    <input
+      matInput
+      [matAutocomplete]="auto"
+      (input)="search($event.target.value)"
+      placeholder="Type to search reefs..."
+    />
+    <mat-icon matPrefix class="search-icon">search</mat-icon>
+  </mat-form-field>
+
+  <mat-autocomplete
+    #auto="matAutocomplete"
+    [displayWith]="displayReef"
+    (optionSelected)="onReefSelected($event)"
+    class="reef-autocomplete">
+    @for (option of reefSearchService.results()?.results ?? []; track option.id) {
+      <mat-option [value]="option" class="reef-option">
+        <span class="reef-name">{{ option.name }}</span>
+      </mat-option>
+    }
+
+    @if (reefSearchService.searching()) {
+      <mat-option disabled>
+        <span class="loading-text">Searching...</span>
+      </mat-option>
+    }
+
+    @if (reefSearchService.error()) {
+      <mat-option disabled>
+        <span class="error-text">{{ reefSearchService.error() }}</span>
+      </mat-option>
+    }
+
+    @if (!reefSearchService.searching() && !reefSearchService.error() && reefSearchService.results() && (reefSearchService.results()?.results?.length ?? 0) === 0) {
+      <mat-option disabled>
+        <span class="no-results-text">No reefs found</span>
+      </mat-option>
+    }
+  </mat-autocomplete>
+</div>

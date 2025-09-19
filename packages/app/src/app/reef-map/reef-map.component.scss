@@ -19,18 +19,25 @@
   left: 12px;
   align-items: flex-start;
 
-  .back-button {
+  .panel-row {
     display: flex;
     flex-direction: row;
     gap: 8px;
     align-items: center;
-    background-color: rgba(240, 248, 255, 0.75);
-    border-radius: 20px;
 
-    .back-button-text {
-      font-size: medium;
-      margin-right: 12px;
-      font-weight: 550;
+    .back-button {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      align-items: center;
+      background-color: rgba(240, 248, 255, 0.75);
+      border-radius: 20px;
+
+      .back-button-text {
+        font-size: medium;
+        margin-right: 12px;
+        font-weight: 550;
+      }
     }
   }
 }
