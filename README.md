@@ -71,7 +71,54 @@ Make sure you have `nvm` and `docker` (rootless) installed, then run
 ./local-dev.sh
 ```
 
-This will set everything up with reasonable defaults for a local dev.
+This will set the project up with reasonable defaults for a local dev.
+
+**Note**: the workers have to be set up and launched before the web app becomes
+functional. See the other ReefGuide repositories (see diagram above) and ensure
+locations for data files and datapackages are suitably defined and correct.
+
+### Running services manually
+
+To launch the web app, run:
+
+```
+pnpm run dev
+```
+
+This will launch the web app, defaulting to http://localhost:4200/.
+
+Login credentials can be found inside the `.env` file under the
+[web-api directory](./packages/web-api). You can use the `worker` credentials to sign into the app.
+
+## Command-line tool
+
+A commandline tool called `reefguide-cli` to aid in managing the database is also provided.
+
+Detailed setup instructions available [here](https://open-aims.github.io/reefguide/setting-up-reefguide-cli.html).
+
+For a quick start:
+
+Inside `packages/cli`, run:
+
+```
+cp .env.dist .env
+```
+
+If pnpm is not configured globally, the `reefguide-cli` tool can be invoked under
+`packages/cli` like so:
+
+```
+pnpm start <reefguide CLI arguments>
+
+# For example
+
+pnpm start --help
+pnpm start data-spec reload
+pnpm start cache --help
+```
+
+See the [`reefguide-cli` README](./packages/cli/README.md) for further detail and more
+complete setup instructions.
 
 ## Manual setup
 
@@ -139,7 +186,7 @@ Then
 turbo dev
 ```
 
-Or just
+Again, the convenience setup script will handle all the above for you.
 
 ```
 ./local-dev.sh
