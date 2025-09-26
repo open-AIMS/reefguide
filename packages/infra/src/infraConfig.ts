@@ -3,6 +3,20 @@ import * as path from 'path';
 import * as z from 'zod';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
+export const MonitoringSchema = z.object({
+  /** The Sentry DSN for the web API */
+  webApiSentryDsn: z.string().url().optional(),
+  /** The Sentry DSN for the app */
+  appSentryDsn: z.string().url().optional(),
+  /** The Sentry DSN for the capacity manager service */
+  capacityManagerSentryDsn: z.string().url().optional(),
+  /** The Sentry DSN for the ADRIA worker */
+  adriaWorkerSentryDsn: z.string().url().optional(),
+  /** The Sentry DSN for the reefguide worker */
+  reefguideWorkerSentryDsn: z.string().url().optional()
+});
+export type MonitoringConfig = z.infer<typeof MonitoringSchema>;
+
 export const ReefGuideFrontendConfigSchema = z.object({
   /** The index document of the website */
   indexDocument: z.string().default('index.html'),
@@ -12,9 +26,53 @@ export const ReefGuideFrontendConfigSchema = z.object({
   appName: z.string().min(1, 'App name must not be empty').default('ReefGuide'),
   /** The email address of the admin user displayed as a contact email for
    * requesting access */
-  adminEmail: z.string().email()
+  adminEmail: z.string().email(),
+  /** If you would like to add additional CSP whitelists for script sources */
+  additionalCspWhitelists: z.array(z.string()).optional()
 });
 export type ReefGuideFrontendConfig = z.infer<typeof ReefGuideFrontendConfigSchema>;
+
+// Email configuration schema for deployment
+export const EmailConfigSchema = z
+  .object({
+    /** Email service mode - SMTP or MOCK */
+    serviceMode: z.enum(['SMTP', 'MOCK']).default('MOCK'),
+    /** From email address for notifications */
+    fromAddress: z.string().email().default('noreply@reefguide.org'),
+    /** From name for email notifications */
+    fromName: z.string().default('ReefGuide Notification System'),
+    /** Reply-to email address (optional) */
+    replyTo: z.string().email().optional(),
+    /**
+     * ARN of the AWS Secrets Manager secret containing SMTP credentials
+     * Only required when serviceMode is SMTP
+     *
+     * Expected secret structure:
+     * {
+     *   "host": "smtp.reefguide.org",           // SMTP server hostname
+     *   "port": "587",                          // SMTP server port (as string)
+     *   "secure": "true",                       // Use secure connection (TLS) - "true" or "false" as string
+     *   "username": "noreply@reefguide.org",    // SMTP username
+     *   "password": "your-smtp-password-here"   // SMTP password
+     * }
+     */
+    smtpCredentialsArn: z.string().optional(),
+    /** Cache expiry time in seconds for SMTP connections */
+    smtpCacheExpirySeconds: z.number().int().positive().default(300)
+  })
+  .refine(
+    data => {
+      // If serviceMode is SMTP, then smtpCredentialsArn is required
+      return (
+        data.serviceMode === 'MOCK' || (data.serviceMode === 'SMTP' && data.smtpCredentialsArn)
+      );
+    },
+    {
+      message: "smtpCredentialsArn is required when serviceMode is 'SMTP'",
+      path: ['smtpCredentialsArn']
+    }
+  );
+export type EmailConfig = z.infer<typeof EmailConfigSchema>;
 
 // These are the values needed inside the API secret object - they are validated
 // at runtime.
@@ -196,7 +254,13 @@ export const DeploymentConfigSchema = z.object({
   db: DatabaseConfigSchema.optional(),
 
   // Job system configuration
-  jobSystem: JobSystemConfigSchema.default({})
+  jobSystem: JobSystemConfigSchema.default({}),
+
+  // Email configuration
+  email: EmailConfigSchema.default({}),
+
+  // Monitoring configuration
+  monitoring: MonitoringSchema.optional()
 });
 export type DeploymentConfig = z.infer<typeof DeploymentConfigSchema>;
 

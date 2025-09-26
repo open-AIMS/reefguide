@@ -1,6 +1,8 @@
 // src/app/app.routes.ts
 import { Routes } from '@angular/router';
 import { JobsTableComponent } from './jobs/jobs-table/jobs-table.component';
+import { authGuard } from './auth.guard';
+import { projectAuthGuard } from './project-auth.guard';
 
 export const routes: Routes = [
   {
@@ -13,7 +15,8 @@ export const routes: Routes = [
     path: 'adria/:projectId',
     loadComponent: () =>
       import('./model-workflow/model-workflow.component').then(m => m.ModelWorkflowComponent),
-    title: 'ADRIA Model Run'
+    title: 'ADRIA Model Run',
+    canActivate: [authGuard, projectAuthGuard]
   },
   {
     path: 'location-selection/:projectId',
@@ -22,11 +25,13 @@ export const routes: Routes = [
         console.log('selection');
         return m.LocationSelectionComponent;
       }),
-    title: 'Location Selection'
+    title: 'Location Selection',
+    canActivate: [authGuard, projectAuthGuard]
   },
   {
     path: 'jobs',
     component: JobsTableComponent,
-    title: 'My Jobs'
+    title: 'My Jobs',
+    canActivate: [authGuard]
   }
 ];

@@ -1,0 +1,93 @@
+<form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
+  <!-- Email Field -->
+  <mat-form-field appearance="outline">
+    <mat-label>Email Address</mat-label>
+    <mat-icon matPrefix>email</mat-icon>
+    <input
+      matInput
+      type="email"
+      formControlName="email"
+      placeholder="Enter your email"
+      autocomplete="email"
+    />
+    @if (registerForm.get('email')?.hasError('required')) {
+      <mat-error>Email is required</mat-error>
+    }
+    @if (registerForm.get('email')?.hasError('email')) {
+      <mat-error>Please enter a valid email address</mat-error>
+    }
+    @if (registerForm.get('email')?.hasError('serverError')) {
+      <mat-error>{{ errorMessage() }}</mat-error>
+    }
+  </mat-form-field>
+
+  <!-- Password Field -->
+  <mat-form-field appearance="outline">
+    <mat-label>Password</mat-label>
+    <mat-icon matPrefix>lock</mat-icon>
+    <input
+      matInput
+      [type]="hidePassword() ? 'password' : 'text'"
+      formControlName="password"
+      placeholder="Enter your password"
+      autocomplete="new-password"
+    />
+    <button
+      mat-icon-button
+      matSuffix
+      type="button"
+      (click)="togglePasswordVisibility()"
+      [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'"
+    >
+      <mat-icon>{{ hidePassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
+    </button>
+    @if (registerForm.get('password')?.hasError('required')) {
+      <mat-error>Password is required</mat-error>
+    }
+    @if (registerForm.get('password')?.hasError('minlength')) {
+      <mat-error>Password must be at least 8 characters long</mat-error>
+    }
+    @if (registerForm.get('password')?.hasError('serverError')) {
+      <mat-error>{{ errorMessage() }}</mat-error>
+    }
+  </mat-form-field>
+
+  <!-- Password Requirements -->
+  <div class="info-message">
+    <mat-icon>info</mat-icon>
+    <span>Password must be at least 8 characters long</span>
+  </div>
+
+  <!-- General Error Message -->
+  @if (errorMessage() && !hasFieldErrors()) {
+    <div class="error-message" role="alert" aria-live="polite">
+      <mat-icon>error</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- Submit Button -->
+  <button
+    mat-raised-button
+    color="primary"
+    type="submit"
+    class="auth-button"
+    [disabled]="!canSubmit()"
+  >
+    @if (isRegistering()) {
+      <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
+    } @else {
+      <mat-icon>person_add</mat-icon>
+    }
+    <span>{{ isRegistering() ? 'Creating account...' : 'Create Account' }}</span>
+  </button>
+</form>
+
+<!-- Mode Switch -->
+<mat-divider></mat-divider>
+<div class="mode-switch">
+  <p>
+    Already have an account?
+    <button mat-button color="primary" type="button" (click)="switchToLogin()">Sign In</button>
+  </p>
+</div>

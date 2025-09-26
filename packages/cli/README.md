@@ -31,6 +31,9 @@ reefguide-cli --help
 
 Triggers a data specification reload job with advanced monitoring options.
 
+**IMPORTANT:** the _regional_cache_v2.dat_ file in the ReefGuide cache directory must be deleted after updates
+to `ReefGuide.ASSESSMENT_CRITERIA`. (see issue [#91](https://github.com/open-AIMS/reefguide/issues/91))
+
 ```bash
 # Basic reload with default settings
 pnpm start data-spec reload

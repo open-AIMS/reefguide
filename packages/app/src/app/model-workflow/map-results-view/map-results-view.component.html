@@ -1,0 +1,70 @@
+<!-- src/app/model-workflow/map-results-view/map-results-view.component.html -->
+<div class="map-results-container">
+  <!-- Map Card -->
+  <mat-card class="map-card">
+    <mat-card-content>
+      <!-- Map Container -->
+      <div class="map-wrapper">
+        <div #mapContainer class="map-container" [class.hidden]="!mapInitialized() || hasError()">
+          <!-- OpenLayers map will be rendered here -->
+        </div>
+
+        <!-- Loading State -->
+        <div class="map-loading" *ngIf="isLoading()">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>
+            <span *ngIf="isMapLoading()">Initializing map...</span>
+            <span *ngIf="isLoadingGeoData()">Loading reef boundaries...</span>
+            <span *ngIf="isLoadingCoralData()">Loading coral cover data...</span>
+          </p>
+        </div>
+
+        <!-- Error State -->
+        <div class="map-error" *ngIf="hasError()">
+          <mat-icon>error_outline</mat-icon>
+          <p>{{ errorMessage() }}</p>
+          <button mat-raised-button color="primary" (click)="retryMapInitialization()">
+            <mat-icon>refresh</mat-icon>
+            Retry
+          </button>
+        </div>
+
+        <!-- No Results State -->
+        <div class="map-empty" *ngIf="!hasJobResults() && !isLoading()">
+          <mat-icon>map</mat-icon>
+          <p>No map data available</p>
+          <p class="hint">Run a model simulation to see spatial results</p>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Site Details Card - Shows when a site is selected -->
+  <mat-card class="site-details-card" *ngIf="selectedSite()">
+    <mat-card-header>
+      <mat-card-title>
+        <div class="title-row">
+          <button
+            mat-icon-button
+            (click)="clearSelectedSite()"
+            matTooltip="Close"
+            class="close-button"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="chart-container" #siteChartContainer>
+        <!-- Loading state for chart -->
+        <div class="chart-loading" *ngIf="isLoadingSiteData()">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Loading time series data...</p>
+        </div>
+        <!-- Vega-Lite chart will be rendered here -->
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -1,9 +1,9 @@
 import express from 'express';
-import { z } from 'zod';
-import { Config, loadConfig } from './config';
+import { config } from './config';
 import { CapacityManager } from './manager';
 import { AuthApiClient } from './authClient';
 import { logger } from './logging';
+import Sentry from '@sentry/node';
 
 /**
  * Main entry point for the Capacity Manager service
@@ -24,22 +24,6 @@ app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-let config: Config;
-
-try {
-  // Load and validate configuration from environment variables
-  config = loadConfig();
-  logger.info('Configuration loaded successfully');
-} catch (error) {
-  if (error instanceof z.ZodError) {
-    logger.error('Configuration validation failed:', { errors: error.errors });
-  } else {
-    logger.error('Failed to load configuration:', { error });
-  }
-  // Exit with error code if configuration cannot be loaded
-  process.exit(1);
-}
-
 // Create API client (base should include /api)
 logger.info('Initializing API client');
 const client = new AuthApiClient(config.apiEndpoint + '/api', {
@@ -59,33 +43,68 @@ logger.info('Starting capacity manager');
 manager.start();
 
 /**
+ * Graceful shutdown helper function
+ */
+async function gracefulShutdown(signal: string) {
+  logger.info(`Received ${signal} signal, shutting down gracefully...`);
+
+  try {
+    // Stop the capacity manager
+    manager.stop();
+    logger.info('Capacity manager stopped successfully');
+
+    // Close Sentry client and flush any pending reports
+    await Sentry.close(2000);
+    logger.info('Sentry client closed');
+
+    process.exit(0);
+  } catch (error) {
+    logger.error('Error during graceful shutdown:', error);
+    await Sentry.close(1000);
+    process.exit(1);
+  }
+}
+
+/**
  * Handles graceful shutdown on SIGTERM
- * Stops the capacity manager before process exit
  */
 process.on('SIGTERM', () => {
-  logger.info('Received SIGTERM signal, shutting down...');
-  manager.stop();
+  gracefulShutdown('SIGTERM');
 });
 
 /**
  * Handles graceful shutdown on SIGINT (Ctrl+C)
- * Stops the capacity manager before process exit
  */
 process.on('SIGINT', () => {
-  logger.info('Received SIGINT signal, shutting down...');
-  manager.stop();
+  gracefulShutdown('SIGINT');
 });
 
-// Additional error handling for uncaught exceptions
+/**
+ * Additional error handling for uncaught exceptions
+ */
 process.on('uncaughtException', error => {
-  logger.error('Uncaught exception, shutting down:', { error });
+  logger.error('Uncaught exception:', error);
+
+  // Attempt graceful shutdown
   manager.stop();
-  throw error;
+  // Flush Sentry and exit
+  Sentry.close(2000).finally(() => {
+    process.exit(1);
+  });
 });
 
-// Additional error handling for unhandled promise rejections
-process.on('unhandledRejection', reason => {
-  logger.error('Unhandled rejection, shutting down:', { reason });
+/**
+ * Additional error handling for unhandled promise rejections
+ */
+process.on('unhandledRejection', (reason, promise) => {
+  const error = reason instanceof Error ? reason : new Error(String(reason));
+  logger.error('Unhandled promise rejection:', error);
+
+  // Attempt graceful shutdown
   manager.stop();
-  throw new Error(reason as string);
+
+  // Flush Sentry and exit
+  Sentry.close(2000).finally(() => {
+    process.exit(1);
+  });
 });

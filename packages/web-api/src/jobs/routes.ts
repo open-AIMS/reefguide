@@ -49,7 +49,8 @@ router.post(
       req.user.id,
       req.body.type,
       req.body.inputPayload,
-      config.disableCache
+      config.cacheOptions.disableCache,
+      config.cacheOptions.disableSpecificCaches
     );
 
     res.status(200).json({

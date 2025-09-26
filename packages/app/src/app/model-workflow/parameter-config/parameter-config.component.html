@@ -22,6 +22,16 @@
         </mat-select>
       </mat-form-field>
 
+      <!-- RCP Scenario -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>RCP Scenario</mat-label>
+        <mat-select formControlName="rcpScenario">
+          <mat-option *ngFor="let option of rcpScenarioOptions()" [value]="option">
+            {{ option }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
       <!-- Number of Scenarios -->
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Number of scenarios</mat-label>

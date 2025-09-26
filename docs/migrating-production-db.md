@@ -1,14 +1,18 @@
-# Database Migration Guide
+# Database migration guide
 
 This guide will describe how to use our ORM `prisma`, to migrate your production database.
 
-## Prerequisites
+## Install dependencies
 
 Ensure the ReefGuide repository is installed and configured:
 
 ```bash
 # Install pnpm globally if not already installed
 npm install -g pnpm
+# setup pnpm if not done already
+pnpm setup
+# re-source your bashrc to apply pnpm config changes (or start a new terminal session)
+source ~/.bashrc
 # Install turbo globally
 pnpm install -g turbo
 # Install deps
@@ -17,45 +21,28 @@ pnpm i
 pnpm generate
 ```
 
-## Database Migration Steps
-
-### 1. Navigate to Database Package and build
+## Build DB package
 
 ```bash
 cd packages/db
 turbo build
 ```
 
-### 2. Access Prisma Commands
-
-All Prisma commands can be run using:
+## Setup placeholder .env file
 
 ```bash
-pnpm prisma <command>
+cp .env.dist .env
 ```
 
-### 3. Production Migration
+## Fill out .env with DB connection details
 
-For production deployments:
-
-```bash
-# Deploy all pending migrations
-pnpm prisma migrate deploy
-```
-
-## Database Credentials
-
-### Retrieving Production Credentials
-
-Production database credentials are stored in AWS Secrets Manager as an auto-generated secret.
+Database credentials are stored in AWS Secrets Manager as an auto-generated secret.
 
 1. **Access AWS Console** - Navigate to AWS Secrets Manager
 2. **Locate Secret** - Find the secret named: `reefguidedbinstancesecret` or similar
 3. **Retrieve Credentials** - Note/copy the database connection details
 
-### Environment Configuration
-
-Create a `.env` file in the `packages/db` directory with the production credentials.
+Now fill out your `.env` template file:
 
 ```env
 DATABASE_URL=postgresql://username:password@host:port/database?sslmode=require
@@ -67,19 +54,39 @@ You will need to map the fields in this format, i.e.
 postgreslql://<username>:<password>@<host>:<port>/<dbname>?sslmode=require
 ```
 
-For example
+For example, below is a complete example
 
 ```
 DATABASE_URL=postgresql://reefguide:<REDACTED>@reefguide-dbinstance123456-x3rxwnt9bwli.cukzufj87cty.ap-southeast-2.rds.amazonaws.com/reefguide?sslmode=require?connect_timeout=15&pool_timeout=15
 ```
 
-You can verify connection with 
+You can verify connection with
 
 ```
 pnpm prisma migrate status
 ```
 
 **⚠️ Security Note**: Never commit production credentials to version control. Use environment variables or secure secret management in production deployments.
+
+## Run prisma commands
+
+All Prisma commands can be run using:
+
+```bash
+pnpm prisma <command>
+```
+
+To see status:
+
+```
+pnpm prisma migrate status
+```
+
+To apply migrations to a DB:
+
+```bash
+pnpm prisma migrate deploy
+```
 
 ## Verification
 
@@ -92,3 +99,41 @@ pnpm prisma migrate status
 # Optionally run Prisma Studio to inspect the database
 pnpm prisma studio
 ```
+
+## Running psql shell commands
+
+You can also manually connect to the pg db using the psql CLI commands.
+
+First, install the PostgreSQL client tools, on ubuntu systems, for example:
+
+```bash
+sudo apt update
+sudo apt install postgresql-client
+```
+
+Then you can use the `db` package scripts available in `packages/db`.
+
+First, setup the .env file
+
+```
+cd packages/db
+cp .env.dist .env
+```
+
+Then update the `DATABASE_URL` in the `.env` file - this process is detailed above in [migrating production DB](#fill-out-env-with-db-connection-details).
+
+You may need to remove some of the unsupported parameters from the connection string.
+
+This format works:
+
+```
+DATABASE_URL=postgresql://reefguide:PASSWORD@HOSTNAME/reefguide?sslmode=require
+```
+
+Then run
+
+```bash
+pnpm run db:shell
+```
+
+This will provide a `psql` shell, if needed for custom queries/ops.

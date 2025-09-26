@@ -10,11 +10,42 @@ export const sharedCriteriaSchema = z.object({
   region: z.string().describe('Region for assessment'),
   reef_type: z.string().describe('The type of reef, slopes or flats'),
   // Criteria - all optional to match the Union{Float64,Nothing} in worker
-  depth_min: z.number().optional().describe('The depth minimum (the deeper more negative value)'),
+  depth_min: z
+    .number()
+    .optional()
+    .describe(
+      'Depth minimum (negative values, relative to sea surface where values further away from 0 is deeper)'
+    ),
   depth_max: z
     .number()
     .optional()
-    .describe('The depth maximum (the shallower less negative value)'),
+    .describe(
+      'Depth maximum (negative values, relative to sea surface where values closer to 0 is shallower)'
+    ),
+  low_tide_min: z
+    .number()
+    .optional()
+    .describe(
+      'Low tide minimum (negative values, relative to sea surface where values further away from 0 is deeper)'
+    ),
+  low_tide_max: z
+    .number()
+    .optional()
+    .describe(
+      'Low tide maximum (negative values, relative to sea surface where values closer to 0 is shallower)'
+    ),
+  high_tide_min: z
+    .number()
+    .optional()
+    .describe(
+      'High tide minimum (negative values, relative to sea surface where values further away from 0 is deeper)'
+    ),
+  high_tide_max: z
+    .number()
+    .optional()
+    .describe(
+      'High tide maximum (negative values, relative to sea surface where values closer to 0 is shallower)'
+    ),
   slope_min: z.number().optional().describe('The slope range (min)'),
   slope_max: z.number().optional().describe('The slope range (max)'),
   rugosity_min: z.number().optional().describe('The rugosity range (min)'),
@@ -78,7 +109,7 @@ export const adriaModelRunInputSchema = z
       .describe('Number of scenarios to run (must be power of 2)'),
     model_params: z.array(modelParamSchema).describe('Array of model parameters for the run'),
     rcp_scenario: z
-      .string()
+      .enum(['26', '45', '60', '85'])
       .optional()
       .default('45')
       .describe('RCP scenario (e.g., "45" for RCP 4.5)')
@@ -110,6 +141,8 @@ export const dataSpecificationUpdateResultSchema = z.object({}).strict();
 
 export const adriaModelRunResultSchema = z
   .object({
+    spatial_metrics_path: z.string().describe('Relative path to the spatial metrics parquet file'),
+    reef_boundaries_path: z.string().describe('Relative path to the reef geometry GeoJSON file'),
     output_result_set_path: z
       .string()
       .describe('The relative location of the result set data package'),

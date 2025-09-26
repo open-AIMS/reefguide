@@ -10,6 +10,8 @@ import {
   Project
 } from '@reefguide/db';
 
+export const PASSWORD_MIN_LENGTH = 8;
+
 // Auth schemas
 export const RegisterInputSchema = z.object({
   email: z.string().email(),
@@ -21,6 +23,14 @@ export const RegisterResponseSchema = z.object({
   userId: z.number()
 });
 export type RegisterResponse = z.infer<typeof RegisterResponseSchema>;
+
+// Change password schemas
+export const ChangePasswordInputSchema = z.object({
+  oldPassword: z.string(),
+  newPassword: z.string().min(PASSWORD_MIN_LENGTH),
+  confirmPassword: z.string().min(PASSWORD_MIN_LENGTH)
+});
+export type ChangePasswordInput = z.infer<typeof ChangePasswordInputSchema>;
 
 // Login schemas
 export const LoginInputSchema = z.object({
@@ -87,13 +97,13 @@ export const UserResponseSchema = z.object({
 export type UserResponse = z.infer<typeof UserResponseSchema>;
 
 export const UpdateUserPasswordSchema = z.object({
-  password: z.string().min(8)
+  password: z.string().min(PASSWORD_MIN_LENGTH)
 });
 
 // Schema Definitions
 export const CreateUserSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string().min(PASSWORD_MIN_LENGTH),
   roles: z.array(z.nativeEnum(UserRole)).optional()
 });
 
@@ -571,3 +581,38 @@ export type BulkCreateProjectsResponse = {
     totalErrors: number;
   };
 };
+
+// Password reset schemas
+export const PostCreateResetRequestSchema = z.object({
+  email: z.string().email('Invalid email address')
+});
+
+export const PostUseResetCodeRequestSchema = z
+  .object({
+    code: z.string().min(1),
+    newPassword: z
+      .string()
+      .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters long`),
+    confirmPassword: z.string()
+  })
+  .refine(data => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword']
+  });
+
+// Response schemas
+export const PostCreateResetResponseSchema = z.object({
+  message: z.string()
+});
+
+export const PostUseResetCodeResponseSchema = z.object({
+  message: z.string()
+});
+
+// Inferred types for request schemas
+export type PostCreateResetRequest = z.infer<typeof PostCreateResetRequestSchema>;
+export type PostUseResetCodeRequest = z.infer<typeof PostUseResetCodeRequestSchema>;
+
+// Inferred types for response schemas
+export type PostCreateResetResponse = z.infer<typeof PostCreateResetResponseSchema>;
+export type PostUseResetCodeResponse = z.infer<typeof PostUseResetCodeResponseSchema>;

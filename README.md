@@ -211,3 +211,26 @@ VSCode _launch.json_ has a few debugging configurations:
 ## Migrating production DB
 
 See [migrating DBs](./docs/migrating-production-db.md).
+
+## Uploading sourcemaps to BugSink
+
+See [the bugsink docs](https://www.bugsink.com/blog/bugsink-1.5-introducing-sourcemaps/) for more info.
+
+Setup the following environment variables:
+
+- `SENTRY_URL`: the URL of the bugsink deployment e.g. `https://bugs.com.au/`
+- `SENTRY_AUTH_TOKEN`: the auth token from your bugsink admin panel (you need to be the root user to generate these)
+
+Then ensure you have installed
+
+```
+pnpm i
+```
+
+And run
+
+```
+pnpm exec turbo sourcemaps
+```
+
+This will build the typescript code, inject debug IDs, then upload source maps for the capacity manager and web API projects.

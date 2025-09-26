@@ -6,3 +6,5 @@ env.json
 .env.*
 !.env.dist
 
+# Don't commit local database dumps
+backup.sql

@@ -13,7 +13,8 @@
         "NG_APP_SPLASH_APP_NAME",
         "NG_APP_SPLASH_SHOW_BACKGROUND_MAP",
         "NG_APP_DOCUMENTATION_LINK",
-        "NG_APP_ABOUT_LINK"
+        "NG_APP_ABOUT_LINK",
+        "NG_APP_SENTRY_DSN"
       ]
     }
   }

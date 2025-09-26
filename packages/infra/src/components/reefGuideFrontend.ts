@@ -34,6 +34,8 @@ export interface ReefGuideFrontendProps {
   adminEmail: string;
   /** App name to display in login panel */
   appName: string;
+  /** The Sentry DSN for the app */
+  sentryDsn?: string;
 }
 
 /**
@@ -114,7 +116,9 @@ export class ReefGuideFrontend extends Construct {
       NG_APP_SPLASH_APP_NAME: props.appName,
       NG_APP_SPLASH_SHOW_BACKGROUND_MAP: 'true',
       NG_APP_DOCUMENTATION_LINK: 'https://open-aims.github.io/reefguide',
-      NG_APP_ABOUT_LINK: 'https://github.com/open-AIMS/reefguide'
+      NG_APP_ABOUT_LINK: 'https://github.com/open-AIMS/reefguide',
+      // Sentry DSN
+      ...(props.sentryDsn ? { NG_APP_SENTRY_DSN: props.sentryDsn } : {})
     };
 
     // Setup deployment with build process
@@ -123,6 +127,8 @@ export class ReefGuideFrontend extends Construct {
       // Setup with distribution so that deployment will invalidate cache
       distribution: this.distribution,
       distributionPaths: ['/*'],
+      // Reasonable memory limit - 128MB is default which is extremely poro
+      memoryLimit: 2048,
       sources: [
         s3deploy.Source.asset(buildPath, {
           // Exclude common directories that shouldn't be included
@@ -162,8 +168,8 @@ export class ReefGuideFrontend extends Construct {
                 # Build the specific package using turbo
                 npx turbo build --filter=${packageName}
                 
-                # Copy built files to output
-                cp -r ${outputPath}/* /asset-output/
+                # Copy built files to output, excluding map files
+                cd ${outputPath} && find . -type f ! -name "*.js.map" ! -name "*.css.map" -exec cp --parents {} /asset-output/ \\;
               `
             ],
             // Local bundling for faster development
@@ -198,8 +204,11 @@ export class ReefGuideFrontend extends Construct {
                     'rm -f packages/app/.env',
                     // Build the app using turbo
                     `npx turbo build --filter=${packageName}`,
-                    // Copy output files
-                    `cp -r ${outputPath}/* ${outputDir}/`,
+                    `ORIGINAL_PATH=$(pwd)`,
+                    // Copy output files excluding map files
+                    `cd ${outputPath} && find . -type f ! -name "*.js.map" ! -name "*.css.map" -exec cp --parents {} ${outputDir} \\;`,
+                    // Return to where we were
+                    `cd $ORIGINAL_PATH`,
                     // Restore backup if it exists
                     '[ -f packages/app/backup.env ] && cp packages/app/backup.env packages/app/.env && rm packages/app/backup.env || echo "No .env backup to restore"'
                   ];

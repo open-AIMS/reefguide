@@ -1,0 +1,18 @@
+<div class="splash-overlay" (keydown)="onKeyDown($event)">
+  <!-- Background Animation -->
+  <div class="splash-background">
+    <div class="wave wave-1"></div>
+    <div class="wave wave-2"></div>
+    <div class="wave wave-3"></div>
+  </div>
+
+  <!-- Dialog Container -->
+  <div class="splash-content">
+    <app-splash-dialog
+      [userState]="userState()"
+      [config]="config()"
+      (loginSuccess)="onLoginSuccess()"
+      (dismissed)="onDismissed()"
+    />
+  </div>
+</div>

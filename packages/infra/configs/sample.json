@@ -41,7 +41,10 @@
         "indexDocument": "index.html",
         "errorDocument": "error.html",
         "adminEmail": "admin@example.com",
-        "appName": "ReefGuide"
+        "appName": "ReefGuide",
+        "additionalCspWhitelists": [
+            "https://example.com"
+        ]
     },
     "db": {
         "instanceSize": "SMALL",
@@ -79,5 +82,20 @@
                 }
             }
         }
+    },
+    "email": {
+        "serviceMode": "SMTP",
+        "fromAddress": "noreply@reefguide.org",
+        "fromName": "ReefGuide Notification System",
+        "replyTo": "support@reefguide.org",
+        "smtpCredentialsArn": "arn:aws:secretsmanager:ap-southeast-2:123456789012:secret:smtp-credentials-123456",
+        "smtpCacheExpirySeconds": 300
+    },
+    "monitoring": {
+        "webApiSentryDsn": "https://example.com",
+        "appSentryDsn": "https://example.com",
+        "capacityManagerSentryDsn": "https://example.com",
+        "adriaWorkerSentryDsn": "https://example.com",
+        "reefguideWorkerSentryDsn": "https://example.com"
     }
 }

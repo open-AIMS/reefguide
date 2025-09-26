@@ -8,6 +8,8 @@ declare interface Env {
   NG_APP_SPLASH_SHOW_BACKGROUND_MAP: string;
   NG_APP_DOCUMENTATION_LINK: string;
   NG_APP_ABOUT_LINK: string;
+  // Optional Sentry DSN for error tracking
+  NG_APP_SENTRY_DSN?: string;
 }
 
 declare interface ImportMeta {

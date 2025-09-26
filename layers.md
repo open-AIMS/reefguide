@@ -1,0 +1,23 @@
+# ReefGuide layer sources
+
+Below is documented the current reefguide contextual layers, and their associated status and data source.
+
+| Title                            | Source (URL)                                                                                                                                                              | Layer Type    | Status      |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ----------- |
+| WavesTp                          | [ArcGIS](https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml)                                     | WMTS (Raster) | Working     |
+| WavesHs                          | [ArcGIS](https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_wave_Hs_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml)                                 | WMTS (Raster) | Working     |
+| Slope                            | [ArcGIS](https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_slope_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml)                                   | WMTS (Raster) | Working     |
+| Depth                            | [ArcGIS](https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_bathymetry/MapServer/WMTS/1.0.0/WMTSCapabilities.xml)                                   | WMTS (Raster) | Working     |
+| QPWS Moorings                    | [ArcGIS](https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer)                                                       | MapServer     | Working     |
+| QPWS Reef Protection Markers     | [ArcGIS](https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer/10)                                                    | FeatureServer | Working     |
+| EcoRRAP Site Locations           | [ArcGIS](https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer)                                                         | FeatureServer | Working     |
+| Hybrid Benthic                   | [ArcGIS](https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer/WMTS/1.0.0/WMTSCapabilities.xml)                                   | WMTS (Raster) | Working     |
+| RRAP Canonical Reefs             | [ArcGIS](https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/RRAP_Canonical_Reefs/FeatureServer)                                                           | FeatureServer | Working     |
+| GBRMP Zoning                     | [ArcGIS](https://services8.arcgis.com/ll1QQ2mI4WMXIXdm/ArcGIS/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer)                                       | FeatureServer | Working |
+| GBRMPA Management Regions        | [ArcGIS](https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Management_Areas_20/FeatureServer)                          | FeatureServer | Working     |
+| GBRMPA Cruise Ship Transit Lanes | [ArcGIS](https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Cruise_Ship_Transit_Lanes_20/FeatureServer)                 | FeatureServer | Working     |
+| GBRMPA TUMRA Agreements          | [ArcGIS](https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Traditional_Use_of_Marine_Resources_TUMRA_20/FeatureServer) | FeatureServer | Working     |
+| GBRMPA Designated Shipping Areas | [ArcGIS](https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Designated_Shipping_Areas_201/FeatureServer)                | FeatureServer | Working     |
+| Maritime Safety Port Limits      | [ArcGIS](https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Maritime_Safety_Port_Limits/FeatureServer)                                                 | FeatureServer | Working     |
+| SSR Sentinel 2018                | [ArcGIS](https://tiles-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/SSR_Sentinel_2018/MapServer)                                | WMTS (Raster) | Working |
+| Base map (OSM)                   | [OSM](https://www.openstreetmap.org/)                                                                                                                                     | OSM (Raster)  | Working     |
