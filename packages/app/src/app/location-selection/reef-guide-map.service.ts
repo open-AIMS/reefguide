@@ -604,4 +604,26 @@ export class ReefGuideMapService {
 
     return this.createLayerController(layer, options);
   }
+
+  /**
+   * Show/hide an info layer by its ID
+   * @param layerId the layer ID to show/hide
+   * @param visible whether to make the layer visible
+   */
+  showInfoLayer(layerId: string, visible: boolean = true) {
+    // Get all layers from the map
+    const allLayers = this.map.getAllLayers();
+
+    // Find the layer with the matching ID
+    const targetLayer = allLayers.find(layer => {
+      const properties = layer.getProperties();
+      return properties['id'] === layerId;
+    });
+
+    if (targetLayer) {
+      targetLayer.setVisible(visible);
+    } else {
+      console.warn(`Info layer with ID "${layerId}" not found`);
+    }
+  }
 }

@@ -29,6 +29,7 @@
     "@reefguide/types": "workspace:*",
     "@sentry/angular": "^10.4.0",
     "apache-arrow": "^21.0.0",
+    "fuzzysort": "^3.1.0",
     "jwt-decode": "^4.0.0",
     "ol": "^10.6.1",
     "parquet-wasm": "^0.6.1",
@@ -39,10 +40,10 @@
     "zod": "^3.25.62"
   },
   "devDependencies": {
-    "@sentry/cli": "^2.53.0",
     "@angular-devkit/build-angular": "^20.2.0",
     "@angular/cli": "^20.2.0",
     "@angular/compiler-cli": "^20.2.1",
+    "@sentry/cli": "^2.53.0",
     "@types/jasmine": "~5.1.0",
     "jasmine-core": "~5.6.0",
     "karma": "~6.4.0",
