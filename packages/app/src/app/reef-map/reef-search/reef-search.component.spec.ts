@@ -9,8 +9,7 @@ describe('ReefSearchComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ReefSearchComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ReefSearchComponent);
     component = fixture.componentInstance;
