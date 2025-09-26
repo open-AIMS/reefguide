@@ -8,7 +8,9 @@
       </button>
       <span class="back-button-text">Return to projects</span>
     </div>
-    <app-reef-search></app-reef-search>
+    <div class="search-box">
+      <app-reef-search (reefSelected)="onFlyToCanonicalReef({ id: $event.id })"></app-reef-search>
+    </div>
   </div>
   <app-layer-list></app-layer-list>
   <!-- content from parent. if needed can use selectors to position first/last etc. -->

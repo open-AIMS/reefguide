@@ -27,7 +27,9 @@ import { FeatureRef } from '../map/openlayers-types';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { ReefSearchComponent } from "./reef-search/reef-search.component";
+import { ReefSearchComponent } from './reef-search/reef-search.component';
+import { ReefSearchService } from './reef-search.service';
+import { Polygon } from 'ol/geom';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -39,12 +41,19 @@ import { ReefSearchComponent } from "./reef-search/reef-search.component";
 @Component({
   selector: 'app-reef-map',
   templateUrl: './reef-map.component.html',
-  imports: [LayerListComponent, JobStatusListComponent, MatIconModule, MatButtonModule, ReefSearchComponent],
+  imports: [
+    LayerListComponent,
+    JobStatusListComponent,
+    MatIconModule,
+    MatButtonModule,
+    ReefSearchComponent
+  ],
   styleUrl: './reef-map.component.scss'
 })
 export class ReefMapComponent implements AfterViewInit {
   private readonly dialog = inject(MatDialog);
   readonly mapService = inject(ReefGuideMapService, { optional: true });
+  reefSearchService = inject(ReefSearchService);
 
   private readonly router = inject(Router);
 
@@ -241,6 +250,44 @@ export class ReefMapComponent implements AfterViewInit {
         features
       }
     });
+  }
+
+  /**
+   * Flies the map to the reef, and makes the canonical reef layer visible
+   * @param reef The ID of the reef from canonical reefs dataset
+   */
+  async onFlyToCanonicalReef(reef: { id: string }) {
+    try {
+      // get the ID and then fetch geometry from the esri service
+      const reefId = reef.id;
+      const geom = await this.reefSearchService.getGeometry({ id: reefId });
+
+      // Convert ArcGIS polygon geometry to OpenLayers Polygon
+      if (geom.rings) {
+        // Create OpenLayers Polygon from rings
+        const olPolygon = new Polygon(geom.rings);
+
+        // Get the extent (bounding box) of the polygon
+        const extent = olPolygon.getExtent();
+
+        // Padding around bounding box
+        const padding = 75;
+
+        // Fly to the extent with animation
+        this.view.fit(extent, {
+          duration: 1000, // Animation duration in milliseconds
+          padding: [padding, padding, padding, padding], // Padding around the geometry
+          maxZoom: 16 // Optional: prevent zooming in too much for small features
+        });
+
+        // Make sure the canonical reefs layer is visible
+        this.mapService?.showInfoLayer('canonical_reefs', true);
+      } else {
+        console.error('Unexpected geometry type or format:', geom);
+      }
+    } catch (error) {
+      console.error('Failed to fly to reef:', error);
+    }
   }
 
   // return home
