@@ -73,6 +73,12 @@ Make sure you have `nvm` and `docker` (rootless) installed, then run
 
 This will set the project up with reasonable defaults for a local dev.
 
+**Note**: the workers have to be set up and launched before the web app becomes
+functional. See the other ReefGuide repositories (see diagram above) and ensure
+locations for data files and datapackages are suitably defined and correct.
+
+### Running services manually
+
 To launch the web app, run:
 
 ```
@@ -81,16 +87,16 @@ pnpm run dev
 
 This will launch the web app, defaulting to http://localhost:4200/.
 
-Note that the workers have to be set up and launched before the web app becomes functional.
-See the other ReefGuide repositories (see diagram above) and ensure locations for data files
-and datapackages are suitably defined and correct.
-
 Login credentials can be found inside the `.env` file under the
-[web-api directory](./packages/web-api)
+[web-api directory](./packages/web-api). You can use the `worker` credentials to sign into the app.
 
 ## Command-line tool
 
 A commandline tool called `reefguide-cli` to aid in managing the database is also provided.
+
+Detailed setup instructions available [here](https://open-aims.github.io/reefguide/setting-up-reefguide-cli.html).
+
+For a quick start:
 
 Inside `packages/cli`, run:
 
