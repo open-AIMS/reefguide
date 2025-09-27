@@ -1,0 +1,30 @@
+.search-field {
+  width: 100%;
+  .search-icon {
+    color: rgba(0, 0, 0, 0.54);
+    margin-right: 2px;
+  }
+}
+
+.loading-text {
+  color: rgba(0, 0, 0, 0.54);
+  font-style: italic;
+  font-size: 14px;
+}
+
+.error-text {
+  color: #f44336;
+  font-size: 14px;
+}
+
+.no-results-text {
+  color: rgba(0, 0, 0, 0.54);
+  font-size: 14px;
+  font-style: italic;
+}
+
+::ng-deep .mat-form-field {
+  .mat-input-element {
+    background-color: rgb(112, 144, 114);
+  }
+}

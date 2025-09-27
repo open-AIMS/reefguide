@@ -204,11 +204,11 @@ export class ReefGuideFrontend extends Construct {
                     'rm -f packages/app/.env',
                     // Build the app using turbo
                     `npx turbo build --filter=${packageName}`,
-                    `ORIGINAL_PATH=$(pwd)`,
+                    'ORIGINAL_PATH=$(pwd)',
                     // Copy output files excluding map files
                     `cd ${outputPath} && find . -type f ! -name "*.js.map" ! -name "*.css.map" -exec cp --parents {} ${outputDir} \\;`,
                     // Return to where we were
-                    `cd $ORIGINAL_PATH`,
+                    'cd $ORIGINAL_PATH',
                     // Restore backup if it exists
                     '[ -f packages/app/backup.env ] && cp packages/app/backup.env packages/app/.env && rm packages/app/backup.env || echo "No .env backup to restore"'
                   ];

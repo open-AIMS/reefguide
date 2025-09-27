@@ -96,7 +96,7 @@ process.on('uncaughtException', error => {
 /**
  * Additional error handling for unhandled promise rejections
  */
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason, _promise) => {
   const error = reason instanceof Error ? reason : new Error(String(reason));
   logger.error('Unhandled promise rejection:', error);
 
