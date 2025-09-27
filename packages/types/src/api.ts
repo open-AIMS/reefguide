@@ -616,3 +616,109 @@ export type PostUseResetCodeRequest = z.infer<typeof PostUseResetCodeRequestSche
 // Inferred types for response schemas
 export type PostCreateResetResponse = z.infer<typeof PostCreateResetResponseSchema>;
 export type PostUseResetCodeResponse = z.infer<typeof PostUseResetCodeResponseSchema>;
+
+// ==================
+// Project Sharing Schemas
+// ==================
+
+// Share/Unshare with Users
+export const ShareProjectWithUsersInputSchema = z.object({
+  userIds: z.array(z.number().positive()).min(1, 'At least one user ID must be provided')
+});
+export type ShareProjectWithUsersInput = z.infer<typeof ShareProjectWithUsersInputSchema>;
+
+export const UnshareProjectWithUsersInputSchema = z.object({
+  userIds: z.array(z.number().positive()).min(1, 'At least one user ID must be provided')
+});
+export type UnshareProjectWithUsersInput = z.infer<typeof UnshareProjectWithUsersInputSchema>;
+
+// Share/Unshare with Groups
+export const ShareProjectWithGroupsInputSchema = z.object({
+  groupIds: z.array(z.number().positive()).min(1, 'At least one group ID must be provided')
+});
+export type ShareProjectWithGroupsInput = z.infer<typeof ShareProjectWithGroupsInputSchema>;
+
+export const UnshareProjectWithGroupsInputSchema = z.object({
+  groupIds: z.array(z.number().positive()).min(1, 'At least one group ID must be provided')
+});
+export type UnshareProjectWithGroupsInput = z.infer<typeof UnshareProjectWithGroupsInputSchema>;
+
+// Set Project Publicity
+export const SetProjectPublicityInputSchema = z.object({
+  isPublic: z.boolean()
+});
+export type SetProjectPublicityInput = z.infer<typeof SetProjectPublicityInputSchema>;
+
+// Response Types for Sharing Operations
+export type ShareProjectWithUsersResponse = {
+  message: string;
+  shared: Array<{
+    userId: number;
+    userEmail: string;
+  }>;
+  alreadyShared: Array<{
+    userId: number;
+    userEmail: string;
+  }>;
+  errors: Array<{
+    userId: number;
+    error: string;
+  }>;
+};
+
+export type UnshareProjectWithUsersResponse = {
+  message: string;
+  unshared: Array<{
+    userId: number;
+    userEmail: string;
+  }>;
+  notShared: Array<{
+    userId: number;
+    userEmail: string;
+  }>;
+  errors: Array<{
+    userId: number;
+    error: string;
+  }>;
+};
+
+export type ShareProjectWithGroupsResponse = {
+  message: string;
+  shared: Array<{
+    groupId: number;
+    groupName: string;
+  }>;
+  alreadyShared: Array<{
+    groupId: number;
+    groupName: string;
+  }>;
+  errors: Array<{
+    groupId: number;
+    error: string;
+  }>;
+};
+
+export type UnshareProjectWithGroupsResponse = {
+  message: string;
+  unshared: Array<{
+    groupId: number;
+    groupName: string;
+  }>;
+  notShared: Array<{
+    groupId: number;
+    groupName: string;
+  }>;
+  errors: Array<{
+    groupId: number;
+    error: string;
+  }>;
+};
+
+export type SetProjectPublicityResponse = {
+  message: string;
+  project: {
+    id: number;
+    name: string;
+    isPublic: boolean;
+  };
+};

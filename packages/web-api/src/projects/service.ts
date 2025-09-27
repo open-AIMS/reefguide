@@ -1,16 +1,83 @@
-import { PrismaClient, ProjectType, Project, Prisma } from '@reefguide/db';
+import { PrismaClient, ProjectType, Project, Prisma, User } from '@reefguide/db';
 import { BadRequestException, NotFoundException } from '../exceptions';
 import { CreateProjectInput, UpdateProjectInput } from '@reefguide/types';
 
 /**
  * Options for querying projects
  */
-export interface GetProjectsOptions {
-  userId?: number;
+interface GetProjectsOptions {
   type?: ProjectType;
   name?: string;
   limit?: number;
   offset?: number;
+  currentUser: User;
+  ignorePermissions?: boolean;
+}
+
+/**
+ * Builds the where clause for project permissions
+ * User can see projects if they are:
+ * a) Admin (ignorePermissions = true)
+ * b) Owner of the project
+ * c) Project is shared directly with them
+ * d) Project is shared with a group they belong to
+ * e) Project is public
+ */
+function buildPermissionWhereClause(currentUser: User, ignorePermissions: boolean = false) {
+  if (ignorePermissions) {
+    return {}; // Admins can see everything
+  }
+
+  return {
+    OR: [
+      // Owner of the project
+      { user_id: currentUser.id },
+
+      // Project is public
+      { is_public: true },
+
+      // Shared directly with user
+      {
+        userShares: {
+          some: {
+            user_id: currentUser.id
+          }
+        }
+      },
+
+      // Shared with a group the user belongs to
+      {
+        groupShares: {
+          some: {
+            group: {
+              OR: [
+                // User is owner of the group
+                { owner_id: currentUser.id },
+
+                // User is a manager of the group
+                {
+                  managers: {
+                    some: {
+                      user_id: currentUser.id
+                    }
+                  }
+                },
+
+                // User is a member of the group
+                {
+                  members: {
+                    some: {
+                      user_id: currentUser.id
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  };
 }
 
 /**
@@ -89,25 +156,56 @@ export class ProjectService {
   }
 
   /**
-   * Retrieves multiple projects with optional filtering
+   * Retrieves multiple projects with optional filtering and permission enforcement
    *
    * @param options - Query options for filtering and pagination
-   * @returns Promise<Project[]> - Array of matching projects
+   * @returns Promise<Project[]> - Array of matching projects the user can access
    */
-  async getMany({ options = {} }: { options?: GetProjectsOptions }): Promise<Project[]> {
-    const { userId, type, name, limit = 50, offset = 0 } = options;
+  async getMany({ options }: { options: GetProjectsOptions }): Promise<Project[]> {
+    const { type, name, limit = 50, offset = 0, currentUser, ignorePermissions = false } = options;
+
+    if (!currentUser) {
+      throw new Error('Current user is required.');
+    }
+
+    const permissionWhere = buildPermissionWhereClause(currentUser, ignorePermissions);
 
     return await this.prisma.project.findMany({
       where: {
-        ...(userId && { user_id: userId }),
-        ...(type && { type }),
-        ...(name && { name: { contains: name, mode: 'insensitive' } })
+        AND: [
+          permissionWhere,
+          {
+            ...(type && { type }),
+            ...(name && { name: { contains: name, mode: 'insensitive' } })
+          }
+        ]
       },
       include: {
         user: {
           select: {
             id: true,
             email: true
+          }
+        },
+        // Include sharing information for context
+        userShares: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true
+              }
+            }
+          }
+        },
+        groupShares: {
+          include: {
+            group: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
           }
         }
       },
@@ -120,19 +218,29 @@ export class ProjectService {
   }
 
   /**
-   * Gets count of projects matching the given criteria
+   * Gets count of projects matching the given criteria and user permissions
    *
    * @param options - Query options for filtering
-   * @returns Promise<number> - Count of matching records
+   * @returns Promise<number> - Count of matching records the user can access
    */
-  async getCount({ options = {} }: { options?: GetProjectsOptions }): Promise<number> {
-    const { userId, type, name } = options;
+  async getCount({ options }: { options: GetProjectsOptions }): Promise<number> {
+    const { type, name, currentUser, ignorePermissions = false } = options;
+
+    if (!currentUser && !ignorePermissions) {
+      throw new Error('Current user is required for permission checking');
+    }
+
+    const permissionWhere = buildPermissionWhereClause(currentUser, ignorePermissions);
 
     return await this.prisma.project.count({
       where: {
-        ...(userId && { user_id: userId }),
-        ...(type && { type }),
-        ...(name && { name: { contains: name, mode: 'insensitive' } })
+        AND: [
+          permissionWhere,
+          {
+            ...(type && { type }),
+            ...(name && { name: { contains: name, mode: 'insensitive' } })
+          }
+        ]
       }
     });
   }
@@ -161,6 +269,35 @@ export class ProjectService {
         }
       })) ?? undefined
     );
+  }
+
+  /**
+   * Helper method to check if a user can access a specific project
+   * Useful for individual project operations (get by ID, update, delete, etc.)
+   *
+   * @param projectId - ID of the project to check
+   * @param currentUser - User to check permissions for
+   * @param ignorePermissions - Whether to skip permission checks (for admins)
+   * @returns Promise<boolean> - Whether the user can access the project
+   */
+  async canUserAccessProject(
+    projectId: number,
+    currentUser: User,
+    ignorePermissions: boolean = false
+  ): Promise<boolean> {
+    if (ignorePermissions) {
+      return true; // Admins can access everything
+    }
+
+    const permissionWhere = buildPermissionWhereClause(currentUser, ignorePermissions);
+
+    const project = await this.prisma.project.findFirst({
+      where: {
+        AND: [{ id: projectId }, permissionWhere]
+      }
+    });
+
+    return !!project;
   }
 
   /**
@@ -332,5 +469,274 @@ export class ProjectService {
     });
 
     return result.count;
+  }
+
+  /**
+   * Share a project with multiple users
+   */
+  async shareWithUsers({ projectId, userIds }: { projectId: number; userIds: number[] }): Promise<{
+    shared: Array<{ userId: number; userEmail: string }>;
+    alreadyShared: Array<{ userId: number; userEmail: string }>;
+    errors: Array<{ userId: number; error: string }>;
+  }> {
+    const shared: Array<{ userId: number; userEmail: string }> = [];
+    const alreadyShared: Array<{ userId: number; userEmail: string }> = [];
+    const errors: Array<{ userId: number; error: string }> = [];
+
+    for (const userId of userIds) {
+      try {
+        // Check if user exists
+        const user = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, email: true }
+        });
+
+        if (!user) {
+          errors.push({ userId, error: 'User not found' });
+          continue;
+        }
+
+        // Check if already shared
+        const existingShare = await this.prisma.projectUserShare.findUnique({
+          where: {
+            project_id_user_id: {
+              project_id: projectId,
+              user_id: userId
+            }
+          }
+        });
+
+        if (existingShare) {
+          alreadyShared.push({ userId, userEmail: user.email });
+          continue;
+        }
+
+        // Create the share
+        await this.prisma.projectUserShare.create({
+          data: {
+            project_id: projectId,
+            user_id: userId
+          }
+        });
+
+        shared.push({ userId, userEmail: user.email });
+      } catch (error) {
+        errors.push({ userId, error: 'Failed to share with user' });
+      }
+    }
+
+    return { shared, alreadyShared, errors };
+  }
+
+  /**
+   * Remove project sharing with multiple users
+   */
+  async unshareWithUsers({
+    projectId,
+    userIds
+  }: {
+    projectId: number;
+    userIds: number[];
+  }): Promise<{
+    unshared: Array<{ userId: number; userEmail: string }>;
+    notShared: Array<{ userId: number; userEmail: string }>;
+    errors: Array<{ userId: number; error: string }>;
+  }> {
+    const unshared: Array<{ userId: number; userEmail: string }> = [];
+    const notShared: Array<{ userId: number; userEmail: string }> = [];
+    const errors: Array<{ userId: number; error: string }> = [];
+
+    for (const userId of userIds) {
+      try {
+        // Check if user exists
+        const user = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, email: true }
+        });
+
+        if (!user) {
+          errors.push({ userId, error: 'User not found' });
+          continue;
+        }
+
+        // Try to delete the share
+        const deleteResult = await this.prisma.projectUserShare.deleteMany({
+          where: {
+            project_id: projectId,
+            user_id: userId
+          }
+        });
+
+        if (deleteResult.count === 0) {
+          notShared.push({ userId, userEmail: user.email });
+        } else {
+          unshared.push({ userId, userEmail: user.email });
+        }
+      } catch (error) {
+        errors.push({ userId, error: 'Failed to unshare with user' });
+      }
+    }
+
+    return { unshared, notShared, errors };
+  }
+
+  /**
+   * Share a project with multiple groups
+   */
+  async shareWithGroups({
+    projectId,
+    groupIds
+  }: {
+    projectId: number;
+    groupIds: number[];
+  }): Promise<{
+    shared: Array<{ groupId: number; groupName: string }>;
+    alreadyShared: Array<{ groupId: number; groupName: string }>;
+    errors: Array<{ groupId: number; error: string }>;
+  }> {
+    const shared: Array<{ groupId: number; groupName: string }> = [];
+    const alreadyShared: Array<{ groupId: number; groupName: string }> = [];
+    const errors: Array<{ groupId: number; error: string }> = [];
+
+    for (const groupId of groupIds) {
+      try {
+        // Check if group exists
+        const group = await this.prisma.group.findUnique({
+          where: { id: groupId },
+          select: { id: true, name: true }
+        });
+
+        if (!group) {
+          errors.push({ groupId, error: 'Group not found' });
+          continue;
+        }
+
+        // Check if already shared
+        const existingShare = await this.prisma.projectGroupShare.findUnique({
+          where: {
+            project_id_group_id: {
+              project_id: projectId,
+              group_id: groupId
+            }
+          }
+        });
+
+        if (existingShare) {
+          alreadyShared.push({ groupId, groupName: group.name });
+          continue;
+        }
+
+        // Create the share
+        await this.prisma.projectGroupShare.create({
+          data: {
+            project_id: projectId,
+            group_id: groupId
+          }
+        });
+
+        shared.push({ groupId, groupName: group.name });
+      } catch (error) {
+        errors.push({ groupId, error: 'Failed to share with group' });
+      }
+    }
+
+    return { shared, alreadyShared, errors };
+  }
+
+  /**
+   * Remove project sharing with multiple groups
+   */
+  async unshareWithGroups({
+    projectId,
+    groupIds
+  }: {
+    projectId: number;
+    groupIds: number[];
+  }): Promise<{
+    unshared: Array<{ groupId: number; groupName: string }>;
+    notShared: Array<{ groupId: number; groupName: string }>;
+    errors: Array<{ groupId: number; error: string }>;
+  }> {
+    const unshared: Array<{ groupId: number; groupName: string }> = [];
+    const notShared: Array<{ groupId: number; groupName: string }> = [];
+    const errors: Array<{ groupId: number; error: string }> = [];
+
+    for (const groupId of groupIds) {
+      try {
+        // Check if group exists
+        const group = await this.prisma.group.findUnique({
+          where: { id: groupId },
+          select: { id: true, name: true }
+        });
+
+        if (!group) {
+          errors.push({ groupId, error: 'Group not found' });
+          continue;
+        }
+
+        // Try to delete the share
+        const deleteResult = await this.prisma.projectGroupShare.deleteMany({
+          where: {
+            project_id: projectId,
+            group_id: groupId
+          }
+        });
+
+        if (deleteResult.count === 0) {
+          notShared.push({ groupId, groupName: group.name });
+        } else {
+          unshared.push({ groupId, groupName: group.name });
+        }
+      } catch (error) {
+        errors.push({ groupId, error: 'Failed to unshare with group' });
+      }
+    }
+
+    return { unshared, notShared, errors };
+  }
+
+  /**
+   * Set the publicity status of a project
+   */
+  async setPublicity({
+    projectId,
+    isPublic
+  }: {
+    projectId: number;
+    isPublic: boolean;
+  }): Promise<{ id: number; name: string; isPublic: boolean }> {
+    const updatedProject = await this.prisma.project.update({
+      where: { id: projectId },
+      data: { is_public: isPublic },
+      select: {
+        id: true,
+        name: true,
+        is_public: true
+      }
+    });
+
+    return {
+      id: updatedProject.id,
+      name: updatedProject.name,
+      isPublic: updatedProject.is_public
+    };
+  }
+
+  /**
+   * Check if a user is the owner of a project
+   */
+  async isProjectOwner({
+    projectId,
+    userId
+  }: {
+    projectId: number;
+    userId: number;
+  }): Promise<boolean> {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { user_id: true }
+    });
+
+    return project?.user_id === userId;
   }
 }
