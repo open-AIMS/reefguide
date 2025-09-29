@@ -9,11 +9,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { User } from '@reefguide/db';
 import { WebApiService } from '../../../../api/web-api.service';
+import { GetGroupsResponse } from '@reefguide/types';
 
 export interface TransferOwnershipDialogData {
   groupId: number;
   groupName: string;
-  members: User[];
+  members: GetGroupsResponse['groups'][number]['members'];
 }
 
 @Component({

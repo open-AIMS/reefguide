@@ -1,12 +1,10 @@
-// group-detail.component.ts
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Group } from '@reefguide/db';
 import { WebApiService } from '../../../api/web-api.service';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatListModule } from '@angular/material/list';
-import { MatButtonModule } from '@angular/material/button';
+import { MatButtonModule, MatIconButton } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -16,6 +14,11 @@ import { AddMembersModalComponent } from '../modals/add-members-modal/add-member
 import { DeleteGroupModalComponent } from '../modals/delete-group-modal/delete-group-modal.component';
 import { TransferOwnershipModalComponent } from '../modals/transfer-ownership-modal/transfer-ownership-modal.component';
 import { AuthService } from '../../auth/auth.service';
+import { GetGroupResponse } from '@reefguide/types';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-group-detail',
@@ -28,7 +31,11 @@ import { AuthService } from '../../auth/auth.service';
     FormsModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatIconModule,
+    MatIconButton,
+    MatMenuModule,
+    MatTooltipModule
   ],
   templateUrl: './group-detail.component.html',
   styleUrl: './group-detail.component.scss'
@@ -41,7 +48,7 @@ export class GroupDetailComponent implements OnInit {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
 
-  group = signal<Group | null>(null);
+  group = signal<GetGroupResponse['group'] | null>(null);
   loading = signal(false);
   activeTab = 0;
   currentUserRole = signal<'Owner' | 'Manager' | 'Member' | null>(null);
@@ -87,12 +94,16 @@ export class GroupDetailComponent implements OnInit {
       return;
     }
 
-    // TODO: Check manager IDs when available from API response
-    // if (group.managerIds?.includes(userId)) {
-    //   this.currentUserRole.set('Manager');
-    //   return;
-    // }
+    if (group.managers.map(m => m.user_id).includes(userId)) {
+      this.currentUserRole.set('Manager');
+      return;
+    }
+    if (group.members.map(m => m.user_id).includes(userId)) {
+      this.currentUserRole.set('Member');
+      return;
+    }
 
+    console.error('Unexpected user in group with no known member/manager role. ID', userId);
     this.currentUserRole.set('Member');
   }
 
@@ -116,18 +127,28 @@ export class GroupDetailComponent implements OnInit {
     });
   }
 
-  onRemoveMember(userId: number) {
+  onRemoveMember(userId: number, isManager: boolean = false) {
     const group = this.group();
-    if (!group || !confirm('Are you sure you want to remove this member?')) return;
+    if (!group || !confirm('Are you sure you want to remove this person from the group?')) return;
 
-    this.webApi.removeGroupMembers(group.id, { userIds: [userId] }).subscribe({
+    // Remove from both members and managers to ensure complete removal
+    const removeOps = [];
+
+    if (isManager) {
+      removeOps.push(this.webApi.removeGroupManagers(group.id, { userIds: [userId] }));
+    }
+
+    // Always try to remove from members as well
+    removeOps.push(this.webApi.removeGroupMembers(group.id, { userIds: [userId] }));
+
+    forkJoin(removeOps).subscribe({
       next: () => {
-        this.snackBar.open('Member removed', 'Close', { duration: 3000 });
+        this.snackBar.open('Person removed from group', 'Close', { duration: 3000 });
         this.loadGroup(group.id);
       },
       error: error => {
-        console.error('Error removing member:', error);
-        this.snackBar.open('Failed to remove member', 'Close', { duration: 3000 });
+        console.error('Error removing person:', error);
+        this.snackBar.open('Failed to remove person', 'Close', { duration: 3000 });
       }
     });
   }
@@ -136,10 +157,22 @@ export class GroupDetailComponent implements OnInit {
     const group = this.group();
     if (!group) return;
 
+    // First promote to manager, then remove from members
     this.webApi.addGroupManagers(group.id, { userIds: [userId] }).subscribe({
       next: () => {
-        this.snackBar.open('User promoted to manager', 'Close', { duration: 3000 });
-        this.loadGroup(group.id);
+        // After promoting, remove from members list
+        this.webApi.removeGroupMembers(group.id, { userIds: [userId] }).subscribe({
+          next: () => {
+            this.snackBar.open('User promoted to manager', 'Close', { duration: 3000 });
+            this.loadGroup(group.id);
+          },
+          error: error => {
+            console.error('Error removing from members after promotion:', error);
+            // Still show success since the promotion worked
+            this.snackBar.open('User promoted to manager', 'Close', { duration: 3000 });
+            this.loadGroup(group.id);
+          }
+        });
       },
       error: error => {
         console.error('Error promoting user:', error);
@@ -152,13 +185,22 @@ export class GroupDetailComponent implements OnInit {
     const group = this.group();
     if (!group) return;
 
-    this.webApi.removeGroupManagers(group.id, { userIds: [userId] }).subscribe({
+    // First add as member, then remove as manager
+    this.webApi.addGroupMembers(group.id, { userIds: [userId] }).subscribe({
       next: () => {
-        this.snackBar.open('Manager demoted to member', 'Close', { duration: 3000 });
-        this.loadGroup(group.id);
+        this.webApi.removeGroupManagers(group.id, { userIds: [userId] }).subscribe({
+          next: () => {
+            this.snackBar.open('Manager demoted to member', 'Close', { duration: 3000 });
+            this.loadGroup(group.id);
+          },
+          error: error => {
+            console.error('Error removing from managers after demotion:', error);
+            this.snackBar.open('Failed to demote manager', 'Close', { duration: 3000 });
+          }
+        });
       },
       error: error => {
-        console.error('Error demoting manager:', error);
+        console.error('Error adding as member during demotion:', error);
         this.snackBar.open('Failed to demote manager', 'Close', { duration: 3000 });
       }
     });
@@ -189,8 +231,8 @@ export class GroupDetailComponent implements OnInit {
     const group = this.group();
     if (!group) return;
 
-    // TODO: Get members from API response when available
-    const allMembers: any[] = [];
+    const allMembers: GetGroupResponse['group']['managers'] = [...group.members, ...group.managers];
+    console.log("opening with: ", allMembers)
 
     const dialogRef = this.dialog.open(TransferOwnershipModalComponent, {
       width: '500px',

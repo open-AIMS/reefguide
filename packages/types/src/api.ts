@@ -728,6 +728,41 @@ export type SetProjectPublicityResponse = {
 // Group Types and Schemas
 // ==================
 
+// User reference type for nested relationships
+export type UserReference = {
+  id: number;
+  email: string;
+};
+
+// Group member with user details
+export type GroupMemberWithUser = {
+  group_id: number;
+  user_id: number;
+  user: UserReference;
+  created_at: Date;
+};
+
+// Group manager with user details
+export type GroupManagerWithUser = {
+  group_id: number;
+  user_id: number;
+  user: UserReference;
+  created_at: Date;
+};
+
+// Extended Group type with relationships
+export type GroupWithRelations = {
+  id: number;
+  name: string;
+  description: string | null;
+  owner_id: number;
+  owner: UserReference;
+  managers: GroupManagerWithUser[];
+  members: GroupMemberWithUser[];
+  created_at: Date;
+  updated_at: Date;
+};
+
 // Group Input Schemas
 export const CreateGroupInputSchema = z.object({
   name: z.string().min(1, 'Group name is required'),
@@ -782,21 +817,21 @@ export const TransferGroupOwnershipInputSchema = z.object({
 });
 export type TransferGroupOwnershipInput = z.infer<typeof TransferGroupOwnershipInputSchema>;
 
-// Response Types
+// Response Types - Now using GroupWithRelations
 export type CreateGroupResponse = {
-  group: Group;
+  group: GroupWithRelations;
 };
 
 export type UpdateGroupResponse = {
-  group: Group;
+  group: GroupWithRelations;
 };
 
 export type GetGroupResponse = {
-  group: Group;
+  group: GroupWithRelations;
 };
 
 export type GetGroupsResponse = {
-  groups: Group[];
+  groups: GroupWithRelations[];
   pagination: {
     total: number;
     limit: number;
@@ -877,7 +912,7 @@ export type RemoveGroupManagersResponse = {
 // Ownership Transfer Response Type
 export type TransferGroupOwnershipResponse = {
   message: string;
-  group: Group;
+  group: GroupWithRelations;
 };
 
 // ==================

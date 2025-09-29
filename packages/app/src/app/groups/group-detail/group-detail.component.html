@@ -1,9 +1,7 @@
 <div class="group-detail-container" *ngIf="group()">
   <button mat-button (click)="goBack()">← Back to Groups</button>
-
   <h1>{{ group()!.name }}</h1>
   <p>{{ group()!.description }}</p>
-
   <mat-tab-group [(selectedIndex)]="activeTab">
     <mat-tab label="Members">
       <div class="members-tab">
@@ -14,27 +12,37 @@
         <h3>Owner</h3>
         <mat-list>
           <mat-list-item *ngIf="group()!.owner_id">
-            <!--
-            TODO fix up owner/manager/member stuff
-            -->
-            <span matListItemTitle>{{ group()!.owner_id }}</span>
+            <span matListItemTitle>{{ group()!.owner.email }}</span>
             <span matListItemMeta>Owner</span>
           </mat-list-item>
         </mat-list>
 
-        <!--
-
         <h3>Managers</h3>
         <mat-list>
           <mat-list-item *ngFor="let manager of group()!.managers">
-            <span matListItemTitle>{{ manager.email }}</span>
-            <span matListItemMeta>
-              <button mat-icon-button (click)="onDemoteManager(manager.id)" *ngIf="isOwner()">
-                Demote
+            <span matListItemTitle>{{ manager.user.email }}</span>
+            <span matListItemMeta *ngIf="canManage()">
+              <button mat-icon-button [matMenuTriggerFor]="managerMenu">
+                <mat-icon>more_vert</mat-icon>
               </button>
-              <button mat-icon-button (click)="onRemoveMember(manager.id)" *ngIf="canManage()">
-                Remove
-              </button>
+              <mat-menu #managerMenu="matMenu">
+                <button
+                  mat-menu-item
+                  (click)="onDemoteManager(manager.user_id)"
+                  matTooltip="Demote this manager to a regular member"
+                  matTooltipPosition="left">
+                  <mat-icon>arrow_downward</mat-icon>
+                  <span>Demote to Member</span>
+                </button>
+                <button
+                  mat-menu-item
+                  (click)="onRemoveMember(manager.user_id, true)"
+                  matTooltip="Completely remove this person from the group"
+                  matTooltipPosition="left">
+                  <mat-icon>person_remove</mat-icon>
+                  <span>Remove from Group</span>
+                </button>
+              </mat-menu>
             </span>
           </mat-list-item>
           <mat-list-item *ngIf="!group()!.managers || group()!.managers.length === 0">
@@ -45,21 +53,36 @@
         <h3>Members</h3>
         <mat-list>
           <mat-list-item *ngFor="let member of group()!.members">
-            <span matListItemTitle>{{ member.email }}</span>
-            <span matListItemMeta>
-              <button mat-button (click)="onPromoteToManager(member.id)" *ngIf="isOwner()">
-                Promote to Manager
+            <span matListItemTitle>{{ member.user.email }}</span>
+            <span matListItemMeta *ngIf="canManage()">
+              <button mat-icon-button [matMenuTriggerFor]="memberMenu">
+                <mat-icon>more_vert</mat-icon>
               </button>
-              <button mat-icon-button (click)="onRemoveMember(member.id)" *ngIf="canManage()">
-                Remove
-              </button>
+              <mat-menu #memberMenu="matMenu">
+                <button
+                  mat-menu-item
+                  (click)="onPromoteToManager(member.user_id)"
+                  *ngIf="isOwner()"
+                  matTooltip="Promote this member to manager with elevated permissions"
+                  matTooltipPosition="left">
+                  <mat-icon>arrow_upward</mat-icon>
+                  <span>Promote to Manager</span>
+                </button>
+                <button
+                  mat-menu-item
+                  (click)="onRemoveMember(member.user_id, false)"
+                  matTooltip="Completely remove this person from the group"
+                  matTooltipPosition="left">
+                  <mat-icon>person_remove</mat-icon>
+                  <span>Remove from Group</span>
+                </button>
+              </mat-menu>
             </span>
           </mat-list-item>
           <mat-list-item *ngIf="!group()!.members || group()!.members.length === 0">
             <span matListItemTitle>No members</span>
           </mat-list-item>
         </mat-list>
-        -->
       </div>
     </mat-tab>
 
@@ -69,7 +92,6 @@
         <mat-form-field>
           <input matInput placeholder="Group Name" [(ngModel)]="group()!.name" />
         </mat-form-field>
-
         <mat-form-field>
           <textarea
             matInput
@@ -77,7 +99,6 @@
             [(ngModel)]="group()!.description"
           ></textarea>
         </mat-form-field>
-
         <button mat-raised-button color="primary" (click)="onSaveSettings()">Save Changes</button>
 
         <div class="danger-zone" *ngIf="isOwner()">
@@ -91,5 +112,4 @@
     </mat-tab>
   </mat-tab-group>
 </div>
-
 <div *ngIf="loading()">Loading...</div>

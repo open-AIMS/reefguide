@@ -66,7 +66,7 @@ export class GroupService {
   /**
    * Creates a new group
    */
-  async create({ input, ownerId }: { input: CreateGroupInput; ownerId: number }): Promise<Group> {
+  async create({ input, ownerId }: { input: CreateGroupInput; ownerId: number }) {
     // Validate input
     if (!input.name || !input.name.trim()) {
       throw new BadRequestException('Group name is required');
@@ -121,7 +121,7 @@ export class GroupService {
   /**
    * Retrieves multiple groups with optional filtering and permission enforcement
    */
-  async getMany({ options }: { options: GetGroupsOptions }): Promise<Group[]> {
+  async getMany({ options }: { options: GetGroupsOptions }) {
     const { name, limit = 50, offset = 0, currentUser, includeAll = false } = options;
 
     if (!currentUser) {
@@ -202,7 +202,7 @@ export class GroupService {
   /**
    * Retrieves a group by ID
    */
-  async getById({ id }: { id: number }): Promise<Group | undefined> {
+  async getById({ id }: { id: number }) {
     return (
       (await this.prisma.group.findUnique({
         where: { id },
@@ -287,7 +287,7 @@ export class GroupService {
   /**
    * Updates an existing group
    */
-  async update({ id, input }: { id: number; input: UpdateGroupInput }): Promise<Group> {
+  async update({ id, input }: { id: number; input: UpdateGroupInput }) {
     // Check if group exists
     const existing = await this.prisma.group.findUnique({
       where: { id }
@@ -563,13 +563,7 @@ export class GroupService {
   /**
    * Transfer group ownership to another user
    */
-  async transferOwnership({
-    groupId,
-    newOwnerId
-  }: {
-    groupId: number;
-    newOwnerId: number;
-  }): Promise<Group> {
+  async transferOwnership({ groupId, newOwnerId }: { groupId: number; newOwnerId: number }) {
     // Check if new owner exists
     const newOwner = await this.prisma.user.findUnique({
       where: { id: newOwnerId }
@@ -629,7 +623,7 @@ export class GroupService {
   /**
    * Gets all groups for a specific user (owned, managed, or member of)
    */
-  async getByUserId({ userId }: { userId: number }): Promise<Group[]> {
+  async getByUserId({ userId }: { userId: number }) {
     return await this.prisma.group.findMany({
       where: {
         OR: [

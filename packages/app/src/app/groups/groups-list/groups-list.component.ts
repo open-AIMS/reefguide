@@ -7,12 +7,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Router } from '@angular/router';
-import { Group } from '@reefguide/db';
 import { WebApiService } from '../../../api/web-api.service';
 import { MatListModule } from '@angular/material/list';
 import { CreateGroupModalComponent } from '../modals/create-group-modal/create-group-modal.component';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { debounceTime, Subject } from 'rxjs';
+import { GetGroupResponse, GetGroupsResponse } from '@reefguide/types';
+import { AuthService } from '../../auth/auth.service';
 
 @Component({
   selector: 'app-groups-list',
@@ -28,15 +29,17 @@ import { debounceTime, Subject } from 'rxjs';
     MatButtonModule,
     MatDialogModule,
     MatSnackBarModule
-  ]
+  ],
+  styleUrls: ['./groups-list.component.scss']
 })
 export class GroupsListComponent implements OnInit {
   private webApi = inject(WebApiService);
   private router = inject(Router);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
+  private authService = inject(AuthService);
 
-  groups = signal<Group[]>([]);
+  groups = signal<GetGroupsResponse['groups']>([]);
   loading = signal(false);
   searchQuery = '';
   private searchSubject = new Subject<string>();
@@ -96,32 +99,35 @@ export class GroupsListComponent implements OnInit {
     this.router.navigate(['/groups', groupId]);
   }
 
-  getUserRole(group: Group): string {
+  getUserRole(group: GetGroupResponse['group']): string {
     // Determine role based on group properties
     // Note: This assumes the Group type has ownerId, managerIds, and memberIds
     // You may need to adjust based on actual Group type structure
-    const currentUserId = this.getCurrentUserId();
+    const currentUserId = this.authService.currentUserSignal()?.id;
+
+    if (!currentUserId) {
+      return 'Member';
+    }
 
     if (group.owner_id === currentUserId) {
       return 'Owner';
     }
 
-    // TODO do we need these?
+    if (group.managers.map(m => m.user_id).includes(currentUserId)) {
+      return 'Manager';
+    }
+
     return 'Member';
   }
 
-  getMemberCount(group: Group): number {
-    // TODO
-    return 0;
+  getMemberCount(group: GetGroupResponse['group']): number {
     // Calculate total members: owner + managers + members
-    // const managerCount = group.managerIds?.length || 0;
-    // const memberCount = group.memberIds?.length || 0;
-    // return 1 + managerCount + memberCount; // +1 for owner
+    const managerCount = group.managers.length || 0;
+    const memberCount = group.members.length || 0;
+    return 1 + managerCount + memberCount; // +1 for owner
   }
 
-  private getCurrentUserId(): number {
-    // This should come from an auth service
-    // For now, return a placeholder - you'll need to inject AuthService
-    return 0; // TODO: Get from AuthService
+  goBack() {
+    this.router.navigate(['/']);
   }
 }

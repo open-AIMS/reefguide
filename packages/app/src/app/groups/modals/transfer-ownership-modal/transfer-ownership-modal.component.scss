@@ -1,0 +1,22 @@
+mat-dialog-content {
+  .warning {
+    color: #f57c00;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+  }
+
+  mat-form-field {
+    width: 100%;
+    margin-bottom: 1rem;
+
+    &:last-of-type {
+      margin-top: 0.5rem;
+    }
+  }
+}
+
+mat-dialog-actions {
+  padding: 1rem 1.5rem;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

@@ -9,8 +9,8 @@
       [ngModel]="selectedUserId()"
       (ngModelChange)="selectedUserId.set($event)"
     >
-      <mat-option *ngFor="let user of data.members" [value]="user.id">
-        {{ user.email }}
+      <mat-option *ngFor="let user of data.members" [value]="user.user_id">
+        {{ user.user.email }}
       </mat-option>
     </mat-select>
   </mat-form-field>
@@ -21,19 +21,14 @@
       placeholder="Type the group name to confirm"
       [ngModel]="confirmationText()"
       (ngModelChange)="confirmationText.set($event)"
-    >
+    />
     <mat-hint>Type "{{ data.groupName }}" to confirm</mat-hint>
   </mat-form-field>
 </mat-dialog-content>
 
 <mat-dialog-actions>
   <button mat-button (click)="onCancel()">Cancel</button>
-  <button
-    mat-raised-button
-    color="warn"
-    (click)="onConfirm()"
-    [disabled]="isSubmitDisabled()"
-  >
+  <button mat-raised-button color="warn" (click)="onConfirm()" [disabled]="isSubmitDisabled()">
     Transfer Ownership
   </button>
 </mat-dialog-actions>

@@ -1,0 +1,76 @@
+.group-detail-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+
+  > button {
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    margin: 1rem 0 0.5rem;
+  }
+
+  > p {
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 2rem;
+  }
+
+  mat-tab-group {
+    margin-top: 1.5rem;
+  }
+}
+
+.members-tab {
+  padding: 1.5rem 0;
+
+  > button {
+    margin-bottom: 1.5rem;
+  }
+
+  h3 {
+    margin: 1.5rem 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  mat-list {
+    margin-bottom: 1.5rem;
+  }
+}
+
+.settings-tab {
+  padding: 1.5rem 0;
+
+  h3 {
+    margin: 1.5rem 0 1rem;
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+
+  mat-form-field {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  > button {
+    margin-top: 0.5rem;
+  }
+}
+
+.danger-zone {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+
+  h3 {
+    color: #d32f2f;
+    margin-bottom: 1rem;
+  }
+
+  button {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+}

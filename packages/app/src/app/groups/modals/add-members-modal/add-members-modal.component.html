@@ -1,5 +1,4 @@
 <h2 mat-dialog-title>Add Members</h2>
-
 <mat-dialog-content>
   <mat-form-field>
     <input
@@ -7,10 +6,10 @@
       placeholder="Search users by email"
       [ngModel]="searchQuery()"
       (ngModelChange)="searchQuery.set($event)"
-    >
+    />
   </mat-form-field>
 
-  <mat-selection-list>
+  <mat-selection-list *ngIf="searchResults().length > 0">
     <mat-list-option
       *ngFor="let user of searchResults()"
       [selected]="isSelected(user.id)"
@@ -20,6 +19,14 @@
     </mat-list-option>
   </mat-selection-list>
 
+  <div class="empty-state" *ngIf="searchResults().length === 0">
+    <mat-icon>person_search</mat-icon>
+    <p class="empty-state-title">No users found</p>
+    <p class="empty-state-message">
+      {{ searchQuery() ? 'Try adjusting your search terms' : 'Start typing to search for users' }}
+    </p>
+  </div>
+
   <mat-checkbox
     *ngIf="data.currentUserRole === 'Owner'"
     [ngModel]="addAsManager()"
@@ -28,19 +35,13 @@
     Add as Manager
   </mat-checkbox>
 
-  <div *ngIf="selectedCount() > 0">
+  <div class="selected-count" *ngIf="selectedCount() > 0">
     Selected: {{ selectedCount() }} user(s)
   </div>
 </mat-dialog-content>
-
 <mat-dialog-actions>
   <button mat-button (click)="onCancel()">Cancel</button>
-  <button
-    mat-raised-button
-    color="primary"
-    (click)="onSubmit()"
-    [disabled]="!canSubmit()"
-  >
+  <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="!canSubmit()">
     Add to Group
   </button>
 </mat-dialog-actions>

@@ -10,6 +10,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatListModule } from '@angular/material/list';
 import { WebApiService } from '../../../../api/web-api.service';
 import { debounceTime, Subject } from 'rxjs';
+import { MatIconModule } from '@angular/material/icon';
 
 export interface AddMembersDialogData {
   groupId: number;
@@ -26,6 +27,7 @@ export interface AddMembersDialogData {
     MatInputModule,
     MatButtonModule,
     MatCheckboxModule,
+    MatIconModule,
     FormsModule,
     ReactiveFormsModule,
     MatListModule
@@ -101,28 +103,31 @@ export class AddMembersModalComponent {
     const userIds = Array.from(this.selectedUserIds());
 
     // First add as members
-    this.webApi.addGroupMembers(this.data.groupId, { userIds }).subscribe({
-      next: () => {
-        // If adding as managers and user is owner, promote them
-        if (this.addAsManager() && this.data.currentUserRole === 'Owner') {
-          this.webApi.addGroupManagers(this.data.groupId, { userIds }).subscribe({
-            next: () => {
-              this.dialogRef.close(true);
-            },
-            error: error => {
-              console.error('Error promoting to managers:', error);
-              this.submitting.set(false);
-            }
-          });
-        } else {
-          this.dialogRef.close(true);
-        }
-      },
-      error: error => {
-        console.error('Error adding members:', error);
-        this.submitting.set(false);
+    if (this.addAsManager()) {
+      if (this.data.currentUserRole === 'Owner') {
+        this.webApi.addGroupManagers(this.data.groupId, { userIds }).subscribe({
+          next: () => {
+            this.dialogRef.close(true);
+          },
+          error: error => {
+            console.error('Error promoting to managers:', error);
+            this.submitting.set(false);
+          }
+        });
+      } else {
+        this.dialogRef.close(true);
       }
-    });
+    } else {
+      this.webApi.addGroupMembers(this.data.groupId, { userIds }).subscribe({
+        next: () => {
+          this.dialogRef.close(true);
+        },
+        error: error => {
+          console.error('Error adding members:', error);
+          this.submitting.set(false);
+        }
+      });
+    }
   }
 
   onCancel() {

@@ -9,6 +9,7 @@ import { ClusterAdminDialogComponent } from '../../admin/cluster/ClusterAdminDia
 import { AdminPanelComponent } from '../../admin/user-panel/user-panel.component';
 import { AuthService } from '../../auth/auth.service';
 import { ConfigDialogComponent } from '../../location-selection/config-dialog/config-dialog.component';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-profile-button',
@@ -29,6 +30,7 @@ export class ProfileButtonComponent {
   private dialog = inject(MatDialog);
   public isAdmin$ = this.authService.isAdmin();
   public user$ = this.authService.user$;
+  private router = inject(Router);
 
   onConfigClick(): void {
     this.dialog.open(ConfigDialogComponent);
@@ -44,6 +46,10 @@ export class ProfileButtonComponent {
     this.dialog.open(AdminPanelComponent, {
       width: '800px'
     });
+  }
+
+  onGroupClick(): void {
+    this.router.navigate(['/groups']);
   }
 
   onClusterAdminClick(): void {
