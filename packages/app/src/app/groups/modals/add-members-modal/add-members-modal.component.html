@@ -1,0 +1,28 @@
+<h2 mat-dialog-title>Add Members</h2>
+
+<mat-dialog-content>
+  <mat-form-field>
+    <input matInput placeholder="Search users by email" [(ngModel)]="searchQuery" (input)="onSearchUsers(searchQuery)">
+  </mat-form-field>
+
+  <mat-selection-list>
+    <mat-list-option *ngFor="let user of searchResults" [selected]="isSelected(user.id)" (click)="toggleUser(user.id)">
+      {{ user.email }}
+    </mat-list-option>
+  </mat-selection-list>
+
+  <mat-checkbox [(ngModel)]="addAsManager" *ngIf="data.currentUserRole === 'Owner'">
+    Add as Manager
+  </mat-checkbox>
+
+  <div *ngIf="selectedUserIds.size > 0">
+    Selected: {{ selectedUserIds.size }} user(s)
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="selectedUserIds.size === 0 || submitting">
+    Add to Group
+  </button>
+</mat-dialog-actions>

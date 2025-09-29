@@ -1,0 +1,60 @@
+<div class="group-detail-container" *ngIf="group">
+  <button mat-button (click)="goBack()">← Back to Groups</button>
+
+  <h1>{{ group!.name }}</h1>
+  <p>{{ group!.description }}</p>
+
+  <mat-tab-group [(selectedIndex)]="activeTab">
+    <mat-tab label="Members">
+      <div class="members-tab">
+        <button mat-raised-button color="primary" (click)="onAddMembers()" *ngIf="canManage()">
+          Add Members
+        </button>
+
+        <h3>Owner</h3>
+        <mat-list>
+          <!-- TODO: Display owner -->
+        </mat-list>
+
+        <h3>Managers</h3>
+        <mat-list>
+          <!-- TODO: Display managers -->
+        </mat-list>
+
+        <h3>Members</h3>
+        <mat-list>
+          <!-- TODO: Display members -->
+        </mat-list>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Settings" *ngIf="canManage()">
+      <div class="settings-tab">
+        <h3>Basic Settings</h3>
+        <mat-form-field>
+          <input matInput placeholder="Group Name" [(ngModel)]="group!.name">
+        </mat-form-field>
+
+        <mat-form-field>
+          <textarea matInput placeholder="Description" [(ngModel)]="group!.description"></textarea>
+        </mat-form-field>
+
+        <button mat-raised-button color="primary" (click)="onSaveSettings()">
+          Save Changes
+        </button>
+
+        <div class="danger-zone" *ngIf="isOwner()">
+          <h3>Danger Zone</h3>
+          <button mat-raised-button color="warn" (click)="onTransferOwnership()">
+            Transfer Ownership
+          </button>
+          <button mat-raised-button color="warn" (click)="onDeleteGroup()">
+            Delete Group
+          </button>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>
+
+<div *ngIf="loading">Loading...</div>
