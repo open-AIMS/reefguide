@@ -7,7 +7,8 @@ import {
   UserAction,
   UserRole,
   ProjectType,
-  Project
+  Project,
+  Group
 } from '@reefguide/db';
 
 export const PASSWORD_MIN_LENGTH = 8;
@@ -722,3 +723,171 @@ export type SetProjectPublicityResponse = {
     isPublic: boolean;
   };
 };
+
+// ==================
+// Group Types and Schemas
+// ==================
+
+// Group Input Schemas
+export const CreateGroupInputSchema = z.object({
+  name: z.string().min(1, 'Group name is required'),
+  description: z.string().optional()
+});
+export type CreateGroupInput = z.infer<typeof CreateGroupInputSchema>;
+
+export const UpdateGroupInputSchema = z.object({
+  name: z.string().min(1, 'Group name is required').optional(),
+  description: z.string().optional()
+});
+export type UpdateGroupInput = z.infer<typeof UpdateGroupInputSchema>;
+
+// Query Schemas
+export const GetGroupsQuerySchema = z.object({
+  name: z.string().optional(),
+  limit: z.number().optional(),
+  offset: z.number().optional()
+});
+export type GetGroupsQuery = z.infer<typeof GetGroupsQuerySchema>;
+
+export const GroupParamsSchema = z.object({
+  id: z.string().regex(/^\d+$/, 'Group ID must be a number')
+});
+export type GroupParams = z.infer<typeof GroupParamsSchema>;
+
+// Member Management Schemas
+export const AddGroupMembersInputSchema = z.object({
+  userIds: z.array(z.number().positive()).min(1, 'At least one user ID must be provided')
+});
+export type AddGroupMembersInput = z.infer<typeof AddGroupMembersInputSchema>;
+
+export const RemoveGroupMembersInputSchema = z.object({
+  userIds: z.array(z.number().positive()).min(1, 'At least one user ID must be provided')
+});
+export type RemoveGroupMembersInput = z.infer<typeof RemoveGroupMembersInputSchema>;
+
+// Manager Management Schemas
+export const AddGroupManagersInputSchema = z.object({
+  userIds: z.array(z.number().positive()).min(1, 'At least one user ID must be provided')
+});
+export type AddGroupManagersInput = z.infer<typeof AddGroupManagersInputSchema>;
+
+export const RemoveGroupManagersInputSchema = z.object({
+  userIds: z.array(z.number().positive()).min(1, 'At least one user ID must be provided')
+});
+export type RemoveGroupManagersInput = z.infer<typeof RemoveGroupManagersInputSchema>;
+
+// Ownership Transfer Schema
+export const TransferGroupOwnershipInputSchema = z.object({
+  newOwnerId: z.number().positive('New owner ID must be a positive number')
+});
+export type TransferGroupOwnershipInput = z.infer<typeof TransferGroupOwnershipInputSchema>;
+
+// Response Types
+export type CreateGroupResponse = {
+  group: Group;
+};
+
+export type UpdateGroupResponse = {
+  group: Group;
+};
+
+export type GetGroupResponse = {
+  group: Group;
+};
+
+export type GetGroupsResponse = {
+  groups: Group[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+};
+
+export type DeleteGroupResponse = {
+  message: string;
+};
+
+// Member Management Response Types
+export type AddGroupMembersResponse = {
+  message: string;
+  added: Array<{
+    userId: number;
+    userEmail: string;
+  }>;
+  alreadyMembers: Array<{
+    userId: number;
+    userEmail: string;
+  }>;
+  errors: Array<{
+    userId: number;
+    error: string;
+  }>;
+};
+
+export type RemoveGroupMembersResponse = {
+  message: string;
+  removed: Array<{
+    userId: number;
+    userEmail: string;
+  }>;
+  notMembers: Array<{
+    userId: number;
+    userEmail: string;
+  }>;
+  errors: Array<{
+    userId: number;
+    error: string;
+  }>;
+};
+
+// Manager Management Response Types
+export type AddGroupManagersResponse = {
+  message: string;
+  added: Array<{
+    userId: number;
+    userEmail: string;
+  }>;
+  alreadyManagers: Array<{
+    userId: number;
+    userEmail: string;
+  }>;
+  errors: Array<{
+    userId: number;
+    error: string;
+  }>;
+};
+
+export type RemoveGroupManagersResponse = {
+  message: string;
+  removed: Array<{
+    userId: number;
+    userEmail: string;
+  }>;
+  notManagers: Array<{
+    userId: number;
+    userEmail: string;
+  }>;
+  errors: Array<{
+    userId: number;
+    error: string;
+  }>;
+};
+
+// Ownership Transfer Response Type
+export type TransferGroupOwnershipResponse = {
+  message: string;
+  group: Group;
+};
+
+// ==================
+// User Search Types
+// ==================
+
+export const SearchUsersQuerySchema = z.object({
+  q: z.string().min(1, 'Search query is required'),
+  limit: z.string().default('20')
+});
+export type SearchUsersQuery = z.infer<typeof SearchUsersQuerySchema>;
+
+export type SearchUsersResponse = UserResponse[];

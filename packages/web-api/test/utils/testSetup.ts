@@ -9,24 +9,33 @@ import { hashPassword } from '../../src/services/auth';
 // Test user credentials
 export const user1Email = 'testuser1@email.com';
 export const user2Email = 'testuser2@email.com';
+export const nonAnalystUserEmail = 'nonanalyst@gmail.com';
 export const adminEmail = 'admin@email.com';
 
 // Tokens (will be set during userSetup)
 export let user1Token: string;
 export let user2Token: string;
+export let nonAnalystUserToken: string;
 export let adminToken: string;
 
 // User IDs (will be set during userSetup)
 export let user1Id: number;
 export let user2Id: number;
 export let adminId: number;
+export let nonAnalystId: number;
 
-export type TokenType = 'user1' | 'user2' | 'admin';
+export type TokenType = 'user1' | 'user2' | 'admin' | 'nonanalyst';
 
 // Utility function to make authenticated requests
 export const authRequest = (app: Express, tokenType: TokenType = 'user1') => {
   const token =
-    tokenType === 'user2' ? user2Token : tokenType === 'admin' ? adminToken : user1Token;
+    tokenType === 'user2'
+      ? user2Token
+      : tokenType === 'admin'
+        ? adminToken
+        : tokenType === 'nonanalyst'
+          ? nonAnalystUserToken
+          : user1Token;
 
   return {
     get: (url: string) =>
@@ -103,6 +112,15 @@ export const userSetup = async () => {
   });
   user2Id = user2.id;
 
+  const nonAnalystUser = await prisma.user.create({
+    data: {
+      email: nonAnalystUserEmail,
+      password: hashedPassword,
+      roles: [...BASE_ROLES]
+    }
+  });
+  nonAnalystId = nonAnalystUser.id;
+
   const admin = await prisma.user.create({
     data: {
       email: adminEmail,
@@ -123,6 +141,12 @@ export const userSetup = async () => {
     id: user2.id,
     email: user2.email,
     roles: user2.roles
+  });
+
+  nonAnalystUserToken = signJwt({
+    id: nonAnalystUser.id,
+    email: nonAnalystUser.email,
+    roles: nonAnalystUser.roles
   });
 
   adminToken = signJwt({

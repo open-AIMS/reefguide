@@ -15,6 +15,7 @@ import { router as polygonRoutes } from './polygons/routes';
 import { router as projectRoutes } from './projects/routes';
 import { router as userRoutes } from './users/routes';
 import { router as passwordResetRoutes } from './password-reset/routes';
+import { router as groupRoutes } from './groups/routes';
 
 require('dotenv').config();
 require('express-async-errors');
@@ -55,6 +56,7 @@ api.use('/users', userRoutes);
 api.use('/jobs', jobRoutes);
 api.use('/projects', projectRoutes);
 api.use('/password-reset', passwordResetRoutes);
+api.use('/groups', groupRoutes);
 
 // API base router
 app.use('/api', api);
