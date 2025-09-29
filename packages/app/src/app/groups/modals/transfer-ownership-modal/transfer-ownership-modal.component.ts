@@ -1,6 +1,6 @@
 // transfer-ownership-modal.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, inject, Inject } from '@angular/core';
+import { Component, computed, inject, Inject, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -36,31 +36,35 @@ export class TransferOwnershipModalComponent {
   private dialogRef = inject(MatDialogRef<TransferOwnershipModalComponent>);
   private webApi = inject(WebApiService);
 
-  selectedUserId: number | null = null;
-  confirmationText = '';
-  submitting = false;
+  selectedUserId = signal<number | null>(null);
+  confirmationText = signal('');
+  submitting = signal(false);
+
+  // Computed signal for validation
+  canConfirm = computed(
+    () => this.selectedUserId() !== null && this.confirmationText() === this.data.groupName
+  );
+
+  // Computed signal for button state
+  isSubmitDisabled = computed(() => !this.canConfirm() || this.submitting());
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: TransferOwnershipDialogData) {}
 
-  canConfirm(): boolean {
-    return this.selectedUserId !== null && this.confirmationText === this.data.groupName;
-  }
-
   onConfirm() {
-    if (!this.canConfirm() || this.submitting) {
+    if (!this.canConfirm() || this.submitting()) {
       return;
     }
 
-    this.submitting = true;
+    this.submitting.set(true);
     this.webApi
-      .transferGroupOwnership(this.data.groupId, { newOwnerId: this.selectedUserId! })
+      .transferGroupOwnership(this.data.groupId, { newOwnerId: this.selectedUserId()! })
       .subscribe({
         next: () => {
           this.dialogRef.close(true);
         },
         error: error => {
           console.error('Error transferring ownership:', error);
-          this.submitting = false;
+          this.submitting.set(false);
         }
       });
   }

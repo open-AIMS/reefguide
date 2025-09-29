@@ -1,5 +1,5 @@
 // group-detail.component.ts
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Group } from '@reefguide/db';
@@ -15,6 +15,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AddMembersModalComponent } from '../modals/add-members-modal/add-members-modal.component';
 import { DeleteGroupModalComponent } from '../modals/delete-group-modal/delete-group-modal.component';
 import { TransferOwnershipModalComponent } from '../modals/transfer-ownership-modal/transfer-ownership-modal.component';
+import { AuthService } from '../../auth/auth.service';
 
 @Component({
   selector: 'app-group-detail',
@@ -34,16 +35,17 @@ import { TransferOwnershipModalComponent } from '../modals/transfer-ownership-mo
 })
 export class GroupDetailComponent implements OnInit {
   private webApi = inject(WebApiService);
+  private authService = inject(AuthService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
 
-  group: Group | null = null;
-  loading = false;
+  group = signal<Group | null>(null);
+  loading = signal(false);
   activeTab = 0;
-  currentUserRole: 'Owner' | 'Manager' | 'Member' | null = null;
-  currentUserId: number = 0; // TODO: Get from AuthService
+  currentUserRole = signal<'Owner' | 'Manager' | 'Member' | null>(null);
+  currentUserId = computed(() => this.authService.currentUserSignal()?.id);
 
   ngOnInit() {
     const groupId = Number(this.route.snapshot.paramMap.get('id'));
@@ -55,65 +57,73 @@ export class GroupDetailComponent implements OnInit {
   }
 
   loadGroup(groupId: number) {
-    this.loading = true;
+    this.loading.set(true);
     this.webApi.getGroup(groupId).subscribe({
       next: response => {
-        this.group = response.group;
+        this.group.set(response.group);
         this.determineUserRole();
-        this.loading = false;
+        this.loading.set(false);
       },
       error: error => {
         console.error('Error loading group:', error);
         this.snackBar.open('Failed to load group', 'Close', { duration: 3000 });
         this.router.navigate(['/groups']);
-        this.loading = false;
+        this.loading.set(false);
       }
     });
   }
 
   private determineUserRole() {
-    if (!this.group) return;
+    const group = this.group();
+    const userId = this.currentUserId();
 
-    if (this.group.owner_id === this.currentUserId) {
-      this.currentUserRole = 'Owner';
+    if (!group || !userId) {
+      this.currentUserRole.set(null);
+      return;
     }
 
-    // TODO need others?
-    this.currentUserRole = 'Member'
+    if (group.owner_id === userId) {
+      this.currentUserRole.set('Owner');
+      return;
+    }
 
-    // else if (this.group.managerIds?.includes(this.currentUserId)) {
-    //   this.currentUserRole = 'Manager';
-    // } else {
-    //   this.currentUserRole = 'Member';
+    // TODO: Check manager IDs when available from API response
+    // if (group.managerIds?.includes(userId)) {
+    //   this.currentUserRole.set('Manager');
+    //   return;
     // }
+
+    this.currentUserRole.set('Member');
   }
 
   onAddMembers() {
-    if (!this.group) return;
+    const group = this.group();
+    if (!group) return;
 
     const dialogRef = this.dialog.open(AddMembersModalComponent, {
       width: '600px',
       data: {
-        groupId: this.group.id,
-        currentUserRole: this.currentUserRole
+        groupId: group.id,
+        currentUserRole: this.currentUserRole()
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.snackBar.open('Members added successfully', 'Close', { duration: 3000 });
-        this.loadGroup(this.group!.id);
+        this.loadGroup(group.id);
       }
     });
   }
 
   onRemoveMember(userId: number) {
-    if (!this.group || !confirm('Are you sure you want to remove this member?')) return;
+    const group = this.group();
+    if (!group || !confirm('Are you sure you want to remove this member?')) return;
 
-    this.webApi.removeGroupMembers(this.group.id, { userIds: [userId] }).subscribe({
+    this.webApi.removeGroupMembers(group.id, { userIds: [userId] }).subscribe({
       next: () => {
         this.snackBar.open('Member removed', 'Close', { duration: 3000 });
-        this.loadGroup(this.group!.id);
+        this.loadGroup(group.id);
       },
       error: error => {
         console.error('Error removing member:', error);
@@ -123,12 +133,13 @@ export class GroupDetailComponent implements OnInit {
   }
 
   onPromoteToManager(userId: number) {
-    if (!this.group) return;
+    const group = this.group();
+    if (!group) return;
 
-    this.webApi.addGroupManagers(this.group.id, { userIds: [userId] }).subscribe({
+    this.webApi.addGroupManagers(group.id, { userIds: [userId] }).subscribe({
       next: () => {
         this.snackBar.open('User promoted to manager', 'Close', { duration: 3000 });
-        this.loadGroup(this.group!.id);
+        this.loadGroup(group.id);
       },
       error: error => {
         console.error('Error promoting user:', error);
@@ -138,12 +149,13 @@ export class GroupDetailComponent implements OnInit {
   }
 
   onDemoteManager(userId: number) {
-    if (!this.group) return;
+    const group = this.group();
+    if (!group) return;
 
-    this.webApi.removeGroupManagers(this.group.id, { userIds: [userId] }).subscribe({
+    this.webApi.removeGroupManagers(group.id, { userIds: [userId] }).subscribe({
       next: () => {
         this.snackBar.open('Manager demoted to member', 'Close', { duration: 3000 });
-        this.loadGroup(this.group!.id);
+        this.loadGroup(group.id);
       },
       error: error => {
         console.error('Error demoting manager:', error);
@@ -153,17 +165,18 @@ export class GroupDetailComponent implements OnInit {
   }
 
   onSaveSettings() {
-    if (!this.group) return;
+    const group = this.group();
+    if (!group) return;
 
     this.webApi
-      .updateGroup(this.group.id, {
-        name: this.group.name,
-        description: this.group.description ?? undefined
+      .updateGroup(group.id, {
+        name: group.name,
+        description: group.description ?? undefined
       })
       .subscribe({
         next: () => {
           this.snackBar.open('Settings saved', 'Close', { duration: 3000 });
-          this.loadGroup(this.group!.id);
+          this.loadGroup(group.id);
         },
         error: error => {
           console.error('Error saving settings:', error);
@@ -173,22 +186,18 @@ export class GroupDetailComponent implements OnInit {
   }
 
   onTransferOwnership() {
-    if (!this.group) return;
+    const group = this.group();
+    if (!group) return;
 
-    // Get all members (managers + regular members) except current owner
-    // TODO do we need this?
-    // const allMembers = [
-    //   ...(this.group.managers || []),
-    //   ...(this.group.members || [])
-    // ];
+    // TODO: Get members from API response when available
+    const allMembers: any[] = [];
 
     const dialogRef = this.dialog.open(TransferOwnershipModalComponent, {
       width: '500px',
       data: {
-        groupId: this.group.id,
-        groupName: this.group.name,
-        // TODO fix this
-        members: []
+        groupId: group.id,
+        groupName: group.name,
+        members: allMembers
       }
     });
 
@@ -201,13 +210,14 @@ export class GroupDetailComponent implements OnInit {
   }
 
   onDeleteGroup() {
-    if (!this.group) return;
+    const group = this.group();
+    if (!group) return;
 
     const dialogRef = this.dialog.open(DeleteGroupModalComponent, {
       width: '500px',
       data: {
-        groupId: this.group.id,
-        groupName: this.group.name
+        groupId: group.id,
+        groupName: group.name
       }
     });
 
@@ -220,11 +230,12 @@ export class GroupDetailComponent implements OnInit {
   }
 
   canManage(): boolean {
-    return this.currentUserRole === 'Owner' || this.currentUserRole === 'Manager';
+    const role = this.currentUserRole();
+    return role === 'Owner' || role === 'Manager';
   }
 
   isOwner(): boolean {
-    return this.currentUserRole === 'Owner';
+    return this.currentUserRole() === 'Owner';
   }
 
   goBack() {

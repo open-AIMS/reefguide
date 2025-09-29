@@ -1,5 +1,5 @@
 // groups-list.component.ts
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -36,8 +36,8 @@ export class GroupsListComponent implements OnInit {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
 
-  groups: Group[] = [];
-  loading = false;
+  groups = signal<Group[]>([]);
+  loading = signal(false);
   searchQuery = '';
   private searchSubject = new Subject<string>();
 
@@ -51,25 +51,25 @@ export class GroupsListComponent implements OnInit {
   }
 
   loadGroups(searchQuery?: string) {
-    this.loading = true;
+    this.loading.set(true);
     const query = searchQuery !== undefined ? searchQuery : this.searchQuery;
 
     this.webApi.getUserGroups().subscribe({
       next: response => {
         // Filter by search query if provided
         if (query && query.trim()) {
-          this.groups = response.groups.filter(group =>
-            group.name.toLowerCase().includes(query.toLowerCase())
+          this.groups.set(
+            response.groups.filter(group => group.name.toLowerCase().includes(query.toLowerCase()))
           );
         } else {
-          this.groups = response.groups;
+          this.groups.set(response.groups);
         }
-        this.loading = false;
+        this.loading.set(false);
       },
       error: error => {
         console.error('Error loading groups:', error);
         this.snackBar.open('Failed to load groups', 'Close', { duration: 3000 });
-        this.loading = false;
+        this.loading.set(false);
       }
     });
   }

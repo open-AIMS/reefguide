@@ -12,15 +12,15 @@
     />
   </mat-form-field>
 
-  <div *ngIf="loading">Loading...</div>
+  <div *ngIf="loading()">Loading...</div>
 
   <mat-list>
-    <mat-list-item *ngFor="let group of groups" (click)="onGroupClick(group.id)">
+    <mat-list-item *ngFor="let group of groups()" (click)="onGroupClick(group.id)">
       <h3 matListItemTitle>{{ group.name }}</h3>
       <p matListItemLine>{{ group.description }}</p>
       <span matListItemMeta>{{ getUserRole(group) }} • {{ getMemberCount(group) }} members</span>
     </mat-list-item>
   </mat-list>
 
-  <div *ngIf="!loading && groups.length === 0">No groups found</div>
+  <div *ngIf="!loading() && groups().length === 0">No groups found</div>
 </div>

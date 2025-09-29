@@ -890,4 +890,13 @@ export const SearchUsersQuerySchema = z.object({
 });
 export type SearchUsersQuery = z.infer<typeof SearchUsersQuerySchema>;
 
-export type SearchUsersResponse = UserResponse[];
+export const SearchUsersResponseSchema = z.object({
+  results: z.array(
+    z.object({
+      id: z.number(),
+      email: z.string()
+    })
+  )
+});
+
+export type SearchUsersResponse = z.infer<typeof SearchUsersResponseSchema>;

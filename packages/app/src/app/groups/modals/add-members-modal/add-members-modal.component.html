@@ -2,27 +2,45 @@
 
 <mat-dialog-content>
   <mat-form-field>
-    <input matInput placeholder="Search users by email" [(ngModel)]="searchQuery" (input)="onSearchUsers(searchQuery)">
+    <input
+      matInput
+      placeholder="Search users by email"
+      [ngModel]="searchQuery()"
+      (ngModelChange)="searchQuery.set($event)"
+    >
   </mat-form-field>
 
   <mat-selection-list>
-    <mat-list-option *ngFor="let user of searchResults" [selected]="isSelected(user.id)" (click)="toggleUser(user.id)">
+    <mat-list-option
+      *ngFor="let user of searchResults()"
+      [selected]="isSelected(user.id)"
+      (click)="toggleUser(user.id)"
+    >
       {{ user.email }}
     </mat-list-option>
   </mat-selection-list>
 
-  <mat-checkbox [(ngModel)]="addAsManager" *ngIf="data.currentUserRole === 'Owner'">
+  <mat-checkbox
+    *ngIf="data.currentUserRole === 'Owner'"
+    [ngModel]="addAsManager()"
+    (ngModelChange)="addAsManager.set($event)"
+  >
     Add as Manager
   </mat-checkbox>
 
-  <div *ngIf="selectedUserIds.size > 0">
-    Selected: {{ selectedUserIds.size }} user(s)
+  <div *ngIf="selectedCount() > 0">
+    Selected: {{ selectedCount() }} user(s)
   </div>
 </mat-dialog-content>
 
 <mat-dialog-actions>
   <button mat-button (click)="onCancel()">Cancel</button>
-  <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="selectedUserIds.size === 0 || submitting">
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="onSubmit()"
+    [disabled]="!canSubmit()"
+  >
     Add to Group
   </button>
 </mat-dialog-actions>
