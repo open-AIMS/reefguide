@@ -1,6 +1,6 @@
 // src/app/model-workflow/parameter-config/parameter-config.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, effect, input, output, signal } from '@angular/core';
+import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -15,6 +15,19 @@ import { AdriaModelRunInput } from '@reefguide/types';
 import { debounceTime, distinctUntilChanged, tap } from 'rxjs/operators';
 
 type DataPackage = 'MOORE' | 'GBR';
+type RcpScenario = AdriaModelRunInput['rcp_scenario'];
+
+const DEFAULT_RCP: RcpScenario = '45';
+
+function availableScenariosFromDataPackage(
+  dataPackage: DataPackage | null | undefined
+): RcpScenario[] {
+  if (dataPackage === 'MOORE') {
+    return ['26', '45', '60', '85'];
+  } else {
+    return ['26', '45', '85'];
+  }
+}
 
 interface ParameterRange {
   lower: number;
@@ -23,6 +36,8 @@ interface ParameterRange {
 
 export interface ModelParameters {
   runName: string;
+  // RCP scenario as a string
+  rcpScenario: RcpScenario;
   // Available data packages
   dataPackage: DataPackage;
   numScenarios: number;
@@ -337,6 +352,9 @@ export class ParameterConfigComponent {
 
   // Available scenario options (powers of 2)
   scenarioOptions = [1, 2, 4, 8, 16, 32, 64, 128, 256];
+
+  baseRCPScenarioOptions: RcpScenario[] = ['26', '45', '60', '85'];
+  rmeRCPScenarioOptions: RcpScenario[] = ['26', '45', '85'];
   dataPackageOptions: DataPackage[] = ['MOORE', 'GBR'];
   dataPackageSpec: Record<DataPackage, { displayName: string }> = {
     MOORE: { displayName: 'Moore Reef cluster (site scale)' },
@@ -346,6 +364,7 @@ export class ParameterConfigComponent {
   configForm = new FormGroup({
     runName: new FormControl('example_run', [Validators.required]),
     dataPackage: new FormControl<DataPackage>('MOORE', [Validators.required]),
+    rcpScenario: new FormControl<RcpScenario>(DEFAULT_RCP, [Validators.required]),
 
     numScenarios: new FormControl(64, [Validators.required]),
 
@@ -393,6 +412,11 @@ export class ParameterConfigComponent {
   });
 
   // Computed signals for range displays
+  dataPackage = signal<DataPackage>('MOORE');
+  rcpScenarioOptions = computed(() => {
+    return availableScenariosFromDataPackage(this.dataPackage());
+  });
+
   taRange = signal<ParameterRange>({ lower: 0, upper: 1000000 });
   caRange = signal<ParameterRange>({ lower: 0, upper: 1000000 });
   smRange = signal<ParameterRange>({ lower: 0, upper: 1000000 });
@@ -428,7 +452,18 @@ export class ParameterConfigComponent {
         })
       )
       .subscribe(formValue => {
-        console.log('Actual change');
+        const currentRcpScenario = formValue.rcpScenario;
+        const availableScenarios = availableScenariosFromDataPackage(formValue.dataPackage);
+
+        // If current RCP scenario is not available for the selected data package
+        if (currentRcpScenario && !availableScenarios.includes(currentRcpScenario)) {
+          // Reset to the first available scenario (or a sensible default)
+          const defaultScenario = availableScenarios.includes(DEFAULT_RCP)
+            ? DEFAULT_RCP
+            : availableScenarios[0];
+          this.configForm.patchValue({ rcpScenario: defaultScenario });
+        }
+
         // Auto-save: emit parameters when form changes and is valid
         if (this.configForm.valid && this.validateRanges()) {
           const parameters = this.buildModelParameters();
@@ -576,6 +611,7 @@ export class ParameterConfigComponent {
     const defaultValues: any = {
       runName: 'example_run',
       dataPackage: 'MOORE',
+      rcpScenario: DEFAULT_RCP,
       numScenarios: 64
     };
 
@@ -606,6 +642,7 @@ export class ParameterConfigComponent {
 
     return {
       runName: formValue.runName!,
+      rcpScenario: formValue.rcpScenario!,
       dataPackage: formValue.dataPackage!,
       numScenarios: formValue.numScenarios!,
 
@@ -712,6 +749,7 @@ export class ParameterConfigComponent {
 
   updateRangeSignals(): void {
     const form = this.configForm.value;
+    this.dataPackage.set(form.dataPackage || 'MOORE');
     this.taRange.set({ lower: form.taLower || 0, upper: form.taUpper || 1000000 });
     this.caRange.set({ lower: form.caLower || 0, upper: form.caUpper || 1000000 });
     this.smRange.set({ lower: form.smLower || 0, upper: form.smUpper || 1000000 });
@@ -766,6 +804,7 @@ export class ParameterConfigComponent {
     // Update form values without triggering valueChanges initially
     this.configForm.patchValue({
       runName: params.runName,
+      rcpScenario: params.rcpScenario,
       dataPackage: params.dataPackage,
       numScenarios: params.numScenarios,
 
@@ -822,6 +861,7 @@ export class ParameterConfigComponent {
     const formValue = this.configForm.value;
     const parameters: ModelParameters = {
       runName: formValue.runName!,
+      rcpScenario: formValue.rcpScenario!,
       dataPackage: formValue.dataPackage!,
       numScenarios: formValue.numScenarios!,
 
@@ -906,7 +946,7 @@ export class ParameterConfigComponent {
     return {
       num_scenarios: params.numScenarios,
       data_package: params.dataPackage,
-      rcp_scenario: '45', // Hardcoded for now
+      rcp_scenario: params.rcpScenario,
       model_params: [
         // DiscreteOrderedUniformDist - SHOULD have third parameter (step size)
         {

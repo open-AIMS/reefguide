@@ -270,7 +270,8 @@ export class AuthService {
       return false;
     }
 
-    console.log('onAuth', auth);
+    // IMPORTANT: do NOT log full auth object to avoid token capture by Sentry
+    console.log('onAuth', auth.user);
     this.auth = auth;
 
     // Update both signals when user data changes

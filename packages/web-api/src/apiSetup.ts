@@ -1,3 +1,4 @@
+import Sentry from '@sentry/node';
 import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
@@ -6,12 +7,14 @@ import { router as adminRoutes } from './admin/routes';
 import { getJwks } from './auth/jwtUtils';
 import { passport } from './auth/passportConfig';
 import { router as authRoutes } from './auth/routes';
+import { config } from './config';
 import { router as jobRoutes } from './jobs/routes';
 import * as middlewares from './middlewares';
 import { router as noteRoutes } from './notes/routes';
 import { router as polygonRoutes } from './polygons/routes';
-import { router as userRoutes } from './users/routes';
 import { router as projectRoutes } from './projects/routes';
+import { router as userRoutes } from './users/routes';
+import { router as passwordResetRoutes } from './password-reset/routes';
 
 require('dotenv').config();
 require('express-async-errors');
@@ -38,11 +41,9 @@ api.get('/.well-known/jwks.json', (req, res) => {
 
 /** Health check GET route */
 api.get('/', (req, res) => {
-  res
-    .json({
-      message: 'API healthy.'
-    })
-    .send();
+  res.status(200).json({
+    message: 'API healthy.'
+  });
 });
 
 // Passport auth routes
@@ -53,9 +54,17 @@ api.use('/admin', adminRoutes);
 api.use('/users', userRoutes);
 api.use('/jobs', jobRoutes);
 api.use('/projects', projectRoutes);
+api.use('/password-reset', passwordResetRoutes);
 
 // API base router
 app.use('/api', api);
+
+// Tell sentry to track errors if DSN is provided
+if (config.sentryDsn) {
+  console.log('Attaching sentry error handler...');
+  Sentry.setupExpressErrorHandler(app);
+  console.log('Attached.');
+}
 
 // Passes status code from custom exceptions through to error response
 app.use(middlewares.errorMiddleware);

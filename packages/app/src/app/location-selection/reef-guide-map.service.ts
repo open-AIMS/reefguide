@@ -450,16 +450,20 @@ export class ReefGuideMapService {
 
   /**
    * Show this criteria layer and hide others.
-   * @param criteria layer id
+   * @param criteriaId layer id
    * @param show show/hide layer
    */
-  showCriteriaLayer(criteria: string, show = true) {
+  showCriteriaLayer(criteriaId: string, show = true) {
     const criteriaLayerGroup = this.criteriaLayerGroup();
     if (criteriaLayerGroup) {
       criteriaLayerGroup.setVisible(true);
       for (let id in this.criteriaLayers) {
         const criteriaLayer = this.criteriaLayers[id];
-        criteriaLayer?.visible.set(id === criteria && show);
+        criteriaLayer?.visible.set(id === criteriaId && show);
+      }
+
+      if (!(criteriaId in this.criteriaLayers)) {
+        console.warn(`No "${criteriaId}" criteria layer`);
       }
     }
   }
@@ -599,5 +603,27 @@ export class ReefGuideMapService {
     });
 
     return this.createLayerController(layer, options);
+  }
+
+  /**
+   * Show/hide an info layer by its ID
+   * @param layerId the layer ID to show/hide
+   * @param visible whether to make the layer visible
+   */
+  showInfoLayer(layerId: string, visible: boolean = true) {
+    // Get all layers from the map
+    const allLayers = this.map.getAllLayers();
+
+    // Find the layer with the matching ID
+    const targetLayer = allLayers.find(layer => {
+      const properties = layer.getProperties();
+      return properties['id'] === layerId;
+    });
+
+    if (targetLayer) {
+      targetLayer.setVisible(visible);
+    } else {
+      console.warn(`Info layer with ID "${layerId}" not found`);
+    }
   }
 }

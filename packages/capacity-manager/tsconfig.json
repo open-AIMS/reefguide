@@ -4,7 +4,9 @@
         "rootDir": ".",
         "outDir": "build",
         "esModuleInterop": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "sourceMap": true,
+        "inlineSources": true
     },
     "include": [
         "src/**/*.ts"

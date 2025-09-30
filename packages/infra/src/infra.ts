@@ -4,7 +4,7 @@ import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import { ReefGuideNetworking } from './components/networking';
-import { DeploymentConfig } from './infraConfig';
+import { DeploymentConfig, MonitoringConfig } from './infraConfig';
 import { ReefGuideFrontend } from './components/reefGuideFrontend';
 import { JobSystem } from './components/jobs';
 import * as sm from 'aws-cdk-lib/aws-secretsmanager';
@@ -27,12 +27,44 @@ export const STANDARD_EXCLUSIONS = [
   'cdk.out'
 ];
 
+// All of these endpoints need to be added to CSP for front-end
+const ARC_GIS_ENDPOINTS = [
+  'https://*.arcgis.com',
+  'https://*.arcgisonline.com',
+  'https://spatial-gis.information.qld.gov.au',
+  'https://*.information.qld.gov.au',
+  'https://*.qld.gov.au'
+];
+
+/**
+ * Extracts Sentry DSN URLs from monitoring configuration for CSP whitelisting.
+ * Only includes URLs that are defined in the configuration.
+ *
+ * @param config - The monitoring configuration object
+ * @returns Array of Sentry DSN URLs to whitelist in Content Security Policy
+ */
+export function getSentryUrlsForCSP(config: MonitoringConfig): string[] {
+  const relevantUrls = [
+    config.adriaWorkerSentryDsn,
+    config.appSentryDsn,
+    config.capacityManagerSentryDsn,
+    config.reefguideWorkerSentryDsn,
+    config.webApiSentryDsn
+  ];
+  // Return the unique origin only as CSP is invalid for full URLs
+  return Array.from(
+    new Set(
+      relevantUrls
+        .filter(dsn => dsn !== undefined)
+        .map(dsn => URL.parse(dsn)?.origin)
+        .filter(dsn => dsn !== undefined)
+    )
+  );
+}
+
 export interface ReefguideWebApiProps extends cdk.StackProps {
   config: DeploymentConfig;
 }
-
-// All of these endpoints need to be added to CSP for front-end
-const ARC_GIS_ENDPOINTS = ['https://*.arcgis.com', 'https://*.arcgisonline.com'];
 
 export class ReefguideStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ReefguideWebApiProps) {
@@ -157,6 +189,7 @@ export class ReefguideStack extends cdk.Stack {
     // ECS mode
     if (config.webAPI.mode.ecs !== undefined) {
       webAPI = new ECSWebAPI(this, 'web-api', {
+        emailConfig: config.email,
         certificate: primaryCert,
         config: config.webAPI,
         storageBucket,
@@ -167,7 +200,8 @@ export class ReefguideStack extends cdk.Stack {
         adminCreds: adminCreds,
         cluster: cluster,
         sharedBalancer: networking.sharedBalancer,
-        vpc: networking.vpc
+        vpc: networking.vpc,
+        sentryDsn: config.monitoring?.webApiSentryDsn
       });
     } else {
       // Lambda mode
@@ -192,11 +226,16 @@ export class ReefguideStack extends cdk.Stack {
         // S3 bucket downloads within this region
         `https://*.s3.${cdk.Stack.of(this).region}.amazonaws.com`,
         webAPI.endpoint,
-        'blob:'
+        'blob:',
+        // User specified whitelists
+        ...(config.frontend.additionalCspWhitelists ?? []),
+        // Automatic monitoring whitelists
+        ...(config.monitoring ? getSentryUrlsForCSP(config.monitoring) : [])
       ].concat(ARC_GIS_ENDPOINTS),
       webApiEndpoint: webAPI.endpoint,
       adminEmail: config.frontend.adminEmail,
-      appName: config.frontend.appName
+      appName: config.frontend.appName,
+      sentryDsn: config.monitoring?.appSentryDsn
     });
 
     const { jobSystem } = config;
@@ -211,7 +250,8 @@ export class ReefguideStack extends cdk.Stack {
       capacityManager: {
         cpu: capacityManager.cpu,
         memoryLimitMiB: capacityManager.memoryLimitMiB,
-        pollIntervalMs: capacityManager.pollIntervalMs
+        pollIntervalMs: capacityManager.pollIntervalMs,
+        sentryDsn: config.monitoring?.capacityManagerSentryDsn
       },
       workers: [
         // Reefguide Worker
@@ -271,7 +311,11 @@ export class ReefguideStack extends cdk.Stack {
             CONFIG_PATH: '/data/reefguide/config.toml',
             JULIA_DEBUG: 'ReefGuideWorker',
             DATA_PATH: '/data/reefguide',
-            CACHE_PATH: '/data/reefguide/cache'
+            CACHE_PATH: '/data/reefguide/cache',
+            // Sentry DSN
+            ...(config.monitoring?.reefguideWorkerSentryDsn
+              ? { SENTRY_DSN: config.monitoring.reefguideWorkerSentryDsn }
+              : {})
           },
 
           // Mount up the reefguide API shared storage
@@ -324,10 +368,15 @@ export class ReefguideStack extends cdk.Stack {
             JULIA_DEBUG: 'ADRIAReefGuideWorker',
             // Moore cluster data package
             MOORE_DATA_PACKAGE_PATH: '/data/reefguide/adria/datapackages/Moore_2025-01-17_v070_rc1',
-            // GBR RME cluster data package
-            GBR_DATA_PACKAGE_PATH: '/data/reefguide/adria/datapackages/rme_ml_2024_01_08',
+            // GBR RME cluster data package - new version
+            GBR_DATA_PACKAGE_PATH: '/data/reefguide/adria/datapackages/rme_ml_2025_06_05',
             // Don't use network FS for this - to speed up IO and reduce $
-            DATA_SCRATCH_SPACE: '/tmp/reefguide'
+            DATA_SCRATCH_SPACE: '/tmp/reefguide',
+
+            // Sentry DSN
+            ...(config.monitoring?.adriaWorkerSentryDsn
+              ? { SENTRY_DSN: config.monitoring.adriaWorkerSentryDsn }
+              : {})
           },
 
           // Mount up the reefguide API shared storage

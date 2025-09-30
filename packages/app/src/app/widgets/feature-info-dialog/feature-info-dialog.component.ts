@@ -20,14 +20,37 @@ export class FeatureInfoDialogComponent {
     this.features = this.data.features;
   }
 
-  getLabel(f: FeatureRef) {
+  /**
+   * Gets the display label for a feature, optionally applying layer prefix and postfix.
+   *
+   * @param f - Object containing feature and layer references
+   * @returns The formatted label string
+   */
+  getLabel(f: FeatureRef): string {
     const { feature, layer } = f;
     const labelProp: string | undefined = layer.get('labelProp');
+    const layerPrefix: string | undefined = layer.get('layerPrefix');
+    const layerPostfix: string | undefined = layer.get('layerPostfix');
+
+    let label: string;
+
+    // Get base label from feature property or fallback to ID
     if (labelProp) {
-      return feature.get(labelProp);
+      label = feature.get(labelProp);
     } else {
-      return `id=${feature.getId()}`;
+      label = `id=${feature.getId()}`;
     }
+
+    // Apply prefix and postfix if available
+    if (layerPrefix) {
+      label = layerPrefix + label;
+    }
+
+    if (layerPostfix) {
+      label = label + layerPostfix;
+    }
+
+    return label;
   }
 
   getPropertyRows(f: FeatureRef) {

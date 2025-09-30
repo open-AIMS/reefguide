@@ -1,3 +1,16 @@
+// <form> wraps dialog content and actions
+form {
+  // form is not a layout element, prevent double scrollbars
+  display: contents;
+}
+
+.dialog-content {
+  // default max-height of 65vh limits our ability to increase dialog height
+  // none seems to work fine, but assuming 65vh was set for a reason, so set it to
+  // full height minus action bar height
+  max-height: calc(100vh - 74px);
+}
+
 .dialog-subtitle {
   margin: 8px 0 0 0;
   color: rgba(0, 0, 0, 0.6);
@@ -5,21 +18,8 @@
   font-weight: 400;
 }
 
-.dialog-content {
-  padding: 24px !important;
-  margin: 0;
-  max-width: none;
-  min-height: 450px;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
 .form-section {
-  margin-bottom: 32px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
+  padding-bottom: 32px;
 
   h3 {
     margin: 0 0 20px 0;
@@ -103,8 +103,7 @@
 }
 
 .project-type-content {
-  padding: 24px;
-  padding-right: 72px; // Increased space for radio button + margin
+  padding: 16px;
   width: 100%;
   background-color: white;
   border-radius: 10px;
@@ -183,19 +182,11 @@
 }
 
 .dialog-actions {
-  padding: 24px !important;
-  margin: 0;
-  justify-content: flex-end;
   gap: 12px;
   border-top: 1px solid #e0e0e0;
 
   button {
     min-width: 80px;
-    height: 40px;
-
-    &[mat-raised-button] {
-      min-width: 140px;
-    }
   }
 }
 
@@ -207,16 +198,17 @@
   }
 }
 
-// Dialog title styling to ensure proper padding
-::ng-deep .mat-mdc-dialog-title {
-  padding: 16px 24px 0 24px !important;
-  margin: 0 !important;
+[mat-dialog-title] {
+  // title is within dialog content, so remove padding
+  padding: 0 0 16px 0;
+  h2 {
+    margin: 0;
+  }
 }
 
 // Ensure dialog container can grow
-::ng-deep .mat-mdc-dialog-container {
-  max-height: 80vh !important;
-  height: auto !important;
+::ng-deep .mat-mdc-dialog-panel {
+  max-height: 85vh;
 }
 
 // Success and error snackbar styles
@@ -232,23 +224,13 @@
 
 // Responsive adjustments
 @media (max-width: 600px) {
+  ::ng-deep .mat-mdc-dialog-panel {
+    // set height on overall dialog
+    max-height: 95vh; // Slightly more space on mobile
+  }
+
   .dialog-content {
     padding: 16px !important;
-    min-height: 400px;
-    max-height: 85vh; // Slightly more space on mobile
-  }
-
-  ::ng-deep .mat-mdc-dialog-title {
-    padding: 12px 16px 0 16px !important;
-  }
-
-  .dialog-actions {
-    padding: 16px !important;
-  }
-
-  .project-type-content {
-    padding: 20px;
-    padding-right: 64px; // Adjusted for mobile radio button space
   }
 
   .project-type-header {

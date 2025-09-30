@@ -1,0 +1,92 @@
+<form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+  <!-- Email Field -->
+  <mat-form-field appearance="outline">
+    <mat-label>Email Address</mat-label>
+    <mat-icon matPrefix>email</mat-icon>
+    <input
+      matInput
+      type="email"
+      formControlName="email"
+      placeholder="Enter your email"
+      autocomplete="email"
+    />
+    @if (loginForm.get('email')?.hasError('required')) {
+      <mat-error>Email is required</mat-error>
+    }
+    @if (loginForm.get('email')?.hasError('email')) {
+      <mat-error>Please enter a valid email address</mat-error>
+    }
+    @if (loginForm.get('email')?.hasError('serverError')) {
+      <mat-error>{{ errorMessage() }}</mat-error>
+    }
+  </mat-form-field>
+
+  <!-- Password Field -->
+  <mat-form-field appearance="outline">
+    <mat-label>Password</mat-label>
+    <mat-icon matPrefix>lock</mat-icon>
+    <input
+      matInput
+      [type]="hidePassword() ? 'password' : 'text'"
+      formControlName="password"
+      placeholder="Enter your password"
+      autocomplete="current-password"
+    />
+    <button
+      mat-icon-button
+      matSuffix
+      type="button"
+      (click)="togglePasswordVisibility()"
+      [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'"
+    >
+      <mat-icon>{{ hidePassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
+    </button>
+    @if (loginForm.get('password')?.hasError('required')) {
+      <mat-error>Password is required</mat-error>
+    }
+    @if (loginForm.get('password')?.hasError('serverError')) {
+      <mat-error>{{ errorMessage() }}</mat-error>
+    }
+  </mat-form-field>
+
+  <!-- General Error Message -->
+  @if (errorMessage() && !hasFieldErrors()) {
+    <div class="error-message" role="alert" aria-live="polite">
+      <mat-icon color="warn">error</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- Submit Button -->
+  <button
+    mat-raised-button
+    color="primary"
+    type="submit"
+    class="auth-button"
+    [disabled]="!canSubmit()"
+  >
+    @if (isAuthenticating()) {
+      <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
+    } @else {
+      <mat-icon>login</mat-icon>
+    }
+    <span>{{ isAuthenticating() ? 'Signing in...' : 'Sign In' }}</span>
+  </button>
+</form>
+
+<!-- Mode Switch Links -->
+<mat-divider></mat-divider>
+<div class="mode-switch">
+  <p>
+    Don't have an account?
+    <button mat-button color="primary" type="button" (click)="switchToRegister()">
+      Create Account
+    </button>
+  </p>
+  <p>
+    Forgot your password?
+    <button mat-button color="accent" type="button" (click)="switchToResetRequest()">
+      Reset Password
+    </button>
+  </p>
+</div>

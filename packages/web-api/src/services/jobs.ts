@@ -162,15 +162,16 @@ export class JobService {
     userId: number,
     jobType: JobType,
     inputPayload: any,
-    disableCache = false
+    globalCacheDisabled = false,
+    disableSpecificCaches: JobType[] | undefined = undefined
   ) {
     await this.validateJobPayload(jobType, inputPayload);
 
     let cachedJob = undefined;
     let cacheHit = false;
 
-    // Check cache first if not disabled
-    if (!disableCache) {
+    // Check cache first if not disabled and specific job type disabled too
+    if (!globalCacheDisabled && !(disableSpecificCaches ?? []).includes(jobType)) {
       cachedJob = await this.checkJobCache(inputPayload, jobType);
       cacheHit = cachedJob !== undefined;
     }

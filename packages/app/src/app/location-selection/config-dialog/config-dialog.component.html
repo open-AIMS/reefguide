@@ -5,6 +5,7 @@
     <!--    <mat-tab label="Map">-->
     <!--      -->
     <!--    </mat-tab>-->
+    <mat-tab label="My Account"><change-my-password (onSuccess)="dialogRef.close()" /></mat-tab>
     <mat-tab label="Developer">
       <mat-checkbox
         [formControl]="enableCOGBlob"

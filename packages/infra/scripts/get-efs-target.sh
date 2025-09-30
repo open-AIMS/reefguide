@@ -110,13 +110,24 @@ get_stack_output() {
     local output_key="$2"
     
     log_info "Getting output '$output_key' from stack: $stack_name"
-    
+
+    tmp_err=$(mktemp)
+
     local output_value
     output_value=$(aws cloudformation describe-stacks \
         --stack-name "$stack_name" \
         --query "Stacks[0].Outputs[?OutputKey=='$output_key'].OutputValue" \
-        --output text 2>/dev/null)
-    
+        --output text 2> "$tmp_err")
+
+    # if command exited with non-zero error code
+    if [[ $? -ne 0 ]]; then
+        log_error "cloudformation describe-stacks error:"
+        cat "$tmp_err" >&2
+        rm -f "$tmp_err"
+        return 1
+    fi
+    rm -f "$tmp_err"
+
     if [[ -z "$output_value" || "$output_value" == "None" ]]; then
         log_error "Output key '$output_key' not found in stack '$stack_name'"
         return 1
