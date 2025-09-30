@@ -23,7 +23,7 @@ interface GetProjectsOptions {
  * d) Project is shared with a group they belong to
  * e) Project is public
  */
-function buildPermissionWhereClause(currentUser: User, ignorePermissions: boolean = false) {
+function buildPermissionWhereClause(currentUser: User, ignorePermissions = false) {
   if (ignorePermissions) {
     return {}; // Admins can see everything
   }
@@ -315,7 +315,7 @@ export class ProjectService {
   async canUserAccessProject(
     projectId: number,
     currentUser: User,
-    ignorePermissions: boolean = false
+    ignorePermissions = false
   ): Promise<boolean> {
     if (ignorePermissions) {
       return true; // Admins can access everything

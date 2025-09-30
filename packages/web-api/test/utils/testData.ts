@@ -2,14 +2,6 @@ import { JobStatus, JobType, prisma, ProjectType, UserRole } from '@reefguide/db
 import { JobService } from '../../src/services/jobs';
 import { hashPasswordResetCode } from '../../src/password-reset/service';
 
-// NOTE: user1Id will be available after userSetup() is called
-let user1Id: number;
-
-// Export a setter for user1Id to be called from testSetup
-export const setUser1Id = (id: number) => {
-  user1Id = id;
-};
-
 /**
  * Create a test polygon for a user
  */
@@ -28,11 +20,7 @@ export const createTestPolygon = async (
 /**
  * Create a test note for a polygon
  */
-export const createTestNote = async (
-  polygonId: number,
-  userId: number,
-  content: string = 'Test note'
-) => {
+export const createTestNote = async (polygonId: number, userId: number, content = 'Test note') => {
   return await prisma.polygonNote.create({
     data: {
       content,
@@ -177,7 +165,7 @@ export const createTestPreApprovedUser = async (
  */
 export const createTestPasswordResetCode = async (
   userId: number,
-  code: string = '123456',
+  code = '123456',
   overrides: {
     expires_at?: Date;
     used?: boolean;

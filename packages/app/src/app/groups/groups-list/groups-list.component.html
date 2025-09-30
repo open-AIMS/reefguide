@@ -19,7 +19,9 @@
     <mat-list-item *ngFor="let group of groups()" (click)="onGroupClick(group.id)">
       <h3 matListItemTitle>{{ group.name }}</h3>
       <p matListItemLine>{{ group.description }}</p>
-      <span class="member-count" matListItemMeta>{{ getUserRole(group) }} • {{ getMemberCount(group) }} members</span>
+      <span class="member-count" matListItemMeta
+        >{{ getUserRole(group) }} • {{ getMemberCount(group) }} members</span
+      >
     </mat-list-item>
   </mat-list>
 

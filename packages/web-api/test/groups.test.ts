@@ -518,7 +518,7 @@ describe('Groups', () => {
 
     it('should return empty array if user has no groups', async () => {
       // Create a new user with no groups
-      const user3 = await prisma.user.create({
+      await prisma.user.create({
         data: {
           email: 'user3@example.com',
           password: 'hashedpassword',

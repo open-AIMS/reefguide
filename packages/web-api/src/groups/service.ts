@@ -1,6 +1,6 @@
-import { PrismaClient, Group, Prisma, User } from '@reefguide/db';
-import { BadRequestException, NotFoundException } from '../exceptions';
+import { Prisma, PrismaClient, User } from '@reefguide/db';
 import { CreateGroupInput, UpdateGroupInput } from '@reefguide/types';
+import { BadRequestException, NotFoundException } from '../exceptions';
 
 /**
  * Options for querying groups
@@ -21,7 +21,7 @@ interface GetGroupsOptions {
  * c) Manager of the group
  * d) Member of the group
  */
-function buildPermissionWhereClause(currentUser: User, includeAll: boolean = false) {
+function buildPermissionWhereClause(currentUser: User, includeAll = false) {
   if (includeAll) {
     return {}; // Admins can see everything
   }
@@ -244,7 +244,7 @@ export class GroupService {
   async canUserAccessGroup(
     groupId: number,
     currentUser: User,
-    includeAll: boolean = false
+    includeAll = false
   ): Promise<boolean> {
     if (includeAll) {
       return true; // Admins can access everything

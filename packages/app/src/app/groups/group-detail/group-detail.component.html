@@ -30,7 +30,8 @@
                   mat-menu-item
                   (click)="onDemoteManager(manager.user_id)"
                   matTooltip="Demote this manager to a regular member"
-                  matTooltipPosition="left">
+                  matTooltipPosition="left"
+                >
                   <mat-icon>arrow_downward</mat-icon>
                   <span>Demote to Member</span>
                 </button>
@@ -38,7 +39,8 @@
                   mat-menu-item
                   (click)="onRemoveMember(manager.user_id, true)"
                   matTooltip="Completely remove this person from the group"
-                  matTooltipPosition="left">
+                  matTooltipPosition="left"
+                >
                   <mat-icon>person_remove</mat-icon>
                   <span>Remove from Group</span>
                 </button>
@@ -64,7 +66,8 @@
                   (click)="onPromoteToManager(member.user_id)"
                   *ngIf="isOwner()"
                   matTooltip="Promote this member to manager with elevated permissions"
-                  matTooltipPosition="left">
+                  matTooltipPosition="left"
+                >
                   <mat-icon>arrow_upward</mat-icon>
                   <span>Promote to Manager</span>
                 </button>
@@ -72,7 +75,8 @@
                   mat-menu-item
                   (click)="onRemoveMember(member.user_id, false)"
                   matTooltip="Completely remove this person from the group"
-                  matTooltipPosition="left">
+                  matTooltipPosition="left"
+                >
                   <mat-icon>person_remove</mat-icon>
                   <span>Remove from Group</span>
                 </button>
