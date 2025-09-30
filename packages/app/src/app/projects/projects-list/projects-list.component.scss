@@ -408,27 +408,46 @@
       min-height: 2.7em;
     }
 
-    .project-meta {
+    .project-meta-container {
       display: flex;
-      gap: 16px;
+      flex-direction: row;
+      justify-content: space-between;
 
-      @media (max-width: 480px) {
-        flex-direction: column;
-        gap: 6px;
+      .project-meta-right {
+        display: flex;
+        flex-direction: row;
+        gap: 16px;
       }
 
-      .meta-item {
+      .project-meta-left {
         display: flex;
+        flex-direction: row;
+        gap: 16px;
         align-items: center;
-        gap: 6px;
-        color: #888;
-        font-size: 0.8rem;
 
-        mat-icon {
-          font-size: 14px;
-          width: 14px;
-          height: 14px;
-          color: #999;
+        .public-icon {
+          font-size: large;
+          color: #666;
+        }
+
+        @media (max-width: 480px) {
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .meta-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: #888;
+          font-size: 0.8rem;
+
+          mat-icon {
+            font-size: 14px;
+            width: 14px;
+            height: 14px;
+            color: #999;
+          }
         }
       }
     }

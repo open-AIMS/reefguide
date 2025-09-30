@@ -136,34 +136,60 @@
               {{ truncateText(project.description || 'No description provided', 80) }}
             </p>
 
-            <div class="project-meta">
-              <div class="meta-item">
-                <mat-icon>schedule</mat-icon>
-                <span>{{ project.created_at | date: 'MMM d, y' }}</span>
+            <div class="project-meta-container">
+              <div class="project-meta-left">
+                <div class="meta-item">
+                  <mat-icon>schedule</mat-icon>
+                  <span>{{ project.created_at | date: 'MMM d, y' }}</span>
+                </div>
+                <div class="meta-item" *ngIf="project.updated_at !== project.created_at">
+                  <mat-icon>edit</mat-icon>
+                  <span>{{ project.updated_at | date: 'MMM d, y' }}</span>
+                </div>
+                @if (project.is_public) {
+                  <mat-icon
+                    class="public-icon"
+                    #tooltip="matTooltip"
+                    matTooltip="Private: visible to everyone."
+                    >public</mat-icon
+                  >
+                } @else {
+                  <mat-icon
+                    class="public-icon"
+                    #tooltip="matTooltip"
+                    matTooltip="Public: visible to shared users."
+                    >public_off</mat-icon
+                  >
+                }
               </div>
-              <div class="meta-item" *ngIf="project.updated_at !== project.created_at">
-                <mat-icon>edit</mat-icon>
-                <span>{{ project.updated_at | date: 'MMM d, y' }}</span>
+              <div>
+                <button
+                  mat-icon-button
+                  matTooltip="Project settings"
+                  (click)="openProjectSettings(project); $event.stopPropagation()"
+                >
+                  <mat-icon>settings</mat-icon>
+                </button>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Bottom Pagination -->
-      <mat-paginator
-        *ngIf="totalProjects >= 4"
-        #paginator
-        [length]="totalProjects"
-        [pageSize]="pageSize"
-        [pageIndex]="currentPage"
-        [pageSizeOptions]="[5, 10, 25, 50]"
-        [showFirstLastButtons]="true"
-        (page)="onPageChange($event)"
-        aria-label="Select page"
-        class="projects-paginator"
-      >
-      </mat-paginator>
+        <!-- Bottom Pagination -->
+        <mat-paginator
+          *ngIf="totalProjects >= 4"
+          #paginator
+          [length]="totalProjects"
+          [pageSize]="pageSize"
+          [pageIndex]="currentPage"
+          [pageSizeOptions]="[5, 10, 25, 50]"
+          [showFirstLastButtons]="true"
+          (page)="onPageChange($event)"
+          aria-label="Select page"
+          class="projects-paginator"
+        >
+        </mat-paginator>
+      </div>
     </div>
   </div>
 </div>

@@ -515,9 +515,10 @@ export const CreateProjectInputSchema = z.object({
   name: z.string().min(1, 'Project name is required'),
   description: z.string().optional(),
   type: z.nativeEnum(ProjectType),
+  public: z.boolean().default(false),
   project_state: z.any()
 });
-export type CreateProjectInput = z.infer<typeof CreateProjectInputSchema>;
+export type CreateProjectInput = z.input<typeof CreateProjectInputSchema>;
 
 export const UpdateProjectInputSchema = z.object({
   name: z.string().min(1, 'Project name is required').optional(),

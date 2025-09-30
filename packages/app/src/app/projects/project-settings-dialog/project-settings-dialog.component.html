@@ -1,0 +1,28 @@
+<div class="settings-dialog">
+  <h2 mat-dialog-title>Project Settings</h2>
+  <mat-dialog-content>
+    <p class="project-name">{{ dialogInput.projectDetails.name }}</p>
+    <h3>Visibility</h3>
+
+    <mat-checkbox [checked]="isPublic()" (change)="onPublicToggle($event.checked)" color="primary">
+      Make this project public
+    </mat-checkbox>
+
+    <div class="info-box" [class.public]="isPublic()" [class.private]="!isPublic()">
+      <mat-icon>{{ isPublic() ? 'public' : 'lock' }}</mat-icon>
+      <div class="info-content">
+        <h4>{{ isPublic() ? 'Public Project' : 'Private Project' }}</h4>
+        <p *ngIf="isPublic()">
+          This project is visible to everyone. Anyone with the link can view this project.
+        </p>
+        <p *ngIf="!isPublic()">
+          This project is only visible to you and users or groups you've explicitly shared it with.
+        </p>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Close</button>
+  </mat-dialog-actions>
+</div>

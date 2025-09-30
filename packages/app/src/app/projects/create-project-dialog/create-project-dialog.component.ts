@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -28,6 +29,7 @@ interface ProjectTypeOption {
     CommonModule,
     ReactiveFormsModule,
     MatButtonModule,
+    MatCheckboxModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
@@ -66,7 +68,8 @@ export class CreateProjectDialogComponent {
   createForm: FormGroup = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(255)]],
     description: ['', [Validators.maxLength(1000)]],
-    type: ['', [Validators.required]]
+    type: ['', [Validators.required]],
+    public: [false]
   });
 
   onCancel() {
@@ -82,7 +85,8 @@ export class CreateProjectDialogComponent {
         name: formValue.name.trim(),
         description: formValue.description?.trim() || undefined,
         type: formValue.type,
-        project_state: {} // Initialize with empty state
+        project_state: {}, // Initialize with empty state
+        public: formValue.public
       };
 
       this.webApi

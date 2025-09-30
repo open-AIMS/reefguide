@@ -1,6 +1,7 @@
 <h2 mat-dialog-title>Add Members</h2>
 <mat-dialog-content>
   <mat-form-field>
+    <mat-icon matPrefix>search</mat-icon>
     <input
       matInput
       placeholder="Search users by email"
@@ -8,7 +9,6 @@
       (ngModelChange)="searchQuery.set($event)"
     />
   </mat-form-field>
-
   <mat-selection-list *ngIf="searchResults().length > 0">
     <mat-list-option
       *ngFor="let user of searchResults()"
@@ -18,7 +18,6 @@
       {{ user.email }}
     </mat-list-option>
   </mat-selection-list>
-
   <div class="empty-state" *ngIf="searchResults().length === 0">
     <mat-icon>person_search</mat-icon>
     <p class="empty-state-title">No users found</p>
@@ -26,7 +25,6 @@
       {{ searchQuery() ? 'Try adjusting your search terms' : 'Start typing to search for users' }}
     </p>
   </div>
-
   <mat-checkbox
     *ngIf="data.currentUserRole === 'Owner'"
     [ngModel]="addAsManager()"
@@ -34,7 +32,6 @@
   >
     Add as Manager
   </mat-checkbox>
-
   <div class="selected-count" *ngIf="selectedCount() > 0">
     Selected: {{ selectedCount() }} user(s)
   </div>

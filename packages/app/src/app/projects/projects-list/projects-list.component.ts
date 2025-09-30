@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
+import { MatButtonModule, MatIconButton } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -15,6 +15,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { Project } from '@reefguide/db';
+import { GetProjectsResponse } from '@reefguide/types';
 import {
   BehaviorSubject,
   combineLatest,
@@ -25,7 +26,10 @@ import {
 } from 'rxjs';
 import { WebApiService } from '../../../api/web-api.service';
 import { CreateProjectDialogComponent } from '../create-project-dialog/create-project-dialog.component';
-import { AuthService } from '../../auth/auth.service';
+import {
+  ProjectSettingsDialogComponent,
+  UpdateProjectDialogInput
+} from '../project-settings-dialog/project-settings-dialog.component';
 
 @Component({
   selector: 'app-projects-list',
@@ -44,7 +48,9 @@ import { AuthService } from '../../auth/auth.service';
     MatProgressSpinnerModule,
     MatRadioModule,
     MatSnackBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatButtonModule,
+    MatIconButton
   ],
   templateUrl: './projects-list.component.html',
   styleUrls: ['./projects-list.component.scss']
@@ -222,5 +228,27 @@ export class ProjectsListComponent implements OnInit {
 
   isTextTruncated(text: string, maxLength: number): boolean {
     return text ? text.length > maxLength : false;
+  }
+
+  /**
+   * Activates the project settings modal
+   * @param project The project we are configuring
+   */
+  openProjectSettings(project: GetProjectsResponse['projects'][number]) {
+    const dialogRef = this.dialog.open(ProjectSettingsDialogComponent, {
+      disableClose: false,
+      width: '30vw',
+      maxWidth: '30vw',
+      height: '60vh',
+      data: {
+        projectDetails: project,
+        projectId: project.id
+      } satisfies UpdateProjectDialogInput
+    });
+
+    dialogRef.afterClosed().subscribe(() => {
+      // Refresh in case of modifications
+      this.refreshProjects();
+    });
   }
 }

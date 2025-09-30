@@ -142,7 +142,8 @@ export class ProjectService {
         description: input.description?.trim() || null,
         type: input.type,
         project_state: input.project_state,
-        user_id: userId
+        user_id: userId,
+        is_public: input.public ?? false
       },
       include: {
         user: {

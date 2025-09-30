@@ -37,8 +37,14 @@ import {
   RemoveGroupMembersInput,
   RemoveGroupMembersResponse,
   SearchUsersResponse,
+  SetProjectPublicityInput,
+  SetProjectPublicityResponse,
+  ShareProjectWithGroupsResponse,
+  ShareProjectWithUsersResponse,
   TransferGroupOwnershipInput,
   TransferGroupOwnershipResponse,
+  UnshareProjectWithGroupsResponse,
+  UnshareProjectWithUsersResponse,
   UpdateGroupInput,
   UpdateGroupResponse,
   UpdateProjectInput,
@@ -747,5 +753,69 @@ export class WebApiService {
         ...(limit !== undefined ? { limit: limit.toString() } : {})
       }
     });
+  }
+
+  // Toggle/set the publicity
+  setProjectPublic(
+    id: number,
+    input: SetProjectPublicityInput
+  ): Observable<SetProjectPublicityResponse> {
+    console.log('POSTING');
+    return this.http.put<SetProjectPublicityResponse>(
+      `${this.base}/projects/${id}/publicity`,
+      input
+    );
+  }
+
+  /**
+   * Share project with users
+   */
+  shareProjectWithUsers(
+    projectId: number,
+    body: { userIds: number[] }
+  ): Observable<ShareProjectWithUsersResponse> {
+    return this.http.post<ShareProjectWithUsersResponse>(
+      `${this.base}/projects/${projectId}/share/users`,
+      body
+    );
+  }
+
+  /**
+   * Remove project sharing with users
+   */
+  unshareProjectWithUsers(
+    projectId: number,
+    body: { userIds: number[] }
+  ): Observable<UnshareProjectWithUsersResponse> {
+    return this.http.delete<UnshareProjectWithUsersResponse>(
+      `${this.base}/projects/${projectId}/share/users`,
+      { body }
+    );
+  }
+
+  /**
+   * Share project with groups
+   */
+  shareProjectWithGroups(
+    projectId: number,
+    body: { groupIds: number[] }
+  ): Observable<ShareProjectWithGroupsResponse> {
+    return this.http.post<ShareProjectWithGroupsResponse>(
+      `${this.base}/projects/${projectId}/share/groups`,
+      body
+    );
+  }
+
+  /**
+   * Remove project sharing with groups
+   */
+  unshareProjectWithGroups(
+    projectId: number,
+    body: { groupIds: number[] }
+  ): Observable<UnshareProjectWithGroupsResponse> {
+    return this.http.delete<UnshareProjectWithGroupsResponse>(
+      `${this.base}/projects/${projectId}/share/groups`,
+      { body }
+    );
   }
 }
