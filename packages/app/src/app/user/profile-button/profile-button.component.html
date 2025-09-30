@@ -19,6 +19,10 @@
       <mat-icon>logout</mat-icon>
       <span>Logout</span>
     </button>
+    <button mat-menu-item (click)="onGroupClick()">
+      <mat-icon>group</mat-icon>
+      <span>Manage Groups</span>
+    </button>
     @if (isAdmin) {
       <button mat-menu-item (click)="onAdminPanelClick()">
         <mat-icon>supervised_user_circle</mat-icon>

@@ -33,5 +33,19 @@ export const routes: Routes = [
     component: JobsTableComponent,
     title: 'My Jobs',
     canActivate: [authGuard]
+  },
+  {
+    path: 'groups',
+    loadComponent: () =>
+      import('./groups/groups-list/groups-list.component').then(m => m.GroupsListComponent),
+    title: 'Groups',
+    canActivate: [authGuard]
+  },
+  {
+    path: 'groups/:id',
+    loadComponent: () =>
+      import('./groups/group-detail/group-detail.component').then(m => m.GroupDetailComponent),
+    title: 'Group Detail',
+    canActivate: [authGuard]
   }
 ];

@@ -166,6 +166,20 @@ form {
   hyphens: auto; // Allow hyphenation for better text flow
 }
 
+.visibility-option {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.visibility-description {
+  margin: 0;
+  padding-left: 32px; // Align with checkbox label
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 .full-width {
   width: 100%;
   margin-bottom: 16px;
@@ -256,5 +270,9 @@ form {
 
   .project-type-description {
     font-size: 0.875rem;
+  }
+
+  .visibility-description {
+    padding-left: 0; // Remove indent on mobile for better readability
   }
 }

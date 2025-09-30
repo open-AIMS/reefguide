@@ -115,7 +115,6 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
 
   switch (layerDef.urlType) {
     case 'ArcGisFeatureServer':
-      console.log('Trying to build layer for ', properties, 'Using ArcGisFeatureServer');
       const source = createVectorSourceForFeatureServer(layerDef.url, layerDef.layerId);
       const vectorLayer = new VectorLayer({
         properties,
@@ -138,7 +137,6 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
       return vectorLayer;
 
     case 'WMTSCapabilitiesXml':
-      console.log('Trying to build layer for ', properties, 'Using WMS');
       const tileLayer = new TileLayer({
         properties,
         ...layerDef.layerOptions,

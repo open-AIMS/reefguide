@@ -1,0 +1,23 @@
+<h2 mat-dialog-title>Create New Group</h2>
+
+<mat-dialog-content>
+  <mat-form-field>
+    <input matInput placeholder="Group Name" [(ngModel)]="groupName" required />
+  </mat-form-field>
+
+  <mat-form-field>
+    <textarea matInput placeholder="Description (optional)" [(ngModel)]="description"></textarea>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="onSubmit()"
+    [disabled]="!groupName.trim() || submitting"
+  >
+    Create Group
+  </button>
+</mat-dialog-actions>

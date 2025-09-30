@@ -9,18 +9,45 @@ import {
   GetProjectsQuerySchema,
   GetProjectsResponse,
   ProjectParamsSchema,
+  SetProjectPublicityInputSchema,
+  SetProjectPublicityResponse,
+  ShareProjectWithGroupsInputSchema,
+  ShareProjectWithGroupsResponse,
+  ShareProjectWithUsersInputSchema,
+  ShareProjectWithUsersResponse,
+  UnshareProjectWithGroupsInputSchema,
+  UnshareProjectWithGroupsResponse,
+  UnshareProjectWithUsersInputSchema,
+  UnshareProjectWithUsersResponse,
   UpdateProjectInputSchema,
   UpdateProjectResponse
 } from '@reefguide/types';
 import express, { Response, Router } from 'express';
 import { processRequest } from 'zod-express-middleware';
 import { passport } from '../auth/passportConfig';
-import { assertUserHasRoleMiddleware } from '../auth/utils';
+import { assertUserHasRoleMiddleware, userIsAdmin } from '../auth/utils';
 import { BadRequestException, InternalServerError, NotFoundException } from '../exceptions';
 import { ProjectService } from './service';
 
 require('express-async-errors');
 export const router: Router = express.Router();
+
+/**
+ * Helper function to check if user is allowed to share a project
+ */
+const isAllowedToShareProject = async (
+  projectService: ProjectService,
+  projectId: number,
+  user: Express.User
+): Promise<boolean> => {
+  const isOwner = await projectService.isProjectOwner({
+    projectId,
+    userId: user.id
+  });
+  const isAdmin = userIsAdmin(user);
+
+  return isOwner || isAdmin;
+};
 
 /**
  * Create a new project
@@ -66,15 +93,12 @@ router.get(
     if (!req.user) {
       throw new InternalServerError('User object was not available after authorization.');
     }
-
     try {
       const projectService = new ProjectService(prisma);
-
       // Parse and validate query parameters
       const limit = req.query.limit;
       const offset = req.query.offset;
       const type = req.query.type;
-
       // Validate type if provided
       if (type && !['SITE_SELECTION', 'ADRIA_ANALYSIS'].includes(type)) {
         throw new BadRequestException(
@@ -82,13 +106,16 @@ router.get(
         );
       }
 
-      // Users can only see their own projects unless they're admin
+      // Build options with user context for permission checking
       const options = {
         type,
         name: req.query.name,
         limit,
         offset,
-        userId: req.user.roles.includes('ADMIN') ? undefined : req.user.id
+        // Always pass the current user for permission filtering
+        // Only admins can see all projects without restriction
+        currentUser: req.user,
+        ignorePermissions: req.user.roles.includes('ADMIN')
       };
 
       const projects = await projectService.getMany({ options });
@@ -122,15 +149,17 @@ router.get(
     if (!req.user) {
       throw new InternalServerError('User object was not available after authorization.');
     }
-
     try {
       const projectId = parseInt(req.params.id, 10);
       const projectService = new ProjectService(prisma);
 
-      // Users can only see their own projects unless they're admin
-      const userId = req.user.roles.includes('ADMIN') ? undefined : req.user.id;
-
-      const project = await projectService.getById({ id: projectId, userId });
+      // Check if user can access this project
+      const isAdmin = req.user.roles.includes('ADMIN');
+      const project = await projectService.getById({
+        id: projectId,
+        currentUser: req.user,
+        ignorePermissions: isAdmin
+      });
 
       if (!project) {
         throw new NotFoundException(`Project with ID ${projectId} not found`);
@@ -159,21 +188,29 @@ router.put(
     if (!req.user) {
       throw new InternalServerError('User object was not available after authorization.');
     }
-
     try {
       const projectId = parseInt(req.params.id, 10);
       const projectService = new ProjectService(prisma);
 
-      // Users can only update their own projects unless they're admin
-      const userId = req.user.roles.includes('ADMIN') ? undefined : req.user.id;
-
-      const project = await projectService.update({
+      // Check if user can access this project (using same permissions as viewing)
+      const isAdmin = req.user.roles.includes('ADMIN');
+      const project = await projectService.getById({
         id: projectId,
-        input: req.body,
-        userId
+        currentUser: req.user,
+        ignorePermissions: isAdmin
       });
 
-      res.json({ project });
+      if (!project) {
+        throw new NotFoundException(`Project with ID ${projectId} not found`);
+      }
+
+      // User has access, perform the update
+      const updatedProject = await projectService.update({
+        id: projectId,
+        input: req.body
+      });
+
+      res.json({ project: updatedProject });
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
       throw new InternalServerError('Failed to update project. Error: ' + error, error as Error);
@@ -195,15 +232,23 @@ router.delete(
     if (!req.user) {
       throw new InternalServerError('User object was not available after authorization.');
     }
-
     try {
       const projectId = parseInt(req.params.id, 10);
       const projectService = new ProjectService(prisma);
 
-      // Users can only delete their own projects unless they're admin
-      const userId = req.user.roles.includes('ADMIN') ? undefined : req.user.id;
+      // Check if user can access this project
+      const isAdmin = req.user.roles.includes('ADMIN');
+      const project = await projectService.getById({
+        id: projectId,
+        currentUser: req.user,
+        ignorePermissions: isAdmin
+      });
 
-      const deleted = await projectService.delete({ id: projectId, userId });
+      if (!project) {
+        throw new NotFoundException(`Project with ID ${projectId} not found`);
+      }
+
+      const deleted = await projectService.delete({ id: projectId });
 
       if (!deleted) {
         throw new NotFoundException(`Project with ID ${projectId} not found`);
@@ -280,6 +325,234 @@ router.post(
     } catch (error) {
       throw new InternalServerError(
         'Failed to bulk create projects. Error: ' + error,
+        error as Error
+      );
+    }
+  }
+);
+
+/**
+ * Share project with users
+ */
+router.post(
+  '/:id/share/users',
+  passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
+  processRequest({
+    params: ProjectParamsSchema,
+    body: ShareProjectWithUsersInputSchema
+  }),
+  async (req, res: Response<ShareProjectWithUsersResponse>) => {
+    if (!req.user) {
+      throw new InternalServerError('User object was not available after authorization.');
+    }
+    try {
+      const projectId = parseInt(req.params.id, 10);
+      const { userIds } = req.body;
+      const projectService = new ProjectService(prisma);
+
+      // Check if user is allowed to share this project
+      const allowed = await isAllowedToShareProject(projectService, projectId, req.user);
+
+      if (!allowed) {
+        throw new NotFoundException(`Project with ID ${projectId} not found`);
+      }
+
+      const result = await projectService.shareWithUsers({ projectId, userIds });
+
+      res.json({
+        message: 'Project sharing completed',
+        shared: result.shared,
+        alreadyShared: result.alreadyShared,
+        errors: result.errors
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerError(
+        'Failed to share project with users. Error: ' + error,
+        error as Error
+      );
+    }
+  }
+);
+
+/**
+ * Remove project sharing with users
+ */
+router.delete(
+  '/:id/share/users',
+  passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
+  processRequest({
+    params: ProjectParamsSchema,
+    body: UnshareProjectWithUsersInputSchema
+  }),
+  async (req, res: Response<UnshareProjectWithUsersResponse>) => {
+    if (!req.user) {
+      throw new InternalServerError('User object was not available after authorization.');
+    }
+    try {
+      const projectId = parseInt(req.params.id, 10);
+      const { userIds } = req.body;
+      const projectService = new ProjectService(prisma);
+
+      // Check if user is allowed to share this project
+      const allowed = await isAllowedToShareProject(projectService, projectId, req.user);
+
+      if (!allowed) {
+        throw new NotFoundException(`Project with ID ${projectId} not found`);
+      }
+
+      const result = await projectService.unshareWithUsers({ projectId, userIds });
+
+      res.json({
+        message: 'Project unsharing completed',
+        unshared: result.unshared,
+        notShared: result.notShared,
+        errors: result.errors
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerError(
+        'Failed to unshare project with users. Error: ' + error,
+        error as Error
+      );
+    }
+  }
+);
+
+/**
+ * Share project with groups
+ */
+router.post(
+  '/:id/share/groups',
+  passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
+  processRequest({
+    params: ProjectParamsSchema,
+    body: ShareProjectWithGroupsInputSchema
+  }),
+  async (req, res: Response<ShareProjectWithGroupsResponse>) => {
+    if (!req.user) {
+      throw new InternalServerError('User object was not available after authorization.');
+    }
+    try {
+      const projectId = parseInt(req.params.id, 10);
+      const { groupIds } = req.body;
+      const projectService = new ProjectService(prisma);
+
+      // Check if user is allowed to share this project
+      const allowed = await isAllowedToShareProject(projectService, projectId, req.user);
+
+      if (!allowed) {
+        throw new NotFoundException(`Project with ID ${projectId} not found`);
+      }
+
+      const result = await projectService.shareWithGroups({ projectId, groupIds });
+
+      res.json({
+        message: 'Project sharing completed',
+        shared: result.shared,
+        alreadyShared: result.alreadyShared,
+        errors: result.errors
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerError(
+        'Failed to share project with groups. Error: ' + error,
+        error as Error
+      );
+    }
+  }
+);
+
+/**
+ * Remove project sharing with groups
+ */
+router.delete(
+  '/:id/share/groups',
+  passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
+  processRequest({
+    params: ProjectParamsSchema,
+    body: UnshareProjectWithGroupsInputSchema
+  }),
+  async (req, res: Response<UnshareProjectWithGroupsResponse>) => {
+    if (!req.user) {
+      throw new InternalServerError('User object was not available after authorization.');
+    }
+    try {
+      const projectId = parseInt(req.params.id, 10);
+      const { groupIds } = req.body;
+      const projectService = new ProjectService(prisma);
+
+      // Check if user is allowed to share this project
+      const allowed = await isAllowedToShareProject(projectService, projectId, req.user);
+
+      if (!allowed) {
+        throw new NotFoundException(`Project with ID ${projectId} not found`);
+      }
+
+      const result = await projectService.unshareWithGroups({ projectId, groupIds });
+
+      res.json({
+        message: 'Project unsharing completed',
+        unshared: result.unshared,
+        notShared: result.notShared,
+        errors: result.errors
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerError(
+        'Failed to unshare project with groups. Error: ' + error,
+        error as Error
+      );
+    }
+  }
+);
+
+/**
+ * Set project publicity (public/private)
+ */
+router.put(
+  '/:id/publicity',
+  passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
+  processRequest({
+    params: ProjectParamsSchema,
+    body: SetProjectPublicityInputSchema
+  }),
+  async (req, res: Response<SetProjectPublicityResponse>) => {
+    if (!req.user) {
+      throw new InternalServerError('User object was not available after authorization.');
+    }
+    try {
+      const projectId = parseInt(req.params.id, 10);
+      const { isPublic } = req.body;
+      const projectService = new ProjectService(prisma);
+
+      // Check if user is the owner of the project
+      const isOwner = await projectService.isProjectOwner({
+        projectId,
+        userId: req.user.id
+      });
+      const isAdmin = userIsAdmin(req.user);
+
+      // Can only do this if either admin or owner
+      if (!isOwner && !isAdmin) {
+        throw new NotFoundException(`Project with ID ${projectId} not found`);
+      }
+
+      const updatedProject = await projectService.setPublicity({ projectId, isPublic });
+
+      res.json({
+        message: `Project ${isPublic ? 'made public' : 'made private'} successfully`,
+        project: updatedProject
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerError(
+        'Failed to update project publicity. Error: ' + error,
         error as Error
       );
     }

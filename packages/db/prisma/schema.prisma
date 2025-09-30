@@ -36,6 +36,14 @@ model User {
     PreApprovedUser PreApprovedUser[]
     projects        Project[]
     resetCodes      PasswordResetCode[]
+    
+    // Group relations
+    ownedGroups     Group[]             @relation("GroupOwner")
+    managedGroups   GroupManager[]
+    groupMemberships GroupMember[]
+    
+    // Project sharing relations
+    sharedProjects  ProjectUserShare[]
 }
 
 enum UserAction {
@@ -43,6 +51,16 @@ enum UserAction {
     LOGOUT
     CHANGE_PASSWORD
     UPDATED
+    CREATE_GROUP
+    UPDATE_GROUP
+    DELETE_GROUP
+    ADD_GROUP_MEMBER
+    REMOVE_GROUP_MEMBER
+    ADD_GROUP_MANAGER
+    REMOVE_GROUP_MANAGER
+    SHARE_PROJECT
+    UNSHARE_PROJECT
+    UPDATE_PROJECT_SHARING
 }
 
 model UserLog {
@@ -81,6 +99,62 @@ model PreApprovedUser {
     @@map("pre_approved_users")
 }
 
+// Group model - collection of users with ownership and management
+model Group {
+    id          Int      @id @default(autoincrement())
+    name        String
+    description String?
+    created_at  DateTime @default(now())
+    updated_at  DateTime @updatedAt
+
+    // Group ownership
+    owner    User @relation("GroupOwner", fields: [owner_id], references: [id], onDelete: Cascade)
+    owner_id Int
+
+    // Relations
+    managers GroupManager[]
+    members  GroupMember[]
+    
+    // Project sharing relations
+    sharedProjects ProjectGroupShare[]
+
+    @@map("groups")
+}
+
+// Group managers - users who can manage the group (but are not owners)
+model GroupManager {
+    id       Int @id @default(autoincrement())
+    group_id Int
+    user_id  Int
+
+    created_at DateTime @default(now())
+
+    // Relations
+    group Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
+    user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+    // Ensure a user can only be a manager of a group once
+    @@unique([group_id, user_id])
+    @@map("group_managers")
+}
+
+// Group members - regular users in the group
+model GroupMember {
+    id       Int @id @default(autoincrement())
+    group_id Int
+    user_id  Int
+
+    created_at DateTime @default(now())
+
+    // Relations
+    group Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
+    user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+    // Ensure a user can only be a member of a group once
+    @@unique([group_id, user_id])
+    @@map("group_members")
+}
+
 // Project model - users can have multiple projects
 model Project {
     id            Int         @id @default(autoincrement())
@@ -89,6 +163,8 @@ model Project {
     type          ProjectType
     // JSON field for project state - will be typed with Zod in application layer
     project_state Json
+    // Privacy setting - defaults to private
+    is_public     Boolean     @default(false)
     created_at    DateTime    @default(now())
     updated_at    DateTime    @updatedAt
 
@@ -96,7 +172,47 @@ model Project {
     user    User @relation(fields: [user_id], references: [id], onDelete: Cascade)
     user_id Int
 
+    // Sharing relations
+    userShares  ProjectUserShare[]
+    groupShares ProjectGroupShare[]
+
     @@map("projects")
+}
+
+// Project sharing with individual users
+model ProjectUserShare {
+    id         Int @id @default(autoincrement())
+    project_id Int
+    user_id    Int
+
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+
+    // Relations
+    project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+    user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+    // Ensure a project can only be shared with a user once
+    @@unique([project_id, user_id])
+    @@map("project_user_shares")
+}
+
+// Project sharing with groups
+model ProjectGroupShare {
+    id         Int @id @default(autoincrement())
+    project_id Int
+    group_id   Int
+
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+
+    // Relations
+    project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+    group   Group   @relation(fields: [group_id], references: [id], onDelete: Cascade)
+
+    // Ensure a project can only be shared with a group once
+    @@unique([project_id, group_id])
+    @@map("project_group_shares")
 }
 
 // User submitted polygon - has notes

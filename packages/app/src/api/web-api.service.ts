@@ -2,12 +2,21 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { JobType, Polygon, PolygonNote, User, UserRole } from '@reefguide/db';
 import {
+  AddGroupManagersInput,
+  AddGroupManagersResponse,
+  AddGroupMembersInput,
+  AddGroupMembersResponse,
+  CreateGroupInput,
+  CreateGroupResponse,
   CreateJobResponse,
   CreateProjectInput,
   CreateProjectResponse,
   CriteriaRangeOutput,
+  DeleteGroupResponse,
   DeleteProjectResponse,
   DownloadResponse,
+  GetGroupResponse,
+  GetGroupsResponse,
   GetProjectResponse,
   GetProjectsResponse,
   JobDetailsResponse,
@@ -23,6 +32,21 @@ import {
   PostUseResetCodeRequest,
   PostUseResetCodeResponse,
   ProfileResponse,
+  RemoveGroupManagersInput,
+  RemoveGroupManagersResponse,
+  RemoveGroupMembersInput,
+  RemoveGroupMembersResponse,
+  SearchUsersResponse,
+  SetProjectPublicityInput,
+  SetProjectPublicityResponse,
+  ShareProjectWithGroupsResponse,
+  ShareProjectWithUsersResponse,
+  TransferGroupOwnershipInput,
+  TransferGroupOwnershipResponse,
+  UnshareProjectWithGroupsResponse,
+  UnshareProjectWithUsersResponse,
+  UpdateGroupInput,
+  UpdateGroupResponse,
   UpdateProjectInput,
   UpdateProjectResponse
 } from '@reefguide/types';
@@ -601,5 +625,197 @@ export class WebApiService {
 
   confirmPasswordReset(payload: PostUseResetCodeRequest): Observable<PostUseResetCodeResponse> {
     return this.http.post<PostUseResetCodeResponse>(`${this.base}/password-reset/confirm`, payload);
+  }
+
+  // ## Groups System ##
+
+  /**
+   * Get all groups the current user has access to
+   */
+  getGroups(query?: {
+    name?: string;
+    limit?: number;
+    offset?: number;
+  }): Observable<GetGroupsResponse> {
+    return this.http.get<GetGroupsResponse>(`${this.base}/groups`, {
+      params: query as any
+    });
+  }
+
+  /**
+   * Get a specific group by ID
+   */
+  getGroup(id: number): Observable<GetGroupResponse> {
+    return this.http.get<GetGroupResponse>(`${this.base}/groups/${id}`);
+  }
+
+  /**
+   * Create a new group
+   */
+  createGroup(groupData: CreateGroupInput): Observable<CreateGroupResponse> {
+    return this.http.post<CreateGroupResponse>(`${this.base}/groups`, groupData);
+  }
+
+  /**
+   * Update an existing group
+   */
+  updateGroup(id: number, groupData: UpdateGroupInput): Observable<UpdateGroupResponse> {
+    return this.http.put<UpdateGroupResponse>(`${this.base}/groups/${id}`, groupData);
+  }
+
+  /**
+   * Delete a group
+   */
+  deleteGroup(id: number): Observable<DeleteGroupResponse> {
+    return this.http.delete<DeleteGroupResponse>(`${this.base}/groups/${id}`);
+  }
+
+  /**
+   * Get groups the current user is part of (owned, managed, or member)
+   */
+  getUserGroups(): Observable<GetGroupsResponse> {
+    return this.http.get<GetGroupsResponse>(`${this.base}/groups`);
+  }
+
+  /**
+   * Add members to a group
+   */
+  addGroupMembers(
+    groupId: number,
+    memberData: AddGroupMembersInput
+  ): Observable<AddGroupMembersResponse> {
+    return this.http.post<AddGroupMembersResponse>(
+      `${this.base}/groups/${groupId}/members`,
+      memberData
+    );
+  }
+
+  /**
+   * Remove members from a group
+   */
+  removeGroupMembers(
+    groupId: number,
+    memberData: RemoveGroupMembersInput
+  ): Observable<RemoveGroupMembersResponse> {
+    return this.http.delete<RemoveGroupMembersResponse>(`${this.base}/groups/${groupId}/members`, {
+      body: memberData
+    });
+  }
+
+  /**
+   * Add managers to a group
+   */
+  addGroupManagers(
+    groupId: number,
+    managerData: AddGroupManagersInput
+  ): Observable<AddGroupManagersResponse> {
+    return this.http.post<AddGroupManagersResponse>(
+      `${this.base}/groups/${groupId}/managers`,
+      managerData
+    );
+  }
+
+  /**
+   * Remove managers from a group
+   */
+  removeGroupManagers(
+    groupId: number,
+    managerData: RemoveGroupManagersInput
+  ): Observable<RemoveGroupManagersResponse> {
+    return this.http.delete<RemoveGroupManagersResponse>(
+      `${this.base}/groups/${groupId}/managers`,
+      {
+        body: managerData
+      }
+    );
+  }
+
+  /**
+   * Transfer group ownership to another user
+   */
+  transferGroupOwnership(
+    groupId: number,
+    transferData: TransferGroupOwnershipInput
+  ): Observable<TransferGroupOwnershipResponse> {
+    return this.http.post<TransferGroupOwnershipResponse>(
+      `${this.base}/groups/${groupId}/transfer-ownership`,
+      transferData
+    );
+  }
+
+  /**
+   * Search users by email (for adding to groups)
+   */
+  searchUsers(query: string, limit?: number): Observable<SearchUsersResponse> {
+    return this.http.get<SearchUsersResponse>(`${this.baseUsers}/search`, {
+      params: {
+        q: query,
+        ...(limit !== undefined ? { limit: limit.toString() } : {})
+      }
+    });
+  }
+
+  // Toggle/set the publicity
+  setProjectPublic(
+    id: number,
+    input: SetProjectPublicityInput
+  ): Observable<SetProjectPublicityResponse> {
+    console.log('POSTING');
+    return this.http.put<SetProjectPublicityResponse>(
+      `${this.base}/projects/${id}/publicity`,
+      input
+    );
+  }
+
+  /**
+   * Share project with users
+   */
+  shareProjectWithUsers(
+    projectId: number,
+    body: { userIds: number[] }
+  ): Observable<ShareProjectWithUsersResponse> {
+    return this.http.post<ShareProjectWithUsersResponse>(
+      `${this.base}/projects/${projectId}/share/users`,
+      body
+    );
+  }
+
+  /**
+   * Remove project sharing with users
+   */
+  unshareProjectWithUsers(
+    projectId: number,
+    body: { userIds: number[] }
+  ): Observable<UnshareProjectWithUsersResponse> {
+    return this.http.delete<UnshareProjectWithUsersResponse>(
+      `${this.base}/projects/${projectId}/share/users`,
+      { body }
+    );
+  }
+
+  /**
+   * Share project with groups
+   */
+  shareProjectWithGroups(
+    projectId: number,
+    body: { groupIds: number[] }
+  ): Observable<ShareProjectWithGroupsResponse> {
+    return this.http.post<ShareProjectWithGroupsResponse>(
+      `${this.base}/projects/${projectId}/share/groups`,
+      body
+    );
+  }
+
+  /**
+   * Remove project sharing with groups
+   */
+  unshareProjectWithGroups(
+    projectId: number,
+    body: { groupIds: number[] }
+  ): Observable<UnshareProjectWithGroupsResponse> {
+    return this.http.delete<UnshareProjectWithGroupsResponse>(
+      `${this.base}/projects/${projectId}/share/groups`,
+      { body }
+    );
   }
 }

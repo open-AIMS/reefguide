@@ -1,0 +1,27 @@
+<h2 mat-dialog-title>Delete Group</h2>
+
+<mat-dialog-content>
+  <p class="warning">⚠️ This action cannot be undone.</p>
+  <p>All members will lose access to this group.</p>
+
+  <p>
+    <strong>{{ data.groupName }}</strong>
+  </p>
+
+  <mat-form-field>
+    <input matInput placeholder="Type DELETE to confirm" [(ngModel)]="confirmationText" />
+    <mat-hint>Type "DELETE" to confirm</mat-hint>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button
+    mat-raised-button
+    color="warn"
+    (click)="onConfirm()"
+    [disabled]="!canConfirm() || submitting"
+  >
+    Delete Group
+  </button>
+</mat-dialog-actions>

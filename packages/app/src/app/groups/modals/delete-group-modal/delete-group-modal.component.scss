@@ -1,0 +1,26 @@
+mat-dialog-content {
+  .warning {
+    color: #d32f2f;
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    margin-bottom: 1rem;
+
+    strong {
+      color: rgba(0, 0, 0, 0.87);
+    }
+  }
+
+  mat-form-field {
+    width: 100%;
+    margin-top: 1rem;
+  }
+}
+
+mat-dialog-actions {
+  padding: 1rem 1.5rem;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

@@ -2,6 +2,8 @@ import { prisma } from '@reefguide/db';
 import {
   CreateUserSchema,
   ListUserLogsResponse,
+  SearchUsersQuerySchema,
+  SearchUsersResponse,
   UpdateUserPasswordSchema,
   UpdateUserRolesSchema,
   UserResponse
@@ -10,7 +12,7 @@ import express, { Response, Router } from 'express';
 import { z } from 'zod';
 import { processRequest } from 'zod-express-middleware';
 import { passport } from '../auth/passportConfig';
-import { assertUserIsAdminMiddleware } from '../auth/utils';
+import { assertUserHasRoleMiddleware, assertUserIsAdminMiddleware } from '../auth/utils';
 import { handlePrismaError, NotFoundException } from '../exceptions';
 import { changePassword, registerUser } from '../services/auth';
 
@@ -36,6 +38,69 @@ router.get(
       res.json(users);
     } catch (error) {
       handlePrismaError(error, 'Failed to fetch users.');
+    }
+  }
+);
+
+/**
+ * Search users by email (fuzzy search)
+ * Returns results ordered by relevance (exact match > starts with > contains)
+ */
+router.get(
+  '/search',
+  passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST', 'ADMIN'] }),
+  processRequest({
+    query: SearchUsersQuerySchema
+  }),
+  async (req, res: Response<SearchUsersResponse>) => {
+    const query = req.query.q!.toLowerCase().trim();
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit!)));
+
+    try {
+      // Fetch all matching users
+      const users = await prisma.user.findMany({
+        where: {
+          email: {
+            contains: query,
+            mode: 'insensitive'
+          }
+        },
+        select: {
+          id: true,
+          email: true
+        },
+        take: limit * 3 // Get extra results for sorting
+      });
+
+      // Sort by relevance
+      const sortedUsers = users.sort((a, b) => {
+        const aEmail = a.email.toLowerCase();
+        const bEmail = b.email.toLowerCase();
+
+        // Exact match wins
+        if (aEmail === query) return -1;
+        if (bEmail === query) return 1;
+
+        // Starts with query comes next
+        const aStarts = aEmail.startsWith(query);
+        const bStarts = bEmail.startsWith(query);
+        if (aStarts && !bStarts) return -1;
+        if (bStarts && !aStarts) return 1;
+
+        // Then sort by position of match (earlier is better)
+        const aIndex = aEmail.indexOf(query);
+        const bIndex = bEmail.indexOf(query);
+        if (aIndex !== bIndex) return aIndex - bIndex;
+
+        // Finally, sort alphabetically
+        return aEmail.localeCompare(bEmail);
+      });
+
+      // Return only the requested limit
+      res.json({ results: sortedUsers.slice(0, limit) });
+    } catch (error) {
+      handlePrismaError(error, 'Failed to search users.');
     }
   }
 );

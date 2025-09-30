@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
+import { MatButtonModule, MatIconButton } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -15,6 +15,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { Project } from '@reefguide/db';
+import { GetProjectsResponse } from '@reefguide/types';
 import {
   BehaviorSubject,
   combineLatest,
@@ -25,6 +26,10 @@ import {
 } from 'rxjs';
 import { WebApiService } from '../../../api/web-api.service';
 import { CreateProjectDialogComponent } from '../create-project-dialog/create-project-dialog.component';
+import {
+  ProjectSettingsDialogComponent,
+  UpdateProjectDialogInput
+} from '../project-settings-dialog/project-settings-dialog.component';
 import { AuthService } from '../../auth/auth.service';
 
 @Component({
@@ -44,7 +49,9 @@ import { AuthService } from '../../auth/auth.service';
     MatProgressSpinnerModule,
     MatRadioModule,
     MatSnackBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatButtonModule,
+    MatIconButton
   ],
   templateUrl: './projects-list.component.html',
   styleUrls: ['./projects-list.component.scss']
@@ -53,6 +60,7 @@ export class ProjectsListComponent implements OnInit {
   private readonly webApi = inject(WebApiService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
@@ -69,7 +77,7 @@ export class ProjectsListComponent implements OnInit {
   private pageEvent$ = new BehaviorSubject<PageEvent>({ pageIndex: 0, pageSize: 10, length: 0 });
 
   // All projects from the server
-  allProjects$ = this.webApi.getUserProjects().pipe(map(response => response.projects));
+  allProjects$ = this.webApi.getProjects().pipe(map(response => response.projects));
 
   // Filtered projects based on search
   filteredProjects$: Observable<Project[]> = combineLatest([
@@ -90,6 +98,15 @@ export class ProjectsListComponent implements OnInit {
       );
     })
   );
+  // Show settings if current user is the project owner
+  public canManageProjectSettings = (project: Project) => {
+    if (this.authService.getCurrentUser()?.roles.includes('ADMIN')) {
+      return true;
+    } else {
+      console.log(project.user_id === this.authService.getCurrentUser()?.id);
+      return project.user_id === this.authService.getCurrentUser()?.id;
+    }
+  };
 
   // Paginated projects
   paginatedProjects$: Observable<Project[]> = combineLatest([
@@ -222,5 +239,26 @@ export class ProjectsListComponent implements OnInit {
 
   isTextTruncated(text: string, maxLength: number): boolean {
     return text ? text.length > maxLength : false;
+  }
+
+  /**
+   * Activates the project settings modal
+   * @param project The project we are configuring
+   */
+  openProjectSettings(project: GetProjectsResponse['projects'][number]) {
+    const dialogRef = this.dialog.open(ProjectSettingsDialogComponent, {
+      disableClose: false,
+      width: '30vw',
+      maxWidth: '30vw',
+      height: '60vh',
+      data: {
+        projectId: project.id
+      } satisfies UpdateProjectDialogInput
+    });
+
+    dialogRef.afterClosed().subscribe(() => {
+      // Refresh in case of modifications
+      this.refreshProjects();
+    });
   }
 }
