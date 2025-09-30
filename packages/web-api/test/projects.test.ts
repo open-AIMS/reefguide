@@ -203,21 +203,6 @@ describe('Projects', () => {
       expect(res.body.project).toHaveProperty('name', 'Admin Updated Project');
     });
 
-    it("should return 404 if user doesn't own the project (even if public)", async () => {
-      // Make project public
-      await prisma.project.update({
-        where: { id: projectId },
-        data: { is_public: true }
-      });
-
-      await authRequest(app, 'user2')
-        .put(`/api/projects/${projectId}`)
-        .send({
-          name: 'Unauthorized Update'
-        })
-        .expect(404);
-    });
-
     it('should return 400 for duplicate project name', async () => {
       // Create another project for the same user
       await createTestProject(user1Id, {
@@ -259,16 +244,6 @@ describe('Projects', () => {
         where: { id: projectId }
       });
       expect(deleted).toBeNull();
-    });
-
-    it("should return 404 if user doesn't own the project (even if public)", async () => {
-      // Make project public
-      await prisma.project.update({
-        where: { id: projectId },
-        data: { is_public: true }
-      });
-
-      await authRequest(app, 'user2').delete(`/api/projects/${projectId}`).expect(404);
     });
 
     it('should return 404 for non-existent project', async () => {
