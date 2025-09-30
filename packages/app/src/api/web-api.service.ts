@@ -291,9 +291,9 @@ export class WebApiService {
           opacity: 0.8,
           style: {
             'fill-color': 'rgba(35,96,165,0.01)',
-            'stroke-color': 'rgba(35,96,165,0.6)',
+            'stroke-color': 'rgba(70,150,255,0.9)',
             'stroke-line-dash': [4, 6],
-            'stroke-width': 0,
+            'stroke-width': 1,
             'text-value': ['get', 'reef_name']
           }
         }

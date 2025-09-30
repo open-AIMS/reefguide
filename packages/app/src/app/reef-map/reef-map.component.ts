@@ -113,7 +113,8 @@ export class ReefMapComponent implements AfterViewInit {
       // https://github.com/openlayers/openlayers/issues/16794
       source: new XYZ({
         url: 'https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer/tile/{z}/{y}/{x}',
-        attributions: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        attributions:
+          'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
       }),
       properties: {
         title: 'Base map (Esri World Imagery Firefly)',
