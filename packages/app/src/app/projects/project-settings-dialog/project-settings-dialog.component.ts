@@ -5,11 +5,11 @@ import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { GetProjectsResponse } from '@reefguide/types';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { GetProjectResponse, GetProjectsResponse } from '@reefguide/types';
 
 export interface UpdateProjectDialogInput {
   projectId: number;
-  projectDetails: GetProjectsResponse['projects'][number];
 }
 
 @Component({
@@ -20,27 +20,52 @@ export interface UpdateProjectDialogInput {
     MatDialogModule,
     MatCheckboxModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    MatProgressSpinnerModule
   ],
   templateUrl: './project-settings-dialog.component.html',
   styleUrl: './project-settings-dialog.component.scss'
 })
 export class ProjectSettingsDialogComponent {
   webApiService = inject(WebApiService);
-  dialogInput: UpdateProjectDialogInput;
 
+  projectId: number;
+  projectDetails = signal<GetProjectResponse['project'] | null>(null);
+  isLoading = signal<boolean>(true);
+  loadError = signal<string | null>(null);
   isPublic = signal<boolean>(false);
 
   constructor(@Inject(MAT_DIALOG_DATA) public input: UpdateProjectDialogInput) {
-    this.dialogInput = input;
-    this.isPublic.set(input.projectDetails.is_public);
+    this.projectId = input.projectId;
+    this.loadProject();
+  }
+
+  loadProject() {
+    this.isLoading.set(true);
+    this.loadError.set(null);
+
+    this.webApiService.getProject(this.projectId).subscribe({
+      next: response => {
+        this.projectDetails.set(response.project);
+        this.isPublic.set(response.project.is_public);
+        this.isLoading.set(false);
+      },
+      error: error => {
+        this.loadError.set('Failed to load project details');
+        this.isLoading.set(false);
+        console.error('Error loading project:', error);
+      }
+    });
   }
 
   onPublicToggle(checked: boolean) {
     this.isPublic.set(checked);
-    console.log('Running public toggle');
-    this.webApiService
-      .setProjectPublic(this.dialogInput.projectId, { isPublic: checked })
-      .subscribe();
+    this.webApiService.setProjectPublic(this.projectId, { isPublic: checked }).subscribe({
+      error: error => {
+        // Rollback on error
+        this.isPublic.set(!checked);
+        console.error('Error updating project publicity:', error);
+      }
+    });
   }
 }

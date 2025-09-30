@@ -558,7 +558,29 @@ export type UpdateProjectResponse = {
 };
 
 export type GetProjectResponse = {
-  project: Project;
+  project: Project & {
+    user: UserReference;
+    userShares: Array<{
+      id: number;
+      project_id: number;
+      user_id: number;
+      created_at: Date;
+      updated_at: Date;
+      user: UserReference;
+    }>;
+    groupShares: Array<{
+      id: number;
+      project_id: number;
+      group_id: number;
+      created_at: Date;
+      updated_at: Date;
+      group: {
+        id: number;
+        name: string;
+        description: string | null;
+      };
+    }>;
+  };
 };
 
 export type GetProjectsResponse = {

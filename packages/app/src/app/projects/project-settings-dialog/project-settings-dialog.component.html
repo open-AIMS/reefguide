@@ -1,23 +1,38 @@
 <div class="settings-dialog">
   <h2 mat-dialog-title>Project Settings</h2>
+
   <mat-dialog-content>
-    <p class="project-name">{{ dialogInput.projectDetails.name }}</p>
-    <h3>Visibility</h3>
+    <div *ngIf="isLoading()" class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Loading project...</p>
+    </div>
 
-    <mat-checkbox [checked]="isPublic()" (change)="onPublicToggle($event.checked)" color="primary">
-      Make this project public
-    </mat-checkbox>
+    <div *ngIf="loadError()" class="error-container">
+      <mat-icon color="warn">error</mat-icon>
+      <p>{{ loadError() }}</p>
+      <button mat-button (click)="loadProject()">Retry</button>
+    </div>
 
-    <div class="info-box" [class.public]="isPublic()" [class.private]="!isPublic()">
-      <mat-icon>{{ isPublic() ? 'public' : 'lock' }}</mat-icon>
-      <div class="info-content">
-        <h4>{{ isPublic() ? 'Public Project' : 'Private Project' }}</h4>
-        <p *ngIf="isPublic()">
-          This project is visible to everyone. Anyone with the link can view this project.
-        </p>
-        <p *ngIf="!isPublic()">
-          This project is only visible to you and users or groups you've explicitly shared it with.
-        </p>
+    <div *ngIf="!isLoading() && !loadError() && projectDetails()">
+      <p class="project-name">{{ projectDetails()!.name }}</p>
+
+      <h3>Visibility</h3>
+
+      <mat-checkbox [checked]="isPublic()" (change)="onPublicToggle($event.checked)" color="primary">
+        Make this project public
+      </mat-checkbox>
+
+      <div class="info-box" [class.public]="isPublic()" [class.private]="!isPublic()">
+        <mat-icon>{{ isPublic() ? 'public' : 'lock' }}</mat-icon>
+        <div class="info-content">
+          <h4>{{ isPublic() ? 'Public Project' : 'Private Project' }}</h4>
+          <p *ngIf="isPublic()">
+            This project is visible to everyone. Anyone with the link can view this project.
+          </p>
+          <p *ngIf="!isPublic()">
+            This project is only visible to you and users or groups you've explicitly shared it with.
+          </p>
+        </div>
       </div>
     </div>
   </mat-dialog-content>

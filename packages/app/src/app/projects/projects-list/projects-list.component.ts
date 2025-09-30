@@ -241,7 +241,6 @@ export class ProjectsListComponent implements OnInit {
       maxWidth: '30vw',
       height: '60vh',
       data: {
-        projectDetails: project,
         projectId: project.id
       } satisfies UpdateProjectDialogInput
     });

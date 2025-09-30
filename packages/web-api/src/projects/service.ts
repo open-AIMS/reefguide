@@ -253,7 +253,7 @@ export class ProjectService {
    * @param userId - Optional user ID to ensure ownership
    * @returns Promise<Project | undefined> - The project or undefined if not found
    */
-  async getById({ id, userId }: { id: number; userId?: number }): Promise<Project | undefined> {
+  async getById({ id, userId }: { id: number; userId?: number }) {
     return (
       (await this.prisma.project.findFirst({
         where: {
@@ -265,6 +265,27 @@ export class ProjectService {
             select: {
               id: true,
               email: true
+            }
+          },
+          userShares: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true
+                }
+              }
+            }
+          },
+          groupShares: {
+            include: {
+              group: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true
+                }
+              }
             }
           }
         }
