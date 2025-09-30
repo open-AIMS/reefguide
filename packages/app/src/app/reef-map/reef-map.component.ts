@@ -11,6 +11,7 @@ import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/WebGLTile';
 import OSM from 'ol/source/OSM';
+import XYZ from 'ol/source/XYZ';
 import ScaleLine from 'ol/control/ScaleLine';
 import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
 import { LayerListComponent } from '../widgets/layer-list/layer-list.component';
@@ -95,10 +96,13 @@ export class ReefMapComponent implements AfterViewInit {
     const baseLayer = new TileLayer({
       // @ts-expect-error this source works with WebGLTileLayer, ignore the type error
       // https://github.com/openlayers/openlayers/issues/16794
-      source: new OSM(),
+      source: new XYZ({
+        url: 'https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer/tile/{z}/{y}/{x}',
+        attributions: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+      }),
       properties: {
-        title: 'Base map (OSM)',
-        infoUrl: 'https://www.openstreetmap.org/copyright'
+        title: 'Base map (Esri World Imagery Firefly)',
+        infoUrl: 'https://www.esri.com/'
       } satisfies LayerProperties
     });
 
