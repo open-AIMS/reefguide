@@ -100,7 +100,6 @@ export class ProjectsListComponent implements OnInit {
   );
   // Show settings if current user is the project owner
   public canManageProjectSettings = (project: Project) => {
-    console.log('Checking ownership of ', project);
     if (this.authService.getCurrentUser()?.roles.includes('ADMIN')) {
       return true;
     } else {

@@ -25,7 +25,7 @@ import {
 import express, { Response, Router } from 'express';
 import { processRequest } from 'zod-express-middleware';
 import { passport } from '../auth/passportConfig';
-import { assertUserHasRoleMiddleware } from '../auth/utils';
+import { assertUserHasRoleMiddleware, userIsAdmin } from '../auth/utils';
 import { BadRequestException, InternalServerError, NotFoundException } from '../exceptions';
 import { ProjectService } from './service';
 
@@ -531,8 +531,10 @@ router.put(
         projectId,
         userId: req.user.id
       });
+      const isAdmin = userIsAdmin(req.user);
 
-      if (!isOwner) {
+      // Can only do this if either admin or owner
+      if (!isOwner && !isAdmin) {
         throw new NotFoundException(`Project with ID ${projectId} not found`);
       }
 
