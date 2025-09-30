@@ -18,7 +18,11 @@
 
       <h3>Visibility</h3>
 
-      <mat-checkbox [checked]="isPublic()" (change)="onPublicToggle($event.checked)" color="primary">
+      <mat-checkbox
+        [checked]="isPublic()"
+        (change)="onPublicToggle($event.checked)"
+        color="primary"
+      >
         Make this project public
       </mat-checkbox>
 
@@ -30,10 +34,118 @@
             This project is visible to everyone. Anyone with the link can view this project.
           </p>
           <p *ngIf="!isPublic()">
-            This project is only visible to you and users or groups you've explicitly shared it with.
+            This project is only visible to you and users or groups you've explicitly shared it
+            with.
           </p>
         </div>
       </div>
+
+      @if (!isPublic()) {
+        <!-- Share with Users Section -->
+        <h3>Share with Users</h3>
+
+        <mat-form-field class="full-width">
+          <mat-label>Search users by email</mat-label>
+          <input
+            matInput
+            [formControl]="userSearchControl"
+            [matAutocomplete]="userAuto"
+            placeholder="Type to search..."
+          />
+          <mat-icon matSuffix *ngIf="isSearchingUsers()">
+            <mat-spinner diameter="20"></mat-spinner>
+          </mat-icon>
+          <mat-autocomplete
+            #userAuto="matAutocomplete"
+            [displayWith]="displayUserFn"
+            (optionSelected)="onAddUser($event.option.value)"
+          >
+            <mat-option *ngFor="let user of filteredUsers()" [value]="user">
+              {{ user.email }}
+            </mat-option>
+            <mat-option
+              *ngIf="
+                filteredUsers().length === 0 &&
+                userSearchControl.value &&
+                userSearchControl.value.length >= 2 &&
+                !isSearchingUsers()
+              "
+              disabled
+            >
+              No users found
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+
+        <div class="shares-list" *ngIf="sharedUsers().length > 0">
+          <mat-chip-set>
+            <mat-chip
+              *ngFor="let user of sharedUsers()"
+              [removable]="true"
+              (removed)="onRemoveUser(user)"
+            >
+              <mat-icon matChipAvatar>person</mat-icon>
+              {{ user.email }}
+              <button matChipRemove>
+                <mat-icon>cancel</mat-icon>
+              </button>
+            </mat-chip>
+          </mat-chip-set>
+        </div>
+        <p class="empty-state" *ngIf="sharedUsers().length === 0">Not shared with any users yet</p>
+
+        <!-- Share with Groups Section -->
+        <h3>Share with Groups</h3>
+
+        <mat-form-field class="full-width">
+          <mat-label>Search groups</mat-label>
+          <input
+            matInput
+            [formControl]="groupSearchControl"
+            [matAutocomplete]="groupAuto"
+            placeholder="Type to search..."
+          />
+          <mat-icon matSuffix *ngIf="isLoadingGroups()">
+            <mat-spinner diameter="20"></mat-spinner>
+          </mat-icon>
+          <mat-autocomplete
+            #groupAuto="matAutocomplete"
+            [displayWith]="displayGroupFn"
+            (optionSelected)="onAddGroup($event.option.value)"
+          >
+            <mat-option *ngFor="let group of filteredGroups()" [value]="group">
+              <div class="group-option">
+                <strong>{{ group.name }}</strong>
+                <span *ngIf="group.description" class="group-description">{{
+                  group.description
+                }}</span>
+              </div>
+            </mat-option>
+            <mat-option *ngIf="filteredGroups().length === 0 && !isLoadingGroups()" disabled>
+              No groups available
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+
+        <div class="shares-list" *ngIf="sharedGroups().length > 0">
+          <mat-chip-set>
+            <mat-chip
+              *ngFor="let group of sharedGroups()"
+              [removable]="true"
+              (removed)="onRemoveGroup(group)"
+            >
+              <mat-icon matChipAvatar>group</mat-icon>
+              {{ group.name }}
+              <button matChipRemove>
+                <mat-icon>cancel</mat-icon>
+              </button>
+            </mat-chip>
+          </mat-chip-set>
+        </div>
+        <p class="empty-state" *ngIf="sharedGroups().length === 0">
+          Not shared with any groups yet
+        </p>
+      }
     </div>
   </mat-dialog-content>
 

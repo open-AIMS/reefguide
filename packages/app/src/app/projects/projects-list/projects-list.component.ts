@@ -30,6 +30,7 @@ import {
   ProjectSettingsDialogComponent,
   UpdateProjectDialogInput
 } from '../project-settings-dialog/project-settings-dialog.component';
+import { AuthService } from '../../auth/auth.service';
 
 @Component({
   selector: 'app-projects-list',
@@ -59,6 +60,7 @@ export class ProjectsListComponent implements OnInit {
   private readonly webApi = inject(WebApiService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
@@ -75,7 +77,7 @@ export class ProjectsListComponent implements OnInit {
   private pageEvent$ = new BehaviorSubject<PageEvent>({ pageIndex: 0, pageSize: 10, length: 0 });
 
   // All projects from the server
-  allProjects$ = this.webApi.getUserProjects().pipe(map(response => response.projects));
+  allProjects$ = this.webApi.getProjects().pipe(map(response => response.projects));
 
   // Filtered projects based on search
   filteredProjects$: Observable<Project[]> = combineLatest([
@@ -96,6 +98,16 @@ export class ProjectsListComponent implements OnInit {
       );
     })
   );
+  // Show settings if current user is the project owner
+  public canManageProjectSettings = (project: Project) => {
+    console.log('Checking ownership of ', project);
+    if (this.authService.getCurrentUser()?.roles.includes('ADMIN')) {
+      return true;
+    } else {
+      console.log(project.user_id === this.authService.getCurrentUser()?.id);
+      return project.user_id === this.authService.getCurrentUser()?.id;
+    }
+  };
 
   // Paginated projects
   paginatedProjects$: Observable<Project[]> = combineLatest([

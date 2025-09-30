@@ -674,7 +674,7 @@ export class WebApiService {
    * Get groups the current user is part of (owned, managed, or member)
    */
   getUserGroups(): Observable<GetGroupsResponse> {
-    return this.http.get<GetGroupsResponse>(`${this.base}/groups/user/me`);
+    return this.http.get<GetGroupsResponse>(`${this.base}/groups`);
   }
 
   /**

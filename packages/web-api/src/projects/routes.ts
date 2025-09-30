@@ -138,14 +138,11 @@ router.get(
 
       // Check if user can access this project
       const isAdmin = req.user.roles.includes('ADMIN');
-      const canAccess = await projectService.canUserAccessProject(projectId, req.user, isAdmin);
-
-      if (!canAccess) {
-        throw new NotFoundException(`Project with ID ${projectId} not found`);
-      }
-
-      // User has permission, get the project
-      const project = await projectService.getById({ id: projectId });
+      const project = await projectService.getById({
+        id: projectId,
+        currentUser: req.user,
+        ignorePermissions: isAdmin
+      });
 
       if (!project) {
         throw new NotFoundException(`Project with ID ${projectId} not found`);
@@ -178,23 +175,25 @@ router.put(
       const projectId = parseInt(req.params.id, 10);
       const projectService = new ProjectService(prisma);
 
-      // For updates, we need to be more restrictive - only owners and admins can update
+      // Check if user can access this project (using same permissions as viewing)
       const isAdmin = req.user.roles.includes('ADMIN');
+      const project = await projectService.getById({
+        id: projectId,
+        currentUser: req.user,
+        ignorePermissions: isAdmin
+      });
 
-      if (!isAdmin) {
-        // Non-admins can only update projects they own
-        const project = await projectService.getById({ id: projectId });
-        if (!project || project.user_id !== req.user.id) {
-          throw new NotFoundException(`Project with ID ${projectId} not found`);
-        }
+      if (!project) {
+        throw new NotFoundException(`Project with ID ${projectId} not found`);
       }
 
-      const project = await projectService.update({
+      // User has access, perform the update
+      const updatedProject = await projectService.update({
         id: projectId,
         input: req.body
       });
 
-      res.json({ project });
+      res.json({ project: updatedProject });
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
       throw new InternalServerError('Failed to update project. Error: ' + error, error as Error);
@@ -220,15 +219,16 @@ router.delete(
       const projectId = parseInt(req.params.id, 10);
       const projectService = new ProjectService(prisma);
 
-      // For deletion, we need to be more restrictive - only owners and admins can delete
+      // Check if user can access this project
       const isAdmin = req.user.roles.includes('ADMIN');
+      const project = await projectService.getById({
+        id: projectId,
+        currentUser: req.user,
+        ignorePermissions: isAdmin
+      });
 
-      if (!isAdmin) {
-        // Non-admins can only delete projects they own
-        const project = await projectService.getById({ id: projectId });
-        if (!project || project.user_id !== req.user.id) {
-          throw new NotFoundException(`Project with ID ${projectId} not found`);
-        }
+      if (!project) {
+        throw new NotFoundException(`Project with ID ${projectId} not found`);
       }
 
       const deleted = await projectService.delete({ id: projectId });

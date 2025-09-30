@@ -12,7 +12,7 @@ import express, { Response, Router } from 'express';
 import { z } from 'zod';
 import { processRequest } from 'zod-express-middleware';
 import { passport } from '../auth/passportConfig';
-import { assertUserIsAdminMiddleware } from '../auth/utils';
+import { assertUserHasRoleMiddleware, assertUserIsAdminMiddleware } from '../auth/utils';
 import { handlePrismaError, NotFoundException } from '../exceptions';
 import { changePassword, registerUser } from '../services/auth';
 
@@ -49,7 +49,7 @@ router.get(
 router.get(
   '/search',
   passport.authenticate('jwt', { session: false }),
-  assertUserIsAdminMiddleware,
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST', 'ADMIN'] }),
   processRequest({
     query: SearchUsersQuerySchema
   }),

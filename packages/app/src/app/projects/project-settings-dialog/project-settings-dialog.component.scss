@@ -3,9 +3,21 @@
   font-size: 13pt;
 }
 
+.settings-dialog {
+  mat-dialog-content {
+    overflow-y: auto;
+    height: 90%;
+    max-height: none;
+  }
+}
+
 mat-dialog-content {
   h3 {
-    margin: 0 0 16px;
+    margin: 24px 0 16px;
+
+    &:first-of-type {
+      margin-top: 0;
+    }
   }
 
   mat-checkbox {
@@ -20,6 +32,7 @@ mat-dialog-content {
     border-radius: 8px;
     background-color: rgba(0, 0, 0, 0.04);
     border: 1px solid rgba(0, 0, 0, 0.12);
+    margin-bottom: 16px;
 
     &.public {
       background-color: rgba(76, 175, 80, 0.08);
@@ -56,6 +69,42 @@ mat-dialog-content {
         line-height: 1.5;
         color: rgba(0, 0, 0, 0.6);
       }
+    }
+  }
+
+  .full-width {
+    width: 100%;
+  }
+
+  .shares-list {
+    margin-top: 12px;
+
+    mat-chip-set {
+      mat-chip {
+        mat-icon[matChipAvatar] {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+  }
+
+  .empty-state {
+    margin: 8px 0 0;
+    color: rgba(0, 0, 0, 0.4);
+    font-size: 14px;
+    font-style: italic;
+  }
+
+  .group-option {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .group-description {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.6);
     }
   }
 }

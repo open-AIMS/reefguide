@@ -247,18 +247,28 @@ export class ProjectService {
   }
 
   /**
-   * Retrieves a project by ID
+   * Retrieves a project by ID with permission checking
    *
    * @param id - The ID of the project
-   * @param userId - Optional user ID to ensure ownership
-   * @returns Promise<Project | undefined> - The project or undefined if not found
+   * @param currentUser - User requesting the project (required for permission check)
+   * @param ignorePermissions - Whether to skip permission checks (for admins)
+   * @returns Promise<Project | undefined> - The project or undefined if not found/no access
    */
-  async getById({ id, userId }: { id: number; userId?: number }) {
+  async getById({
+    id,
+    currentUser,
+    ignorePermissions = false
+  }: {
+    id: number;
+    currentUser: User;
+    ignorePermissions?: boolean;
+  }) {
+    const permissionWhere = buildPermissionWhereClause(currentUser, ignorePermissions);
+
     return (
       (await this.prisma.project.findFirst({
         where: {
-          id,
-          ...(userId && { user_id: userId })
+          AND: [{ id }, permissionWhere]
         },
         include: {
           user: {

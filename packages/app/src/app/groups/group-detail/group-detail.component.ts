@@ -53,6 +53,7 @@ export class GroupDetailComponent implements OnInit {
   activeTab = 0;
   currentUserRole = signal<'Owner' | 'Manager' | 'Member' | null>(null);
   currentUserId = computed(() => this.authService.currentUserSignal()?.id);
+  isAdmin = computed(() => this.authService.currentUserSignal()?.roles.includes('ADMIN') ?? false);
 
   ngOnInit() {
     const groupId = Number(this.route.snapshot.paramMap.get('id'));
@@ -232,7 +233,7 @@ export class GroupDetailComponent implements OnInit {
     if (!group) return;
 
     const allMembers: GetGroupResponse['group']['managers'] = [...group.members, ...group.managers];
-    console.log("opening with: ", allMembers)
+    console.log('opening with: ', allMembers);
 
     const dialogRef = this.dialog.open(TransferOwnershipModalComponent, {
       width: '500px',
