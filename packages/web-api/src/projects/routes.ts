@@ -33,6 +33,23 @@ require('express-async-errors');
 export const router: Router = express.Router();
 
 /**
+ * Helper function to check if user is allowed to share a project
+ */
+const isAllowedToShareProject = async (
+  projectService: ProjectService,
+  projectId: number,
+  user: Express.User
+): Promise<boolean> => {
+  const isOwner = await projectService.isProjectOwner({
+    projectId,
+    userId: user.id
+  });
+  const isAdmin = userIsAdmin(user);
+
+  return isOwner || isAdmin;
+};
+
+/**
  * Create a new project
  */
 router.post(
@@ -334,13 +351,10 @@ router.post(
       const { userIds } = req.body;
       const projectService = new ProjectService(prisma);
 
-      // Check if user is the owner of the project
-      const isOwner = await projectService.isProjectOwner({
-        projectId,
-        userId: req.user.id
-      });
+      // Check if user is allowed to share this project
+      const allowed = await isAllowedToShareProject(projectService, projectId, req.user);
 
-      if (!isOwner) {
+      if (!allowed) {
         throw new NotFoundException(`Project with ID ${projectId} not found`);
       }
 
@@ -382,13 +396,10 @@ router.delete(
       const { userIds } = req.body;
       const projectService = new ProjectService(prisma);
 
-      // Check if user is the owner of the project
-      const isOwner = await projectService.isProjectOwner({
-        projectId,
-        userId: req.user.id
-      });
+      // Check if user is allowed to share this project
+      const allowed = await isAllowedToShareProject(projectService, projectId, req.user);
 
-      if (!isOwner) {
+      if (!allowed) {
         throw new NotFoundException(`Project with ID ${projectId} not found`);
       }
 
@@ -430,13 +441,10 @@ router.post(
       const { groupIds } = req.body;
       const projectService = new ProjectService(prisma);
 
-      // Check if user is the owner of the project
-      const isOwner = await projectService.isProjectOwner({
-        projectId,
-        userId: req.user.id
-      });
+      // Check if user is allowed to share this project
+      const allowed = await isAllowedToShareProject(projectService, projectId, req.user);
 
-      if (!isOwner) {
+      if (!allowed) {
         throw new NotFoundException(`Project with ID ${projectId} not found`);
       }
 
@@ -478,13 +486,10 @@ router.delete(
       const { groupIds } = req.body;
       const projectService = new ProjectService(prisma);
 
-      // Check if user is the owner of the project
-      const isOwner = await projectService.isProjectOwner({
-        projectId,
-        userId: req.user.id
-      });
+      // Check if user is allowed to share this project
+      const allowed = await isAllowedToShareProject(projectService, projectId, req.user);
 
-      if (!isOwner) {
+      if (!allowed) {
         throw new NotFoundException(`Project with ID ${projectId} not found`);
       }
 
