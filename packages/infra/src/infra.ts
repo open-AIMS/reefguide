@@ -279,6 +279,10 @@ export class ReefguideStack extends cdk.Stack {
                   '--project=@app',
                   '-t',
                   'auto',
+                  // Include memory heap if specified
+                  ...(reefguide.heapMemoryHintGb
+                    ? [`--heap-size-hint=${reefguide.heapMemoryHintGb}GB`]
+                    : []),
                   '-J',
                   reefguide.sysimage.sysimagePath,
                   '--sysimage-native-code=yes',
@@ -293,6 +297,10 @@ export class ReefguideStack extends cdk.Stack {
                   '--project=@app',
                   '-t',
                   'auto',
+                  // Include memory heap if specified
+                  ...(reefguide.heapMemoryHintGb
+                    ? [`--heap-size-hint=${reefguide.heapMemoryHintGb}GB`]
+                    : []),
                   '-e',
                   'using ReefGuideWorker; ReefGuideWorker.start_worker()'
                 ],

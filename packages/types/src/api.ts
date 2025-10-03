@@ -7,8 +7,7 @@ import {
   UserAction,
   UserRole,
   ProjectType,
-  Project,
-  Group
+  Project
 } from '@reefguide/db';
 
 export const PASSWORD_MIN_LENGTH = 8;
