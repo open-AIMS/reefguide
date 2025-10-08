@@ -174,7 +174,10 @@ const ReefGuideWorkerConfigSchema = z.object({
   /** Scaling configuration */
   scaling: JobWorkerScalingSchema.default({}),
   /** Sysimage mode? */
-  sysimage: SysimageConfigurationSchema.optional()
+  sysimage: SysimageConfigurationSchema.optional(),
+  /** The heapMemoryLimit hint if any - passed into the launch command as
+   * --heap-size-hint=<value>GB */
+  heapMemoryHintGb: z.number().positive().optional()
 });
 
 // ADRIA worker configuration schema with defaults
