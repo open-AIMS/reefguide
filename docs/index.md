@@ -76,9 +76,9 @@ Troubleshooting guide for AWS ECS services, covering web API, capacity manager, 
 
 ### [Data Specification Reload](./prompting-data-spec-reload.md)
 
-Guide for updating the system's data specifications and clearing cached regional data to reflect new parameter configurations.
+Guide for updating the system's data specifications and clearing cached regional data to reflect new region and/or criteria information.
 
-**When needed:** After data updates, parameter changes, cache invalidation
+**When needed:** After data updates, ReefGuide assessment criteria changes, cache invalidation.
 
 ## Monitoring
 

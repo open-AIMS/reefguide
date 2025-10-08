@@ -1,8 +1,19 @@
 # Data specification reload procedure
 
-The `ReefGuide` system provides information about parameters available to the frontend through an object called the `data spec`. This is updated daily as a cron-job, however, currently, you need to perform a cleanup process of the cached Regional Data to see these changes reflected.
+The `ReefGuide` system provides information about regions and assessment criteria available to the frontend through an object called the `data spec`. This is updated daily as a cron-job. The job can also be [run manually using the cli](#run-the-data-spec-reload-job).
+
+* Criteria metadata is from [ReefGuide.jl ASSESSMENT_CRITERIA](https://github.com/open-AIMS/ReefGuide.jl/blob/main/src/utility/regions_criteria_setup.jl)
+* Other metadata (statistics) are calculated from the regions dataset during the data spec job execution.
+
+Changes to `ASSESSMENT_CRITERIA` requires deploying [ReefGuideWorker.jl](https://github.com/open-AIMS/ReefGuideWorker.jl) with the latest version of [ReefGuide.jl](https://github.com/open-AIMS/ReefGuide.jl). Currently, for dataset changes to have effect, you need to perform a cleanup process of the cached Regional Data to see dataset statistics changes reflected; this is described below.
 
 This guide **follows on from [managing EFS data](./managing-efs-data.md)** - it is **assumed you have uploaded replacement data to your EC2 management instance and have an active SSM session** - if not, please see this guide first!
+
+**Data Spec Flow**
+1. `DATA_SPECIFICATION_UPDATE` job executes (see [ReefGuideWorker.jl](https://github.com/open-AIMS/ReefGuideWorker.jl)) 
+2. Worker sends information to API via `POST /admin/data-specification`
+3. API updates `Region` and `Criteria` in the [database](../packages/db/prisma/schema.prisma)
+4. App loads information via `GET /admin/regions` and `GET /admin/criteria/{REGION}/ranges`
 
 ## Deleting old files
 
