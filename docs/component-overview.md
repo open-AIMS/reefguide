@@ -35,6 +35,7 @@ ReefGuide is an AWS cloud based system composed of four main components:
 - Project and job metadata storage
 - Result caching and retrieval
 - Prisma schema definitions with migration support
+- Regions and their criteria metadata (see [Data Specification](./prompting-data-spec-reload.md))
 
 ### Compute and Processing Layer
 
