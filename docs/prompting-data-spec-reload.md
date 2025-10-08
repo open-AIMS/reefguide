@@ -1,6 +1,6 @@
 # Data specification reload procedure
 
-The `ReefGuide` system provides information about regions and assessment criteria available to the frontend through an object called the `data spec`. This is updated daily as a cron-job. The job can also be [run manually using the cli](#run-the-data-spec-reload-job).
+The `ReefGuide` system provides information about regions and assessment criteria available to the frontend through an object called the `data spec`. This is updated daily as a cron-job. The job can also be [run manually using the cli](#run-the-data-spec-reload-job). Adjustments to the criteria made by the app are [described here](../..).
 
 * Criteria metadata is from [ReefGuide.jl ASSESSMENT_CRITERIA](https://github.com/open-AIMS/ReefGuide.jl/blob/main/src/utility/regions_criteria_setup.jl)
 * Other metadata (statistics) are calculated from the regions dataset during the data spec job execution.
