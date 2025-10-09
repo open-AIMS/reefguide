@@ -40,9 +40,9 @@
     "zod": "^3.25.62"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^20.2.0",
-    "@angular/cli": "^20.2.0",
-    "@angular/compiler-cli": "^20.2.1",
+    "@angular-devkit/build-angular": "^20.3.5",
+    "@angular/cli": "^20.3.5",
+    "@angular/compiler-cli": "^20.3.3",
     "@sentry/cli": "^2.53.0",
     "@types/jasmine": "~5.1.0",
     "jasmine-core": "~5.6.0",
