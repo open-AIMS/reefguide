@@ -7,3 +7,10 @@ onlyBuiltDependencies:
   - esbuild
   - prisma
   - unrs-resolver
+
+minimumReleaseAge: 2880
+minimumReleaseAgeExclude:
+  - '@angular/*'
+  - '@angular-devkit/*'
+  - '@ngtools/webpack'
+  - '@schematics/angular'

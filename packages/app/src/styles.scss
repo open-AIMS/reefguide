@@ -1,4 +1,9 @@
 @use '@angular/material' as mat;
+@use 'styles/mat-overrides';
+@use 'styles/layout';
+@use 'styles/openlayers';
+@use 'styles/tables';
+@use 'styles/messages';
 
 html {
   // can specify "light dark" to use user theme preference
@@ -20,42 +25,3 @@ body {
   margin: 0;
   font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
-
-.info-table {
-  th {
-    text-align: right;
-    color: rgba(0, 0, 0, 0.7);
-  }
-
-  td {
-    padding-left: 0.5em;
-  }
-}
-
-.row {
-  display: flex;
-}
-
-.error-message {
-  color: var(--mat-sys-error);
-  font-weight: 500;
-}
-
-mat-tab-group.fixed-height {
-  .mat-mdc-tab-body-wrapper {
-    height: 100%;
-  }
-}
-
-// OpenLayers map
-app-reef-map {
-  // move zoom buttons to bottom-right
-  .ol-zoom {
-    top: unset;
-    left: unset;
-    bottom: 1.5em;
-    right: 1em;
-  }
-}
-
-@import 'styles/messages.scss';
