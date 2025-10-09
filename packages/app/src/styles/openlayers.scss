@@ -1,11 +1,12 @@
 // adjustments OpenLayers map in ReefMapComponent
 // styles are defined here instead of using the ::ng-deep hack
 app-reef-map {
-  // move zoom buttons to bottom-right
+  // move zoom buttons to bottom-right, above the attribution [i] button
   .ol-zoom {
     top: unset;
     left: unset;
-    bottom: 1.5em;
-    right: 1em;
+    bottom: calc(0.5em + 30px);
+    // match ol-attribution offset
+    right: 0.5em;
   }
 }
