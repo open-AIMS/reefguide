@@ -1,5 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { MatSliderModule } from '@angular/material/slider';
+import {Component, computed, inject, signal} from '@angular/core';
+import {MatSliderModule} from '@angular/material/slider';
 import {
   FormBuilder,
   FormGroup,
@@ -7,14 +7,14 @@ import {
   ReactiveFormsModule,
   Validators
 } from '@angular/forms';
-import { MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
-import { ReefGuideMapService } from '../reef-guide-map.service';
-import { CriteriaPayloads, SiteSuitabilityCriteria } from '../reef-guide-api.types';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatSlideToggle } from '@angular/material/slide-toggle';
-import { MatSelectModule } from '@angular/material/select';
+import {MatIconButton} from '@angular/material/button';
+import {MatIcon} from '@angular/material/icon';
+import {ReefGuideMapService} from '../reef-guide-map.service';
+import {CriteriaPayloads, SiteSuitabilityCriteria} from '../reef-guide-api.types';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
+import {MatSlideToggle} from '@angular/material/slide-toggle';
+import {MatSelectModule} from '@angular/material/select';
 import {
   catchError,
   combineLatestWith,
@@ -28,13 +28,13 @@ import {
   takeUntil,
   tap
 } from 'rxjs';
-import { WebApiService } from '../../../api/web-api.service';
-import { CriteriaRangeOutput } from '@reefguide/types';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
-import { LayerController } from '../../map/openlayers-model';
-import { retryHTTPErrors } from '../../../util/http-util';
-import { AsyncPipe } from '@angular/common';
+import {WebApiService} from '../../../api/web-api.service';
+import {CriteriaRangeOutput} from '@reefguide/types';
+import {MatTooltip} from '@angular/material/tooltip';
+import {MatProgressSpinner} from '@angular/material/progress-spinner';
+import {LayerController} from '../../map/openlayers-model';
+import {retryHTTPErrors} from '../../../util/http-util';
+import {AsyncPipe} from '@angular/common';
 
 type SliderDef = {
   // original criteria definition from API
@@ -107,7 +107,7 @@ export class SelectionCriteriaComponent {
       .sort((a, b) => idOrder.indexOf(a.criteria.id) - idOrder.indexOf(b.criteria.id));
   });
 
-  enableSiteSuitability = signal(true);
+  enableSiteSuitability = signal(false);
 
   /**
    * Criteria ID that is currently pixel-filtering.
@@ -244,7 +244,7 @@ export class SelectionCriteriaComponent {
   }
 
   private createSliderDef(criteria: CriteriaRangeOutput[string]): SliderDef {
-    const { id, min_val, max_val, default_min_val, default_max_val } = criteria;
+    const {id, min_val, max_val, default_min_val, default_max_val} = criteria;
 
     if (default_min_val < min_val) {
       console.warn(`criteria ${id} default_min_val=${default_min_val} < min_val=${min_val}`);
@@ -310,7 +310,7 @@ export class SelectionCriteriaComponent {
       return;
     }
     for (const def of slidersDefs) {
-      const { criteria, slider } = def;
+      const {criteria, slider} = def;
       const layerId = slider.criteriaLayerId;
 
       const layerController = layerId ? this.mapService.criteriaLayers[layerId] : undefined;
@@ -356,7 +356,7 @@ export class SelectionCriteriaComponent {
 
     // fix values of negative-flipped criteria
     for (const sliderDef of sliderDefs) {
-      const { criteria } = sliderDef;
+      const {criteria} = sliderDef;
       const isFlipped = this.negativeFlippedCriteria.has(criteria.id);
       const minKey = `${criteria.payload_property_prefix}min`;
       const maxKey = `${criteria.payload_property_prefix}max`;
@@ -417,7 +417,7 @@ export class SelectionCriteriaComponent {
     }
 
     for (const sliderDef of sliderDefs) {
-      const { criteria, slider } = sliderDef;
+      const {criteria, slider} = sliderDef;
       // don't need to worry about negative-flipping here since we mutated min/max values
       const minControl = criteriaFormGroup.get(`${criteria.payload_property_prefix}min`);
       minControl?.setValue(slider.default_min);
@@ -429,7 +429,7 @@ export class SelectionCriteriaComponent {
   }
 
   onSliderChange(sliderDef: SliderDef, layerController: LayerController, min: number, max: number) {
-    const { criteria, slider } = sliderDef;
+    const {criteria, slider} = sliderDef;
     if (!layerController.visible()) {
       layerController.visible.set(true);
       this.mapService.showCriteriaLayer(slider.criteriaLayerId);
