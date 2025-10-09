@@ -7,3 +7,10 @@ mat-progress-spinner {
   margin-right: 8px;
   color: #606060;
 }
+
+// limit the height and show scrollbar when not enough vertical space
+// MatExpansionPanel doesn't seem to have default scrollbar, setting max-height on root didn't work.
+::ng-deep .mat-expansion-panel-content {
+  max-height: calc(100vh - 240px) !important;
+  overflow: auto !important;
+}

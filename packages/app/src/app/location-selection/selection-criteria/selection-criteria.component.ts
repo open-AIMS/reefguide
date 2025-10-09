@@ -81,9 +81,26 @@ export class SelectionCriteriaComponent {
   private readonly formBuilder = inject(FormBuilder);
   readonly mapService = inject(ReefGuideMapService);
 
+  // HACK order regions from North to South
+  // ideally regions would already be ordered by API or have geometry property to sort by.
+  private regionOrder = [
+    'FarNorthern',
+    'Cairns-Cooktown',
+    'Townsville-Whitsunday',
+    'Mackay-Capricorn'
+  ];
+
   regions$ = this.api.getRegions().pipe(
     retryHTTPErrors(3),
-    map(resp => resp.regions)
+    map(resp => {
+      const { regions } = resp;
+      const regionOrder = this.regionOrder;
+      // sort the regions by the hardcoded order
+      return regions.sort((a, b) => {
+        // -1 if not found, but not important to handle that explicitly for this ordering hack.
+        return regionOrder.indexOf(a.name) - regionOrder.indexOf(b.name);
+      });
+    })
   );
 
   /**
@@ -107,7 +124,7 @@ export class SelectionCriteriaComponent {
       .sort((a, b) => idOrder.indexOf(a.criteria.id) - idOrder.indexOf(b.criteria.id));
   });
 
-  enableSiteSuitability = signal(true);
+  enableSiteSuitability = signal(false);
 
   /**
    * Criteria ID that is currently pixel-filtering.
