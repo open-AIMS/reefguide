@@ -1,0 +1,11 @@
+// adjustments OpenLayers map in ReefMapComponent
+// styles are defined here instead of using the ::ng-deep hack
+app-reef-map {
+  // move zoom buttons to bottom-right
+  .ol-zoom {
+    top: unset;
+    left: unset;
+    bottom: 1.5em;
+    right: 1em;
+  }
+}

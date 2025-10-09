@@ -18,6 +18,12 @@
   }
 }
 
+// FIXME redundant, conflicting class name
+.error-message {
+  color: var(--mat-sys-error);
+  font-weight: 500;
+}
+
 .error-message {
   @extend .message-base;
   color: #f44336;
