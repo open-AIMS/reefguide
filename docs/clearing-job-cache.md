@@ -8,6 +8,14 @@ Unfortunately, caching can mean stale data. **If the data processing changes sig
 
 This process is easy using the provided CLI tooling.
 
+### Cache-busting Payload Properties
+
+Worker implementation changes can result in breaking job result changes from the client/app perspective. In these cases, a payload property can be added, which results in new job hashes that prevent reusing old incompatible job results.
+
+An example is when `ReefGuide.jl` changed the COG result from single color to greyscale in version _0.1.11_. This required changing OpenLayers styling code to render the new COG. A new property `cogColor='greyscale'` was added to the `REGIONAL_ASSESSMENT` payload to distinguish these new job results. Currently, `ReefGuide.jl` ignores this, but could support different COG color formats in the future. Another concern going forward is persistent project state; the app code will need to check these properties to determine what rendering implementation to use for the job results _OR_ consider the job invalid if it doesn't use the latest render-related payload properties.
+
+The data spec job has a `cache_buster` property to ensure cached jobs are never used.
+
 ## Setup the CLI
 
 Follow the [guide here](./setting-up-reefguide-cli.md) to setup the CLI.

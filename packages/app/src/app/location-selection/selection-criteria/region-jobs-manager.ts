@@ -62,7 +62,7 @@ export class RegionJobsManager {
 
   /**
    *
-   * @param type
+   * @param jobType job type
    * @param payload partial payload, "region" will be set by this
    * @param regions$ observable that emits each region, then completes
    */

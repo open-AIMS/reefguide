@@ -90,7 +90,19 @@ export const suitabilityAssessmentInputSchema = sharedCriteriaSchema
   })
   .strict();
 
-export const regionalAssessmentInputSchema = sharedCriteriaSchema.strict();
+export const regionalAssessmentInputSchema = sharedCriteriaSchema
+  .extend({
+    cogColor: z
+      // ReefGuide does not currently support this property; it is set by the app to mark the
+      // new greyscale COG format in version 0.1.11. ReefGuide may support different COG
+      // color styles in the future.
+      .enum(['greyscale'])
+      .optional()
+      .describe(
+        'COG color values format. Currently not used by ReefGuide, but affects the job hash'
+      )
+  })
+  .strict();
 
 export const dataSpecificationUpdateJobInputSchema = z.object({
   cache_buster: z.number().optional().describe('Cache buster to force update')

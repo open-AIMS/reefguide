@@ -221,19 +221,22 @@ export class ReefGuideMapService {
   }
 
   /**
-   * Start region jobs and add layers using the job results.
-   * @param jobType
+   * Request REGIONAL_ASSESSMENT job and add map layer when result downloaded.
    * @param payload
    */
-  addJobLayers(jobType: JobType, payload: RegionalAssessmentInput): RegionJobsManager {
-    console.log('addJobLayers', payload);
+  addRegionalAssessmentJob(payload: RegionalAssessmentInput): RegionJobsManager {
+    if (!payload.cogColor) {
+      // greyscale is assumed/required by addRegionalAssessmentLayer
+      payload.cogColor = 'greyscale';
+    }
+    console.log('addRegionalAssessmentJob', payload);
 
     // TODO cleanup old multi-region code
     const regions$ = of(payload.region);
 
     const jobManager = runInInjectionContext(
       this.injector,
-      () => new RegionJobsManager(jobType, payload, regions$)
+      () => new RegionJobsManager('REGIONAL_ASSESSMENT', payload, regions$)
     );
 
     const layerGroup = this.setupCOGAssessRegionsLayerGroup();
@@ -350,10 +353,10 @@ export class ReefGuideMapService {
   }
 
   /**
-   * Start job, add map layer based on result
+   * Request SUITABILITY_ASSESSMENT job and add map layer when result downloaded.
    * @param payload
    */
-  addSiteSuitabilityLayer(payload: SuitabilityAssessmentInput) {
+  addSuitabilityAssessmentJob(payload: SuitabilityAssessmentInput) {
     // TODO[OpenLayers] site suitability loading indicator
     // TODO:region rework multi-request progress tracking, review RegionJobsManager
     // this works, but is bespoke for this kind of request, will refactor job requests
