@@ -225,7 +225,11 @@ export class ReefGuideMapService {
    * @param payload
    */
   addRegionalAssessmentJob(payload: RegionalAssessmentInput): RegionJobsManager {
-    console.log('addJobLayers', payload);
+    if (!payload.cogColor) {
+      // greyscale is assumed/required by addRegionalAssessmentLayer
+      payload.cogColor = 'greyscale';
+    }
+    console.log('addRegionalAssessmentJob', payload);
 
     // TODO cleanup old multi-region code
     const regions$ = of(payload.region);
