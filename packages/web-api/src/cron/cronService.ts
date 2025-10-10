@@ -37,7 +37,8 @@ export class CronService {
   private scheduleDataSpecificationUpdate(): void {
     console.log('Scheduling data specification update job...');
     const task = schedule(
-      '0 2 * * * *',
+      // 2AM AEDT
+      '0 2 * * *',
       async () => {
         try {
           console.log('Starting scheduled data specification update...');
