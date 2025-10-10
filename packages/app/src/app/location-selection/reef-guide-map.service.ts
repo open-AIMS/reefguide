@@ -55,7 +55,7 @@ import Layer from 'ol/layer/Layer';
 import { createLayerFromDef } from '../../util/arcgis/arcgis-openlayer-util';
 import { LayerController, LayerControllerOptions } from '../map/openlayers-model';
 import { LayerProperties } from '../../types/layer.type';
-import { singleColorLayerStyle } from '../map/openlayers-styles';
+import { singleBandColorGradientLayerStyle } from '../map/openlayers-styles';
 import { fromString as colorFromString } from 'ol/color';
 
 /**
@@ -490,10 +490,10 @@ export class ReefGuideMapService {
             url: region.cogUrl
           }
         ],
-        // prevent normalization so can work with band value 1
+        // prevent normalization so can work with original band 1 values 0:100
         normalize: false
       }),
-      opacity: 0.8
+      opacity: 1.0
     });
 
     // free ObjectURL memory after layer disposed
@@ -511,7 +511,10 @@ export class ReefGuideMapService {
     // update style when color changes (and first init)
     effect(
       () => {
-        layer.setStyle(singleColorLayerStyle(colorFromString(layerController.color!())));
+        // ReefGuide assessment band values are 0 to 100
+        layer.setStyle(
+          singleBandColorGradientLayerStyle(colorFromString(layerController.color!()), 100)
+        );
       },
       { injector: this.injector }
     );
