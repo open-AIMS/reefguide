@@ -150,7 +150,7 @@ export class LocationSelectionComponent implements MapUI {
     // no need to await
     void this.drawer.close();
 
-    const jobsManager = this.mapService.addJobLayers('REGIONAL_ASSESSMENT', criteria);
+    this.mapService.addRegionalAssessmentJob(criteria);
     // could load previous job result like this:
     // this.mapService.loadLayerFromJobResults(31);
 
@@ -160,7 +160,7 @@ export class LocationSelectionComponent implements MapUI {
         ...siteSuitability
       };
 
-      this.mapService.addSiteSuitabilityLayer(ssPayload);
+      this.mapService.addSuitabilityAssessmentJob(ssPayload);
     }
   }
 }
