@@ -19,6 +19,18 @@
   left: 12px;
   align-items: flex-start;
 
+  &.hidden {
+    visibility: hidden;
+
+    // Material sets visible on this, which causes scrollbar and text to remain
+    ::ng-deep
+      .mat-expansion-panel.mat-expanded
+      > .mat-expansion-panel-content-wrapper
+      > .mat-expansion-panel-content {
+      visibility: hidden;
+    }
+  }
+
   .panel-row {
     display: flex;
     flex-direction: row;
