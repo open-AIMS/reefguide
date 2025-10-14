@@ -153,6 +153,21 @@ class WorkspaceService {
       next: response => {
         const job = response.job;
         console.debug(`[${this.workspaceId}] Restored job:`, job);
+
+        // If the job has result with an invalid cache, then invalidate it NOTE
+        // in the future if we have more complex management of job results we
+        // may wish to check also that there is no result which is newer and not
+        // invalidated - but right now we only ever have one result per job
+        if (job.assignments.some(a => a.result && !a.result.cache_valid)) {
+          // There is at least one result which has been manually invalidated - let's dismiss the job
+          console.warn(
+            `[${this.workspaceId}] Job ${jobId} has invalidated results - resetting job state`
+          );
+          this.job.set(null);
+          this.workflowState.set('configuring');
+          return;
+        }
+
         this.job.set(job);
 
         // Set workflow state based on job status
