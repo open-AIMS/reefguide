@@ -24,6 +24,7 @@ import { ReefGuideConfigService } from './reef-guide-config.service';
 import { MAP_UI, MapUI, ReefGuideMapService } from './reef-guide-map.service';
 import { SelectionCriteriaComponent } from './selection-criteria/selection-criteria.component';
 import { MapToolbarComponent } from './map-toolbar/map-toolbar.component';
+import { PolygonMapService } from './polygon-map.service';
 
 type DrawerModes = 'criteria' | 'style';
 
@@ -52,7 +53,11 @@ type DrawerModes = 'criteria' | 'style';
     ProfileButtonComponent,
     MapToolbarComponent
   ],
-  providers: [ReefGuideMapService, { provide: MAP_UI, useExisting: LocationSelectionComponent }],
+  providers: [
+    ReefGuideMapService,
+    PolygonMapService,
+    { provide: MAP_UI, useExisting: LocationSelectionComponent }
+  ],
   templateUrl: './location-selection.component.html',
   styleUrl: './location-selection.component.scss'
 })
@@ -187,10 +192,8 @@ export class LocationSelectionComponent implements MapUI {
             duration: 3000
           });
 
-          // TODO: Add logic to:
-          // - Refresh list of polygons if displayed
-          // - Navigate to polygon detail view
-          // - Enable adding notes to the new polygon
+          // Refresh the polygon layer on the map
+          this.mapService.polygonMapService.refresh();
         },
         error: error => {
           console.error('Error creating polygon:', error);

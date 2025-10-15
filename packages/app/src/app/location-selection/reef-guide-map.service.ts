@@ -89,6 +89,8 @@ export interface PolygonDrawHandlers {
   onCancelled?: () => void;
 }
 
+import { PolygonMapService } from './polygon-map.service';
+
 /**
  * Reef Guide map context and layer management.
  * Higher-level abstraction over the map component.
@@ -101,6 +103,7 @@ export class ReefGuideMapService {
   private readonly api = inject(WebApiService);
   private readonly snackbar = inject(MatSnackBar);
   private readonly jobsManager = inject(JobsManagerService);
+  readonly polygonMapService = inject(PolygonMapService);
 
   // map is set shortly after construction
   private map!: OLMap;
@@ -227,6 +230,9 @@ export class ReefGuideMapService {
 
     this.addInfoLayers();
     void this.addCriteriaLayers();
+
+    // Initialize polygon map service with the map
+    this.polygonMapService.setMap(map);
   }
 
   /**
@@ -330,14 +336,23 @@ export class ReefGuideMapService {
   private handleDrawEnd(feature: Feature<Geometry>): void {
     try {
       // Convert the feature to GeoJSON
-      const geojson = this.geojsonFormat.writeFeature(feature, {
+      const geojsonFeature = this.geojsonFormat.writeFeature(feature, {
         dataProjection: 'EPSG:4326',
         featureProjection: this.map.getView().getProjection()
       });
 
-      // Call the success handler
+      // Parse the feature to extract just the geometry
+      const parsedFeature = JSON.parse(geojsonFeature);
+
+      // Extract just the geometry (Polygon) from the Feature
+      const geometry = parsedFeature.geometry;
+
+      // Convert geometry back to string
+      const geojsonGeometry = JSON.stringify(geometry);
+
+      // Call the success handler with the geometry only
       if (this.drawHandlers?.onSuccess) {
-        this.drawHandlers.onSuccess(geojson);
+        this.drawHandlers.onSuccess(geojsonGeometry);
       }
 
       // Clean up the drawing state after a short delay
