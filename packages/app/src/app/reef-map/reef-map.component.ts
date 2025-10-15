@@ -1,3 +1,4 @@
+import { moveItemInArray } from '@angular/cdk/drag-drop';
 import {
   AfterViewInit,
   Component,
@@ -7,30 +8,28 @@ import {
   signal,
   viewChild
 } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { Router } from '@angular/router';
+import { MapBrowserEvent } from 'ol';
 import Map from 'ol/Map';
 import View from 'ol/View';
-import TileLayer from 'ol/layer/WebGLTile';
-import OSM from 'ol/source/OSM';
-import XYZ from 'ol/source/XYZ';
 import ScaleLine from 'ol/control/ScaleLine';
-import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
-import { LayerListComponent } from '../widgets/layer-list/layer-list.component';
-import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
-import { debounceTime, map, Observable, Subject } from 'rxjs';
-import LayerGroup from 'ol/layer/Group';
-import { LayerProperties } from '../../types/layer.type';
-import Layer from 'ol/layer/Layer';
-import { moveItemInArray } from '@angular/cdk/drag-drop';
-import { MapBrowserEvent } from 'ol';
-import { MatDialog } from '@angular/material/dialog';
-import { FeatureInfoDialogComponent } from '../widgets/feature-info-dialog/feature-info-dialog.component';
-import { FeatureRef } from '../map/openlayers-types';
-import { Router } from '@angular/router';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { ReefSearchComponent } from './reef-search/reef-search.component';
-import { ReefSearchService } from './reef-search.service';
 import { Polygon } from 'ol/geom';
+import LayerGroup from 'ol/layer/Group';
+import Layer from 'ol/layer/Layer';
+import TileLayer from 'ol/layer/WebGLTile';
+import XYZ from 'ol/source/XYZ';
+import { debounceTime, map, Observable, Subject } from 'rxjs';
+import { LayerProperties } from '../../types/layer.type';
+import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
+import { FeatureRef } from '../map/openlayers-types';
+import { FeatureInfoDialogComponent } from '../widgets/feature-info-dialog/feature-info-dialog.component';
+import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
+import { LayerListComponent } from '../widgets/layer-list/layer-list.component';
+import { ReefSearchService } from './reef-search.service';
+import { ReefSearchComponent } from './reef-search/reef-search.component';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -221,42 +220,42 @@ export class ReefMapComponent implements AfterViewInit {
   }
 
   private onClick(event: MapBrowserEvent) {
+    if (this.mapService?.isDrawingPolygon) {
+      return;
+    }
     // We only do things here if we are not busy drawing a polygon
-    if (!this.mapService?.isDrawingPolygon) {
-      const features: FeatureRef[] = [];
-      this.map.forEachFeatureAtPixel(event.pixel, (feature, layer, geometry) => {
-        console.log('feature at click', feature.getProperties(), feature);
-        // Cluster point has child features
-        const childFeatures = feature.get('features');
-        if (childFeatures instanceof Array) {
-          for (const child of childFeatures) {
-            features.push({
-              feature: child,
-              layer,
-              geometry
-            });
-          }
-        } else {
+    const features: FeatureRef[] = [];
+    this.map.forEachFeatureAtPixel(event.pixel, (feature, layer, geometry) => {
+      // Cluster point has child features
+      const childFeatures = feature.get('features');
+      if (childFeatures instanceof Array) {
+        for (const child of childFeatures) {
           features.push({
-            feature,
+            feature: child,
             layer,
             geometry
           });
         }
-      });
-
-      if (features.length === 0) {
-        return;
+      } else {
+        features.push({
+          feature,
+          layer,
+          geometry
+        });
       }
+    });
 
-      this.dialog.open(FeatureInfoDialogComponent, {
-        // allows moving map under dialog, but no close on outside click
-        // hasBackdrop: false,
-        data: {
-          features
-        }
-      });
+    if (features.length === 0) {
+      return;
     }
+
+    this.dialog.open(FeatureInfoDialogComponent, {
+      // allows moving map under dialog, but no close on outside click
+      // hasBackdrop: false,
+      data: {
+        features
+      }
+    });
   }
 
   /**

@@ -14,7 +14,7 @@ import { WebApiService } from '../../api/web-api.service';
 import { LayerProperties } from '../../types/layer.type';
 import { disposeLayerGroup } from '../map/openlayers-util';
 
-const USER_POLYGON_LAYER_ID = 'user-polygon-layer';
+export const USER_POLYGON_LAYER_ID = 'user-polygon-layer';
 
 /**
  * Service for managing user-drawn polygons on the map.
