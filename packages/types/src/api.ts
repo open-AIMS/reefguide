@@ -957,3 +957,179 @@ export const SearchUsersResponseSchema = z.object({
 });
 
 export type SearchUsersResponse = z.infer<typeof SearchUsersResponseSchema>;
+
+// ==================
+// Polygons and Notes
+// ==================
+
+// GeoJSON Polygon Schema
+// GeoJSON Polygon geometry as per RFC 7946
+export const GeoJSONPolygonSchema = z.object({
+  type: z.literal('Polygon'),
+  coordinates: z.array(
+    z.array(
+      z.tuple([z.number(), z.number()]).rest(z.number()) // [longitude, latitude, altitude?]
+    )
+  )
+});
+export type GeoJSONPolygon = z.infer<typeof GeoJSONPolygonSchema>;
+
+// Polygon Schemas
+export const PolygonParamsSchema = z.object({
+  id: z.string().regex(/^\d+$/, 'Polygon ID must be a number')
+});
+export type PolygonParams = z.infer<typeof PolygonParamsSchema>;
+
+export const CreatePolygonInputSchema = z.object({
+  polygon: GeoJSONPolygonSchema
+});
+export type CreatePolygonInput = z.infer<typeof CreatePolygonInputSchema>;
+
+export const UpdatePolygonInputSchema = z.object({
+  polygon: GeoJSONPolygonSchema
+});
+export type UpdatePolygonInput = z.infer<typeof UpdatePolygonInputSchema>;
+
+export const GetPolygonsQuerySchema = z.object({
+  userId: z.string().optional(),
+  limit: z.number().optional(),
+  offset: z.number().optional()
+});
+export type GetPolygonsQuery = z.infer<typeof GetPolygonsQuerySchema>;
+
+// Note Schemas
+export const NoteParamsSchema = z.object({
+  id: z.string().regex(/^\d+$/, 'Note ID must be a number')
+});
+export type NoteParams = z.infer<typeof NoteParamsSchema>;
+
+export const CreateNoteInputSchema = z.object({
+  content: z.string().min(1, 'Note content is required'),
+  polygonId: z.number().positive('Polygon ID must be a positive number')
+});
+export type CreateNoteInput = z.infer<typeof CreateNoteInputSchema>;
+
+export const UpdateNoteInputSchema = z.object({
+  content: z.string().min(1, 'Note content is required')
+});
+export type UpdateNoteInput = z.infer<typeof UpdateNoteInputSchema>;
+
+export const GetNotesQuerySchema = z.object({
+  polygonId: z.string().optional(),
+  userId: z.string().optional(),
+  limit: z.number().optional(),
+  offset: z.number().optional()
+});
+export type GetNotesQuery = z.infer<typeof GetNotesQuerySchema>;
+
+// Base Polygon Schema (matches Prisma model exactly)
+// Prisma model: id, created_at, user_id, polygon (Json), notes (relation)
+export const PolygonReferenceSchema = z.object({
+  id: z.number(),
+  polygon: z.any(), // Json type in Prisma - stores GeoJSON object
+  user_id: z.number(),
+  created_at: z.date()
+});
+export type PolygonReference = z.infer<typeof PolygonReferenceSchema>;
+
+// Base Note Schema (matches Prisma model exactly)
+// Prisma model: id, created_at, content, user_id, polygon_id
+export const NoteReferenceSchema = z.object({
+  id: z.number(),
+  content: z.string(),
+  user_id: z.number(),
+  polygon_id: z.number(),
+  created_at: z.date()
+});
+export type NoteReference = z.infer<typeof NoteReferenceSchema>;
+
+// Note with User relation
+export const NoteWithUserSchema = NoteReferenceSchema.extend({
+  user: z.object({
+    id: z.number(),
+    email: z.string()
+  })
+});
+export type NoteWithUser = z.infer<typeof NoteWithUserSchema>;
+
+// Polygon with relations
+export const PolygonWithRelationsSchema = PolygonReferenceSchema.extend({
+  user: z.object({
+    id: z.number(),
+    email: z.string()
+  }),
+  notes: z.array(NoteWithUserSchema)
+});
+export type PolygonWithRelations = z.infer<typeof PolygonWithRelationsSchema>;
+
+// Note with full relations (user and polygon)
+export const NoteWithRelationsSchema = NoteReferenceSchema.extend({
+  user: z.object({
+    id: z.number(),
+    email: z.string()
+  }),
+  polygon: PolygonReferenceSchema
+});
+export type NoteWithRelations = z.infer<typeof NoteWithRelationsSchema>;
+
+// Pagination Schema
+export const PaginationSchema = z.object({
+  total: z.number(),
+  limit: z.number(),
+  offset: z.number()
+});
+export type Pagination = z.infer<typeof PaginationSchema>;
+
+// Polygon Response Schemas
+export const CreatePolygonResponseSchema = z.object({
+  polygon: PolygonReferenceSchema
+});
+export type CreatePolygonResponse = z.infer<typeof CreatePolygonResponseSchema>;
+
+export const UpdatePolygonResponseSchema = z.object({
+  polygon: PolygonReferenceSchema
+});
+export type UpdatePolygonResponse = z.infer<typeof UpdatePolygonResponseSchema>;
+
+export const GetPolygonResponseSchema = z.object({
+  polygon: PolygonWithRelationsSchema
+});
+export type GetPolygonResponse = z.infer<typeof GetPolygonResponseSchema>;
+
+export const GetPolygonsResponseSchema = z.object({
+  polygons: z.array(PolygonReferenceSchema),
+  pagination: PaginationSchema
+});
+export type GetPolygonsResponse = z.infer<typeof GetPolygonsResponseSchema>;
+
+export const DeletePolygonResponseSchema = z.object({
+  message: z.string()
+});
+export type DeletePolygonResponse = z.infer<typeof DeletePolygonResponseSchema>;
+
+// Note Response Schemas
+export const CreateNoteResponseSchema = z.object({
+  note: NoteReferenceSchema
+});
+export type CreateNoteResponse = z.infer<typeof CreateNoteResponseSchema>;
+
+export const UpdateNoteResponseSchema = z.object({
+  note: NoteReferenceSchema
+});
+export type UpdateNoteResponse = z.infer<typeof UpdateNoteResponseSchema>;
+
+export const GetNoteResponseSchema = z.object({
+  note: NoteWithRelationsSchema
+});
+export type GetNoteResponse = z.infer<typeof GetNoteResponseSchema>;
+
+export const GetNotesResponseSchema = z.object({
+  notes: z.array(NoteWithUserSchema),
+  pagination: PaginationSchema.optional()
+});
+export type GetNotesResponse = z.infer<typeof GetNotesResponseSchema>;
+
+export const DeleteNoteResponseSchema = z.object({
+  message: z.string()
+});
+export type DeleteNoteResponse = z.infer<typeof DeleteNoteResponseSchema>;

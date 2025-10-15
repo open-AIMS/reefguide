@@ -1,12 +1,11 @@
 import { computed, effect, Signal, signal, WritableSignal } from '@angular/core';
-import type Layer from 'ol/layer/Layer';
-import { LayerProperties } from '../../types/layer.type';
-import TileLayer from 'ol/layer/WebGLTile';
-import { LayerDef } from '@reefguide/types';
-import { fromOpenLayersEvent } from './openlayers-util';
-import { debounceTime, map, of, shareReplay, Subject, switchMap, takeUntil } from 'rxjs';
-import { TileSourceEvent } from 'ol/source/Tile';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { LayerDef } from '@reefguide/types';
+import type Layer from 'ol/layer/Layer';
+import TileLayer from 'ol/layer/WebGLTile';
+import { debounceTime, map, of, shareReplay, Subject, switchMap, takeUntil } from 'rxjs';
+import { LayerProperties } from '../../types/layer.type';
+import { fromOpenLayersEvent } from './openlayers-util';
 
 type LayerStyleModes = 'default' | 'pixel-filtering';
 

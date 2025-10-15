@@ -13,7 +13,6 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Map as OLMap } from 'ol';
-import { JobType } from '@reefguide/db';
 import {
   BehaviorSubject,
   filter,
@@ -50,6 +49,10 @@ import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { GeoJSON } from 'ol/format';
 import { Fill, Stroke, Style } from 'ol/style';
+import Draw from 'ol/interaction/Draw';
+import { Feature } from 'ol';
+import { Geometry } from 'ol/geom';
+import { DrawEvent } from 'ol/interaction/Draw';
 import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
 import Layer from 'ol/layer/Layer';
 import { createLayerFromDef } from '../../util/arcgis/arcgis-openlayer-util';
@@ -76,6 +79,14 @@ export interface ReadyRegion {
   region: string;
   cogUrl: string;
   originalUrl: string;
+}
+
+/**
+ * Polygon drawing callbacks
+ */
+export interface PolygonDrawHandlers {
+  onSuccess: (geojson: string) => void;
+  onCancelled?: () => void;
 }
 
 /**
@@ -141,6 +152,14 @@ export class ReefGuideMapService {
   private readonly siteSuitabilityLayerGroup = signal<LayerGroup | undefined>(undefined);
 
   private layerControllers = new Map<Layer, LayerController>();
+
+  // Polygon drawing state
+  public isDrawingPolygon: boolean = false;
+  private drawInteraction: Draw | null = null;
+  private drawSource: VectorSource | null = null;
+  private drawLayer: VectorLayer<VectorSource> | null = null;
+  private drawHandlers: PolygonDrawHandlers | null = null;
+  private readonly geojsonFormat = new GeoJSON();
 
   // whether to show the clear layers button
   showClear = computed(() => {
@@ -218,6 +237,138 @@ export class ReefGuideMapService {
       center: fromLonLat([146.1979986145376, -16.865253472483754]),
       zoom: 10
     });
+  }
+
+  /**
+   * Start drawing a polygon on the map.
+   * The polygon will be temporarily visible while being drawn.
+   * Once complete, the GeoJSON is returned via onSuccess callback.
+   *
+   * @param handlers Callbacks for success and cancellation
+   */
+  startDrawPolygon(handlers: PolygonDrawHandlers): void {
+    // Cancel any existing drawing
+    this.cancelDrawPolygon();
+
+    this.drawHandlers = handlers;
+
+    // Create a temporary vector source and layer for drawing
+    this.drawSource = new VectorSource({ wrapX: false });
+    this.drawLayer = new VectorLayer({
+      source: this.drawSource,
+      style: new Style({
+        stroke: new Stroke({
+          color: 'rgba(0, 123, 255, 0.8)',
+          width: 2
+        }),
+        fill: new Fill({
+          color: 'rgba(0, 123, 255, 0.2)'
+        })
+      })
+    });
+
+    // Add the temporary layer to the map
+    this.map.addLayer(this.drawLayer);
+
+    // Create the draw interaction
+    this.isDrawingPolygon = true;
+    this.drawInteraction = new Draw({
+      source: this.drawSource,
+      type: 'Polygon'
+    });
+
+    // Handle draw end event
+    this.drawInteraction.on('drawend', (event: DrawEvent) => {
+      this.handleDrawEnd(event.feature);
+    });
+
+    // Add the interaction to the map
+    this.map.addInteraction(this.drawInteraction);
+  }
+
+  /**
+   * Cancel the current polygon drawing operation.
+   * Removes the draw interaction and temporary layer.
+   */
+  cancelDrawPolygon(): void {
+    if (this.drawInteraction) {
+      this.map.removeInteraction(this.drawInteraction);
+      this.drawInteraction = null;
+      this.isDrawingPolygon = false;
+    }
+
+    if (this.drawLayer) {
+      this.map.removeLayer(this.drawLayer);
+      this.drawLayer = null;
+    }
+
+    this.drawSource = null;
+
+    if (this.drawHandlers?.onCancelled) {
+      this.drawHandlers.onCancelled();
+    }
+
+    this.drawHandlers = null;
+  }
+
+  /**
+   * Remove the last point from the polygon being drawn.
+   * Useful for an "undo" button during drawing.
+   */
+  undoLastDrawPoint(): void {
+    if (this.drawInteraction) {
+      this.drawInteraction.removeLastPoint();
+    }
+  }
+
+  /**
+   * Handle the completion of polygon drawing.
+   * Converts the feature to GeoJSON and calls the success handler.
+   *
+   * @param feature The drawn polygon feature
+   */
+  private handleDrawEnd(feature: Feature<Geometry>): void {
+    try {
+      // Convert the feature to GeoJSON
+      const geojson = this.geojsonFormat.writeFeature(feature, {
+        dataProjection: 'EPSG:4326',
+        featureProjection: this.map.getView().getProjection()
+      });
+
+      // Call the success handler
+      if (this.drawHandlers?.onSuccess) {
+        this.drawHandlers.onSuccess(geojson);
+      }
+
+      // Clean up the drawing state after a short delay
+      // This allows the user to see the completed polygon briefly
+      setTimeout(() => {
+        this.cleanupDrawing();
+      }, 500);
+    } catch (error) {
+      console.error('Error converting polygon to GeoJSON:', error);
+      this.snackbar.open('Error processing drawn polygon', 'OK');
+      this.cleanupDrawing();
+    }
+  }
+
+  /**
+   * Clean up drawing interaction and temporary layer.
+   */
+  private cleanupDrawing(): void {
+    if (this.drawInteraction) {
+      this.map.removeInteraction(this.drawInteraction);
+      this.drawInteraction = null;
+      this.isDrawingPolygon = false;
+    }
+
+    if (this.drawLayer) {
+      this.map.removeLayer(this.drawLayer);
+      this.drawLayer = null;
+    }
+
+    this.drawSource = null;
+    this.drawHandlers = null;
   }
 
   /**

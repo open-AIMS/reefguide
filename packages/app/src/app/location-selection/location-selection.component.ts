@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltip } from '@angular/material/tooltip';
 import { SuitabilityAssessmentInput } from '@reefguide/types';
@@ -22,6 +23,7 @@ import { CriteriaPayloads } from './reef-guide-api.types';
 import { ReefGuideConfigService } from './reef-guide-config.service';
 import { MAP_UI, MapUI, ReefGuideMapService } from './reef-guide-map.service';
 import { SelectionCriteriaComponent } from './selection-criteria/selection-criteria.component';
+import { MapToolbarComponent } from './map-toolbar/map-toolbar.component';
 
 type DrawerModes = 'criteria' | 'style';
 
@@ -47,7 +49,8 @@ type DrawerModes = 'criteria' | 'style';
     MatMenuModule,
     ReefMapComponent,
     LayerStyleEditorComponent,
-    ProfileButtonComponent
+    ProfileButtonComponent,
+    MapToolbarComponent
   ],
   providers: [ReefGuideMapService, { provide: MAP_UI, useExisting: LocationSelectionComponent }],
   templateUrl: './location-selection.component.html',
@@ -58,6 +61,7 @@ export class LocationSelectionComponent implements MapUI {
   readonly authService = inject(AuthService);
   readonly api = inject(WebApiService);
   readonly mapService = inject(ReefGuideMapService);
+  private readonly snackbar = inject(MatSnackBar);
 
   map = viewChild.required(ReefMapComponent);
 
@@ -162,5 +166,55 @@ export class LocationSelectionComponent implements MapUI {
 
       this.mapService.addSuitabilityAssessmentJob(ssPayload);
     }
+  }
+
+  /**
+   * Handle successful polygon drawing
+   * @param geojson The drawn polygon as GeoJSON string
+   */
+  onPolygonDrawn(geojson: string): void {
+    console.log('Polygon drawn:', geojson);
+
+    try {
+      const polygon = JSON.parse(geojson);
+      console.log('Parsed polygon:', polygon);
+
+      // Create the polygon via API
+      this.api.createPolygon({ polygon }).subscribe({
+        next: response => {
+          console.log('Polygon created:', response.polygon);
+          this.snackbar.open('Polygon saved successfully', 'OK', {
+            duration: 3000
+          });
+
+          // TODO: Add logic to:
+          // - Refresh list of polygons if displayed
+          // - Navigate to polygon detail view
+          // - Enable adding notes to the new polygon
+        },
+        error: error => {
+          console.error('Error creating polygon:', error);
+          const errorMessage = error?.error?.message || 'Failed to save polygon';
+          this.snackbar.open(`Error: ${errorMessage}`, 'OK', {
+            duration: 5000
+          });
+        }
+      });
+    } catch (error) {
+      console.error('Error parsing polygon GeoJSON:', error);
+      this.snackbar.open('Error processing polygon data', 'OK', {
+        duration: 3000
+      });
+    }
+  }
+
+  /**
+   * Handle polygon drawing cancellation
+   */
+  onDrawingCancelled(): void {
+    console.log('Polygon drawing cancelled');
+    this.snackbar.open('Drawing cancelled', 'OK', {
+      duration: 2000
+    });
   }
 }

@@ -76,6 +76,13 @@
               </mat-progress-spinner>
             }
           </div>
+
+          <!-- Map Toolbar with polygon drawing tools -->
+          <app-map-toolbar
+            (polygonDrawn)="onPolygonDrawn($event)"
+            (drawingCancelled)="onDrawingCancelled()"
+          ></app-map-toolbar>
+
           <!--          TODO polygon notes -->
           <!--          <button-->
           <!--            mat-mini-fab-->
@@ -88,7 +95,6 @@
         </div>
       }
     </app-reef-map>
-
     <!--
     TODO move to map, tile loading progress for OpenLayers
     This was originally developed for ArcGis map.

@@ -1,191 +1,308 @@
-import express, { Router } from 'express';
-import { z } from 'zod';
+import { prisma } from '@reefguide/db';
+import {
+  CreateNoteInputSchema,
+  CreateNoteResponse,
+  DeleteNoteResponse,
+  GetNoteResponse,
+  GetNotesResponse,
+  NoteParamsSchema,
+  PolygonParamsSchema,
+  UpdateNoteInputSchema,
+  UpdateNoteResponse
+} from '@reefguide/types';
+import express, { Response, Router } from 'express';
 import { processRequest } from 'zod-express-middleware';
 import { passport } from '../auth/passportConfig';
 import { assertUserHasRoleMiddleware, userIsAdmin } from '../auth/utils';
-import { NotFoundException, UnauthorizedException } from '../exceptions';
-import { prisma } from '@reefguide/db';
+import { InternalServerError, NotFoundException, UnauthorizedException } from '../exceptions';
+
 require('express-async-errors');
 
 export const router: Router = express.Router();
 
-// Input validation schemas
-const createNoteSchema = z.object({
-  content: z.string(),
-  polygonId: z.number()
-});
-
-const updateNoteSchema = z.object({
-  content: z.string()
-});
-
-/** Get all notes for the user, or all notes if admin */
+/**
+ * Get all notes for the user, or all notes if admin
+ */
 router.get(
   '/',
   passport.authenticate('jwt', { session: false }),
   assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
-  async (req, res) => {
+  async (req, res: Response<GetNotesResponse>) => {
     if (!req.user) {
       throw new UnauthorizedException();
     }
 
-    let notes;
+    try {
+      let notes;
 
-    if (userIsAdmin(req.user)) {
-      // Admin gets all notes
-      notes = await prisma.polygonNote.findMany({});
-    } else {
-      // Normal users get only their own notes
-      notes = await prisma.polygonNote.findMany({
-        where: { user_id: req.user.id }
-      });
+      if (userIsAdmin(req.user)) {
+        // Admin gets all notes with user information
+        notes = await prisma.polygonNote.findMany({
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true
+              }
+            }
+          }
+        });
+      } else {
+        // Normal users get only their own notes
+        notes = await prisma.polygonNote.findMany({
+          where: { user_id: req.user.id },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true
+              }
+            }
+          }
+        });
+      }
+
+      res.json({ notes });
+    } catch (error) {
+      throw new InternalServerError('Failed to get notes. Error: ' + error, error as Error);
     }
-
-    res.json({ notes });
   }
 );
 
-/** Get all notes for a specific polygon*/
+/**
+ * Get all notes for a specific polygon
+ */
 router.get(
-  '/:id',
-  processRequest({ params: z.object({ id: z.string() }) }),
+  '/polygon/:id',
   passport.authenticate('jwt', { session: false }),
   assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
-  async (req, res) => {
+  processRequest({
+    params: PolygonParamsSchema
+  }),
+  async (req, res: Response<GetNotesResponse>) => {
     if (!req.user) {
       throw new UnauthorizedException();
     }
-    const polygonId = parseInt(req.params.id);
 
-    const polygon = await prisma.polygon.findUnique({
-      where: { id: polygonId }
-    });
+    try {
+      const polygonId = parseInt(req.params.id);
 
-    if (!polygon) {
-      throw new NotFoundException('Polygon not found');
+      const polygon = await prisma.polygon.findUnique({
+        where: { id: polygonId }
+      });
+
+      if (!polygon) {
+        throw new NotFoundException('Polygon not found');
+      }
+
+      if (!userIsAdmin(req.user) && polygon.user_id !== req.user.id) {
+        throw new UnauthorizedException(
+          'You do not have permission to view notes for this polygon'
+        );
+      }
+
+      const notes = await prisma.polygonNote.findMany({
+        where: { polygon_id: polygonId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      res.json({ notes });
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof UnauthorizedException) throw error;
+      throw new InternalServerError('Failed to get polygon notes. Error: ' + error, error as Error);
     }
-
-    if (!userIsAdmin(req.user) && polygon.user_id !== req.user.id) {
-      throw new UnauthorizedException();
-    }
-
-    const notes = await prisma.polygonNote.findMany({
-      where: { polygon_id: polygonId }
-    });
-
-    res.json({ notes });
   }
 );
 
-/** Create a new note for the given polygon ID */
+/**
+ * Get a specific note by ID
+ */
+router.get(
+  '/:id',
+  passport.authenticate('jwt', { session: false }),
+  assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
+  processRequest({
+    params: NoteParamsSchema
+  }),
+  async (req, res: Response<GetNoteResponse>) => {
+    if (!req.user) {
+      throw new UnauthorizedException();
+    }
+
+    try {
+      const noteId = parseInt(req.params.id);
+
+      const note = await prisma.polygonNote.findUnique({
+        where: { id: noteId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true
+            }
+          },
+          polygon: true
+        }
+      });
+
+      if (!note) {
+        throw new NotFoundException('Note not found');
+      }
+
+      if (!userIsAdmin(req.user) && note.user_id !== req.user.id) {
+        throw new UnauthorizedException('You do not have permission to view this note');
+      }
+
+      res.json({ note });
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof UnauthorizedException) throw error;
+      throw new InternalServerError('Failed to get note. Error: ' + error, error as Error);
+    }
+  }
+);
+
+/**
+ * Create a new note for the given polygon ID
+ */
 router.post(
   '/',
-  processRequest({
-    body: createNoteSchema
-  }),
   passport.authenticate('jwt', { session: false }),
   assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
-  async (req, res) => {
+  processRequest({
+    body: CreateNoteInputSchema
+  }),
+  async (req, res: Response<CreateNoteResponse>) => {
     if (!req.user) {
       throw new UnauthorizedException();
     }
-    const userId = req.user.id;
-    const { content: note, polygonId } = req.body;
 
-    const polygon = await prisma.polygon.findUnique({
-      where: { id: polygonId }
-    });
+    try {
+      const userId = req.user.id;
+      const { content, polygonId } = req.body;
 
-    if (!polygon) {
-      throw new NotFoundException('Polygon not found');
-    }
+      const polygon = await prisma.polygon.findUnique({
+        where: { id: polygonId }
+      });
 
-    if (!userIsAdmin(req.user) && polygon.user_id !== userId) {
-      throw new UnauthorizedException('You do not have permission to add notes to this polygon');
-    }
-
-    const newNote = await prisma.polygonNote.create({
-      data: {
-        content: note,
-        user_id: userId,
-        polygon_id: polygonId
+      if (!polygon) {
+        throw new NotFoundException('Polygon not found');
       }
-    });
 
-    res.status(200).json({
-      note: newNote
-    });
+      if (!userIsAdmin(req.user) && polygon.user_id !== userId) {
+        throw new UnauthorizedException('You do not have permission to add notes to this polygon');
+      }
+
+      const newNote = await prisma.polygonNote.create({
+        data: {
+          content,
+          user_id: userId,
+          polygon_id: polygonId
+        }
+      });
+
+      res.status(201).json({
+        note: newNote
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof UnauthorizedException) throw error;
+      throw new InternalServerError('Failed to create note. Error: ' + error, error as Error);
+    }
   }
 );
 
-/** Update a note by note ID */
+/**
+ * Update a note by note ID
+ */
 router.put(
   '/:id',
-  processRequest({
-    body: updateNoteSchema,
-    params: z.object({ id: z.string() })
-  }),
   passport.authenticate('jwt', { session: false }),
   assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
-  async (req, res) => {
+  processRequest({
+    params: NoteParamsSchema,
+    body: UpdateNoteInputSchema
+  }),
+  async (req, res: Response<UpdateNoteResponse>) => {
     if (!req.user) {
       throw new UnauthorizedException();
     }
-    const userId = req.user.id;
-    const noteId = parseInt(req.params.id);
-    const { content: note } = req.body;
 
-    const existingNote = await prisma.polygonNote.findUnique({
-      where: { id: noteId }
-    });
+    try {
+      const userId = req.user.id;
+      const noteId = parseInt(req.params.id);
+      const { content } = req.body;
 
-    if (!existingNote) {
-      throw new NotFoundException('Note not found');
-    }
+      const existingNote = await prisma.polygonNote.findUnique({
+        where: { id: noteId }
+      });
 
-    if (!userIsAdmin(req.user) && existingNote.user_id !== userId) {
-      throw new UnauthorizedException();
-    }
-
-    const updatedPolygon = await prisma.polygonNote.update({
-      where: { id: noteId },
-      data: {
-        content: note
+      if (!existingNote) {
+        throw new NotFoundException('Note not found');
       }
-    });
 
-    res.json({ note: updatedPolygon });
+      if (!userIsAdmin(req.user) && existingNote.user_id !== userId) {
+        throw new UnauthorizedException('You do not have permission to update this note');
+      }
+
+      const updatedNote = await prisma.polygonNote.update({
+        where: { id: noteId },
+        data: {
+          content
+        }
+      });
+
+      res.json({ note: updatedNote });
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof UnauthorizedException) throw error;
+      throw new InternalServerError('Failed to update note. Error: ' + error, error as Error);
+    }
   }
 );
 
-/** Delete a note by note ID */
+/**
+ * Delete a note by note ID
+ */
 router.delete(
   '/:id',
-  processRequest({ params: z.object({ id: z.string() }) }),
   passport.authenticate('jwt', { session: false }),
   assertUserHasRoleMiddleware({ sufficientRoles: ['ANALYST'] }),
-  async (req, res) => {
+  processRequest({
+    params: NoteParamsSchema
+  }),
+  async (req, res: Response<DeleteNoteResponse>) => {
     if (!req.user) {
       throw new UnauthorizedException();
     }
-    const noteId = parseInt(req.params.id);
 
-    const existingNote = await prisma.polygonNote.findUnique({
-      where: { id: noteId }
-    });
+    try {
+      const noteId = parseInt(req.params.id);
 
-    if (!existingNote) {
-      throw new NotFoundException('Note not found');
+      const existingNote = await prisma.polygonNote.findUnique({
+        where: { id: noteId }
+      });
+
+      if (!existingNote) {
+        throw new NotFoundException('Note not found');
+      }
+
+      if (!userIsAdmin(req.user) && existingNote.user_id !== req.user.id) {
+        throw new UnauthorizedException('You do not have permission to delete this note');
+      }
+
+      await prisma.polygonNote.delete({
+        where: { id: noteId }
+      });
+
+      res.json({ message: 'Note deleted successfully' });
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof UnauthorizedException) throw error;
+      throw new InternalServerError('Failed to delete note. Error: ' + error, error as Error);
     }
-
-    if (!userIsAdmin(req.user) && existingNote.user_id !== req.user.id) {
-      throw new UnauthorizedException();
-    }
-
-    await prisma.polygonNote.delete({
-      where: { id: noteId }
-    });
-
-    res.status(204).send();
   }
 );

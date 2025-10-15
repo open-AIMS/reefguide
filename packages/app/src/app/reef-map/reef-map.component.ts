@@ -221,40 +221,42 @@ export class ReefMapComponent implements AfterViewInit {
   }
 
   private onClick(event: MapBrowserEvent) {
-    console.log('map click', event);
-    const features: FeatureRef[] = [];
-    this.map.forEachFeatureAtPixel(event.pixel, (feature, layer, geometry) => {
-      console.log('feature at click', feature.getProperties(), feature);
-      // Cluster point has child features
-      const childFeatures = feature.get('features');
-      if (childFeatures instanceof Array) {
-        for (const child of childFeatures) {
+    // We only do things here if we are not busy drawing a polygon
+    if (!this.mapService?.isDrawingPolygon) {
+      const features: FeatureRef[] = [];
+      this.map.forEachFeatureAtPixel(event.pixel, (feature, layer, geometry) => {
+        console.log('feature at click', feature.getProperties(), feature);
+        // Cluster point has child features
+        const childFeatures = feature.get('features');
+        if (childFeatures instanceof Array) {
+          for (const child of childFeatures) {
+            features.push({
+              feature: child,
+              layer,
+              geometry
+            });
+          }
+        } else {
           features.push({
-            feature: child,
+            feature,
             layer,
             geometry
           });
         }
-      } else {
-        features.push({
-          feature,
-          layer,
-          geometry
-        });
-      }
-    });
+      });
 
-    if (features.length === 0) {
-      return;
+      if (features.length === 0) {
+        return;
+      }
+
+      this.dialog.open(FeatureInfoDialogComponent, {
+        // allows moving map under dialog, but no close on outside click
+        // hasBackdrop: false,
+        data: {
+          features
+        }
+      });
     }
-
-    this.dialog.open(FeatureInfoDialogComponent, {
-      // allows moving map under dialog, but no close on outside click
-      // hasBackdrop: false,
-      data: {
-        features
-      }
-    });
   }
 
   /**

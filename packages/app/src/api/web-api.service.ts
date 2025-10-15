@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { JobType, Polygon, PolygonNote, User, UserRole } from '@reefguide/db';
+import { JobType, User, UserRole } from '@reefguide/db';
 import {
   AddGroupManagersInput,
   AddGroupManagersResponse,
@@ -9,14 +9,24 @@ import {
   CreateGroupInput,
   CreateGroupResponse,
   CreateJobResponse,
+  CreateNoteInput,
+  CreateNoteResponse,
+  CreatePolygonInput,
+  CreatePolygonResponse,
   CreateProjectInput,
   CreateProjectResponse,
   CriteriaRangeOutput,
   DeleteGroupResponse,
+  DeleteNoteResponse,
+  DeletePolygonResponse,
   DeleteProjectResponse,
   DownloadResponse,
   GetGroupResponse,
   GetGroupsResponse,
+  GetNoteResponse,
+  GetNotesResponse,
+  GetPolygonResponse,
+  GetPolygonsResponse,
   GetProjectResponse,
   GetProjectsResponse,
   JobDetailsResponse,
@@ -47,6 +57,10 @@ import {
   UnshareProjectWithUsersResponse,
   UpdateGroupInput,
   UpdateGroupResponse,
+  UpdateNoteInput,
+  UpdateNoteResponse,
+  UpdatePolygonInput,
+  UpdatePolygonResponse,
   UpdateProjectInput,
   UpdateProjectResponse
 } from '@reefguide/types';
@@ -102,46 +116,88 @@ export class WebApiService {
     return this.http.get<ProfileResponse>(`${this.base}/auth/profile`);
   }
 
-  getPolygons(): Observable<Polygon[]> {
-    return this.http.get<Polygon[]>(`${this.base}/polygons`);
+  // ## Polygons ##
+
+  /**
+   * Get all polygons for the current user (or all if admin)
+   */
+  getPolygons(): Observable<GetPolygonsResponse> {
+    return this.http.get<GetPolygonsResponse>(`${this.base}/polygons`);
   }
 
-  getPolygon(id: string): Observable<Polygon> {
-    return this.http.get<Polygon>(`${this.base}/polygons/${id}`);
+  /**
+   * Get a specific polygon by ID with full relations (user and notes)
+   */
+  getPolygon(id: number): Observable<GetPolygonResponse> {
+    return this.http.get<GetPolygonResponse>(`${this.base}/polygons/${id}`);
   }
 
-  // TODO fix types where using any
-  createPolygon(geoJSON: any): Observable<any> {
-    return this.http.post<any>(`${this.base}/polygons`, geoJSON);
+  /**
+   * Create a new polygon with GeoJSON data
+   */
+  createPolygon(polygonData: CreatePolygonInput): Observable<CreatePolygonResponse> {
+    return this.http.post<CreatePolygonResponse>(`${this.base}/polygons`, polygonData);
   }
 
-  updatePolygon(id: string, geoJSON: any): Observable<void> {
-    return this.http.put<any>(`${this.base}/polygons/${id}`, geoJSON);
+  /**
+   * Update an existing polygon
+   */
+  updatePolygon(id: number, polygonData: UpdatePolygonInput): Observable<UpdatePolygonResponse> {
+    return this.http.put<UpdatePolygonResponse>(`${this.base}/polygons/${id}`, polygonData);
   }
 
-  deletePolygon(id: string) {
-    return this.http.delete(`${this.base}/polygons/${id}`);
+  /**
+   * Delete a polygon by ID
+   */
+  deletePolygon(id: number): Observable<DeletePolygonResponse> {
+    return this.http.delete<DeletePolygonResponse>(`${this.base}/polygons/${id}`);
   }
 
-  // TODO remaining note endpoints, types
-  getNotes(): Observable<Array<PolygonNote>> {
-    return this.http.get<Array<PolygonNote>>(`${this.base}/notes`);
+  // ## Notes ##
+
+  /**
+   * Get all notes for the current user (or all if admin)
+   */
+  getNotes(): Observable<GetNotesResponse> {
+    return this.http.get<GetNotesResponse>(`${this.base}/notes`);
   }
 
-  getNote(id: string): Observable<PolygonNote> {
-    return this.http.get<PolygonNote>(`${this.base}/notes/${id}`);
+  /**
+   * Get all notes for a specific polygon
+   */
+  getPolygonNotes(polygonId: number): Observable<GetNotesResponse> {
+    return this.http.get<GetNotesResponse>(`${this.base}/notes/polygon/${polygonId}`);
   }
 
-  createNote(polygonId: number, content: string) {
-    return this.http.post(`${this.base}/notes`, {
-      polygonId,
-      content
-    });
+  /**
+   * Get a specific note by ID with full relations (user and polygon)
+   */
+  getNote(id: number): Observable<GetNoteResponse> {
+    return this.http.get<GetNoteResponse>(`${this.base}/notes/${id}`);
   }
 
-  updateNote(id: string, content: string) {
-    return this.http.put(`${this.base}/notes/${id}`, { content });
+  /**
+   * Create a new note for a polygon
+   */
+  createNote(noteData: CreateNoteInput): Observable<CreateNoteResponse> {
+    return this.http.post<CreateNoteResponse>(`${this.base}/notes`, noteData);
   }
+
+  /**
+   * Update an existing note
+   */
+  updateNote(id: number, noteData: UpdateNoteInput): Observable<UpdateNoteResponse> {
+    return this.http.put<UpdateNoteResponse>(`${this.base}/notes/${id}`, noteData);
+  }
+
+  /**
+   * Delete a note by ID
+   */
+  deleteNote(id: number): Observable<DeleteNoteResponse> {
+    return this.http.delete<DeleteNoteResponse>(`${this.base}/notes/${id}`);
+  }
+
+  // ## Admin ##
 
   getClusterStatus() {
     return this.http.get<any>(`${this.base}/admin/status`);
@@ -154,6 +210,8 @@ export class WebApiService {
   redeployCluster() {
     return this.http.post(`${this.base}/admin/redeploy`, {});
   }
+
+  // ## Users ##
 
   getUsers() {
     return this.http.get<User[]>(this.baseUsers);
@@ -587,6 +645,8 @@ export class WebApiService {
     );
   }
 
+  // ## Projects ##
+
   getProjects(query?: {
     type?: string;
     name?: string;
@@ -618,7 +678,8 @@ export class WebApiService {
     return this.http.get<GetProjectsResponse>(`${this.base}/projects/user/me`);
   }
 
-  // Reset actions (don't require auth)
+  // ## Password Reset ##
+
   requestPasswordReset(payload: PostCreateResetRequest): Observable<PostCreateResetResponse> {
     return this.http.post<PostCreateResetResponse>(`${this.base}/password-reset/request`, payload);
   }
@@ -755,12 +816,15 @@ export class WebApiService {
     });
   }
 
-  // Toggle/set the publicity
+  // ## Project Sharing ##
+
+  /**
+   * Set project publicity (public or private)
+   */
   setProjectPublic(
     id: number,
     input: SetProjectPublicityInput
   ): Observable<SetProjectPublicityResponse> {
-    console.log('POSTING');
     return this.http.put<SetProjectPublicityResponse>(
       `${this.base}/projects/${id}/publicity`,
       input
