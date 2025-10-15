@@ -1,6 +1,6 @@
 import { AsyncPipe, CommonModule } from '@angular/common';
 import { Component, effect, inject, signal, viewChild, ViewChild } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
@@ -25,6 +25,7 @@ import { MAP_UI, MapUI, ReefGuideMapService } from './reef-guide-map.service';
 import { SelectionCriteriaComponent } from './selection-criteria/selection-criteria.component';
 import { MapToolbarComponent } from './map-toolbar/map-toolbar.component';
 import { PolygonMapService } from './polygon-map.service';
+import { ActivatedRoute } from '@angular/router';
 
 type DrawerModes = 'criteria' | 'style';
 
@@ -67,6 +68,8 @@ export class LocationSelectionComponent implements MapUI {
   readonly api = inject(WebApiService);
   readonly mapService = inject(ReefGuideMapService);
   private readonly snackbar = inject(MatSnackBar);
+  private activatedRoute = inject(ActivatedRoute);
+  private projectId = toSignal<string>(this.activatedRoute.params.pipe(map(p => p['projectId'])));
 
   map = viewChild.required(ReefMapComponent);
 
@@ -185,24 +188,36 @@ export class LocationSelectionComponent implements MapUI {
       console.log('Parsed polygon:', polygon);
 
       // Create the polygon via API
-      this.api.createPolygon({ polygon }).subscribe({
-        next: response => {
-          console.log('Polygon created:', response.polygon);
-          this.snackbar.open('Polygon saved successfully', 'OK', {
-            duration: 3000
-          });
-
-          // Refresh the polygon layer on the map
-          this.mapService.polygonMapService.refresh();
-        },
-        error: error => {
-          console.error('Error creating polygon:', error);
-          const errorMessage = error?.error?.message || 'Failed to save polygon';
-          this.snackbar.open(`Error: ${errorMessage}`, 'OK', {
+      if (!this.projectId()) {
+        // Routing stuffed up here!
+        console.error('There is no project ID, this route should not have loaded!');
+        this.snackbar.open(
+          `Error: you appear to have navigated somewhere you shouldn't be! Try refreshing the app.`,
+          'OK',
+          {
             duration: 5000
-          });
-        }
-      });
+          }
+        );
+      } else {
+        this.api.createPolygon({ polygon, projectId: parseInt(this.projectId()!) }).subscribe({
+          next: response => {
+            console.log('Polygon created:', response.polygon);
+            this.snackbar.open('Polygon saved successfully', 'OK', {
+              duration: 3000
+            });
+
+            // Refresh the polygon layer on the map
+            this.mapService.polygonMapService.refresh();
+          },
+          error: error => {
+            console.error('Error creating polygon:', error);
+            const errorMessage = error?.error?.message || 'Failed to save polygon';
+            this.snackbar.open(`Error: ${errorMessage}`, 'OK', {
+              duration: 5000
+            });
+          }
+        });
+      }
     } catch (error) {
       console.error('Error parsing polygon GeoJSON:', error);
       this.snackbar.open('Error processing polygon data', 'OK', {

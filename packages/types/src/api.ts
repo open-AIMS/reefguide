@@ -981,19 +981,29 @@ export const PolygonParamsSchema = z.object({
 export type PolygonParams = z.infer<typeof PolygonParamsSchema>;
 
 export const CreatePolygonInputSchema = z.object({
-  polygon: GeoJSONPolygonSchema
+  polygon: GeoJSONPolygonSchema,
+  projectId: z.number().positive('Project ID must be a positive number').optional()
 });
 export type CreatePolygonInput = z.infer<typeof CreatePolygonInputSchema>;
 
 export const UpdatePolygonInputSchema = z.object({
-  polygon: GeoJSONPolygonSchema
+  polygon: GeoJSONPolygonSchema,
+  projectId: z.number().positive('Project ID must be a positive number').optional()
 });
 export type UpdatePolygonInput = z.infer<typeof UpdatePolygonInputSchema>;
 
 export const GetPolygonsQuerySchema = z.object({
   userId: z.string().optional(),
-  limit: z.number().optional(),
-  offset: z.number().optional()
+  projectId: z.string().optional(),
+  onlyMine: z
+    .string()
+    .optional(),
+  limit: z
+    .string()
+    .optional(),
+  offset: z
+    .string()
+    .optional()
 });
 export type GetPolygonsQuery = z.infer<typeof GetPolygonsQuerySchema>;
 
@@ -1023,11 +1033,12 @@ export const GetNotesQuerySchema = z.object({
 export type GetNotesQuery = z.infer<typeof GetNotesQuerySchema>;
 
 // Base Polygon Schema (matches Prisma model exactly)
-// Prisma model: id, created_at, user_id, polygon (Json), notes (relation)
+// Prisma model: id, created_at, user_id, project_id, polygon (Json), notes (relation)
 export const PolygonReferenceSchema = z.object({
   id: z.number(),
   polygon: z.any(), // Json type in Prisma - stores GeoJSON object
   user_id: z.number(),
+  project_id: z.number().nullable(),
   created_at: z.date()
 });
 export type PolygonReference = z.infer<typeof PolygonReferenceSchema>;
