@@ -10,7 +10,7 @@ import {
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { ReefGuideMapService } from '../reef-guide-map.service';
-import { CriteriaPayloads, SiteSuitabilityCriteria } from '../reef-guide-api.types';
+import { CriteriaPayloads, SuitabilityAssessmentExclusiveInput } from '../reef-guide-api.types';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
@@ -29,7 +29,7 @@ import {
   tap
 } from 'rxjs';
 import { WebApiService } from '../../../api/web-api.service';
-import { CriteriaRangeOutput } from '@reefguide/types';
+import { CriteriaRangeOutput, SuitabilityAssessmentInput, SharedCriteria } from '@reefguide/types';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { LayerController } from '../../map/openlayers-model';
@@ -169,10 +169,14 @@ export class SelectionCriteriaComponent {
   private reset$ = new Subject<void>();
 
   constructor() {
-    this.form = this.formBuilder.group({
+    // add type safety where payload property names must match.
+    type SharedProps = Pick<SharedCriteria, 'region' | 'reef_type'> | { siteSuitability: any };
+    this.form = this.formBuilder.group<Record<keyof SharedProps, any>>({
       region: [null, Validators.required],
       reef_type: ['slopes'],
-      siteSuitability: this.formBuilder.group<Record<keyof SiteSuitabilityCriteria, any>>({
+      siteSuitability: this.formBuilder.group<
+        Record<keyof SuitabilityAssessmentExclusiveInput, any>
+      >({
         x_dist: [450, [Validators.min(1), Validators.required]],
         y_dist: [20, [Validators.min(1), Validators.required]],
         threshold: [95, Validators.required]
@@ -407,22 +411,30 @@ export class SelectionCriteriaComponent {
 
     // console.log('criteria before/after', formValue.criteria, criteria);
 
-    let siteSuitability: SiteSuitabilityCriteria | undefined = undefined;
+    const sharedCriteria: SharedCriteria = {
+      region: formValue.region,
+      reef_type: formValue.reef_type,
+      // the *_min, *_max values
+      ...formValues
+    };
+
+    let siteSuitability: SuitabilityAssessmentInput | undefined = undefined;
     const siteForm = this.form.get('siteSuitability')!;
     if (this.enableSiteSuitability() && siteForm.valid) {
-      siteSuitability = siteForm.value;
+      siteSuitability = {
+        ...sharedCriteria,
+        ...siteForm.value
+      };
     }
 
     return {
-      criteria: {
-        region: formValue.region,
-        reef_type: formValue.reef_type,
+      regionalAssessment: {
+        ...sharedCriteria,
         // greyscale is assumed/required by ReefGuideMapService.addRegionalAssessmentLayer
         // see: docs/clearing-job-cache.md
-        cogColor: 'greyscale',
-        ...formValues
+        cogColor: 'greyscale'
       },
-      siteSuitability
+      suitabilityAssessment: siteSuitability
     };
   }
 

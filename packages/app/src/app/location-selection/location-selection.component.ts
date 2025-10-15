@@ -143,38 +143,19 @@ export class LocationSelectionComponent implements MapUI {
    * @param assessment
    */
   onAssess(assessment: CriteriaPayloads) {
-    const { criteria, siteSuitability } = assessment;
+    const { regionalAssessment, suitabilityAssessment } = assessment;
 
     this.mapService.clearAssessedLayers();
 
     // no need to await
     void this.drawer.close();
 
-    this.mapService.addRegionalAssessmentJob(criteria);
+    this.mapService.addRegionalAssessmentJob(regionalAssessment);
     // could load previous job result like this:
     // this.mapService.loadLayerFromJobResults(31);
 
-    if (siteSuitability) {
-      const ssPayload: SuitabilityAssessmentInput = {
-        // this introduces some properties that do not belong in this payload
-        ...criteria,
-        ...siteSuitability
-      };
-
-      // properties that are only in regional assessment payload and will be rejected by API.
-      type InvalidProps = Exclude<keyof typeof criteria, keyof SuitabilityAssessmentInput>;
-      // TypeScript does not support union to tuple, so easiest to create a
-      // dummy object in order to iterate these properties.
-      const propsToDelete: Record<InvalidProps, true> = {
-        cogColor: true
-      };
-
-      for (let prop in propsToDelete) {
-        // @ts-expect-error
-        delete ssPayload[prop];
-      }
-
-      this.mapService.addSuitabilityAssessmentJob(ssPayload);
+    if (suitabilityAssessment) {
+      this.mapService.addSuitabilityAssessmentJob(suitabilityAssessment);
     }
   }
 }
