@@ -9,8 +9,7 @@ describe('MapToolbarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MapToolbarComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(MapToolbarComponent);
     component = fixture.componentInstance;

@@ -222,7 +222,9 @@ export class PolygonEditorComponent implements OnInit {
     }
 
     // Simple browser confirmation
-    const confirmed = confirm('Are you sure you want to delete this polygon? This action cannot be undone.');
+    const confirmed = confirm(
+      'Are you sure you want to delete this polygon? This action cannot be undone.'
+    );
 
     if (!confirmed) {
       return;

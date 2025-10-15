@@ -1,10 +1,4 @@
-import {
-  DestroyRef,
-  inject,
-  Injectable,
-  Injector,
-  signal
-} from '@angular/core';
+import { DestroyRef, inject, Injectable, Injector, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { PolygonReference } from '@reefguide/types';

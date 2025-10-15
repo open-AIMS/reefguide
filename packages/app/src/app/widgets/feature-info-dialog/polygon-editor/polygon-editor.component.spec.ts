@@ -9,8 +9,7 @@ describe('PolygonEditorComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PolygonEditorComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(PolygonEditorComponent);
     component = fixture.componentInstance;

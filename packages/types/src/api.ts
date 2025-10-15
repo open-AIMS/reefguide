@@ -995,15 +995,9 @@ export type UpdatePolygonInput = z.infer<typeof UpdatePolygonInputSchema>;
 export const GetPolygonsQuerySchema = z.object({
   userId: z.string().optional(),
   projectId: z.string().optional(),
-  onlyMine: z
-    .string()
-    .optional(),
-  limit: z
-    .string()
-    .optional(),
-  offset: z
-    .string()
-    .optional()
+  onlyMine: z.string().optional(),
+  limit: z.string().optional(),
+  offset: z.string().optional()
 });
 export type GetPolygonsQuery = z.infer<typeof GetPolygonsQuerySchema>;
 
