@@ -252,6 +252,7 @@ export class ReefMapComponent implements AfterViewInit {
     this.dialog.open(FeatureInfoDialogComponent, {
       // allows moving map under dialog, but no close on outside click
       // hasBackdrop: false,
+      height: '85vh',
       data: {
         features
       }

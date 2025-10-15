@@ -1,17 +1,23 @@
 <h2 mat-dialog-title>{{ features.length >= 2 ? `${features.length} ` : '' }}Features at Click</h2>
 <mat-dialog-content>
-  <mat-tab-group dynamicHeight>
+  <mat-tab-group dynamicHeight [selectedIndex]="selectedTabIndex()">
     @for (f of features; track f.feature.getId()) {
       <mat-tab [label]="getLabel(f)">
-        <table>
-          @let rows = getPropertyRows(f);
-          @for (row of rows; track row[0]) {
-            <tr>
-              <th>{{ row[0] }}</th>
-              <td>{{ row[1] }}</td>
-            </tr>
-          }
-        </table>
+        @if (isPolygonFeature(f)) {
+          <!-- Render the polygon editor component for polygon features -->
+          <app-polygon-editor [featureRef]="f"></app-polygon-editor>
+        } @else {
+          <!-- Render the default property table for other features -->
+          <table>
+            @let rows = getPropertyRows(f);
+            @for (row of rows; track row[0]) {
+              <tr>
+                <th>{{ row[0] }}</th>
+                <td>{{ row[1] }}</td>
+              </tr>
+            }
+          </table>
+        }
       </mat-tab>
     }
   </mat-tab-group>

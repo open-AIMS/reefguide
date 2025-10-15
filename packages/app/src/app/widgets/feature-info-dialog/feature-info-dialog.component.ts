@@ -1,23 +1,48 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
 import { FeatureRef } from '../../map/openlayers-types';
+import { PolygonEditorComponent } from './polygon-editor/polygon-editor.component';
+
+const USER_POLYGON_LAYER_ID = 'user-polygon-layer';
 
 @Component({
   selector: 'app-feature-info-dialog',
-  imports: [MatDialogModule, MatTabsModule],
+  imports: [MatDialogModule, MatTabsModule, PolygonEditorComponent],
   templateUrl: './feature-info-dialog.component.html',
   styleUrl: './feature-info-dialog.component.scss'
 })
-export class FeatureInfoDialogComponent {
+export class FeatureInfoDialogComponent implements OnInit {
   data = inject(MAT_DIALOG_DATA);
 
   features: FeatureRef[];
 
-  excludedProperties = new Set<string>(['geometry', '__layer']);
+  excludedProperties = new Set<string>(['geometry', '__layer', 'polygonId', 'userId', 'createdAt']);
+
+  /**
+   * Index of the initially selected tab (prioritizes polygon tabs)
+   */
+  selectedTabIndex = signal(0);
 
   constructor() {
     this.features = this.data.features;
+  }
+
+  ngOnInit(): void {
+    // Find the first polygon feature and select its tab
+    const polygonFeatureIndex = this.features.findIndex(f => this.isPolygonFeature(f));
+    if (polygonFeatureIndex !== -1) {
+      this.selectedTabIndex.set(polygonFeatureIndex);
+    }
+  }
+
+  /**
+   * Check if a feature is from the user polygon layer
+   * @param f - Feature reference
+   * @returns True if this is a polygon feature
+   */
+  isPolygonFeature(f: FeatureRef): boolean {
+    return f.layer?.get('id') === USER_POLYGON_LAYER_ID;
   }
 
   /**
@@ -34,25 +59,36 @@ export class FeatureInfoDialogComponent {
 
     let label: string;
 
-    // Get base label from feature property or fallback to ID
-    if (labelProp) {
-      label = feature.get(labelProp);
+    // Special handling for polygon features
+    if (this.isPolygonFeature(f)) {
+      const polygonId = feature.get('polygonId');
+      label = polygonId ? `Polygon #${polygonId}` : 'User Polygon';
     } else {
-      label = `id=${feature.getId()}`;
-    }
+      // Get base label from feature property or fallback to ID
+      if (labelProp) {
+        label = feature.get(labelProp);
+      } else {
+        label = `id=${feature.getId()}`;
+      }
 
-    // Apply prefix and postfix if available
-    if (layerPrefix) {
-      label = layerPrefix + label;
-    }
+      // Apply prefix and postfix if available
+      if (layerPrefix) {
+        label = layerPrefix + label;
+      }
 
-    if (layerPostfix) {
-      label = label + layerPostfix;
+      if (layerPostfix) {
+        label = label + layerPostfix;
+      }
     }
 
     return label;
   }
 
+  /**
+   * Get property rows for a feature (excludes internal properties)
+   * @param f - Feature reference
+   * @returns Array of [key, value] tuples
+   */
   getPropertyRows(f: FeatureRef) {
     return Object.entries(f.feature.getProperties()).filter(
       row => !this.excludedProperties.has(row[0])
