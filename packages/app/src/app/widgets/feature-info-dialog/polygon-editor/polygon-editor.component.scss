@@ -1,5 +1,4 @@
 .polygon-editor {
-  height: 100%;
   padding: 16px;
 
   .loading-container,
@@ -11,6 +10,16 @@
   // Details Card
   .details-card {
     margin-bottom: 16px;
+
+    mat-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .delete-polygon-button {
+        margin-left: auto;
+      }
+    }
 
     .detail-row {
       display: flex;
@@ -65,22 +74,45 @@
         .note-header {
           display: flex;
           justify-content: space-between;
+          align-items: center;
           margin-bottom: 8px;
           font-size: 0.9em;
 
           .note-author {
             font-weight: bold;
             color: #333;
+            flex: 1;
           }
 
-          .note-time {
-            color: #666;
+          .note-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            .note-time {
+              color: #666;
+              white-space: nowrap;
+            }
+
+            .delete-note-button {
+              width: 32px;
+              height: 32px;
+              line-height: 32px;
+
+              mat-icon {
+                font-size: 18px;
+                width: 18px;
+                height: 18px;
+                line-height: 18px;
+              }
+            }
           }
         }
 
         .note-content {
           color: #333;
           line-height: 1.4;
+          word-wrap: break-word;
         }
       }
     }

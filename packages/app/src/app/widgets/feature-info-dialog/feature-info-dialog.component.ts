@@ -1,10 +1,15 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { Component, inject, OnInit, output, signal } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
 import { FeatureRef } from '../../map/openlayers-types';
 import { PolygonEditorComponent } from './polygon-editor/polygon-editor.component';
 
 const USER_POLYGON_LAYER_ID = 'user-polygon-layer';
+
+export interface FeatureInfoDialogResult {
+  polygonDeleted: boolean;
+  polygonId: number;
+}
 
 @Component({
   selector: 'app-feature-info-dialog',
@@ -14,6 +19,7 @@ const USER_POLYGON_LAYER_ID = 'user-polygon-layer';
 })
 export class FeatureInfoDialogComponent implements OnInit {
   data = inject(MAT_DIALOG_DATA);
+  dialogRef = inject(MatDialogRef<FeatureInfoDialogComponent>);
 
   features: FeatureRef[];
 
@@ -34,6 +40,16 @@ export class FeatureInfoDialogComponent implements OnInit {
     if (polygonFeatureIndex !== -1) {
       this.selectedTabIndex.set(polygonFeatureIndex);
     }
+  }
+
+  /**
+   * Handle polygon deletion event from polygon editor
+   * Close the dialog and return the deleted polygon ID
+   * @param polygonId - ID of the deleted polygon
+   */
+  polygonDeletedEvent(polygonId: number): void {
+    // Close the dialog and pass the deleted polygon ID back to the parent
+    this.dialogRef.close({ polygonDeleted: true, polygonId } satisfies FeatureInfoDialogResult);
   }
 
   /**

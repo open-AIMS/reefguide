@@ -25,11 +25,15 @@ import { debounceTime, map, Observable, Subject } from 'rxjs';
 import { LayerProperties } from '../../types/layer.type';
 import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
 import { FeatureRef } from '../map/openlayers-types';
-import { FeatureInfoDialogComponent } from '../widgets/feature-info-dialog/feature-info-dialog.component';
+import {
+  FeatureInfoDialogComponent,
+  FeatureInfoDialogResult
+} from '../widgets/feature-info-dialog/feature-info-dialog.component';
 import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
 import { LayerListComponent } from '../widgets/layer-list/layer-list.component';
 import { ReefSearchService } from './reef-search.service';
 import { ReefSearchComponent } from './reef-search/reef-search.component';
+import { PolygonMapService } from '../location-selection/polygon-map.service';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -54,6 +58,7 @@ export class ReefMapComponent implements AfterViewInit {
   private readonly dialog = inject(MatDialog);
   readonly mapService = inject(ReefGuideMapService, { optional: true });
   reefSearchService = inject(ReefSearchService);
+  polygonMapService = inject(PolygonMapService);
 
   private readonly router = inject(Router);
 
@@ -249,14 +254,21 @@ export class ReefMapComponent implements AfterViewInit {
       return;
     }
 
-    this.dialog.open(FeatureInfoDialogComponent, {
-      // allows moving map under dialog, but no close on outside click
-      // hasBackdrop: false,
-      height: '85vh',
-      data: {
-        features
-      }
-    });
+    this.dialog
+      .open(FeatureInfoDialogComponent, {
+        // allows moving map under dialog, but no close on outside click
+        // hasBackdrop: false,
+        height: '85vh',
+        data: {
+          features
+        }
+      })
+      .afterClosed()
+      .subscribe((result: FeatureInfoDialogResult | undefined) => {
+        if (result?.polygonDeleted && result?.polygonId) {
+          this.polygonMapService.removePolygon(result.polygonId);
+        }
+      });
   }
 
   /**

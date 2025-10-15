@@ -10,6 +10,20 @@
       <mat-card class="details-card">
         <mat-card-header>
           <mat-card-title>Polygon Details</mat-card-title>
+          <button
+            mat-icon-button
+            color="warn"
+            (click)="deletePolygon()"
+            [disabled]="deletingPolygon()"
+            matTooltip="Delete polygon"
+            class="delete-polygon-button"
+          >
+            @if (deletingPolygon()) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              <mat-icon>delete</mat-icon>
+            }
+          </button>
         </mat-card-header>
         <mat-card-content>
           <div class="detail-row">
@@ -65,7 +79,23 @@
                 <div class="note-item">
                   <div class="note-header">
                     <span class="note-author">{{ note.user.email }}</span>
-                    <span class="note-time">{{ getRelativeTime(note.created_at) }}</span>
+                    <div class="note-actions">
+                      <span class="note-time">{{ getRelativeTime(note.created_at) }}</span>
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        (click)="deleteNote(note.id)"
+                        [disabled]="isNoteDeleting(note.id)"
+                        matTooltip="Delete comment"
+                        class="delete-note-button"
+                      >
+                        @if (isNoteDeleting(note.id)) {
+                          <mat-spinner diameter="16"></mat-spinner>
+                        } @else {
+                          <mat-icon>delete</mat-icon>
+                        }
+                      </button>
+                    </div>
                   </div>
                   <div class="note-content">{{ note.content }}</div>
                 </div>

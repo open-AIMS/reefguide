@@ -5,7 +5,10 @@
       <mat-tab [label]="getLabel(f)">
         @if (isPolygonFeature(f)) {
           <!-- Render the polygon editor component for polygon features -->
-          <app-polygon-editor [featureRef]="f"></app-polygon-editor>
+          <app-polygon-editor
+            [featureRef]="f"
+            (polygonDeleted)="polygonDeletedEvent($event)"
+          ></app-polygon-editor>
         } @else {
           <!-- Render the default property table for other features -->
           <table>
