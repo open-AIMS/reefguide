@@ -417,6 +417,9 @@ export class SelectionCriteriaComponent {
       criteria: {
         region: formValue.region,
         reef_type: formValue.reef_type,
+        // greyscale is assumed/required by ReefGuideMapService.addRegionalAssessmentLayer
+        // see: docs/clearing-job-cache.md
+        cogColor: 'greyscale',
         ...formValues
       },
       siteSuitability
