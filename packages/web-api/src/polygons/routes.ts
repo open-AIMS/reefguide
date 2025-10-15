@@ -1,91 +1,25 @@
-import express, { Response, Router } from 'express';
-import { processRequest } from 'zod-express-middleware';
-import { passport } from '../auth/passportConfig';
-import { assertUserHasRoleMiddleware, userIsAdmin } from '../auth/utils';
-import {
-  NotFoundException,
-  UnauthorizedException,
-  InternalServerError,
-  BadRequestException
-} from '../exceptions';
 import { Prisma, prisma } from '@reefguide/db';
 import {
   CreatePolygonInputSchema,
   CreatePolygonResponse,
-  UpdatePolygonInputSchema,
-  UpdatePolygonResponse,
-  GetPolygonResponse,
-  GetPolygonsResponse,
   DeletePolygonResponse,
+  GetPolygonResponse,
+  GetPolygonsQuerySchema,
+  GetPolygonsResponse,
   PolygonParamsSchema,
-  GetPolygonsQuerySchema
+  UpdatePolygonInputSchema,
+  UpdatePolygonResponse
 } from '@reefguide/types';
+import express, { Response, Router } from 'express';
+import { processRequest } from 'zod-express-middleware';
+import { passport } from '../auth/passportConfig';
+import { assertUserHasRoleMiddleware, userIsAdmin } from '../auth/utils';
+import { InternalServerError, NotFoundException, UnauthorizedException } from '../exceptions';
+import { userHasProjectAccess } from '../util';
 
 require('express-async-errors');
 
 export const router: Router = express.Router();
-
-/**
- * Helper function to check if user has access to a project
- * User has access if they:
- * - Own the project
- * - Project is shared with them directly
- * - Project is shared with a group they're in (as member, manager, or owner)
- */
-async function userHasProjectAccess(userId: number, projectId: number): Promise<boolean> {
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    include: {
-      userShares: true,
-      groupShares: {
-        include: {
-          group: {
-            include: {
-              members: true,
-              managers: true
-            }
-          }
-        }
-      }
-    }
-  });
-
-  if (!project) {
-    return false;
-  }
-
-  // Check if user owns the project
-  if (project.user_id === userId) {
-    return true;
-  }
-
-  // Check if project is directly shared with user
-  if (project.userShares.some(share => share.user_id === userId)) {
-    return true;
-  }
-
-  // Check if project is shared with a group the user is in
-  for (const groupShare of project.groupShares) {
-    const group = groupShare.group;
-
-    // Check if user is the group owner
-    if (group.owner_id === userId) {
-      return true;
-    }
-
-    // Check if user is a group member
-    if (group.members.some(member => member.user_id === userId)) {
-      return true;
-    }
-
-    // Check if user is a group manager
-    if (group.managers.some(manager => manager.user_id === userId)) {
-      return true;
-    }
-  }
-
-  return false;
-}
 
 /**
  * Get a specific polygon by ID
@@ -134,10 +68,13 @@ router.get(
       // Check permissions
       const isAdmin = userIsAdmin(req.user);
       const ownsPolygon = polygon.user_id === req.user.id;
-
       let hasProjectAccess = false;
-      if (polygon.project_id) {
-        hasProjectAccess = await userHasProjectAccess(req.user.id, polygon.project_id);
+
+      // Only check this if necessary
+      if (!isAdmin && !ownsPolygon) {
+        if (polygon.project_id) {
+          hasProjectAccess = await userHasProjectAccess(req.user.id, polygon.project_id);
+        }
       }
 
       if (!isAdmin && !ownsPolygon && !hasProjectAccess) {

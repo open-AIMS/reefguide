@@ -1,4 +1,10 @@
-import { DestroyRef, inject, Injectable, Injector, signal } from '@angular/core';
+import {
+  DestroyRef,
+  inject,
+  Injectable,
+  Injector,
+  signal
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { PolygonReference } from '@reefguide/types';
@@ -19,6 +25,7 @@ export const USER_POLYGON_LAYER_ID = 'user-polygon-layer';
 /**
  * Service for managing user-drawn polygons on the map.
  * Handles fetching polygons from the API and rendering them as OpenLayers vector layers.
+ * Can work with or without a specific project scope.
  */
 @Injectable()
 export class PolygonMapService {
@@ -58,12 +65,17 @@ export class PolygonMapService {
   /**
    * Trigger to refresh polygons from API
    */
-  private readonly refreshTrigger$ = new Subject<void>();
+  private readonly refreshTrigger$ = new Subject<{ projectId?: number }>();
 
   /**
    * Observable of current polygons
    */
   readonly polygons$ = new BehaviorSubject<PolygonReference[]>([]);
+
+  /**
+   * Currently active project ID (for tracking state)
+   */
+  private currentProjectId?: number;
 
   constructor() {
     this.setupRefreshListener();
@@ -72,34 +84,39 @@ export class PolygonMapService {
   /**
    * Set the map instance
    * @param map OpenLayers map
+   * @param projectId Optional project ID to load polygons for
    */
-  setMap(map: OLMap): void {
+  setMap(map: OLMap, projectId: number): void {
     this.map = map;
+    this.currentProjectId = projectId;
 
     // Initial load of polygons
-    this.refresh();
+    this.refresh(projectId);
   }
 
   /**
    * Setup listener for refresh triggers
    */
   private setupRefreshListener(): void {
-    this.refreshTrigger$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.fetchAndRenderPolygons();
+    this.refreshTrigger$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(({ projectId }) => {
+      this.fetchAndRenderPolygons(projectId);
     });
   }
 
   /**
    * Trigger a refresh of polygons from the API
+   * @param projectId Optional project ID to filter polygons by
    */
-  refresh(): void {
-    this.refreshTrigger$.next();
+  refresh(projectId: number): void {
+    this.currentProjectId = projectId;
+    this.refreshTrigger$.next({ projectId });
   }
 
   /**
    * Fetch polygons from API and render them on the map
+   * @param projectId Optional project ID to filter polygons by
    */
-  private fetchAndRenderPolygons(): void {
+  private fetchAndRenderPolygons(projectId?: number): void {
     if (!this.map) {
       console.warn('Map not initialized, cannot fetch polygons');
       return;
@@ -108,10 +125,13 @@ export class PolygonMapService {
     this.loading.set(true);
 
     this.api
-      .getPolygons()
+      .getPolygons({ projectId })
       .pipe(
         tap(response => {
-          console.log('Fetched polygons:', response.polygons);
+          console.log(
+            `Fetched polygons${projectId ? ` for project ${projectId}` : ''}:`,
+            response.polygons
+          );
           this.polygons.set(response.polygons);
           this.polygons$.next(response.polygons);
         }),
@@ -120,7 +140,7 @@ export class PolygonMapService {
       )
       .subscribe({
         next: response => {
-          this.renderPolygonsOnMap(response.polygons);
+          this.renderPolygonsOnMap(response.polygons, projectId);
         },
         error: error => {
           console.error('Error fetching polygons:', error);
@@ -135,18 +155,19 @@ export class PolygonMapService {
    * Intelligently update polygon layers on the map.
    * Only adds/updates/removes polygons that have changed.
    * @param polygons Array of polygon data from API
+   * @param projectId Optional project ID for layer naming
    */
-  private renderPolygonsOnMap(polygons: PolygonReference[]): void {
+  private renderPolygonsOnMap(polygons: PolygonReference[], projectId?: number): void {
     if (!this.map) {
       console.warn('Map not initialized');
       return;
     }
 
     // Setup layer group if needed
-    const layerGroup = this.setupPolygonLayerGroup();
+    const layerGroup = this.setupPolygonLayerGroup(projectId);
 
     // Get the vector layer (create if doesn't exist)
-    let vectorLayer = this.getOrCreateVectorLayer(layerGroup);
+    let vectorLayer = this.getOrCreateVectorLayer(layerGroup, projectId);
     const source = vectorLayer.getSource();
 
     if (!source) {
@@ -246,6 +267,7 @@ export class PolygonMapService {
       feature.setProperties({
         polygonId: polygon.id,
         userId: polygon.user_id,
+        projectId: polygon.project_id,
         createdAt: polygon.created_at
       });
 
@@ -260,8 +282,12 @@ export class PolygonMapService {
   /**
    * Get existing vector layer or create a new one
    * @param layerGroup Layer group to search/add to
+   * @param projectId Optional project ID for layer naming
    */
-  private getOrCreateVectorLayer(layerGroup: LayerGroup): VectorLayer<VectorSource> {
+  private getOrCreateVectorLayer(
+    layerGroup: LayerGroup,
+    projectId?: number
+  ): VectorLayer<VectorSource> {
     // Try to find existing vector layer
     const layers = layerGroup.getLayers().getArray();
     const existingLayer = layers.find(layer => layer.get('id') === USER_POLYGON_LAYER_ID) as
@@ -275,9 +301,11 @@ export class PolygonMapService {
     // Create new vector layer
     const source = new VectorSource();
 
+    const layerTitle = projectId ? `Project ${projectId} Polygons` : 'User Polygons';
+
     const layer = new VectorLayer({
       properties: {
-        title: 'User Polygons',
+        title: layerTitle,
         id: USER_POLYGON_LAYER_ID
       } satisfies LayerProperties,
       source: source,
@@ -305,16 +333,19 @@ export class PolygonMapService {
 
   /**
    * Setup or retrieve the polygon layer group
+   * @param projectId Optional project ID for layer group naming
    */
-  private setupPolygonLayerGroup(): LayerGroup {
+  private setupPolygonLayerGroup(projectId?: number): LayerGroup {
     const existingLayerGroup = this.polygonLayerGroup();
     if (existingLayerGroup) {
       return existingLayerGroup;
     }
 
+    const groupTitle = projectId ? `Project ${projectId} Polygons` : 'User Polygons';
+
     const layerGroup = new LayerGroup({
       properties: {
-        title: 'User Polygons'
+        title: groupTitle
       }
     });
 
@@ -340,6 +371,7 @@ export class PolygonMapService {
     this.featuresByPolygonId.clear();
     this.polygons.set([]);
     this.polygons$.next([]);
+    this.currentProjectId = undefined;
   }
 
   /**
@@ -360,7 +392,7 @@ export class PolygonMapService {
     if (feature) {
       const layerGroup = this.polygonLayerGroup();
       if (layerGroup) {
-        const vectorLayer = this.getOrCreateVectorLayer(layerGroup);
+        const vectorLayer = this.getOrCreateVectorLayer(layerGroup, this.currentProjectId);
         const source = vectorLayer.getSource();
         if (source) {
           source.removeFeature(feature);
@@ -400,5 +432,12 @@ export class PolygonMapService {
    */
   getPolygons(): PolygonReference[] {
     return Array.from(this.polygonsById.values());
+  }
+
+  /**
+   * Get the currently active project ID
+   */
+  getCurrentProjectId(): number | undefined {
+    return this.currentProjectId;
   }
 }

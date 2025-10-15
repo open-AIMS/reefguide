@@ -207,7 +207,7 @@ export class LocationSelectionComponent implements MapUI {
             });
 
             // Refresh the polygon layer on the map
-            this.mapService.polygonMapService.refresh();
+            this.mapService.polygonMapService.refresh(parseInt(this.projectId()!));
           },
           error: error => {
             console.error('Error creating polygon:', error);

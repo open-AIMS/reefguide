@@ -225,14 +225,14 @@ export class ReefGuideMapService {
    * Map provided by ReefGuideMapComponent
    * @param map
    */
-  setMap(map: OLMap) {
+  setMap(map: OLMap, projectId: number) {
     this.map = map;
 
     this.addInfoLayers();
     void this.addCriteriaLayers();
 
     // Initialize polygon map service with the map
-    this.polygonMapService.setMap(map);
+    this.polygonMapService.setMap(map, projectId);
   }
 
   /**

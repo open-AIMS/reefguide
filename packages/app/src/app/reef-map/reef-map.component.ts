@@ -11,7 +11,7 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MapBrowserEvent } from 'ol';
 import Map from 'ol/Map';
 import View from 'ol/View';
@@ -106,12 +106,20 @@ export class ReefMapComponent implements AfterViewInit {
 
   public readonly loading = signal(false);
 
-  constructor() {}
+  constructor(private route: ActivatedRoute) {}
 
   /**
    * Create OpenLayers Map and hookup everything.
    */
   ngAfterViewInit() {
+    // parse out the project ID
+    const projectIdString = this.route.snapshot.paramMap.get('projectId');
+    const projectId = projectIdString ? parseInt(projectIdString) : undefined;
+    if (!projectId) {
+      this.router.navigate(['/']);
+      return;
+    }
+
     const baseLayer = new TileLayer({
       // @ts-expect-error this source works with WebGLTileLayer, ignore the type error
       // https://github.com/openlayers/openlayers/issues/16794
@@ -134,7 +142,7 @@ export class ReefMapComponent implements AfterViewInit {
 
     // REVIEW better design if one-way (map component listens to service)
     //  maybe move View to service
-    this.mapService?.setMap(this.map);
+    this.mapService?.setMap(this.map, projectId);
     this.hookEvents(this.map);
     this.setupMapControls(this.map);
 

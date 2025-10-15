@@ -15,13 +15,45 @@ import { processRequest } from 'zod-express-middleware';
 import { passport } from '../auth/passportConfig';
 import { assertUserHasRoleMiddleware, userIsAdmin } from '../auth/utils';
 import { InternalServerError, NotFoundException, UnauthorizedException } from '../exceptions';
+import { userHasProjectAccess } from '../util';
 
 require('express-async-errors');
 
 export const router: Router = express.Router();
 
 /**
+ * Helper function to check if user has access to a polygon
+ * User has access if they:
+ * - Own the polygon
+ * - Polygon is in a project they have access to
+ */
+async function userHasPolygonAccess(userId: number, polygonId: number): Promise<boolean> {
+  const polygon = await prisma.polygon.findUnique({
+    where: { id: polygonId }
+  });
+
+  if (!polygon) {
+    return false;
+  }
+
+  // Check if user owns the polygon
+  if (polygon.user_id === userId) {
+    return true;
+  }
+
+  // Check if polygon is in a project and user has access to that project
+  if (polygon.project_id) {
+    return await userHasProjectAccess(userId, polygon.project_id);
+  }
+
+  return false;
+}
+
+/**
  * Get all notes for the user, or all notes if admin
+ * Non-admins can see notes for:
+ * - Polygons they own
+ * - Polygons in projects shared with them
  */
 router.get(
   '/',
@@ -48,9 +80,47 @@ router.get(
           }
         });
       } else {
-        // Normal users get only their own notes
+        // Get all projects the user has access to
+        const accessibleProjects = await prisma.project.findMany({
+          where: {
+            OR: [
+              // Projects owned by user
+              { user_id: req.user.id },
+              // Projects directly shared with user
+              { userShares: { some: { user_id: req.user.id } } },
+              // Projects shared with groups user is in
+              {
+                groupShares: {
+                  some: {
+                    group: {
+                      OR: [
+                        { owner_id: req.user.id },
+                        { members: { some: { user_id: req.user.id } } },
+                        { managers: { some: { user_id: req.user.id } } }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          select: { id: true }
+        });
+
+        const accessibleProjectIds = accessibleProjects.map(p => p.id);
+
+        // Get notes for polygons the user has access to
         notes = await prisma.polygonNote.findMany({
-          where: { user_id: req.user.id },
+          where: {
+            polygon: {
+              OR: [
+                // Polygons owned by user
+                { user_id: req.user.id },
+                // Polygons in accessible projects
+                { project_id: { in: accessibleProjectIds } }
+              ]
+            }
+          },
           include: {
             user: {
               select: {
@@ -95,7 +165,11 @@ router.get(
         throw new NotFoundException('Polygon not found');
       }
 
-      if (!userIsAdmin(req.user) && polygon.user_id !== req.user.id) {
+      // Check permissions
+      const isAdmin = userIsAdmin(req.user);
+      const hasAccess = isAdmin || (await userHasPolygonAccess(req.user.id, polygonId));
+
+      if (!hasAccess) {
         throw new UnauthorizedException(
           'You do not have permission to view notes for this polygon'
         );
@@ -156,7 +230,12 @@ router.get(
         throw new NotFoundException('Note not found');
       }
 
-      if (!userIsAdmin(req.user) && note.user_id !== req.user.id) {
+      // Check permissions
+      const isAdmin = userIsAdmin(req.user);
+      const ownsNote = note.user_id === req.user.id;
+      const hasPolygonAccess = await userHasPolygonAccess(req.user.id, note.polygon_id);
+
+      if (!isAdmin && !ownsNote && !hasPolygonAccess) {
         throw new UnauthorizedException('You do not have permission to view this note');
       }
 
@@ -195,7 +274,11 @@ router.post(
         throw new NotFoundException('Polygon not found');
       }
 
-      if (!userIsAdmin(req.user) && polygon.user_id !== userId) {
+      // Check permissions - user must have access to the polygon to add notes
+      const isAdmin = userIsAdmin(req.user);
+      const hasAccess = isAdmin || (await userHasPolygonAccess(userId, polygonId));
+
+      if (!hasAccess) {
         throw new UnauthorizedException('You do not have permission to add notes to this polygon');
       }
 
@@ -246,7 +329,12 @@ router.put(
         throw new NotFoundException('Note not found');
       }
 
-      if (!userIsAdmin(req.user) && existingNote.user_id !== userId) {
+      // Check permissions
+      const isAdmin = userIsAdmin(req.user);
+      const ownsNote = existingNote.user_id === userId;
+      const hasPolygonAccess = await userHasPolygonAccess(userId, existingNote.polygon_id);
+
+      if (!isAdmin && !ownsNote && !hasPolygonAccess) {
         throw new UnauthorizedException('You do not have permission to update this note');
       }
 
@@ -291,7 +379,12 @@ router.delete(
         throw new NotFoundException('Note not found');
       }
 
-      if (!userIsAdmin(req.user) && existingNote.user_id !== req.user.id) {
+      // Check permissions
+      const isAdmin = userIsAdmin(req.user);
+      const ownsNote = existingNote.user_id === req.user.id;
+      const hasPolygonAccess = await userHasPolygonAccess(req.user.id, existingNote.polygon_id);
+
+      if (!isAdmin && !ownsNote && !hasPolygonAccess) {
         throw new UnauthorizedException('You do not have permission to delete this note');
       }
 
