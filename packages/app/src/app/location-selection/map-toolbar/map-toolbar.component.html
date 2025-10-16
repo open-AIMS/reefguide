@@ -1,0 +1,35 @@
+<div class="map-toolbar">
+  @if (!isDrawing()) {
+    <!-- Default state: Show draw polygon button -->
+    <button
+      mat-mini-fab
+      color="primary"
+      (click)="startDrawing()"
+      matTooltipPosition="right"
+      matTooltip="Draw new polygon"
+    >
+      <mat-icon>polyline</mat-icon>
+    </button>
+  } @else {
+    <!-- Drawing state: Show cancel and undo buttons -->
+    <div class="drawing-controls">
+      <button
+        mat-mini-fab
+        color="warn"
+        (click)="cancelDrawing()"
+        matTooltipPosition="right"
+        matTooltip="Cancel drawing"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+      <button
+        mat-mini-fab
+        (click)="undoLastPoint()"
+        matTooltipPosition="right"
+        matTooltip="Undo last point"
+      >
+        <mat-icon>undo</mat-icon>
+      </button>
+    </div>
+  }
+</div>

@@ -1,3 +1,4 @@
+import { moveItemInArray } from '@angular/cdk/drag-drop';
 import {
   AfterViewInit,
   Component,
@@ -7,30 +8,32 @@ import {
   signal,
   viewChild
 } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MapBrowserEvent } from 'ol';
 import Map from 'ol/Map';
 import View from 'ol/View';
-import TileLayer from 'ol/layer/WebGLTile';
-import OSM from 'ol/source/OSM';
-import XYZ from 'ol/source/XYZ';
 import ScaleLine from 'ol/control/ScaleLine';
-import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
-import { LayerListComponent } from '../widgets/layer-list/layer-list.component';
-import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
-import { debounceTime, map, Observable, Subject } from 'rxjs';
-import LayerGroup from 'ol/layer/Group';
-import { LayerProperties } from '../../types/layer.type';
-import Layer from 'ol/layer/Layer';
-import { moveItemInArray } from '@angular/cdk/drag-drop';
-import { MapBrowserEvent } from 'ol';
-import { MatDialog } from '@angular/material/dialog';
-import { FeatureInfoDialogComponent } from '../widgets/feature-info-dialog/feature-info-dialog.component';
-import { FeatureRef } from '../map/openlayers-types';
-import { Router } from '@angular/router';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { ReefSearchComponent } from './reef-search/reef-search.component';
-import { ReefSearchService } from './reef-search.service';
 import { Polygon } from 'ol/geom';
+import LayerGroup from 'ol/layer/Group';
+import Layer from 'ol/layer/Layer';
+import TileLayer from 'ol/layer/WebGLTile';
+import XYZ from 'ol/source/XYZ';
+import { debounceTime, map, Observable, Subject } from 'rxjs';
+import { LayerProperties } from '../../types/layer.type';
+import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
+import { FeatureRef } from '../map/openlayers-types';
+import {
+  FeatureInfoDialogComponent,
+  FeatureInfoDialogResult
+} from '../widgets/feature-info-dialog/feature-info-dialog.component';
+import { JobStatusListComponent } from '../widgets/job-status-list/job-status-list.component';
+import { LayerListComponent } from '../widgets/layer-list/layer-list.component';
+import { ReefSearchService } from './reef-search.service';
+import { ReefSearchComponent } from './reef-search/reef-search.component';
+import { PolygonMapService } from '../location-selection/polygon-map.service';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -55,6 +58,7 @@ export class ReefMapComponent implements AfterViewInit {
   private readonly dialog = inject(MatDialog);
   readonly mapService = inject(ReefGuideMapService, { optional: true });
   reefSearchService = inject(ReefSearchService);
+  polygonMapService = inject(PolygonMapService);
 
   private readonly router = inject(Router);
 
@@ -92,7 +96,11 @@ export class ReefMapComponent implements AfterViewInit {
       // For now show all layers in flat list;
       // in future could display tree by recursing through getLayers()
       // getAllLayers will recursively get all leaf layers
-      const allLayers = this.map.getAllLayers();
+      const allLayers = this.map.getAllLayers().filter(layer => {
+        const props: LayerProperties = layer.getProperties();
+        return props.hideInList !== true;
+      });
+
       this.setMissingZindexes(allLayers);
       allLayers.sort((a, b) => b.getZIndex()! - a.getZIndex()!);
       this._lastEmittedLayers = allLayers;
@@ -102,12 +110,20 @@ export class ReefMapComponent implements AfterViewInit {
 
   public readonly loading = signal(false);
 
-  constructor() {}
+  constructor(private route: ActivatedRoute) {}
 
   /**
    * Create OpenLayers Map and hookup everything.
    */
   ngAfterViewInit() {
+    // parse out the project ID
+    const projectIdString = this.route.snapshot.paramMap.get('projectId');
+    const projectId = projectIdString ? parseInt(projectIdString) : undefined;
+    if (!projectId) {
+      this.router.navigate(['/']);
+      return;
+    }
+
     const baseLayer = new TileLayer({
       // @ts-expect-error this source works with WebGLTileLayer, ignore the type error
       // https://github.com/openlayers/openlayers/issues/16794
@@ -130,7 +146,7 @@ export class ReefMapComponent implements AfterViewInit {
 
     // REVIEW better design if one-way (map component listens to service)
     //  maybe move View to service
-    this.mapService?.setMap(this.map);
+    this.mapService?.setMap(this.map, projectId);
     this.hookEvents(this.map);
     this.setupMapControls(this.map);
 
@@ -221,10 +237,12 @@ export class ReefMapComponent implements AfterViewInit {
   }
 
   private onClick(event: MapBrowserEvent) {
-    console.log('map click', event);
+    if (this.mapService?.isDrawingPolygon) {
+      return;
+    }
+    // We only do things here if we are not busy drawing a polygon
     const features: FeatureRef[] = [];
     this.map.forEachFeatureAtPixel(event.pixel, (feature, layer, geometry) => {
-      console.log('feature at click', feature.getProperties(), feature);
       // Cluster point has child features
       const childFeatures = feature.get('features');
       if (childFeatures instanceof Array) {
@@ -248,13 +266,21 @@ export class ReefMapComponent implements AfterViewInit {
       return;
     }
 
-    this.dialog.open(FeatureInfoDialogComponent, {
-      // allows moving map under dialog, but no close on outside click
-      // hasBackdrop: false,
-      data: {
-        features
-      }
-    });
+    this.dialog
+      .open(FeatureInfoDialogComponent, {
+        // allows moving map under dialog, but no close on outside click
+        // hasBackdrop: false,
+        height: '85vh',
+        data: {
+          features
+        }
+      })
+      .afterClosed()
+      .subscribe((result: FeatureInfoDialogResult | undefined) => {
+        if (result?.polygonDeleted && result?.polygonId) {
+          this.polygonMapService.removePolygon(result.polygonId);
+        }
+      });
   }
 
   /**

@@ -306,29 +306,6 @@ export function getConfig(): Config {
     sentryDsn: env.SENTRY_DSN
   };
 
-  // Log configuration in non-production environments (excluding sensitive data)
-  if (config.isDevelopment) {
-    const logConfig = {
-      ...config,
-      jwt: { keyId: config.jwt.keyId }, // Only log key ID, not the actual keys
-      creds: '[HIDDEN]', // Hide credentials from logs
-      email: {
-        serviceMode: config.email.serviceMode,
-        config: config.email.config,
-        smtp: config.email.smtp
-          ? {
-              host: config.email.smtp.host,
-              port: config.email.smtp.port,
-              secure: config.email.smtp.secure,
-              auth: '[HIDDEN]', // Hide SMTP credentials
-              cacheExpirySeconds: config.email.smtp.cacheExpirySeconds
-            }
-          : undefined
-      }
-    };
-    console.debug('API Configuration:', JSON.stringify(logConfig, null, 2));
-  }
-
   // Update process.env with parsed values
   process.env.DATABASE_URL = config.database.url;
   process.env.DIRECT_URL = config.database.directUrl;

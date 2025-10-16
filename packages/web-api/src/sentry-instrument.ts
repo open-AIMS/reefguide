@@ -2,7 +2,7 @@ import { config } from './config';
 
 // Only import and use sentry if the DSN is provided
 if (config.sentryDsn) {
-  console.log('Setting up Sentry for error tracking...');
+  console.debug('Setting up Sentry for error tracking...');
   // Import Sentry
   const Sentry = require('@sentry/node');
   Sentry.init({
@@ -12,7 +12,7 @@ if (config.sentryDsn) {
     // Bugsink prefers no traces
     tracesSampleRate: 0
   });
-  console.log('Sentry initialized successfully.');
+  console.debug('Sentry initialized successfully.');
 }
 
 /**
@@ -25,6 +25,6 @@ export function logSentryMessage(message: string, level: 'info' | 'warning' | 'e
     const Sentry = require('@sentry/node');
     Sentry.captureMessage(message, level);
   } else {
-    console.log('Swallowing sentry log since DSN is not configured. ', { message, level });
+    console.debug('Swallowing sentry log since DSN is not configured. ', { message, level });
   }
 }

@@ -8,26 +8,26 @@ export class CronService {
    * Start all scheduled cron jobs
    */
   public start(): void {
-    console.log('Starting cron service...');
+    console.debug('Starting cron service...');
 
     // Schedule data specification update job
     this.scheduleDataSpecificationUpdate();
 
-    console.log(`Started ${this.tasks.length} cron job(s)`);
+    console.debug(`Started ${this.tasks.length} cron job(s)`);
   }
 
   /**
    * Stop all scheduled cron jobs
    */
   public stop(): void {
-    console.log('Stopping cron service...');
+    console.debug('Stopping cron service...');
 
     this.tasks.forEach(task => {
       task.stop();
     });
 
     this.tasks = [];
-    console.log('All cron jobs stopped');
+    console.debug('All cron jobs stopped');
   }
 
   /**
@@ -35,24 +35,24 @@ export class CronService {
    * Runs daily at 2:00 AM UTC
    */
   private scheduleDataSpecificationUpdate(): void {
-    console.log('Scheduling data specification update job...');
+    console.debug('Scheduling data specification update job...');
     const task = schedule(
       // 2AM AEDT
       '0 2 * * *',
       async () => {
         try {
-          console.log('Starting scheduled data specification update...');
+          console.debug('Starting scheduled data specification update...');
 
           const dataSpecService = getDataSpecificationService();
           const { jobId, cached, message } =
             await dataSpecService.createDataSpecificationUpdateJob();
 
           if (cached) {
-            console.log(`Data specification update job found in cache: ${jobId}`);
+            console.debug(`Data specification update job found in cache: ${jobId}`);
           } else {
-            console.log(`Data specification update job created: ${jobId}`);
+            console.debug(`Data specification update job created: ${jobId}`);
           }
-          console.log(message);
+          console.debug(message);
         } catch (error) {
           console.error('Failed to create scheduled data specification update job:', error);
         }
@@ -66,7 +66,7 @@ export class CronService {
     this.tasks.push(task);
     task.start();
 
-    console.log('Scheduled data specification update job (daily at 2:00 AM UTC)');
+    console.debug('Scheduled data specification update job (daily at 2:00 AM UTC)');
   }
 
   /**

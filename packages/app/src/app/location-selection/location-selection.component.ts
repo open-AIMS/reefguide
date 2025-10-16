@@ -1,12 +1,13 @@
 import { AsyncPipe, CommonModule } from '@angular/common';
 import { Component, effect, inject, signal, viewChild, ViewChild } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltip } from '@angular/material/tooltip';
 import { SuitabilityAssessmentInput } from '@reefguide/types';
@@ -22,6 +23,9 @@ import { CriteriaPayloads } from './reef-guide-api.types';
 import { ReefGuideConfigService } from './reef-guide-config.service';
 import { MAP_UI, MapUI, ReefGuideMapService } from './reef-guide-map.service';
 import { SelectionCriteriaComponent } from './selection-criteria/selection-criteria.component';
+import { MapToolbarComponent } from './map-toolbar/map-toolbar.component';
+import { PolygonMapService } from './polygon-map.service';
+import { ActivatedRoute } from '@angular/router';
 
 type DrawerModes = 'criteria' | 'style';
 
@@ -47,9 +51,14 @@ type DrawerModes = 'criteria' | 'style';
     MatMenuModule,
     ReefMapComponent,
     LayerStyleEditorComponent,
-    ProfileButtonComponent
+    ProfileButtonComponent,
+    MapToolbarComponent
   ],
-  providers: [ReefGuideMapService, { provide: MAP_UI, useExisting: LocationSelectionComponent }],
+  providers: [
+    ReefGuideMapService,
+    PolygonMapService,
+    { provide: MAP_UI, useExisting: LocationSelectionComponent }
+  ],
   templateUrl: './location-selection.component.html',
   styleUrl: './location-selection.component.scss'
 })
@@ -58,6 +67,9 @@ export class LocationSelectionComponent implements MapUI {
   readonly authService = inject(AuthService);
   readonly api = inject(WebApiService);
   readonly mapService = inject(ReefGuideMapService);
+  private readonly snackbar = inject(MatSnackBar);
+  private activatedRoute = inject(ActivatedRoute);
+  private projectId = toSignal<string>(this.activatedRoute.params.pipe(map(p => p['projectId'])));
 
   map = viewChild.required(ReefMapComponent);
 
@@ -157,5 +169,60 @@ export class LocationSelectionComponent implements MapUI {
     if (suitabilityAssessment) {
       this.mapService.addSuitabilityAssessmentJob(suitabilityAssessment);
     }
+  }
+
+  /**
+   * Handle successful polygon drawing
+   * @param geojson The drawn polygon as GeoJSON string
+   */
+  onPolygonDrawn(geojson: string): void {
+    try {
+      const polygon = JSON.parse(geojson);
+
+      // Create the polygon via API
+      if (!this.projectId()) {
+        // Routing stuffed up here!
+        console.error('There is no project ID, this route should not have loaded!');
+        this.snackbar.open(
+          `Error: you appear to have navigated somewhere you shouldn't be! Try refreshing the app.`,
+          'OK',
+          {
+            duration: 5000
+          }
+        );
+      } else {
+        this.api.createPolygon({ polygon, projectId: parseInt(this.projectId()!) }).subscribe({
+          next: () => {
+            this.snackbar.open('Polygon saved successfully', 'OK', {
+              duration: 3000
+            });
+
+            // Refresh the polygon layer on the map
+            this.mapService.polygonMapService.refresh(parseInt(this.projectId()!));
+          },
+          error: error => {
+            console.error('Error creating polygon:', error);
+            const errorMessage = error?.error?.message || 'Failed to save polygon';
+            this.snackbar.open(`Error: ${errorMessage}`, 'OK', {
+              duration: 5000
+            });
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error parsing polygon GeoJSON:', error);
+      this.snackbar.open('Error processing polygon data', 'OK', {
+        duration: 3000
+      });
+    }
+  }
+
+  /**
+   * Handle polygon drawing cancellation
+   */
+  onDrawingCancelled(): void {
+    this.snackbar.open('Drawing cancelled', 'OK', {
+      duration: 2000
+    });
   }
 }

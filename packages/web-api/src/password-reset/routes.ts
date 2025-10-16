@@ -28,13 +28,13 @@ router.post(
       const { email } = req.body;
       const resetService = new PasswordResetService(prisma);
 
-      console.log('Received password reset request for email:', email);
+      console.debug('Received password reset request for email:', email);
       const { code, resetCode } = await resetService.createResetCode({ email });
-      console.log('Generated reset code for email:', email);
+      console.debug('Generated reset code for email:', email);
 
       // Send email with reset code
       try {
-        console.log('Sending password reset email to:', email);
+        console.debug('Sending password reset email to:', email);
         // Let this work in the background, don't await
         EMAIL_SERVICE.sendEmail({
           options: {
@@ -65,7 +65,7 @@ This code will expire in 30 minutes. If you did not request this reset, please i
           }
         })
           .then(() => {
-            console.log(`Password reset code sent to ${email} (Code ID: ${resetCode.id})`);
+            console.debug(`Password reset code sent to ${email} (Code ID: ${resetCode.id})`);
           })
           .catch(err => {
             console.error('Error sending password reset email:', err);

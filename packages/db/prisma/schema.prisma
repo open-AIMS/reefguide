@@ -175,6 +175,9 @@ model Project {
     // Sharing relations
     userShares  ProjectUserShare[]
     groupShares ProjectGroupShare[]
+    
+    // Polygon relations
+    polygons    Polygon[]
 
     @@map("projects")
 }
@@ -222,6 +225,9 @@ model Polygon {
     // Each polygon is linked to a user
     user       User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
     user_id    Int
+    // Optional link to a project
+    project    Project?      @relation(fields: [project_id], references: [id], onDelete: Cascade)
+    project_id Int?
     // Using Json type for GeoJSON
     polygon    Json
     // Polygon has PolygonNote

@@ -76,19 +76,15 @@
               </mat-progress-spinner>
             }
           </div>
-          <!--          TODO polygon notes -->
-          <!--          <button-->
-          <!--            mat-mini-fab-->
-          <!--            (click)="mapService.toggleNotes()"-->
-          <!--            matTooltipPosition="right"-->
-          <!--            matTooltip="Notes"-->
-          <!--          >-->
-          <!--            <mat-icon>edit_note</mat-icon>-->
-          <!--          </button>-->
+
+          <!-- Map Toolbar with polygon drawing tools -->
+          <app-map-toolbar
+            (polygonDrawn)="onPolygonDrawn($event)"
+            (drawingCancelled)="onDrawingCancelled()"
+          ></app-map-toolbar>
         </div>
       }
     </app-reef-map>
-
     <!--
     TODO move to map, tile loading progress for OpenLayers
     This was originally developed for ArcGis map.

@@ -103,7 +103,6 @@ export class ProjectsListComponent implements OnInit {
     if (this.authService.getCurrentUser()?.roles.includes('ADMIN')) {
       return true;
     } else {
-      console.log(project.user_id === this.authService.getCurrentUser()?.id);
       return project.user_id === this.authService.getCurrentUser()?.id;
     }
   };

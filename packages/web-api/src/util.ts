@@ -1,5 +1,6 @@
-import { JSONValue, NormalizedObject } from './types/util';
+import { prisma } from '@reefguide/db';
 import { createHash } from 'crypto';
+import { JSONValue, NormalizedObject } from './types/util';
 
 /**
  * Recursively normalizes an object to ensure deterministic serialization
@@ -82,4 +83,70 @@ export function hashObject(obj: any): string {
  */
 export function tidyUpEmail(email: string) {
   return email.toLowerCase().trim();
+}
+
+/**
+ * Helper function to check if user has access to a project
+ * User has access if they:
+ * - Own the project
+ * - Project is shared with them directly
+ * - Project is shared with a group they're in (as member, manager, or owner)
+ */
+export async function userHasProjectAccess(userId: number, projectId: number): Promise<boolean> {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    include: {
+      userShares: true,
+      groupShares: {
+        include: {
+          group: {
+            include: {
+              members: true,
+              managers: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!project) {
+    return false;
+  }
+
+  if (project.is_public) {
+    return true;
+  }
+
+  // Check if user owns the project
+  if (project.user_id === userId) {
+    return true;
+  }
+
+  // Check if project is directly shared with user
+  if (project.userShares.some(share => share.user_id === userId)) {
+    return true;
+  }
+
+  // Check if project is shared with a group the user is in
+  for (const groupShare of project.groupShares) {
+    const group = groupShare.group;
+
+    // Check if user is the group owner
+    if (group.owner_id === userId) {
+      return true;
+    }
+
+    // Check if user is a group member
+    if (group.members.some(member => member.user_id === userId)) {
+      return true;
+    }
+
+    // Check if user is a group manager
+    if (group.managers.some(manager => manager.user_id === userId)) {
+      return true;
+    }
+  }
+
+  return false;
 }

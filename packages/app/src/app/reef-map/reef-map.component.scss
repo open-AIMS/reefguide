@@ -18,6 +18,14 @@
   top: 12px;
   left: 12px;
   align-items: flex-start;
+  // don't capture mouse events in this div
+  pointer-events: none;
+
+  // re-enable pointer-events in child elements
+  // need ng-deep to apply to content injected by parent.
+  ::ng-deep > * {
+    pointer-events: auto;
+  }
 
   &.hidden {
     visibility: hidden;
