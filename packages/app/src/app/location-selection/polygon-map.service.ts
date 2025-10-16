@@ -80,7 +80,7 @@ export class PolygonMapService {
    * @param map OpenLayers map
    * @param projectId Optional project ID to load polygons for
    */
-  setMap(map: OLMap, projectId: number): void {
+  configureMapService(map: OLMap, projectId: number): void {
     this.map = map;
     this.currentProjectId = projectId;
 

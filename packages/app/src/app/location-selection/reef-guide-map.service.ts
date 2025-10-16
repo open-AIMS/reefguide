@@ -232,7 +232,7 @@ export class ReefGuideMapService {
     void this.addCriteriaLayers();
 
     // Initialize polygon map service with the map
-    this.polygonMapService.setMap(map, projectId);
+    this.polygonMapService.configureMapService(map, projectId);
   }
 
   /**
