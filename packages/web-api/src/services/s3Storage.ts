@@ -19,7 +19,9 @@ export class S3StorageService {
   constructor(bucketName: string, options?: { minio?: MinioConfig }) {
     this.minio = options?.minio;
     if (this.minio) {
-      console.log(`Using a locally mocked S3 endpoint - provided with URL: ${this.minio.endpoint}`);
+      console.debug(
+        `Using a locally mocked S3 endpoint - provided with URL: ${this.minio.endpoint}`
+      );
     }
     if (this.minio) {
       this.s3Client = new S3Client({

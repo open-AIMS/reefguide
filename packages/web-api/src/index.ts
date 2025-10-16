@@ -7,10 +7,10 @@ import { getCronService } from './cron/cronService';
 import { initialiseAdmins } from './initialise';
 import { initializeS3Service } from './services/s3Storage';
 
-console.log('Initializing admins...');
+console.debug('Initializing admins...');
 initialiseAdmins();
 
-console.log('Setting up S3 storage service');
+console.debug('Setting up S3 storage service');
 initializeS3Service(config.s3.bucketName, { minio: config.s3.minio });
 
 // Start cron jobs

@@ -14,9 +14,9 @@ import { registerUser } from './services/auth';
  * 4. Verify successful creation/update
  */
 export const initialiseAdmins = async () => {
-  console.log('=== initialiseAdmins START ===');
+  console.debug('=== initialiseAdmins START ===');
 
-  console.log('Config check:', {
+  console.debug('Config check:', {
     hasConfig: !!config,
     hasCreds: !!config?.creds,
     managerCreds: {
@@ -48,18 +48,18 @@ export const initialiseAdmins = async () => {
     }
   ];
 
-  console.log('Initialising users count:', initialise.length);
-  console.log(
+  console.debug('Initialising users count:', initialise.length);
+  console.debug(
     'Users to initialise:',
     initialise.map(user => ({ email: user.email }))
   );
 
   for (const { email, password } of initialise) {
-    console.log(`\n=== Processing user: ${email} ===`);
+    console.debug(`\n=== Processing user: ${email} ===`);
 
     try {
       // First, try to find the user
-      console.log(`Checking if user exists: ${email}`);
+      console.debug(`Checking if user exists: ${email}`);
       const existingUser = await prisma.user.findUnique({
         // Changed from findUniqueOrThrow
         where: { email },
@@ -72,24 +72,24 @@ export const initialiseAdmins = async () => {
       });
 
       if (existingUser) {
-        console.log(`User ${email} already exists:`, {
+        console.debug(`User ${email} already exists:`, {
           id: existingUser.id,
           roles: existingUser.roles
         });
 
         // Optionally, verify and update roles if needed
         if (!existingUser.roles.includes('ADMIN')) {
-          console.log(`Updating user ${email} to include ADMIN role`);
+          console.debug(`Updating user ${email} to include ADMIN role`);
           await prisma.user.update({
             where: { email },
             data: {
               roles: [...existingUser.roles, 'ADMIN']
             }
           });
-          console.log(`Successfully added ADMIN role to ${email}`);
+          console.debug(`Successfully added ADMIN role to ${email}`);
         }
       } else {
-        console.log(`User ${email} not found, creating new user...`);
+        console.debug(`User ${email} not found, creating new user...`);
         const newUser = await registerUser({
           email,
           password,
@@ -130,9 +130,9 @@ export const initialiseAdmins = async () => {
       }
     });
 
-    console.log('\n=== Final Admin Users Status ===');
-    console.log('Total admin users:', adminUsers.length);
-    console.log(
+    console.debug('\n=== Final Admin Users Status ===');
+    console.debug('Total admin users:', adminUsers.length);
+    console.debug(
       'Admin users:',
       adminUsers.map(user => ({
         email: user.email,
@@ -157,5 +157,5 @@ export const initialiseAdmins = async () => {
     throw error;
   }
 
-  console.log('\n=== initialiseAdmins END ===');
+  console.debug('\n=== initialiseAdmins END ===');
 };

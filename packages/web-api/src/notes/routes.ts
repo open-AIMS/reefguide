@@ -233,10 +233,13 @@ router.get(
       // Check permissions
       const isAdmin = userIsAdmin(req.user);
       const ownsNote = note.user_id === req.user.id;
-      const hasPolygonAccess = await userHasPolygonAccess(req.user.id, note.polygon_id);
 
-      if (!isAdmin && !ownsNote && !hasPolygonAccess) {
-        throw new UnauthorizedException('You do not have permission to view this note');
+      if (!isAdmin && !ownsNote) {
+        const hasPolygonAccess = await userHasPolygonAccess(req.user.id, note.polygon_id);
+
+        if (!hasPolygonAccess) {
+          throw new UnauthorizedException('You do not have permission to view this note');
+        }
       }
 
       res.json({ note });
@@ -290,7 +293,7 @@ router.post(
         }
       });
 
-      res.status(201).json({
+      res.status(200).json({
         note: newNote
       });
     } catch (error) {
@@ -392,7 +395,7 @@ router.delete(
         where: { id: noteId }
       });
 
-      res.json({ message: 'Note deleted successfully' });
+      res.status(204).json({ message: 'Note deleted successfully' });
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof UnauthorizedException) throw error;
       throw new InternalServerError('Failed to delete note. Error: ' + error, error as Error);

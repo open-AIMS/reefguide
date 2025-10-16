@@ -63,9 +63,9 @@ app.use('/api', api);
 
 // Tell sentry to track errors if DSN is provided
 if (config.sentryDsn) {
-  console.log('Attaching sentry error handler...');
+  console.debug('Attaching sentry error handler...');
   Sentry.setupExpressErrorHandler(app);
-  console.log('Attached.');
+  console.debug('Attached.');
 }
 
 // Passes status code from custom exceptions through to error response

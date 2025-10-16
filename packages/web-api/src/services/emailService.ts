@@ -239,7 +239,7 @@ export class MockEmailService extends BaseEmailService {
    */
   async sendEmail({ options }: { options: EmailOptions }): Promise<SentMessageInfo> {
     if (process.env.TEST_MODE !== 'true') {
-      console.log('[MockEmailService] Sending email:', {
+      console.debug('[MockEmailService] Sending email:', {
         from: `${this.config.fromName} <${this.config.fromEmail}>`,
         to: options.to,
         subject: options.subject,
