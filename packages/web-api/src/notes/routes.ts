@@ -7,6 +7,7 @@ import {
   GetNotesResponse,
   NoteParamsSchema,
   PolygonParamsSchema,
+  testJobResultSchema,
   UpdateNoteInputSchema,
   UpdateNoteResponse
 } from '@reefguide/types';
@@ -27,13 +28,17 @@ export const router: Router = express.Router();
  * - Own the polygon
  * - Polygon is in a project they have access to
  */
-async function userHasPolygonAccess(userId: number, polygonId: number): Promise<boolean> {
+async function userHasPolygonAccess(userId: number, polygonId: number, isAdmin: boolean): Promise<boolean> {
   const polygon = await prisma.polygon.findUnique({
     where: { id: polygonId }
   });
 
   if (!polygon) {
     return false;
+  }
+
+  if (isAdmin){
+    return true;
   }
 
   // Check if user owns the polygon
@@ -43,7 +48,7 @@ async function userHasPolygonAccess(userId: number, polygonId: number): Promise<
 
   // Check if polygon is in a project and user has access to that project
   if (polygon.project_id) {
-    return await userHasProjectAccess(userId, polygon.project_id);
+    return await userHasProjectAccess(userId, polygon.project_id, isAdmin);
   }
 
   return false;
@@ -168,7 +173,7 @@ router.get(
 
       // Check permissions
       const isAdmin = userIsAdmin(req.user);
-      const hasAccess = isAdmin || (await userHasPolygonAccess(req.user.id, polygonId));
+      const hasAccess = isAdmin || (await userHasPolygonAccess(req.user.id, polygonId, isAdmin));
 
       if (!hasAccess) {
         throw new UnauthorizedException(
@@ -236,7 +241,7 @@ router.get(
       const ownsNote = note.user_id === req.user.id;
 
       if (!isAdmin && !ownsNote) {
-        const hasPolygonAccess = await userHasPolygonAccess(req.user.id, note.polygon_id);
+        const hasPolygonAccess = await userHasPolygonAccess(req.user.id, note.polygon_id, isAdmin);
 
         if (!hasPolygonAccess) {
           throw new UnauthorizedException('You do not have permission to view this note');
@@ -280,7 +285,7 @@ router.post(
 
       // Check permissions - user must have access to the polygon to add notes
       const isAdmin = userIsAdmin(req.user);
-      const hasAccess = isAdmin || (await userHasPolygonAccess(userId, polygonId));
+      const hasAccess = isAdmin || (await userHasPolygonAccess(userId, polygonId, isAdmin));
 
       if (!hasAccess) {
         throw new UnauthorizedException('You do not have permission to add notes to this polygon');
@@ -336,7 +341,7 @@ router.put(
       // Check permissions
       const isAdmin = userIsAdmin(req.user);
       const ownsNote = existingNote.user_id === userId;
-      const hasPolygonAccess = await userHasPolygonAccess(userId, existingNote.polygon_id);
+      const hasPolygonAccess = await userHasPolygonAccess(userId, existingNote.polygon_id, isAdmin);
 
       if (!isAdmin && !ownsNote && !hasPolygonAccess) {
         throw new UnauthorizedException('You do not have permission to update this note');
@@ -386,7 +391,7 @@ router.delete(
       // Check permissions
       const isAdmin = userIsAdmin(req.user);
       const ownsNote = existingNote.user_id === req.user.id;
-      const hasPolygonAccess = await userHasPolygonAccess(req.user.id, existingNote.polygon_id);
+      const hasPolygonAccess = await userHasPolygonAccess(req.user.id, existingNote.polygon_id, isAdmin);
 
       if (!isAdmin && !ownsNote && !hasPolygonAccess) {
         throw new UnauthorizedException('You do not have permission to delete this note');
