@@ -46,7 +46,7 @@
           @if (areaM2()) {
             <div class="detail-row">
               <span class="detail-label">Area:</span>
-              <span class="detail-value">{{ formatArea(areaM2()!) }} m²</span>
+              <span class="detail-value">{{ getAreaDisplay() }}</span>
             </div>
           }
 
@@ -80,7 +80,7 @@
                   <div class="note-header">
                     <span class="note-author">{{ note.user.email }}</span>
                     <div class="note-actions">
-                      <span class="note-time">{{ getRelativeTime(note.created_at) }}</span>
+                      <span class="note-time">{{ relativeTime(note.created_at) }}</span>
                       <button
                         mat-icon-button
                         color="warn"

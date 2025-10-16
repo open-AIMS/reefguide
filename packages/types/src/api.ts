@@ -1026,8 +1026,7 @@ export const GetNotesQuerySchema = z.object({
 });
 export type GetNotesQuery = z.infer<typeof GetNotesQuerySchema>;
 
-// Base Polygon Schema (matches Prisma model exactly)
-// Prisma model: id, created_at, user_id, project_id, polygon (Json), notes (relation)
+// Base Polygon schema
 export const PolygonReferenceSchema = z.object({
   id: z.number(),
   polygon: z.any(), // Json type in Prisma - stores GeoJSON object
@@ -1037,8 +1036,7 @@ export const PolygonReferenceSchema = z.object({
 });
 export type PolygonReference = z.infer<typeof PolygonReferenceSchema>;
 
-// Base Note Schema (matches Prisma model exactly)
-// Prisma model: id, created_at, content, user_id, polygon_id
+// Base Note Schema
 export const NoteReferenceSchema = z.object({
   id: z.number(),
   content: z.string(),

@@ -1,10 +1,9 @@
-import { Component, inject, OnInit, output, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
+import { USER_POLYGON_LAYER_ID } from '../../location-selection/polygon-map.service';
 import { FeatureRef } from '../../map/openlayers-types';
 import { PolygonEditorComponent } from './polygon-editor/polygon-editor.component';
-
-const USER_POLYGON_LAYER_ID = 'user-polygon-layer';
 
 export interface FeatureInfoDialogResult {
   polygonDeleted: boolean;

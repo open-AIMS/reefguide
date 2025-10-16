@@ -16,6 +16,7 @@ import { Geometry } from 'ol/geom';
 import { NoteWithUser, PolygonWithRelations } from '@reefguide/types';
 import { WebApiService } from '../../../../api/web-api.service';
 import { FeatureRef } from '../../../map/openlayers-types';
+import { displayDate, getRelativeTime } from '../../../../util/time-utils';
 
 /**
  * Component for displaying and editing polygon details and notes.
@@ -124,7 +125,6 @@ export class PolygonEditorComponent implements OnInit {
   private calculateGeometryProperties(): void {
     try {
       const geometry = this.featureRef.feature.getGeometry() as Geometry;
-
       if (!geometry) {
         console.warn('Feature has no geometry');
         return;
@@ -293,58 +293,20 @@ export class PolygonEditorComponent implements OnInit {
   }
 
   /**
-   * Format area for display (with thousands separators)
-   */
-  formatArea(area: number): string {
-    return area.toLocaleString('en-US', {
-      maximumFractionDigits: 2,
-      minimumFractionDigits: 2
-    });
-  }
-
-  /**
    * Format bounding box coordinates for display
    */
   formatBoundingBox(bbox: number[]): string {
     return bbox.map(coord => coord.toFixed(6)).join(', ');
   }
 
-  /**
-   * Format date for display
-   */
-  formatDate(date: Date | string): string {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  /** Format relative time (e.g. 2s ago) using helper functions */
+  relativeTime(date: Date) {
+    return getRelativeTime(date);
   }
 
-  /**
-   * Get relative time string (e.g., "2 hours ago")
-   */
-  getRelativeTime(date: Date | string): string {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    const now = new Date();
-    const diffMs = now.getTime() - dateObj.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) {
-      return 'Just now';
-    } else if (diffMins < 60) {
-      return `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
-    } else if (diffHours < 24) {
-      return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
-    } else if (diffDays < 7) {
-      return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
-    } else {
-      return this.formatDate(dateObj);
-    }
+  /** Format date using helper functions */
+  formatDate(date: Date) {
+    return displayDate(date);
   }
 
   /**
@@ -356,5 +318,25 @@ export class PolygonEditorComponent implements OnInit {
 
   isCtrlPressed(event: KeyboardEvent): boolean {
     return event.ctrlKey;
+  }
+
+  /**
+   * Get formatted area display string with appropriate units
+   * @param areaM2 Area in square meters
+   * @returns Formatted string with appropriate units (m² or ha)
+   */
+  public getAreaDisplay(): string {
+    let areaM2 = this.areaM2();
+    if (!areaM2) {
+      return 'Unknown';
+    }
+    if (areaM2 >= 10000) {
+      // Convert to hectares (1 hectare = 10,000 m²)
+      const hectares = areaM2 / 10000;
+      return `${hectares.toFixed(2)} ha`;
+    }
+
+    // Use square meters for smaller areas
+    return `${Math.round(areaM2)} m²`;
   }
 }

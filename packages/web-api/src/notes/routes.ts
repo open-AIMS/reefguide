@@ -84,6 +84,7 @@ router.get(
         const accessibleProjects = await prisma.project.findMany({
           where: {
             OR: [
+              { is_public: { equals: true } },
               // Projects owned by user
               { user_id: req.user.id },
               // Projects directly shared with user

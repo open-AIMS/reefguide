@@ -140,6 +140,7 @@ router.get(
           {
             project: {
               OR: [
+                { is_public: { equals: true } },
                 { user_id: { equals: req.user.id } },
                 { userShares: { some: { user_id: { equals: req.user.id } } } },
                 {

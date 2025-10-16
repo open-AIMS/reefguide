@@ -114,6 +114,10 @@ export async function userHasProjectAccess(userId: number, projectId: number): P
     return false;
   }
 
+  if (project.is_public) {
+    return true;
+  }
+
   // Check if user owns the project
   if (project.user_id === userId) {
     return true;

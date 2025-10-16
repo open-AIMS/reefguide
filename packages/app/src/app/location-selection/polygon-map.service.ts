@@ -121,7 +121,7 @@ export class PolygonMapService {
       .getPolygons({ projectId })
       .pipe(
         tap(response => {
-          console.log(
+          console.debug(
             `Fetched polygons for project ${projectId}`,
             response.polygons
           );
@@ -177,7 +177,7 @@ export class PolygonMapService {
     // 1. Remove polygons that no longer exist
     for (const polygonId of currentPolygonIds) {
       if (!newPolygonIds.has(polygonId)) {
-        console.log(`Removing polygon ${polygonId} from map`);
+        console.debug(`Removing polygon ${polygonId} from map`);
         const feature = this.featuresByPolygonId.get(polygonId);
         if (feature) {
           source.removeFeature(feature);
@@ -196,10 +196,10 @@ export class PolygonMapService {
       const hasChanged = existingPolygon && this.hasPolygonChanged(existingPolygon, polygon);
 
       if (isNew) {
-        console.log(`Adding new polygon ${polygon.id} to map`);
+        console.debug(`Adding new polygon ${polygon.id} to map`);
         this.addPolygonFeature(polygon, source);
       } else if (hasChanged) {
-        console.log(`Updating changed polygon ${polygon.id} on map`);
+        console.debug(`Updating changed polygon ${polygon.id} on map`);
         // Remove old feature
         const oldFeature = this.featuresByPolygonId.get(polygon.id);
         if (oldFeature) {
@@ -214,7 +214,7 @@ export class PolygonMapService {
       this.polygonsById.set(polygon.id, polygon);
     }
 
-    console.log(`Polygon map updated: ${source.getFeatures().length} features on map`);
+    console.debug(`Polygon map updated: ${source.getFeatures().length} features on map`);
   }
 
   /**
@@ -388,7 +388,7 @@ export class PolygonMapService {
         const source = vectorLayer.getSource();
         if (source) {
           source.removeFeature(feature);
-          console.log(`Removed polygon ${id} from map`);
+          console.debug(`Removed polygon ${id} from map`);
         }
       }
       this.featuresByPolygonId.delete(id);
