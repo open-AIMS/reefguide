@@ -121,10 +121,7 @@ export class PolygonMapService {
       .getPolygons({ projectId })
       .pipe(
         tap(response => {
-          console.debug(
-            `Fetched polygons for project ${projectId}`,
-            response.polygons
-          );
+          console.debug(`Fetched polygons for project ${projectId}`, response.polygons);
           this.polygons.set(response.polygons);
           this.polygons$.next(response.polygons);
         }),
@@ -277,9 +274,7 @@ export class PolygonMapService {
    * @param layerGroup Layer group to search/add to
    * @param projectId Optional project ID for layer naming
    */
-  private getOrCreateVectorLayer(
-    layerGroup: LayerGroup
-  ): VectorLayer<VectorSource> {
+  private getOrCreateVectorLayer(layerGroup: LayerGroup): VectorLayer<VectorSource> {
     // Try to find existing vector layer
     const layers = layerGroup.getLayers().getArray();
     const existingLayer = layers.find(layer => layer.get('id') === USER_POLYGON_LAYER_ID) as
@@ -333,7 +328,7 @@ export class PolygonMapService {
       return existingLayerGroup;
     }
 
-    const groupTitle = `Project ${projectId} Polygons` ;
+    const groupTitle = `Project ${projectId} Polygons`;
 
     const layerGroup = new LayerGroup({
       properties: {
