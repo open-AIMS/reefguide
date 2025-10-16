@@ -43,7 +43,7 @@ describe('Notes', () => {
 
   describe('GET /api/notes/:id', () => {
     it('should return notes for a specific polygon (owner)', async () => {
-      const res = await authRequest(app, 'user1').get(`/api/notes/${polygonId}`).expect(200);
+      const res = await authRequest(app, 'user1').get(`/api/notes/polygon/${polygonId}`).expect(200);
 
       expect(res.body.notes).toBeInstanceOf(Array);
       expect(res.body.notes.length).toBe(1);
@@ -51,18 +51,18 @@ describe('Notes', () => {
     });
 
     it('should return notes for a specific polygon (admin)', async () => {
-      const res = await authRequest(app, 'admin').get(`/api/notes/${polygonId}`).expect(200);
+      const res = await authRequest(app, 'admin').get(`/api/notes/polygon/${polygonId}`).expect(200);
 
       expect(res.body.notes).toBeInstanceOf(Array);
       expect(res.body.notes.length).toBe(1);
     });
 
     it('should return 401 if user is not the owner', async () => {
-      await authRequest(app, 'user2').get(`/api/notes/${polygonId}`).expect(401);
+      await authRequest(app, 'user2').get(`/api/notes/polygon/${polygonId}`).expect(401);
     });
 
     it('should return 404 for non-existent polygon', async () => {
-      await authRequest(app, 'user1').get('/api/notes/9999').expect(404);
+      await authRequest(app, 'user1').get('/api/notes/polygon/9999').expect(404);
     });
   });
 

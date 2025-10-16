@@ -223,7 +223,7 @@ router.post(
         }
       });
 
-      res.status(201).json({
+      res.status(200).json({
         polygon: newPolygon
       });
     } catch (error) {

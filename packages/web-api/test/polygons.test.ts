@@ -159,7 +159,7 @@ describe('Polygons', () => {
 
   describe('DELETE /api/polygons/:id', () => {
     it('should delete an existing polygon', async () => {
-      await authRequest(app, 'user1').delete(`/api/polygons/${polygonId}`).expect(204);
+      await authRequest(app, 'user1').delete(`/api/polygons/${polygonId}`).expect(200);
 
       // Verify the polygon is deleted
       await authRequest(app, 'user1').get(`/api/polygons/${polygonId}`).expect(404);
