@@ -143,24 +143,19 @@ export class LocationSelectionComponent implements MapUI {
    * @param assessment
    */
   onAssess(assessment: CriteriaPayloads) {
-    const { criteria, siteSuitability } = assessment;
+    const { regionalAssessment, suitabilityAssessment } = assessment;
 
     this.mapService.clearAssessedLayers();
 
     // no need to await
     void this.drawer.close();
 
-    this.mapService.addRegionalAssessmentJob(criteria);
+    this.mapService.addRegionalAssessmentJob(regionalAssessment);
     // could load previous job result like this:
     // this.mapService.loadLayerFromJobResults(31);
 
-    if (siteSuitability) {
-      const ssPayload: SuitabilityAssessmentInput = {
-        ...criteria,
-        ...siteSuitability
-      };
-
-      this.mapService.addSuitabilityAssessmentJob(ssPayload);
+    if (suitabilityAssessment) {
+      this.mapService.addSuitabilityAssessmentJob(suitabilityAssessment);
     }
   }
 }
