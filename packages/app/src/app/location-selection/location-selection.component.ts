@@ -181,11 +181,8 @@ export class LocationSelectionComponent implements MapUI {
    * @param geojson The drawn polygon as GeoJSON string
    */
   onPolygonDrawn(geojson: string): void {
-    console.log('Polygon drawn:', geojson);
-
     try {
       const polygon = JSON.parse(geojson);
-      console.log('Parsed polygon:', polygon);
 
       // Create the polygon via API
       if (!this.projectId()) {
@@ -200,8 +197,7 @@ export class LocationSelectionComponent implements MapUI {
         );
       } else {
         this.api.createPolygon({ polygon, projectId: parseInt(this.projectId()!) }).subscribe({
-          next: response => {
-            console.log('Polygon created:', response.polygon);
+          next: () => {
             this.snackbar.open('Polygon saved successfully', 'OK', {
               duration: 3000
             });
@@ -230,7 +226,6 @@ export class LocationSelectionComponent implements MapUI {
    * Handle polygon drawing cancellation
    */
   onDrawingCancelled(): void {
-    console.log('Polygon drawing cancelled');
     this.snackbar.open('Drawing cancelled', 'OK', {
       duration: 2000
     });

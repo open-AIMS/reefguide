@@ -19,7 +19,6 @@ export const USER_POLYGON_LAYER_ID = 'user-polygon-layer';
 /**
  * Service for managing user-drawn polygons on the map.
  * Handles fetching polygons from the API and rendering them as OpenLayers vector layers.
- * Can work with or without a specific project scope.
  */
 @Injectable()
 export class PolygonMapService {
@@ -59,7 +58,7 @@ export class PolygonMapService {
   /**
    * Trigger to refresh polygons from API
    */
-  private readonly refreshTrigger$ = new Subject<{ projectId?: number }>();
+  private readonly refreshTrigger$ = new Subject<{ projectId: number }>();
 
   /**
    * Observable of current polygons
@@ -99,7 +98,7 @@ export class PolygonMapService {
 
   /**
    * Trigger a refresh of polygons from the API
-   * @param projectId Optional project ID to filter polygons by
+   * @param projectId project ID to filter polygons by
    */
   refresh(projectId: number): void {
     this.currentProjectId = projectId;
@@ -108,9 +107,9 @@ export class PolygonMapService {
 
   /**
    * Fetch polygons from API and render them on the map
-   * @param projectId Optional project ID to filter polygons by
+   * @param projectId project ID to filter polygons by
    */
-  private fetchAndRenderPolygons(projectId?: number): void {
+  private fetchAndRenderPolygons(projectId: number): void {
     if (!this.map) {
       console.warn('Map not initialized, cannot fetch polygons');
       return;
@@ -123,7 +122,7 @@ export class PolygonMapService {
       .pipe(
         tap(response => {
           console.log(
-            `Fetched polygons${projectId ? ` for project ${projectId}` : ''}:`,
+            `Fetched polygons for project ${projectId}`,
             response.polygons
           );
           this.polygons.set(response.polygons);
@@ -151,7 +150,7 @@ export class PolygonMapService {
    * @param polygons Array of polygon data from API
    * @param projectId Optional project ID for layer naming
    */
-  private renderPolygonsOnMap(polygons: PolygonReference[], projectId?: number): void {
+  private renderPolygonsOnMap(polygons: PolygonReference[], projectId: number): void {
     if (!this.map) {
       console.warn('Map not initialized');
       return;
@@ -161,7 +160,7 @@ export class PolygonMapService {
     const layerGroup = this.setupPolygonLayerGroup(projectId);
 
     // Get the vector layer (create if doesn't exist)
-    let vectorLayer = this.getOrCreateVectorLayer(layerGroup, projectId);
+    let vectorLayer = this.getOrCreateVectorLayer(layerGroup);
     const source = vectorLayer.getSource();
 
     if (!source) {
@@ -279,8 +278,7 @@ export class PolygonMapService {
    * @param projectId Optional project ID for layer naming
    */
   private getOrCreateVectorLayer(
-    layerGroup: LayerGroup,
-    projectId?: number
+    layerGroup: LayerGroup
   ): VectorLayer<VectorSource> {
     // Try to find existing vector layer
     const layers = layerGroup.getLayers().getArray();
@@ -295,7 +293,7 @@ export class PolygonMapService {
     // Create new vector layer
     const source = new VectorSource();
 
-    const layerTitle = projectId ? `Project ${projectId} Polygons` : 'User Polygons';
+    const layerTitle = `Project Polygons`;
 
     const layer = new VectorLayer({
       properties: {
@@ -329,13 +327,13 @@ export class PolygonMapService {
    * Setup or retrieve the polygon layer group
    * @param projectId Optional project ID for layer group naming
    */
-  private setupPolygonLayerGroup(projectId?: number): LayerGroup {
+  private setupPolygonLayerGroup(projectId: number): LayerGroup {
     const existingLayerGroup = this.polygonLayerGroup();
     if (existingLayerGroup) {
       return existingLayerGroup;
     }
 
-    const groupTitle = projectId ? `Project ${projectId} Polygons` : 'User Polygons';
+    const groupTitle = `Project ${projectId} Polygons` ;
 
     const layerGroup = new LayerGroup({
       properties: {
@@ -386,7 +384,7 @@ export class PolygonMapService {
     if (feature) {
       const layerGroup = this.polygonLayerGroup();
       if (layerGroup) {
-        const vectorLayer = this.getOrCreateVectorLayer(layerGroup, this.currentProjectId);
+        const vectorLayer = this.getOrCreateVectorLayer(layerGroup);
         const source = vectorLayer.getSource();
         if (source) {
           source.removeFeature(feature);
