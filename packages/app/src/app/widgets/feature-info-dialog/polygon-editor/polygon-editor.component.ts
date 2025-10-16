@@ -314,10 +314,6 @@ export class PolygonEditorComponent implements OnInit {
     return note.id;
   }
 
-  isCtrlPressed(event: KeyboardEvent): boolean {
-    return event.ctrlKey;
-  }
-
   /**
    * Get formatted area display string with appropriate units
    * @param areaM2 Area in square meters
