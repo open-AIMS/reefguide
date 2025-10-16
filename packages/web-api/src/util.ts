@@ -92,7 +92,11 @@ export function tidyUpEmail(email: string) {
  * - Project is shared with them directly
  * - Project is shared with a group they're in (as member, manager, or owner)
  */
-export async function userHasProjectAccess(userId: number, projectId: number): Promise<boolean> {
+export async function userHasProjectAccess(
+  userId: number,
+  projectId: number,
+  isAdmin: boolean
+): Promise<boolean> {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: {
@@ -112,6 +116,10 @@ export async function userHasProjectAccess(userId: number, projectId: number): P
 
   if (!project) {
     return false;
+  }
+
+  if (isAdmin) {
+    return true;
   }
 
   if (project.is_public) {

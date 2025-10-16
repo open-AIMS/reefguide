@@ -73,7 +73,7 @@ router.get(
       // Only check this if necessary
       if (!isAdmin && !ownsPolygon) {
         if (polygon.project_id) {
-          hasProjectAccess = await userHasProjectAccess(req.user.id, polygon.project_id);
+          hasProjectAccess = await userHasProjectAccess(req.user.id, polygon.project_id, isAdmin);
         }
       }
 
@@ -120,7 +120,7 @@ router.get(
 
         // Verify user has access to the project (unless admin)
         if (!isAdmin) {
-          const hasAccess = await userHasProjectAccess(req.user.id, projectIdNum);
+          const hasAccess = await userHasProjectAccess(req.user.id, projectIdNum, isAdmin);
           if (!hasAccess) {
             throw new UnauthorizedException('You do not have access to this project');
           }
@@ -208,9 +208,11 @@ router.post(
       const userId = req.user.id;
       const { polygon, projectId } = req.body;
 
+      const isAdmin = userIsAdmin(req.user);
+
       // If projectId is provided, validate user has access to the project
       if (projectId !== undefined) {
-        const hasAccess = await userHasProjectAccess(userId, projectId);
+        const hasAccess = await userHasProjectAccess(userId, projectId, isAdmin);
         if (!hasAccess) {
           throw new UnauthorizedException('You do not have access to this project');
         }
@@ -268,7 +270,7 @@ router.put(
 
       let hasProjectAccess = false;
       if (existingPolygon.project_id) {
-        hasProjectAccess = await userHasProjectAccess(req.user.id, existingPolygon.project_id);
+        hasProjectAccess = await userHasProjectAccess(req.user.id, existingPolygon.project_id, isAdmin);
       }
 
       if (!isAdmin && !ownsPolygon && !hasProjectAccess) {
@@ -277,7 +279,7 @@ router.put(
 
       // If updating projectId, validate user has access to the new project
       if (projectId !== undefined) {
-        const hasAccessToNewProject = await userHasProjectAccess(req.user.id, projectId);
+        const hasAccessToNewProject = await userHasProjectAccess(req.user.id, projectId, isAdmin);
         if (!hasAccessToNewProject) {
           throw new UnauthorizedException('You do not have access to the specified project');
         }
@@ -331,7 +333,7 @@ router.delete(
 
       let hasProjectAccess = false;
       if (existingPolygon.project_id) {
-        hasProjectAccess = await userHasProjectAccess(req.user.id, existingPolygon.project_id);
+        hasProjectAccess = await userHasProjectAccess(req.user.id, existingPolygon.project_id, isAdmin);
       }
 
       if (!isAdmin && !ownsPolygon && !hasProjectAccess) {
