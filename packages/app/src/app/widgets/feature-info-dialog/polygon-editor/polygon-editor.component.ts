@@ -1,22 +1,21 @@
-import { Component, inject, Input, OnInit, Output, EventEmitter, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { GeoJSON } from 'ol/format';
-import { getArea } from 'ol/sphere';
-import { Geometry } from 'ol/geom';
 import { NoteWithUser, PolygonWithRelations } from '@reefguide/types';
+import { Geometry } from 'ol/geom';
+import { getArea } from 'ol/sphere';
 import { WebApiService } from '../../../../api/web-api.service';
-import { FeatureRef } from '../../../map/openlayers-types';
 import { displayDate, getRelativeTime } from '../../../../util/time-utils';
+import { FeatureRef } from '../../../map/openlayers-types';
 
 /**
  * Component for displaying and editing polygon details and notes.
@@ -44,7 +43,6 @@ import { displayDate, getRelativeTime } from '../../../../util/time-utils';
 export class PolygonEditorComponent implements OnInit {
   private readonly api = inject(WebApiService);
   private readonly snackbar = inject(MatSnackBar);
-  private readonly geojsonFormat = new GeoJSON();
 
   /**
    * The feature reference containing the polygon feature and layer
@@ -131,7 +129,7 @@ export class PolygonEditorComponent implements OnInit {
       }
 
       // Calculate area in square meters using OpenLayers sphere utility
-      const area = getArea(geometry, { projection: 'EPSG:3857' });
+      const area = getArea(geometry);
       this.areaM2.set(Math.abs(area));
 
       // Get bounding box (extent)
@@ -337,6 +335,6 @@ export class PolygonEditorComponent implements OnInit {
     }
 
     // Use square meters for smaller areas
-    return `${Math.round(areaM2)} m²`;
+    return `~${Math.round(areaM2)} m²`;
   }
 }

@@ -397,17 +397,6 @@ export class PolygonMapService {
   }
 
   /**
-   * Show or hide polygon layers
-   * @param visible Whether layers should be visible
-   */
-  setVisible(visible: boolean): void {
-    const layerGroup = this.polygonLayerGroup();
-    if (layerGroup) {
-      layerGroup.setVisible(visible);
-    }
-  }
-
-  /**
    * Get the current loading state
    */
   isLoading(): boolean {

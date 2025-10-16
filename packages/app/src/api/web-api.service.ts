@@ -122,9 +122,10 @@ export class WebApiService {
    * Get all polygons for the current user (or all if admin)
    */
   getPolygons({ projectId }: { projectId?: number }): Observable<GetPolygonsResponse> {
-    return this.http.get<GetPolygonsResponse>(
-      `${this.base}/polygons${projectId ? '?projectId=' + projectId : ''}`
-    );
+    return this.http.get<GetPolygonsResponse>(`${this.base}/polygons`, {
+      // Include projectId param if provided
+      params: { ...(projectId ? { projectId } : {}) }
+    });
   }
 
   /**
