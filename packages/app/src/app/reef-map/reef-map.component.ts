@@ -96,7 +96,11 @@ export class ReefMapComponent implements AfterViewInit {
       // For now show all layers in flat list;
       // in future could display tree by recursing through getLayers()
       // getAllLayers will recursively get all leaf layers
-      const allLayers = this.map.getAllLayers();
+      const allLayers = this.map.getAllLayers().filter(layer => {
+        const props: LayerProperties = layer.getProperties();
+        return props.hideInList !== true;
+      });
+
       this.setMissingZindexes(allLayers);
       allLayers.sort((a, b) => b.getZIndex()! - a.getZIndex()!);
       this._lastEmittedLayers = allLayers;

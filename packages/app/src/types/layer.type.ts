@@ -24,4 +24,8 @@ export type LayerProperties = {
    * Text to append to all feature labels in this layer.
    */
   layerPostfix?: string;
+  /**
+   * Do not show this layer in lists visible to user.
+   */
+  hideInList?: boolean;
 };

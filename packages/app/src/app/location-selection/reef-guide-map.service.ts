@@ -261,6 +261,9 @@ export class ReefGuideMapService {
     // Create a temporary vector source and layer for drawing
     this.drawSource = new VectorSource({ wrapX: false });
     this.drawLayer = new VectorLayer({
+      properties: {
+        hideInList: true
+      } satisfies LayerProperties,
       source: this.drawSource,
       style: new Style({
         stroke: new Stroke({
