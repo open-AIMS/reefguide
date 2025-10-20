@@ -7,11 +7,14 @@ import VectorSource from 'ol/source/Vector';
 import XYZ from 'ol/source/XYZ';
 import { EsriJSON } from 'ol/format';
 import { LayerProperties } from '../../types/layer.type';
+import TileState from 'ol/TileState';
 import { tile as tileStrategy } from 'ol/loadingstrategy.js';
 import { createXYZ } from 'ol/tilegrid';
 import TileLayer from 'ol/layer/WebGLTile';
 import { Tile } from 'ol';
 import { clusterLayerSource } from '../../app/map/openlayers-util';
+import XYZ from 'ol/source/XYZ';
+import { load as lercLoad, decode as lercDecode } from 'lerc';
 
 /**
  * Create WMTS source based from capabilities XML file url.
@@ -75,6 +78,58 @@ export function errorTilesLoader(
       setTimeout(() => {
         URL.revokeObjectURL(imageUrl);
       }, 5_000);
+    }
+  };
+}
+
+export function lercTilesLoader() {
+  // https://codesandbox.io/p/sandbox/simple-forked-8vxfk?file=%2Fmain.js%3A28%2C46
+
+  // REVIEW ok keep canvas element like this?
+  const canvas = document.createElement('canvas');
+
+  return async (tile: Tile, src: string) => {
+    try {
+      const response = await fetch(src);
+
+      if (!response.ok) {
+        console.warn('LERC tile response not ok');
+        tile.setState(TileState.ERROR);
+        return;
+      } else {
+        console.log('loaded LERC tile', src);
+      }
+
+      const data = await response.arrayBuffer();
+      if (data !== undefined) {
+        const image = lercDecode(data);
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const ctx = canvas.getContext('2d')!;
+        const imgData = ctx.createImageData(image.width, image.width);
+        const values = image.pixels[0];
+        let j = 0;
+        for (let i = 0; i < values.length; i++) {
+          // REVIEW parseFloat needed?
+          // @ts-expect-error already number?
+          const pixel = Math.round(parseFloat(values[i]) * 10 + 100000);
+          imgData.data[j] = (pixel >> 16) & 0xff;
+          imgData.data[j + 1] = (pixel >> 8) & 0xff;
+          imgData.data[j + 2] = (pixel >> 0) & 0xff;
+          imgData.data[j + 3] = 0xff;
+          j += 4;
+        }
+        ctx.putImageData(imgData, 0, 0);
+
+        // @ts-expect-error getImage exists but is private
+        const img = tile.getImage() as HTMLImageElement;
+        img.src = canvas.toDataURL();
+      } else {
+        tile.setState(TileState.ERROR);
+      }
+    } catch (error) {
+      console.error('LERC tile load error', error);
+      tile.setState(TileState.ERROR);
     }
   };
 }
@@ -163,6 +218,34 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
       });
 
       return xyzLayer;
+
+    case 'ArcGisImageServer':
+      // initial layer, source is set later on lerc load
+      const tileLayer2 = new TileLayer({
+        properties,
+        ...layerDef.layerOptions,
+        ...mixin
+      });
+
+      // TODO share lerc loading promise/state
+      lercLoad({
+        locateFile: (wasmFileName): string => {
+          // see angular.json assets configuration
+          return `assets/lerc/${wasmFileName}`;
+        }
+      }).then(() => {
+        console.log('lerc loaded');
+
+        const xyzSource = new XYZ({
+          url: `${layerDef.url}/tile/{z}/{y}/{x}`,
+          tileLoadFunction: lercTilesLoader()
+        });
+
+        // @ts-expect-error ignore DataTileSource type check issue
+        tileLayer2.setSource(xyzSource);
+      });
+
+      return tileLayer2;
 
     default:
       throw new Error(`Unsupported urlType: ${layerDef.urlType}`);
