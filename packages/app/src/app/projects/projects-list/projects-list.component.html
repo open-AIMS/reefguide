@@ -153,13 +153,6 @@
                     matTooltip="Public: visible to everyone."
                     >public</mat-icon
                   >
-                } @else {
-                  <mat-icon
-                    class="public-icon"
-                    #tooltip="matTooltip"
-                    matTooltip="Private: visible only to shared users."
-                    >public_off</mat-icon
-                  >
                 }
               </div>
               @if (canManageProjectSettings(project)) {

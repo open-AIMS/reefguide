@@ -426,8 +426,8 @@
         align-items: center;
 
         .public-icon {
-          font-size: large;
-          color: #666;
+          // TODO share color variable with Project Settings
+          color: #4caf50;
         }
 
         @media (max-width: 480px) {
