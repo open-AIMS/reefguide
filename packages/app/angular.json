@@ -27,6 +27,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "*.wasm",
+                "input": "node_modules/lerc",
+                "output": "assets/lerc"
               }
             ],
             "styles": [
