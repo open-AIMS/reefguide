@@ -701,24 +701,32 @@ export class ReefGuideMapService {
 
     for (let layerDef of layers) {
       const { id } = layerDef;
-      const layer = createLayerFromDef(layerDef, {
-        id: `criteria_${id}`,
-        visible: false,
-        opacity: 0.8
-      });
+      try {
+        const layer = createLayerFromDef(layerDef, {
+          id: `criteria_${id}`,
+          visible: false,
+          opacity: 0.8
+        });
 
-      this.criteriaLayers[id] = this.afterCreateLayer(layer, { layerDef });
+        this.criteriaLayers[id] = this.afterCreateLayer(layer, { layerDef });
 
-      layerGroup.getLayers().push(layer);
+        layerGroup.getLayers().push(layer);
+      } catch (err) {
+        console.error(`Error loading criteria layer ${id}`, err);
+      }
     }
   }
 
   private addInfoLayers() {
     const infoLayerDefs = this.api.getInfoLayers();
     for (const layerDef of infoLayerDefs) {
-      const layer = createLayerFromDef(layerDef);
-      this.afterCreateLayer(layer, { layerDef });
-      this.map.getLayers().push(layer);
+      try {
+        const layer = createLayerFromDef(layerDef);
+        this.afterCreateLayer(layer, { layerDef });
+        this.map.getLayers().push(layer);
+      } catch (err) {
+        console.error(`Error loading info layer ${layerDef.id}`, err);
+      }
     }
   }
 
