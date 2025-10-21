@@ -174,7 +174,6 @@ export class SelectionCriteriaComponent {
     this.form = this.formBuilder.group<Record<keyof SharedProps, any>>({
       region: [null, Validators.required],
       reef_type: ['slopes'],
-      siteSuitability: this.formBuilder.group<Record<keyof SuitabilityAssessmentExclusiveInput, any>>({
       siteSuitability: this.formBuilder.group<
         Record<keyof SuitabilityAssessmentExclusiveInput, any>
       >({
