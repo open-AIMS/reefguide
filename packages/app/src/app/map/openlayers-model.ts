@@ -20,7 +20,12 @@ export type LayerControllerOptions = {
   color?: string;
 };
 
-// TODO lifecycle/dispose concerns, may need to cleanup listeners
+/**
+ * Wraps an OpenLayers Layer with signals and abstract over the app's layer styling system.
+ * Provides information about layer loading progress and errors.
+ *
+ * TODO lifecycle/dispose concerns, may need to cleanup listeners
+ */
 export class LayerController {
   readonly visible: WritableSignal<boolean>;
   readonly opacity: WritableSignal<number>;
@@ -42,6 +47,10 @@ export class LayerController {
    * Primary color of this layer
    */
   color?: WritableSignal<string>;
+  /**
+   * Download data file for the layer.
+   */
+  readonly download?: LayerProperties['download'];
 
   private destroyed$ = new Subject<void>();
 
@@ -49,6 +58,9 @@ export class LayerController {
     public readonly layer: Layer,
     public readonly options?: LayerControllerOptions
   ) {
+    const download: LayerProperties['download'] = layer.get('download');
+    this.download = typeof download === 'function' ? download : undefined;
+
     this.visible = signal(layer.getVisible());
     this.opacity = signal(layer.getOpacity());
 

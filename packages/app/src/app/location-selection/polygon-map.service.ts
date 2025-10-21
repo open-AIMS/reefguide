@@ -11,7 +11,7 @@ import VectorSource from 'ol/source/Vector';
 import { Fill, Stroke, Style } from 'ol/style';
 import { BehaviorSubject, finalize, Subject, tap } from 'rxjs';
 import { WebApiService } from '../../api/web-api.service';
-import { LayerProperties } from '../../types/layer.type';
+import { LayerDownload, LayerProperties } from '../../types/layer.type';
 import { disposeLayerGroup } from '../map/openlayers-util';
 
 export const USER_POLYGON_LAYER_ID = 'user-polygon-layer';
@@ -272,7 +272,6 @@ export class PolygonMapService {
   /**
    * Get existing vector layer or create a new one
    * @param layerGroup Layer group to search/add to
-   * @param projectId Optional project ID for layer naming
    */
   private getOrCreateVectorLayer(layerGroup: LayerGroup): VectorLayer<VectorSource> {
     // Try to find existing vector layer
@@ -293,7 +292,8 @@ export class PolygonMapService {
     const layer = new VectorLayer({
       properties: {
         title: layerTitle,
-        id: USER_POLYGON_LAYER_ID
+        id: USER_POLYGON_LAYER_ID,
+        download: () => this.download()
       } satisfies LayerProperties,
       source: source,
       style: this.getPolygonStyle()
@@ -415,5 +415,33 @@ export class PolygonMapService {
    */
   getCurrentProjectId(): number | undefined {
     return this.currentProjectId;
+  }
+
+  /**
+   * Generate GeoJSON feature collection of the polygons.
+   */
+  async download(): Promise<LayerDownload> {
+    const polygons = this.getPolygons();
+    const geoPolygons = polygons.map(p => {
+      return {
+        type: 'Feature',
+        // TODO what date format?
+        // TODO createdBy username instead of id
+        // TODO add comments
+        properties: { fid: p.id, createdAt: p.created_at, createdBy: p.user_id },
+        geometry: p.polygon
+      };
+    });
+
+    const featureCollection = {
+      type: 'FeatureCollection',
+      // TODO add bbox? https://datatracker.ietf.org/doc/html/rfc7946#section-5
+      features: geoPolygons
+    };
+
+    return {
+      filename: 'ReefGuide_polygons.geojson',
+      data: featureCollection
+    };
   }
 }

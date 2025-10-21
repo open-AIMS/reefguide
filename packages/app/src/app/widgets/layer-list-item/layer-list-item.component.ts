@@ -6,6 +6,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MAP_UI, ReefGuideMapService } from '../../location-selection/reef-guide-map.service';
 import { LayerController } from '../../map/openlayers-model';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { downloadJsonAsFile } from '../../../util/js-util';
 
 @Component({
   selector: 'app-layer-list-item',
@@ -38,5 +39,15 @@ export class LayerListItemComponent implements OnInit {
 
   openStyleEditor() {
     this.mapUI.openLayerStyleEditor(this.layer());
+  }
+
+  async download() {
+    const layerDownload = this.layerController.download;
+    if (layerDownload) {
+      const { filename, data } = await layerDownload();
+      downloadJsonAsFile(data, filename);
+    } else {
+      console.error('Attempt to download layer that does not support it.');
+    }
   }
 }

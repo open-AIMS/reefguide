@@ -28,4 +28,13 @@ export type LayerProperties = {
    * Do not show this layer in lists visible to user.
    */
   hideInList?: boolean;
+  /**
+   * Download all data for this layer.
+   */
+  download?: () => Promise<LayerDownload>;
+};
+
+export type LayerDownload = {
+  filename: string;
+  data: any;
 };
