@@ -51,6 +51,9 @@ export class LayerListItemComponent implements OnInit {
         const { filename, data } = await layerDownload();
         await downloadJsonAsFile(data, filename);
       } catch (e) {
+        if (e instanceof Error && e.name === 'AbortError') {
+          return;
+        }
         console.error(`Error downloading layer data id=${id}`, e);
         const title = this.layer().get('title');
         this.snackbar.open(`Error downloading ${title}`, 'OK');
