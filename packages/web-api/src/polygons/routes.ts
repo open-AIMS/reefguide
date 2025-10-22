@@ -91,6 +91,18 @@ router.get(
 );
 
 /**
+ * Format polygons as single text value
+ * @param polygon
+ */
+function formatNotes(polygon: PolygonWithRelations): string {
+  return polygon.notes
+    .map(note => {
+      return `# ${note.created_at} ${note.user.email}\n${note.content.trim()}`;
+    })
+    .join('\n---\n');
+}
+
+/**
  * Wraps the polygons in a GeoJSON feature collection.
  * @param polygons
  */
@@ -103,7 +115,12 @@ function polygonsToGeoJSON(polygons: PolygonWithRelations[]): any {
         type: 'Feature',
         // TODO what date format?
         // TODO add comments
-        properties: { fid: p.id, createdAt: p.created_at, createdBy: p.user.email },
+        properties: {
+          fid: p.id,
+          createdAt: p.created_at,
+          createdBy: p.user.email,
+          notes: formatNotes(p)
+        },
         geometry: p.polygon
       };
     })
