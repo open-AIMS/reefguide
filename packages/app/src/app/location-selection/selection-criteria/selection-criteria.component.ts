@@ -177,7 +177,7 @@ export class SelectionCriteriaComponent {
       siteSuitability: this.formBuilder.group<
         Record<keyof SuitabilityAssessmentExclusiveInput, any>
       >({
-        x_dist: [450, [Validators.min(1), Validators.required]],
+        x_dist: [100, [Validators.min(1), Validators.required]],
         y_dist: [20, [Validators.min(1), Validators.required]],
         threshold: [95, Validators.required]
       })

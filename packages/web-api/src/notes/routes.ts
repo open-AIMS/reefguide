@@ -28,7 +28,11 @@ export const router: Router = express.Router();
  * - Own the polygon
  * - Polygon is in a project they have access to
  */
-async function userHasPolygonAccess(userId: number, polygonId: number, isAdmin: boolean): Promise<boolean> {
+async function userHasPolygonAccess(
+  userId: number,
+  polygonId: number,
+  isAdmin: boolean
+): Promise<boolean> {
   const polygon = await prisma.polygon.findUnique({
     where: { id: polygonId }
   });
@@ -37,7 +41,7 @@ async function userHasPolygonAccess(userId: number, polygonId: number, isAdmin: 
     return false;
   }
 
-  if (isAdmin){
+  if (isAdmin) {
     return true;
   }
 
@@ -391,7 +395,11 @@ router.delete(
       // Check permissions
       const isAdmin = userIsAdmin(req.user);
       const ownsNote = existingNote.user_id === req.user.id;
-      const hasPolygonAccess = await userHasPolygonAccess(req.user.id, existingNote.polygon_id, isAdmin);
+      const hasPolygonAccess = await userHasPolygonAccess(
+        req.user.id,
+        existingNote.polygon_id,
+        isAdmin
+      );
 
       if (!isAdmin && !ownsNote && !hasPolygonAccess) {
         throw new UnauthorizedException('You do not have permission to delete this note');

@@ -270,7 +270,11 @@ router.put(
 
       let hasProjectAccess = false;
       if (existingPolygon.project_id) {
-        hasProjectAccess = await userHasProjectAccess(req.user.id, existingPolygon.project_id, isAdmin);
+        hasProjectAccess = await userHasProjectAccess(
+          req.user.id,
+          existingPolygon.project_id,
+          isAdmin
+        );
       }
 
       if (!isAdmin && !ownsPolygon && !hasProjectAccess) {
@@ -333,7 +337,11 @@ router.delete(
 
       let hasProjectAccess = false;
       if (existingPolygon.project_id) {
-        hasProjectAccess = await userHasProjectAccess(req.user.id, existingPolygon.project_id, isAdmin);
+        hasProjectAccess = await userHasProjectAccess(
+          req.user.id,
+          existingPolygon.project_id,
+          isAdmin
+        );
       }
 
       if (!isAdmin && !ownsPolygon && !hasProjectAccess) {
