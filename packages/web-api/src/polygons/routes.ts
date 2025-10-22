@@ -7,6 +7,7 @@ import {
   GetPolygonsQuerySchema,
   GetPolygonsResponse,
   PolygonParamsSchema,
+  PolygonWithRelations,
   UpdatePolygonInputSchema,
   UpdatePolygonResponse
 } from '@reefguide/types';
@@ -90,7 +91,29 @@ router.get(
 );
 
 /**
+ * Wraps the polygons in a GeoJSON feature collection.
+ * @param polygons
+ */
+function polygonsToGeoJSON(polygons: PolygonWithRelations[]): any {
+  return {
+    type: 'FeatureCollection',
+    // TODO add bbox? https://datatracker.ietf.org/doc/html/rfc7946#section-5
+    features: polygons.map(p => {
+      return {
+        type: 'Feature',
+        // TODO what date format?
+        // TODO add comments
+        properties: { fid: p.id, createdAt: p.created_at, createdBy: p.user.email },
+        geometry: p.polygon
+      };
+    })
+  };
+}
+
+/**
  * Get all polygons based on user permissions and filters
+ *
+ * format - respond with a file in that format instead of GetPolygonsQuery JSON.
  */
 router.get(
   '/',
@@ -105,7 +128,7 @@ router.get(
     }
 
     try {
-      const { projectId, onlyMine } = req.query;
+      const { projectId, onlyMine, format } = req.query;
       const isAdmin = userIsAdmin(req.user);
 
       let polygons;
@@ -161,27 +184,61 @@ router.get(
         ];
       }
 
+      // include user and notes relations when client asks for geojson
+      const includeUserAndNotes = format === 'geojson';
+
+      // Prisma include to mixin into queries
+      const includeQuery = includeUserAndNotes
+        ? {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true
+                }
+              },
+              notes: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      email: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        : undefined;
+
       if (isAdmin && !projectId && !onlyMine) {
         // Admin with no filters gets all polygons
-        polygons = await prisma.polygon.findMany();
+        polygons = await prisma.polygon.findMany(includeQuery);
         total = await prisma.polygon.count();
       } else {
         polygons = await prisma.polygon.findMany({
-          where: whereClause
+          where: whereClause,
+          ...includeQuery
         });
         total = await prisma.polygon.count({
           where: whereClause
         });
       }
 
-      res.json({
-        polygons,
-        pagination: {
-          total,
-          limit: polygons.length,
-          offset: 0
-        }
-      });
+      if (format === 'geojson') {
+        // technically content-type='application/geo+json' but just do json
+        // user and notes included in query when geojson format specified.
+        res.json(polygonsToGeoJSON(polygons as PolygonWithRelations[]));
+      } else {
+        res.json({
+          polygons,
+          pagination: {
+            total,
+            limit: polygons.length,
+            offset: 0
+          }
+        });
+      }
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
       throw new InternalServerError('Failed to get polygons. Error: ' + error, error as Error);
@@ -270,7 +327,11 @@ router.put(
 
       let hasProjectAccess = false;
       if (existingPolygon.project_id) {
-        hasProjectAccess = await userHasProjectAccess(req.user.id, existingPolygon.project_id, isAdmin);
+        hasProjectAccess = await userHasProjectAccess(
+          req.user.id,
+          existingPolygon.project_id,
+          isAdmin
+        );
       }
 
       if (!isAdmin && !ownsPolygon && !hasProjectAccess) {
@@ -333,7 +394,11 @@ router.delete(
 
       let hasProjectAccess = false;
       if (existingPolygon.project_id) {
-        hasProjectAccess = await userHasProjectAccess(req.user.id, existingPolygon.project_id, isAdmin);
+        hasProjectAccess = await userHasProjectAccess(
+          req.user.id,
+          existingPolygon.project_id,
+          isAdmin
+        );
       }
 
       if (!isAdmin && !ownsPolygon && !hasProjectAccess) {

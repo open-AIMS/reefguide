@@ -129,6 +129,18 @@ export class WebApiService {
   }
 
   /**
+   * Get URL that will download the polygons as a file.
+   * Currently, geojson is the only file format.
+   * @param params
+   */
+  getPolygonsGeoJSON(params?: { projectId?: number }): Observable<Blob> {
+    return this.http.get(`${this.base}/polygons`, {
+      params: { ...params, format: 'geojson' },
+      responseType: 'blob'
+    });
+  }
+
+  /**
    * Get a specific polygon by ID with full relations (user and notes)
    */
   getPolygon(id: number): Observable<GetPolygonResponse> {

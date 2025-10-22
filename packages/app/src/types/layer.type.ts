@@ -36,5 +36,5 @@ export type LayerProperties = {
 
 export type LayerDownload = {
   filename: string;
-  data: any;
+  data: object | Blob;
 };
