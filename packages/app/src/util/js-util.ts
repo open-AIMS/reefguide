@@ -3,19 +3,14 @@ export function isDefined<T>(value: T | undefined | null): value is T {
 }
 
 /**
- * Downloads a JSON object as a file in the browser
- * @param data The JSON object to download
+ * Downloads the Blob as a file in the browser.
+ * Uses old method of createObjectURL, temporary <a download> element.
+ * @param data The file data to download
  * @param filename The name of the file to download
  */
-function downloadJsonAsFileOldSchool(data: unknown, filename: string): void {
-  // Convert the JSON object to a string with pretty formatting
-  const jsonString = JSON.stringify(data, null, 2);
-
-  // Create a Blob containing the JSON data
-  const blob = new Blob([jsonString], { type: 'application/json' });
-
+function downloadFileOldSchool(data: Blob, filename: string): void {
   // Create a URL for the Blob
-  const url = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(data);
 
   // Create a temporary anchor element
   const link = document.createElement('a');
@@ -50,14 +45,15 @@ const filePickerTypes: Array<{ description: string; accept: Record<string, Array
 ];
 
 /**
- * Downloads JSON/GeoJSON as a file in the browser using modern APIs when available
+ * Downloads file in the browser using modern file system APIs when available.
  * @param data The JSON object or Blob to download
- * @param filename The name of the file to download
+ * @param filename The name of the file to download (including lowercase extension)
+ * @throws AbortError if user cancels
  */
-export async function downloadJsonAsFile(data: object | Blob, filename: string): Promise<void> {
+export async function downloadFile(data: object | Blob, filename: string): Promise<void> {
   let fileMimetype: string | undefined = undefined;
   // determine what picker types apply to this file based on extension in filename
-  // TODO better to bring content-type from response here
+  // TODO better to use content-type from response instead of file extension inspection.
   const availableFilePickerTypes = filePickerTypes.filter(t => {
     for (const mimetype in t.accept) {
       const extensions = t.accept[mimetype];
@@ -102,5 +98,5 @@ export async function downloadJsonAsFile(data: object | Blob, filename: string):
   }
 
   // Fallback to traditional method
-  downloadJsonAsFileOldSchool(data, filename);
+  downloadFileOldSchool(blob, filename);
 }

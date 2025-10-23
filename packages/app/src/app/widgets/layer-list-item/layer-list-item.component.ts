@@ -6,7 +6,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MAP_UI, ReefGuideMapService } from '../../location-selection/reef-guide-map.service';
 import { LayerController } from '../../map/openlayers-model';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
-import { downloadJsonAsFile } from '../../../util/js-util';
+import { downloadFile } from '../../../util/js-util';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
@@ -49,7 +49,7 @@ export class LayerListItemComponent implements OnInit {
     if (layerDownload) {
       try {
         const { filename, data } = await layerDownload();
-        await downloadJsonAsFile(data, filename);
+        await downloadFile(data, filename);
       } catch (e) {
         if (e instanceof Error && e.name === 'AbortError') {
           return;
