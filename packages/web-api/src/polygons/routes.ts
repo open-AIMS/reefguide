@@ -96,11 +96,15 @@ router.get(
  * @param polygon
  */
 function formatNotes(polygon: PolygonWithRelations): string {
+  const dateFormat = new Intl.DateTimeFormat('en-AU', {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  });
   return polygon.notes
     .map(note => {
-      return `# ${note.created_at} ${note.user.email}\n${note.content.trim()}`;
+      return `# ${dateFormat.format(note.created_at)} \u2014 ${note.user.email}\n${note.content.trim()}`;
     })
-    .join('\n---\n');
+    .join('\n\n');
 }
 
 /**
