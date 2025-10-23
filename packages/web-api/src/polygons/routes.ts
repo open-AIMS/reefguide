@@ -17,6 +17,7 @@ import { passport } from '../auth/passportConfig';
 import { assertUserHasRoleMiddleware, userIsAdmin } from '../auth/utils';
 import { InternalServerError, NotFoundException, UnauthorizedException } from '../exceptions';
 import { userHasProjectAccess } from '../util';
+import tokml from '@maphubs/tokml';
 
 require('express-async-errors');
 
@@ -117,7 +118,7 @@ function polygonsToGeoJSON(polygons: PolygonWithRelations[]): any {
         // TODO add comments
         properties: {
           fid: p.id,
-          createdAt: p.created_at,
+          createdAt: p.created_at.toISOString(),
           createdBy: p.user.email,
           notes: formatNotes(p)
         },
@@ -201,8 +202,8 @@ router.get(
         ];
       }
 
-      // include user and notes relations when client asks for geojson
-      const includeUserAndNotes = format === 'geojson';
+      // include user and notes relations when client asks for geo file format.
+      const includeUserAndNotes = Boolean(format); // not undefined or ''
 
       // Prisma include to mixin into queries
       const includeQuery = includeUserAndNotes
@@ -246,6 +247,15 @@ router.get(
         // technically content-type='application/geo+json' but just do json
         // user and notes included in query when geojson format specified.
         res.json(polygonsToGeoJSON(polygons as PolygonWithRelations[]));
+      } else if (format === 'kml') {
+        res.contentType('application/vnd.google-earth.kml+xml');
+        const geojson = polygonsToGeoJSON(polygons as PolygonWithRelations[]);
+        const kml = tokml(geojson, {
+          name: 'createdBy',
+          description: 'notes',
+          timestamp: 'createdAt'
+        });
+        res.send(kml as any);
       } else {
         res.json({
           polygons,

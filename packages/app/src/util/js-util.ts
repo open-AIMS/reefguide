@@ -32,28 +32,43 @@ function downloadJsonAsFileOldSchool(data: unknown, filename: string): void {
 }
 
 /**
+ * Mapping of file extension to file picker type entry
+ */
+const filePickerTypes: Array<{ description: string; accept: Record<string, Array<string>> }> = [
+  {
+    description: 'GeoJSON File',
+    accept: { 'application/geo_json': ['.geojson', '.json'] }
+  },
+  {
+    description: 'JSON File',
+    accept: { 'application/json': ['.json'] }
+  },
+  {
+    description: 'KML File',
+    accept: { 'application/vnd.google-earth.kml+xml': ['.kml'] }
+  }
+];
+
+/**
  * Downloads JSON/GeoJSON as a file in the browser using modern APIs when available
  * @param data The JSON object or Blob to download
  * @param filename The name of the file to download
  */
 export async function downloadJsonAsFile(data: object | Blob, filename: string): Promise<void> {
-  let mimetype: string = 'application/json';
-  let extension: string = '.json';
-  const filePickerTypes: any = [
-    {
-      description: 'JSON File',
-      accept: { [mimetype]: [extension] }
+  let fileMimetype: string | undefined = undefined;
+  // determine what picker types apply to this file based on extension in filename
+  // TODO better to bring content-type from response here
+  const availableFilePickerTypes = filePickerTypes.filter(t => {
+    for (const mimetype in t.accept) {
+      const extensions = t.accept[mimetype];
+      if (extensions.find(extension => filename.endsWith(extension))) {
+        // set Blob mimetype to the first one that matches
+        fileMimetype = mimetype;
+        return true;
+      }
     }
-  ];
-
-  if (filename.endsWith('.geojson')) {
-    mimetype = 'application/geo+json';
-    extension = '.geojson';
-    filePickerTypes.push({
-      description: 'GeoJSON File',
-      accept: { [mimetype]: [extension] }
-    });
-  }
+    return false;
+  });
 
   let blob: Blob;
   if (data instanceof Blob) {
@@ -61,7 +76,7 @@ export async function downloadJsonAsFile(data: object | Blob, filename: string):
   } else {
     // Convert the JSON object to a string with pretty formatting
     const jsonString = JSON.stringify(data, null, 2);
-    blob = new Blob([jsonString], { type: mimetype });
+    blob = new Blob([jsonString], { type: fileMimetype });
   }
 
   // Check if File System Access API is supported
@@ -69,7 +84,7 @@ export async function downloadJsonAsFile(data: object | Blob, filename: string):
     try {
       const handle = await (window as any).showSaveFilePicker({
         suggestedName: filename,
-        types: filePickerTypes
+        types: availableFilePickerTypes
       });
 
       const writable = await handle.createWritable();

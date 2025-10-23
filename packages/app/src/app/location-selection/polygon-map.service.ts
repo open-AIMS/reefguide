@@ -420,15 +420,15 @@ export class PolygonMapService {
   }
 
   /**
-   * Generate GeoJSON for the polygons (server-side)
+   * Generate KML for the polygons (server-side)
    */
   async download(): Promise<LayerDownload> {
     const blob = await firstValueFrom(
-      this.api.getPolygonsGeoJSON({ projectId: this.currentProjectId })
+      this.api.getPolygonsFile({ projectId: this.currentProjectId, format: 'kml' })
     );
 
     return {
-      filename: 'ReefGuide_polygons.geojson',
+      filename: 'ReefGuide_polygons.kml',
       data: blob
     };
   }
