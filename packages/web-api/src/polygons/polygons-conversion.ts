@@ -35,7 +35,8 @@ export function polygonsToGeoJSON(polygons: PolygonWithRelations[]): any {
           createdBy: p.user.email,
           notes: formatNotes(p)
         },
-        geometry: p.polygon
+        // REVIEW why is polygon property a string?
+        geometry: typeof p.polygon === 'string' ? JSON.parse(p.polygon) : p.polygon
       };
     })
   };

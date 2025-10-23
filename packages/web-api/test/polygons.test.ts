@@ -34,6 +34,35 @@ describe('Polygons', () => {
       expect(res.body.polygons).toBeInstanceOf(Array);
       expect(res.body.polygons.length).toBe(0);
     });
+
+    it('should return geojson', async () => {
+      const res = await authRequest(app, 'user1').get('/api/polygons?format=geojson').expect(200);
+
+      expect(res.type).toEqual('application/json');
+      expect(res.body).toMatchObject({
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            properties: {
+              // fid: 43,
+              // createdAt: '2025-10-23T04:02:11.339Z',
+              createdBy: 'testuser1@email.com',
+              notes: ''
+            },
+            geometry: { type: 'Polygon', coordinates: [[]] }
+          }
+        ]
+      });
+    });
+
+    it('should return kml', async () => {
+      const res = await authRequest(app, 'user1').get('/api/polygons?format=kml').expect(200);
+
+      expect(res.type).toEqual('application/vnd.google-earth.kml+xml');
+      // name is currently set to createdBy
+      expect(res.text).toContain('<Placemark><name>testuser1@email.com</name>');
+    });
   });
 
   describe('GET /api/polygons/:id', () => {
