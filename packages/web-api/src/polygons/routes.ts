@@ -7,6 +7,7 @@ import {
   GetPolygonsQuerySchema,
   GetPolygonsResponse,
   PolygonParamsSchema,
+  PolygonWithRelations,
   UpdatePolygonInputSchema,
   UpdatePolygonResponse
 } from '@reefguide/types';
@@ -16,6 +17,8 @@ import { passport } from '../auth/passportConfig';
 import { assertUserHasRoleMiddleware, userIsAdmin } from '../auth/utils';
 import { InternalServerError, NotFoundException, UnauthorizedException } from '../exceptions';
 import { userHasProjectAccess } from '../util';
+import tokml from '@maphubs/tokml';
+import { polygonsToGeoJSON } from './polygons-conversion';
 
 require('express-async-errors');
 
@@ -91,6 +94,8 @@ router.get(
 
 /**
  * Get all polygons based on user permissions and filters
+ *
+ * format - respond with a file in that format instead of GetPolygonsQuery JSON.
  */
 router.get(
   '/',
@@ -105,7 +110,7 @@ router.get(
     }
 
     try {
-      const { projectId, onlyMine } = req.query;
+      const { projectId, onlyMine, format } = req.query;
       const isAdmin = userIsAdmin(req.user);
 
       let polygons;
@@ -161,27 +166,70 @@ router.get(
         ];
       }
 
+      // include user and notes relations when client asks for geo file format.
+      const includeUserAndNotes = Boolean(format); // not undefined or ''
+
+      // Prisma include to mixin into queries
+      const includeQuery = includeUserAndNotes
+        ? {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true
+                }
+              },
+              notes: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      email: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        : undefined;
+
       if (isAdmin && !projectId && !onlyMine) {
         // Admin with no filters gets all polygons
-        polygons = await prisma.polygon.findMany();
+        polygons = await prisma.polygon.findMany(includeQuery);
         total = await prisma.polygon.count();
       } else {
         polygons = await prisma.polygon.findMany({
-          where: whereClause
+          where: whereClause,
+          ...includeQuery
         });
         total = await prisma.polygon.count({
           where: whereClause
         });
       }
 
-      res.json({
-        polygons,
-        pagination: {
-          total,
-          limit: polygons.length,
-          offset: 0
-        }
-      });
+      if (format === 'geojson') {
+        // technically content-type='application/geo+json' but just do json
+        // user and notes included in query when geojson format specified.
+        res.json(polygonsToGeoJSON(polygons as PolygonWithRelations[]));
+      } else if (format === 'kml') {
+        res.contentType('application/vnd.google-earth.kml+xml');
+        const geojson = polygonsToGeoJSON(polygons as PolygonWithRelations[]);
+        const kml = tokml(geojson, {
+          name: 'createdBy',
+          description: 'notes',
+          timestamp: 'createdAt'
+        });
+        res.send(kml as any);
+      } else {
+        res.json({
+          polygons,
+          pagination: {
+            total,
+            limit: polygons.length,
+            offset: 0
+          }
+        });
+      }
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
       throw new InternalServerError('Failed to get polygons. Error: ' + error, error as Error);

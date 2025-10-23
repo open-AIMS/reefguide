@@ -6,6 +6,10 @@
   <a mat-icon-button [href]="props.downloadUrl" download matTooltip="Download layer file">
     <mat-icon>download</mat-icon>
   </a>
+} @else if (layerController.download) {
+  <button mat-icon-button (click)="download()" matTooltip="Download layer file">
+    <mat-icon>download</mat-icon>
+  </button>
 } @else if (props.infoUrl) {
   <a mat-icon-button [href]="props.infoUrl" target="_blank" matTooltip="Layer source information">
     <mat-icon>travel_explore</mat-icon>

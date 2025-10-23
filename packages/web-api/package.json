@@ -29,6 +29,7 @@
         "@aws-sdk/s3-request-presigner": "^3.835.0",
         "@cloudcomponents/cdk-static-website": "^2.2.0",
         "@codegenie/serverless-express": "^4.16.0",
+        "@maphubs/tokml": "^0.6.1",
         "@reefguide/db": "workspace:*",
         "@reefguide/types": "workspace:*",
         "@sentry/node": "^10.4.0",

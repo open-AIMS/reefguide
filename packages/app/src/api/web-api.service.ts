@@ -26,6 +26,7 @@ import {
   GetNoteResponse,
   GetNotesResponse,
   GetPolygonResponse,
+  GetPolygonsQuery,
   GetPolygonsResponse,
   GetProjectResponse,
   GetProjectsResponse,
@@ -125,6 +126,20 @@ export class WebApiService {
     return this.http.get<GetPolygonsResponse>(`${this.base}/polygons`, {
       // Include projectId param if provided
       params: { ...(projectId ? { projectId } : {}) }
+    });
+  }
+
+  /**
+   * Download the polygons in the specified file format.
+   * @param params
+   */
+  getPolygonsFile(params?: {
+    projectId?: number;
+    format: GetPolygonsQuery['format'];
+  }): Observable<Blob> {
+    return this.http.get(`${this.base}/polygons`, {
+      params: { ...params },
+      responseType: 'blob'
     });
   }
 

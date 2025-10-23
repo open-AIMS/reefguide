@@ -997,7 +997,8 @@ export const GetPolygonsQuerySchema = z.object({
   projectId: z.string().optional(),
   onlyMine: z.string().optional(),
   limit: z.string().optional(),
-  offset: z.string().optional()
+  offset: z.string().optional(),
+  format: z.enum(['geojson', 'kml']).optional()
 });
 export type GetPolygonsQuery = z.infer<typeof GetPolygonsQuerySchema>;
 
