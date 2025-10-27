@@ -10,6 +10,11 @@
         }
       </mat-select>
     </mat-form-field>
+    @if (regions?.length === 0) {
+      <div class="error-message">
+        Database is missing regions information!
+      </div>
+    }
     @if (sliderDefs) {
       <div formGroupName="criteria">
         @for (sliderDef of sliderDefs; track sliderDef.criteria.id) {

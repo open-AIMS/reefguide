@@ -108,9 +108,6 @@ export class ReefGuideMapService {
   // map is set shortly after construction
   private map!: OLMap;
 
-  // TODO apply default style for assessed layer
-  assessColor = [241, 192, 12, 1]; // ColorRGBA
-
   criteriaLayers: Record<string, LayerController | undefined> = {};
 
   /**
@@ -548,11 +545,11 @@ export class ReefGuideMapService {
 
         const style = new Style({
           stroke: new Stroke({
-            color: 'rgba(241, 192, 12, 0.7)',
+            color: 'rgba(203,8,229,0.7)',
             width: 1
           }),
           fill: new Fill({
-            color: 'rgba(241, 192, 12, 0.5)' // semi-transparent gold
+            color: 'rgba(203,8,229,0.4)'
           })
         });
 
@@ -643,7 +640,7 @@ export class ReefGuideMapService {
   private async addRegionalAssessmentLayer(region: ReadyRegion, layerGroup: LayerGroup) {
     console.log('addRegionalAssessmentLayer', region.region, region.originalUrl);
 
-    const color = '#27b51e';
+    const color = '#F1C00C';
 
     const layer = new TileLayer({
       properties: {
