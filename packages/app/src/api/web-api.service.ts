@@ -351,6 +351,15 @@ export class WebApiService {
   getInfoLayers(): Array<LayerDef> {
     return [
       {
+        id: 'world_imagery_basemap',
+        title: 'Base map (Esri World Imagery Firefly)',
+        infoUrl: 'https://www.esri.com/',
+        url: 'https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer/tile/{z}/{y}/{x}',
+        urlType: 'XYZ',
+        attributions:
+          'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+      },
+      {
         id: 'ssr_sentinel_2018',
         title: 'SSR Sentinel 2018',
         infoUrl:

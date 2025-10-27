@@ -4,6 +4,7 @@ import { LayerDef } from '@reefguide/types';
 import Layer, { Options } from 'ol/layer/Layer';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
+import XYZ from 'ol/source/XYZ';
 import { EsriJSON } from 'ol/format';
 import { LayerProperties } from '../../types/layer.type';
 import { tile as tileStrategy } from 'ol/loadingstrategy.js';
@@ -152,6 +153,22 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
       }, 2_000);
 
       return tileLayer;
+
+    case 'XYZ':
+      const xyzLayer = new TileLayer({
+        properties,
+        ...layerDef.layerOptions,
+        ...mixin,
+        // @ts-expect-error this source works with WebGLTileLayer, ignore the type error
+        // https://github.com/openlayers/openlayers/issues/16794
+        source: new XYZ({
+          url: layerDef.url,
+          // TODO set attributions across layer types in generic way
+          attributions: layerDef.attributions
+        })
+      });
+
+      return xyzLayer;
 
     default:
       throw new Error(`Unsupported urlType: ${layerDef.urlType}`);

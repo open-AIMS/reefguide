@@ -19,8 +19,6 @@ import ScaleLine from 'ol/control/ScaleLine';
 import { Polygon } from 'ol/geom';
 import LayerGroup from 'ol/layer/Group';
 import Layer from 'ol/layer/Layer';
-import TileLayer from 'ol/layer/WebGLTile';
-import XYZ from 'ol/source/XYZ';
 import { debounceTime, map, Observable, Subject } from 'rxjs';
 import { LayerProperties } from '../../types/layer.type';
 import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
@@ -124,24 +122,9 @@ export class ReefMapComponent implements AfterViewInit {
       return;
     }
 
-    const baseLayer = new TileLayer({
-      // @ts-expect-error this source works with WebGLTileLayer, ignore the type error
-      // https://github.com/openlayers/openlayers/issues/16794
-      source: new XYZ({
-        url: 'https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer/tile/{z}/{y}/{x}',
-        attributions:
-          'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-      }),
-      properties: {
-        title: 'Base map (Esri World Imagery Firefly)',
-        infoUrl: 'https://www.esri.com/'
-      } satisfies LayerProperties
-    });
-
     this.map = new Map({
       target: this.mapEl().nativeElement,
-      view: this.view,
-      layers: [baseLayer]
+      view: this.view
     });
 
     // REVIEW better design if one-way (map component listens to service)
