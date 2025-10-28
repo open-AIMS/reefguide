@@ -78,7 +78,6 @@ import { environment } from '../environments/environment';
 import { retryHTTPErrors } from '../util/http-util';
 import Style, { StyleFunction } from 'ol/style/Style';
 import { Fill, Stroke } from 'ol/style';
-import { gbrmpZoneStyleFunction } from './styling-helpers';
 
 type JobId = CreateJobResponse['jobId'];
 
@@ -349,6 +348,10 @@ export class WebApiService {
    * Get informational layers
    */
   getInfoLayers(): Array<LayerDef> {
+    /*
+    Layer definitions could come from the API/database in the future, so should avoid
+    anything that can't be encoded in JSON (e.g. functions)
+     */
     return [
       {
         id: 'world_imagery_basemap',
@@ -401,8 +404,7 @@ export class WebApiService {
         urlType: 'ArcGisFeatureServer',
         layerOptions: {
           visible: false,
-          opacity: 0.5,
-          style: gbrmpZoneStyleFunction
+          opacity: 0.5
         }
       },
       {
@@ -630,6 +632,7 @@ export class WebApiService {
         layerOptions: {
           visible: false,
           opacity: 0.8,
+          // TODO should convert to JSON or hardcoded style
           style: function (feature, resolution) {
             if (feature.get('OBJECTID') == 1) {
               return new Style({
