@@ -371,6 +371,25 @@ export class WebApiService {
         }
       },
       {
+        id: 'cities',
+        title: 'Cities',
+        url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/Cities/FeatureServer/',
+        urlType: 'ArcGisFeatureServer',
+        layerId: '0',
+        labelProp: 'name',
+        infoUrl:
+          'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/Cities/FeatureServer/',
+        layerOptions: {
+          style: {
+            'text-value': ['get', 'name'],
+            'text-font': '14px Roboto',
+            'text-fill-color': '#ffffff',
+            'text-stroke-color': '#000000',
+            'text-stroke-width': 2
+          }
+        }
+      },
+      {
         id: 'GBRMPA_Zoning',
         title: 'GBRMPA Zoning',
         // NAME exists, specific id like P-16-15, but TYPE more friendly text
