@@ -416,13 +416,24 @@ export class WebApiService {
         urlType: 'ArcGisFeatureServer',
         layerOptions: {
           visible: true,
+          minZoom: 7,
           opacity: 0.8,
+          // only declutter with self
+          declutter: 'reefs',
           style: {
             'fill-color': 'rgba(35,96,165,0.01)',
             'stroke-color': 'rgba(70,150,255,0.9)',
             'stroke-line-dash': [4, 6],
             'stroke-width': 1,
-            'text-value': ['get', 'reef_name']
+            'text-value': ['get', 'reef_name'],
+            'text-font': '12px Verdana',
+            'text-fill-color': '#ffffff',
+            'text-stroke-color': '#000000',
+            'text-stroke-width': 2,
+            // required otherwise text does not show until zoom far in
+            'text-overflow': true,
+            // reduce how many labels are shown when crowded by setting padding
+            'text-padding': [4, 2, 4, 2] // top, right, bottom, left
           }
         }
       },
