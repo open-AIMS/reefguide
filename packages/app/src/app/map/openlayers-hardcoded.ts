@@ -80,6 +80,10 @@ const gbrmpZoneStyleFunction: StyleFunction = feature => {
   // Get zone-specific styling based on TYPE field
   const zoneStyle = getZoneStyle(zoneType);
 
+  // PERF this is creating thousands of Style objects
+  //  we could cache them on zoneType except for the text expression.
+  //  text property does not accept an Expression here, not clear how to set an expression
+  //  using Style objects. May need to change to flat styles
   return new Style({
     fill: new Fill({
       color: zoneStyle.fillColor
