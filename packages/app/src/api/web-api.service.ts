@@ -416,17 +416,36 @@ export class WebApiService {
         urlType: 'ArcGisFeatureServer',
         layerOptions: {
           visible: true,
-          minZoom: 7,
+          minZoom: 8,
           opacity: 0.8,
           // only declutter with self
           declutter: 'reefs',
+          // Note: nice_reef_name and significance are added in openlayers-hardcoded.ts
           style: {
             'fill-color': 'rgba(35,96,165,0.01)',
             'stroke-color': 'rgba(70,150,255,0.9)',
             'stroke-line-dash': [4, 6],
             'stroke-width': 1,
-            'text-value': ['get', 'reef_name'],
-            'text-font': '12px Verdana',
+            'text-value': [
+              'match',
+              ['get', 'significance'],
+              // always show reef text for significant reefs
+              1,
+              ['get', 'nice_reef_name'],
+              // default
+              // show text when resolution < 75
+              ['case', ['<', ['resolution'], 75], ['get', 'nice_reef_name'], '']
+              // view resolution with: ['to-string', ['resolution']]
+            ],
+            'text-font': [
+              'match',
+              ['get', 'significance'],
+              // larger text for more significant reefs
+              1,
+              '12px Verdana, sans-serif',
+              // default (i.e. unnamed reefs)
+              '10px Verdana, sans-serif'
+            ],
             'text-fill-color': '#ffffff',
             'text-stroke-color': '#000000',
             'text-stroke-width': 2,

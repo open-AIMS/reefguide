@@ -12,7 +12,6 @@ import { createXYZ } from 'ol/tilegrid';
 import TileLayer from 'ol/layer/WebGLTile';
 import { Tile } from 'ol';
 import { clusterLayerSource } from '../../app/map/openlayers-util';
-import { setupGBRMPZoning } from '../../app/map/openlayers-hardcoded';
 
 /**
  * Create WMTS source based from capabilities XML file url.
@@ -125,11 +124,6 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
         ...layerDef.layerOptions,
         ...mixin
       });
-
-      // TODO generic support for ArcGis to OpenLayers style
-      if (layerDef.id === 'GBRMP_Zoning') {
-        setupGBRMPZoning(vectorLayer);
-      }
 
       if (layerDef.cluster) {
         clusterLayerSource(vectorLayer);

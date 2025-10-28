@@ -90,6 +90,7 @@ export interface PolygonDrawHandlers {
 }
 
 import { PolygonMapService } from './polygon-map.service';
+import { LAYER_ADJUSTMENT } from '../map/openlayers-hardcoded';
 
 /**
  * Reef Guide map context and layer management.
@@ -762,6 +763,13 @@ export class ReefGuideMapService {
    * @param options should be provided if created from LayerDef
    */
   private afterCreateLayer(layer: Layer, options?: LayerControllerOptions): LayerController {
+    const layerId = layer.get('id');
+    // call hardcoded adjustment function for this layer if it has one.
+    const adjustFn = LAYER_ADJUSTMENT[layerId];
+    if (adjustFn && layer instanceof VectorLayer) {
+      adjustFn(layer);
+    }
+
     // TODO show error indicator in UI
     layer.on('error', e => {
       console.error('layer error', e);
