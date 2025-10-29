@@ -78,7 +78,6 @@ import { environment } from '../environments/environment';
 import { retryHTTPErrors } from '../util/http-util';
 import Style, { StyleFunction } from 'ol/style/Style';
 import { Fill, Stroke } from 'ol/style';
-import { gbrmpZoneStyleFunction } from './styling-helpers';
 
 type JobId = CreateJobResponse['jobId'];
 
@@ -349,7 +348,20 @@ export class WebApiService {
    * Get informational layers
    */
   getInfoLayers(): Array<LayerDef> {
+    /*
+    Layer definitions could come from the API/database in the future, so should avoid
+    anything that can't be encoded in JSON (e.g. functions)
+     */
     return [
+      {
+        id: 'world_imagery_basemap',
+        title: 'Base map (Esri World Imagery Firefly)',
+        infoUrl: 'https://www.esri.com/',
+        url: 'https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer/tile/{z}/{y}/{x}',
+        urlType: 'XYZ',
+        attributions:
+          'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+      },
       {
         id: 'ssr_sentinel_2018',
         title: 'SSR Sentinel 2018',
@@ -359,6 +371,25 @@ export class WebApiService {
         urlType: 'WMTSCapabilitiesXml',
         layerOptions: {
           visible: false
+        }
+      },
+      {
+        id: 'cities',
+        title: 'Cities',
+        url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/Cities/FeatureServer/',
+        urlType: 'ArcGisFeatureServer',
+        layerId: '0',
+        labelProp: 'name',
+        infoUrl:
+          'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/Cities/FeatureServer/',
+        layerOptions: {
+          style: {
+            'text-value': ['get', 'name'],
+            'text-font': '14px Roboto',
+            'text-fill-color': '#ffffff',
+            'text-stroke-color': '#000000',
+            'text-stroke-width': 2
+          }
         }
       },
       {
@@ -373,8 +404,7 @@ export class WebApiService {
         urlType: 'ArcGisFeatureServer',
         layerOptions: {
           visible: false,
-          opacity: 0.5,
-          style: gbrmpZoneStyleFunction
+          opacity: 0.5
         }
       },
       {
@@ -388,13 +418,43 @@ export class WebApiService {
         urlType: 'ArcGisFeatureServer',
         layerOptions: {
           visible: true,
+          minZoom: 8,
           opacity: 0.8,
+          // only declutter with self
+          declutter: 'reefs',
+          // Note: nice_reef_name and significance are added in openlayers-hardcoded.ts
           style: {
             'fill-color': 'rgba(35,96,165,0.01)',
             'stroke-color': 'rgba(70,150,255,0.9)',
             'stroke-line-dash': [4, 6],
             'stroke-width': 1,
-            'text-value': ['get', 'reef_name']
+            'text-value': [
+              'match',
+              ['get', 'significance'],
+              // always show reef text for significant reefs
+              1,
+              ['get', 'nice_reef_name'],
+              // default
+              // show text when resolution < 75
+              ['case', ['<', ['resolution'], 75], ['get', 'nice_reef_name'], '']
+              // view resolution with: ['to-string', ['resolution']]
+            ],
+            'text-font': [
+              'match',
+              ['get', 'significance'],
+              // larger text for more significant reefs
+              1,
+              '12px Verdana, sans-serif',
+              // default (i.e. unnamed reefs)
+              '10px Verdana, sans-serif'
+            ],
+            'text-fill-color': '#ffffff',
+            'text-stroke-color': '#000000',
+            'text-stroke-width': 2,
+            // required otherwise text does not show until zoom far in
+            'text-overflow': true,
+            // reduce how many labels are shown when crowded by setting padding
+            'text-padding': [4, 2, 4, 2] // top, right, bottom, left
           }
         }
       },
@@ -572,6 +632,7 @@ export class WebApiService {
         layerOptions: {
           visible: false,
           opacity: 0.8,
+          // TODO should convert to JSON or hardcoded style
           style: function (feature, resolution) {
             if (feature.get('OBJECTID') == 1) {
               return new Style({

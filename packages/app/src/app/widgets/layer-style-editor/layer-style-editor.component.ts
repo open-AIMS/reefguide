@@ -1,11 +1,10 @@
-import { Component, inject, input, WritableSignal } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
 import Layer from 'ol/layer/Layer';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { ReefGuideMapService } from '../../location-selection/reef-guide-map.service';
-import { LayerController } from '../../map/openlayers-model';
 
 // TODO layer blend mode. was for ArcGis, but these are standard canvas blend modes
 const BLEND_MODES = [
@@ -57,23 +56,12 @@ export class LayerStyleEditorComponent {
   private readonly mapService = inject(ReefGuideMapService);
 
   layer = input.required<Layer>();
-  layerController!: LayerController;
+
+  layerController = computed(() => {
+    return this.mapService.getLayerController(this.layer());
+  });
 
   blendModes = BLEND_MODES;
-
-  /**
-   * Defined if color supported
-   */
-  currentColor?: WritableSignal<string>;
-
-  ngOnInit() {
-    const layer = this.layer();
-    this.layerController = this.mapService.getLayerController(layer);
-
-    if (this.layerController.color) {
-      this.currentColor = this.layerController.color;
-    }
-  }
 
   // onBlendModeChange(value: BlendModes) {
   //   const layer = this.layer();
@@ -89,6 +77,6 @@ export class LayerStyleEditorComponent {
   onColorChange(event: Event) {
     const el = event.target! as HTMLInputElement;
     const colorString = el.value as string;
-    this.currentColor?.set(colorString);
+    this.layerController().color?.set(colorString);
   }
 }

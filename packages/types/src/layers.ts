@@ -35,6 +35,11 @@ type BaseLayerDef = {
   infoUrl?: string;
 
   /**
+   * Layer attributions text.
+   */
+  attributions?: string;
+
+  /**
    * Reverse criteria range values when applying pixel filter
    */
   reverseRange?: boolean;
@@ -80,7 +85,7 @@ type TileLayerDef = BaseLayerDef & {
    *
    * WMTSCapabilitiesXml - URL of WMTSCapabilities.xml file
    */
-  urlType: 'WMTSCapabilitiesXml' | 'ArcGisImageServer' | 'ArcGisMapServer';
+  urlType: 'WMTSCapabilitiesXml' | 'ArcGisImageServer' | 'ArcGisMapServer' | 'XYZ';
 
   /**
    * Layer Options to mixin during construction.
