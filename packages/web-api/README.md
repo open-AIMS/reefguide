@@ -549,7 +549,7 @@ Example:
 1. Export your config file path:
 
    ```bash
-   export CONFIG_FILE_NAME=<file name.json e.g. dev.json>
+   export CONFIG_FILE_NAME=<file name.json e.g. test.json>
    ```
 
 2. Ensure you have AWS credentials active for the target environment:

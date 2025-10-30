@@ -210,7 +210,9 @@ export class ECSWebAPI extends Construct {
       desiredCount: 1,
       securityGroups: [serviceSecurityGroup],
       assignPublicIp: true,
-      healthCheckGracePeriod: Duration.minutes(3)
+      healthCheckGracePeriod: Duration.minutes(3),
+      // ok if no tasks running during deployment
+      minHealthyPercent: 0
     });
 
     // LOAD BALANCING SETUP
@@ -280,7 +282,9 @@ export class ECSWebAPI extends Construct {
       zone: props.hz,
       recordName: props.domainName,
       comment: `Route from ${props.domainName} to web-api ECS service through ALB`,
-      ttl: Duration.minutes(30),
+      // [Warning at /test-reefguide/web-api/web-api-route] Ignoring ttl since 'target' uses an
+      //   alias target [ack: aws-cdk-lib/aws-route53:ttlIgnored]
+      // ttl: Duration.minutes(30),
       target: r53.RecordTarget.fromAlias(
         new r53Targets.LoadBalancerTarget(props.sharedBalancer.alb)
       )

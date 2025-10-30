@@ -36,22 +36,22 @@ ReefGuide uses a detached configuration management approach with a private confi
 ```
 .
 └── STAGE
-    ├── dev
+    ├── prod
     │   ├── cdk.context.json
     │   └── configs
-    │       └── dev.json
+    │       └── prod.json
     └── test
         ├── cdk.context.json
         └── configs
             └── test.json
 ```
 
-Where `STAGE` is replaced with the name of your namespace and `dev`/`test` are your deployment stages.
+Where `STAGE` is replaced with the name of your namespace and `test`/`prod` are your deployment stages.
 
 **Configuration files:**
 
 - `cdk.context.json`: Copy this after your first deployment to ensure deterministic deployments
-- `dev.json`/`test.json`: Stage-specific configuration (see sample below)
+- `test.json`/`prod.json`: Stage-specific configuration (see sample below)
 
 **Sample configuration** (adapt from `packages/infra/configs/sample.json`):
 
@@ -163,7 +163,7 @@ First, setup your config and environment, then run CDK operations.
 2. **Set Configuration**:
 
    ```bash
-   export CONFIG_FILE_NAME=dev.json  # or other stage.json
+   export CONFIG_FILE_NAME=test.json  # or other stage.json
    ```
 
 3. **Install Dependencies**:
@@ -176,7 +176,7 @@ First, setup your config and environment, then run CDK operations.
 4. **Load Configuration**:
 
    ```bash
-   ./config aims dev --target git@github.com:your-org/your-config-repo.git
+   ./config aims test --target git@github.com:your-org/your-config-repo.git
    ```
 
 ### Synth
