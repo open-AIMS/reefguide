@@ -65,7 +65,7 @@ First, **identify the repo clone URL, namespace and stage for your private confi
 e.g.
 
 ```
-./config aims dev --target git@github.com:open-AIMS/reefguide-config.git
+./config aims test --target git@github.com:open-AIMS/reefguide-config.git
 ```
 
 You should see an output similar to
@@ -80,17 +80,17 @@ remote: Total 133 (delta 19), reused 131 (delta 17), pack-reused 0 (from 0)
 Receiving objects: 100% (133/133), 13.20 KiB | 13.20 MiB/s, done.
 Resolving deltas: 100% (19/19), done.
 Warning: Directory /tmp/tmp.Wn0N8YcVSR/aims/base does not exist. Skipping.
-Copying files from /tmp/tmp.Wn0N8YcVSR/aims/dev to current directory
+Copying files from /tmp/tmp.Wn0N8YcVSR/aims/test to current directory
 Cleaning up temporary directory: /tmp/tmp.Wn0N8YcVSR
-Configuration update complete for namespace: aims, stage: dev, branch: main
+Configuration update complete for namespace: aims, stage: test, branch: main
 ```
 
-And should now have the corresponding JSON config file in `configs/*.json` e.g. we have a `dev` stage file `dev.json`.
+And should now have the corresponding JSON config file in `configs/*.json` e.g. we have a `test` stage file `test.json`.
 
 Now, in the same terminal session, export the name of your config file
 
 ```bash
-export CONFIG_FILE_NAME=dev.json
+export CONFIG_FILE_NAME=test.json
 ```
 
 ### Setup AWS credentials
