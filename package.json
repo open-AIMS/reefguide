@@ -1,31 +1,31 @@
 {
-    "name": "reefguide",
-    "version": "0.1.0",
-    "private": true,
-    "description": "ReefGuide mono repo",
-    "scripts": {
-        "build": "turbo build",
-        "dev": "turbo dev",
-        "dev-no-web-api": "turbo dev --filter=!@reefguide/web-api",
-        "format:write": "turbo format:write",
-        "format:check": "turbo format:check",
-        "lint": "turbo lint",
-        "test": "turbo test",
-        "type-check": "turbo type-check",
-        "clean": "turbo clean",
-        "generate": "pnpm --filter @reefguide/db run generate"
-    },
-    "devDependencies": {
-        "@types/node": "^24.0.4",
-        "eslint": "^8.57.0",
-        "gts": "^6.0.2",
-        "prettier": "^3.6.0",
-        "turbo": "^2.5.4",
-        "typescript": "^5.8.3"
-    },
-    "packageManager": "pnpm@10.18.1",
-    "engines": {
-        "node": ">=18.0.0",
-        "pnpm": ">=10.0.0"
-    }
+  "name": "reefguide",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ReefGuide mono repo",
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "dev-no-web-api": "turbo dev --filter=!@reefguide/web-api",
+    "format:write": "turbo format:write",
+    "format:check": "turbo format:check",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "type-check": "turbo type-check",
+    "clean": "turbo clean",
+    "generate": "pnpm --filter @reefguide/db run generate"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.4",
+    "eslint": "^8.57.0",
+    "gts": "^6.0.2",
+    "prettier": "^3.6.0",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3"
+  },
+  "packageManager": "pnpm@10.20.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=10.0.0"
+  }
 }
