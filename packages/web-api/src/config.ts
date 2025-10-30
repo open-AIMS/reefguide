@@ -28,6 +28,14 @@ const envSchema = z.object({
   WORKER_PASSWORD: z.string(),
   ADMIN_USERNAME: z.string(),
   ADMIN_PASSWORD: z.string(),
+  JOB_EXPIRY_MINUTES: z
+    .string()
+    .optional()
+    .default('120')
+    .transform(val => parseInt(val, 10))
+    .refine(val => !isNaN(val) && val > 0, {
+      message: 'JOB_EXPIRY_MINUTES must be a positive number'
+    }),
   DISABLE_CACHE: z
     .string()
     .default('false')
@@ -182,6 +190,8 @@ export interface Config {
   };
   // Optional Sentry DSN for error tracking
   sentryDsn?: string;
+  // How many minutes before non-terminated jobs expire
+  jobExpiryMinutes: number;
 }
 
 /**
@@ -303,7 +313,8 @@ export function getConfig(): Config {
       config: emailConfig,
       smtp: smtpConfig
     },
-    sentryDsn: env.SENTRY_DSN
+    sentryDsn: env.SENTRY_DSN,
+    jobExpiryMinutes: env.JOB_EXPIRY_MINUTES
   };
 
   // Update process.env with parsed values

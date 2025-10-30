@@ -1,5 +1,7 @@
 import { schedule, ScheduledTask } from 'node-cron';
 import { getDataSpecificationService } from '../services/dataSpec';
+import { config } from '../config';
+import { timeoutJobs } from '../admin/helpers';
 
 export class CronService {
   private tasks: ScheduledTask[] = [];
@@ -13,6 +15,9 @@ export class CronService {
     // Schedule data specification update job
     this.scheduleDataSpecificationUpdate();
 
+    // Schedule job timeout cleanup
+    this.scheduleJobTimeoutCleanup();
+
     console.debug(`Started ${this.tasks.length} cron job(s)`);
   }
 
@@ -21,18 +26,16 @@ export class CronService {
    */
   public stop(): void {
     console.debug('Stopping cron service...');
-
     this.tasks.forEach(task => {
       task.stop();
     });
-
     this.tasks = [];
     console.debug('All cron jobs stopped');
   }
 
   /**
    * Schedule the data specification update job
-   * Runs daily at 2:00 AM UTC
+   * Runs daily at 2:00 AM AEDT
    */
   private scheduleDataSpecificationUpdate(): void {
     console.debug('Scheduling data specification update job...');
@@ -42,11 +45,9 @@ export class CronService {
       async () => {
         try {
           console.debug('Starting scheduled data specification update...');
-
           const dataSpecService = getDataSpecificationService();
           const { jobId, cached, message } =
             await dataSpecService.createDataSpecificationUpdateJob();
-
           if (cached) {
             console.debug(`Data specification update job found in cache: ${jobId}`);
           } else {
@@ -62,11 +63,49 @@ export class CronService {
         timezone: 'Australia/Sydney'
       }
     );
-
     this.tasks.push(task);
     task.start();
+    console.debug('Scheduled data specification update job (daily at 2:00 AM AEDT)');
+  }
 
-    console.debug('Scheduled data specification update job (daily at 2:00 AM UTC)');
+  /**
+   * Schedule the job timeout cleanup
+   * Runs every hour to clean up stale jobs
+   */
+  private scheduleJobTimeoutCleanup(): void {
+    console.debug('Scheduling job timeout cleanup...');
+    const task = schedule(
+      // Every hour at minute 0
+      '0 * * * *',
+      async () => {
+        try {
+          console.debug('Starting scheduled job timeout cleanup...');
+          const result = await timeoutJobs({
+            timeoutThresholdMinutes: config.jobExpiryMinutes
+          });
+
+          if (result.totalTimedOut > 0) {
+            console.debug(`Timed out ${result.totalTimedOut} job(s):`);
+            Object.entries(result.byType).forEach(([type, count]) => {
+              console.debug(`  ${type}: ${count}`);
+            });
+            console.debug(`  Job IDs: ${result.timedOutJobIds.join(', ')}`);
+          } else {
+            console.debug('No jobs needed to be timed out');
+          }
+        } catch (error) {
+          console.error('Failed to run scheduled job timeout cleanup:', error);
+        }
+      },
+      {
+        timezone: 'Australia/Sydney'
+      }
+    );
+    this.tasks.push(task);
+    task.start();
+    console.debug(
+      `Scheduled job timeout cleanup (hourly, threshold: ${config.jobExpiryMinutes} minutes)`
+    );
   }
 
   /**

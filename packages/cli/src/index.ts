@@ -6,6 +6,7 @@ import { createDataSpecCommands } from './commands/data-spec';
 import { createPreapprovalCommands } from './commands/pre-approval';
 import { createUserAuditCommands } from './commands/user-audit';
 import { createCacheManagementCommands } from './commands/cache-management';
+import { createJobTimeoutCommands } from './commands/job-timeout';
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +21,7 @@ createDataSpecCommands(program);
 createPreapprovalCommands(program);
 createUserAuditCommands(program);
 createCacheManagementCommands(program);
+createJobTimeoutCommands(program);
 
 // Parse command line arguments
 program.parse();

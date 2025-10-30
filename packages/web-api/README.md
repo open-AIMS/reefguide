@@ -1067,6 +1067,72 @@ const jobTypeSchemas = {
 };
 ```
 
+### Job Timeout Management
+
+The system includes automatic cleanup of stale jobs that remain in non-terminal states (PENDING or IN_PROGRESS) for too long.
+
+#### Configuration
+
+Job timeout threshold is configured via the `JOB_EXPIRY_MINUTES` setting in your configuration file.
+
+#### Automatic Cleanup (Cron)
+
+A cron job runs hourly to automatically timeout stale jobs:
+
+- **Schedule**: Every hour at minute 0
+- **Threshold**: Uses `JOB_EXPIRY_MINUTES`
+- **Timezone**: Australia/Sydney
+- **Logs**: Outputs count of timed out jobs by type and their IDs
+
+The cron service starts automatically when the API server starts.
+
+#### Manual Cleanup (Admin API)
+
+**Endpoint**: POST `/api/admin/timeout-jobs`
+
+Manually trigger job timeout cleanup.
+
+- **Authentication**: Required (JWT)
+- **Authorization**: Admin only
+- **Request Body**:
+  ```json
+  {
+    "timeoutThresholdMinutes": 120, // Optional, defaults to 120
+    "jobTypes": ["SUITABILITY_ASSESSMENT"] // Optional, defaults to all types
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "totalTimedOut": 5,
+    "byType": {
+      "SUITABILITY_ASSESSMENT": 3,
+      "REGIONAL_ASSESSMENT": 2
+    },
+    "timedOutJobIds": [142, 156, 187, 201, 215]
+  }
+  ```
+
+#### CLI Tool
+
+Use the CLI for manual cleanup during maintenance or troubleshooting:
+
+```bash
+# Timeout all jobs older than 60 minutes (default)
+pnpm start job-timeout run
+
+# Timeout jobs older than 2 hours
+pnpm start job-timeout run --minutes 120
+
+# Timeout specific job types only
+pnpm start job-timeout run -m 30 -t SUITABILITY_ASSESSMENT REGIONAL_ASSESSMENT
+```
+
+**CLI Options**:
+
+- `-m, --minutes <minutes>`: Timeout threshold in minutes (default: 60)
+- `-t, --types <types...>`: Specific job types to timeout (optional)
+
 ## Security
 
 - Uses `helmet` for HTTP headers
@@ -1083,7 +1149,6 @@ const jobTypeSchemas = {
 ### Database Connection Issues
 
 - **Issue**: Can't connect to database with `localhost`
-
   - **Solution**: Try using `127.0.0.1` instead in your connection string
 
 - **Issue**: "Connection refused" error
@@ -1099,7 +1164,6 @@ const jobTypeSchemas = {
 ### Prisma Client Generation Errors
 
 - **Issue**: Prisma client not found
-
   - **Solution**: Run `npm run prisma-generate`
 
 - **Issue**: Migration errors
