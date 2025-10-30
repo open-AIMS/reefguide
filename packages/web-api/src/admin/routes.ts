@@ -5,6 +5,8 @@ import {
   DataSpecificationUpdateRequestResponse,
   DataSpecificationUpdateResponse,
   ListRegionsResponse,
+  PostTimeoutJobsRequestSchema,
+  PostTimeoutJobsResponse,
   UpdateCriteriaInput
 } from '@reefguide/types';
 import express, { Response, Router } from 'express';
@@ -15,6 +17,7 @@ import { assertUserHasRoleMiddleware, assertUserIsAdminMiddleware } from '../aut
 import { BadRequestException, InternalServerError, NotFoundException } from '../exceptions';
 import { initialiseAdmins } from '../initialise';
 import { getDataSpecificationService } from '../services/dataSpec';
+import { timeoutJobs } from './helpers';
 
 require('express-async-errors');
 export const router: Router = express.Router();
@@ -301,6 +304,37 @@ router.get(
     await initialiseAdmins();
     res.status(200).send();
     return;
+  }
+);
+
+/**
+ * Timeout stale jobs
+ *
+ * This endpoint allows admins to manually trigger the job timeout process.
+ * It will find jobs that have been in PENDING or IN_PROGRESS state for longer
+ * than the specified threshold and mark them as TIMED_OUT.
+ */
+router.post(
+  '/timeout-jobs',
+  passport.authenticate('jwt', { session: false }),
+  assertUserIsAdminMiddleware,
+  processRequest({
+    body: PostTimeoutJobsRequestSchema
+  }),
+  async (req, res: Response<PostTimeoutJobsResponse>) => {
+    const { timeoutThresholdMinutes, jobTypes } = req.body;
+
+    try {
+      const result = await timeoutJobs({
+        // This is actually defined since has default
+        timeoutThresholdMinutes: timeoutThresholdMinutes!,
+        jobTypes
+      });
+
+      res.status(200).json(result);
+    } catch (error) {
+      throw new InternalServerError('Failed to timeout jobs. Error: ' + error, error as Error);
+    }
   }
 );
 

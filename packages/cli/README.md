@@ -302,6 +302,53 @@ The system provides detailed error reporting:
    ❌ user@example.com - Error: Failed to update user roles: Unauthorized
 ```
 
+## Job Timeout Management
+
+The job timeout system allows administrators to clean up stale jobs that have been stuck in non-terminal states (PENDING or IN_PROGRESS) for too long.
+
+#### `job-timeout run`
+
+Timeout jobs that have been stuck in PENDING or IN_PROGRESS state for longer than a specified threshold.
+
+```bash
+# Timeout all jobs older than 60 minutes (default)
+pnpm start job-timeout run
+
+# Timeout jobs older than 2 hours (120 minutes)
+pnpm start job-timeout run --minutes 120
+pnpm start job-timeout run -m 120
+
+# Timeout only specific job types older than 30 minutes
+pnpm start job-timeout run -m 30 -t SUITABILITY_ASSESSMENT REGIONAL_ASSESSMENT
+
+# Timeout TEST jobs older than 5 minutes
+pnpm start job-timeout run -m 5 --types TEST
+```
+
+**Options:**
+
+- `-m, --minutes <minutes>`: Timeout threshold in minutes (default: 60). Jobs older than this will be timed out
+- `-t, --types <types...>`: Optional job types to timeout (e.g., `SUITABILITY_ASSESSMENT`, `REGIONAL_ASSESSMENT`, `TEST`, `ADRIA_MODEL_RUN`)
+
+**Output Example:**
+
+```bash
+⏱️  Timing out jobs older than 120 minutes...
+   Filtering by job types: SUITABILITY_ASSESSMENT, REGIONAL_ASSESSMENT
+
+📊 Results:
+   Total jobs timed out: 5
+
+   Breakdown by job type:
+      SUITABILITY_ASSESSMENT: 3
+      REGIONAL_ASSESSMENT: 2
+
+   Timed out job IDs:
+      142, 156, 187, 201, 215
+
+✅ Job timeout process completed successfully.
+```
+
 ## Environment Variables
 
 Set these environment variables to avoid interactive prompts:

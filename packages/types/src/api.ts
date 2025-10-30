@@ -1137,3 +1137,21 @@ export const DeleteNoteResponseSchema = z.object({
   message: z.string()
 });
 export type DeleteNoteResponse = z.infer<typeof DeleteNoteResponseSchema>;
+
+// Job timeout
+export const PostTimeoutJobsRequestSchema = z.object({
+  // 2 hour default
+  timeoutThresholdMinutes: z.number().positive().default(120),
+  jobTypes: z.array(z.nativeEnum(JobType)).optional()
+});
+export type PostTimeoutJobsRequest = z.infer<typeof PostTimeoutJobsRequestSchema>;
+
+export const PostTimeoutJobsResponseSchema = z.object({
+  /** Total number of jobs that were timed out */
+  totalTimedOut: z.number(),
+  /** Breakdown by job type */
+  byType: z.record(z.nativeEnum(JobType), z.number()),
+  /** IDs of all jobs that were timed out */
+  timedOutJobIds: z.array(z.number())
+});
+export type PostTimeoutJobsResponse = z.infer<typeof PostTimeoutJobsResponseSchema>;
