@@ -48,3 +48,5 @@ out
 .env
 .env*
 !.env.dist
+# created temporarily by cdk
+backup.env
