@@ -13,8 +13,10 @@ import { createXYZ } from 'ol/tilegrid';
 import TileLayer from 'ol/layer/WebGLTile';
 import { Tile } from 'ol';
 import { clusterLayerSource } from '../../app/map/openlayers-util';
-import XYZ from 'ol/source/XYZ';
-import { load as lercLoad, decode as lercDecode } from 'lerc';
+import * as Lerc from 'lerc';
+import DataTileSource from 'ol/source/DataTile';
+import { Loader as DataTileLoader } from 'ol/source/DataTile';
+import { createFromTemplate } from 'ol/tileurlfunction';
 
 /**
  * Create WMTS source based from capabilities XML file url.
@@ -82,9 +84,15 @@ export function errorTilesLoader(
   };
 }
 
-export function lercTilesLoader() {
-  // https://codesandbox.io/p/sandbox/simple-forked-8vxfk?file=%2Fmain.js%3A28%2C46
-
+/**
+ * LERC tile loader that uses a canvas element to render image and writes the image data
+ * to tile's HTMLImageElement.src
+ * Some code from: https://codesandbox.io/p/sandbox/simple-forked-8vxfk?file=%2Fmain.js%3A28%2C46
+ *
+ * @deprecated prefer DataTile approach
+ * Keep this function in case useful in the future.
+ */
+export function lercImgTilesLoader() {
   // REVIEW ok keep canvas element like this?
   const canvas = document.createElement('canvas');
 
@@ -102,7 +110,7 @@ export function lercTilesLoader() {
 
       const data = await response.arrayBuffer();
       if (data !== undefined) {
-        const image = lercDecode(data);
+        const image = Lerc.decode(data);
         canvas.width = image.width;
         canvas.height = image.height;
         const ctx = canvas.getContext('2d')!;
@@ -110,13 +118,28 @@ export function lercTilesLoader() {
         const values = image.pixels[0];
         let j = 0;
         for (let i = 0; i < values.length; i++) {
-          // REVIEW parseFloat needed?
-          // @ts-expect-error already number?
-          const pixel = Math.round(parseFloat(values[i]) * 10 + 100000);
-          imgData.data[j] = (pixel >> 16) & 0xff;
-          imgData.data[j + 1] = (pixel >> 8) & 0xff;
-          imgData.data[j + 2] = (pixel >> 0) & 0xff;
-          imgData.data[j + 3] = 0xff;
+          // Original code
+          // parseFloat needed? maybe needed to force float32?
+          // const pixel = Math.round(parseFloat(values[i]) * 10 + 100000);
+          // const pixel = Math.round(values[i] * 10 + 100000);
+          // imgData.data[j] = (pixel >> 16) & 0xff;
+          // imgData.data[j + 1] = (pixel >> 8) & 0xff;
+          // imgData.data[j + 2] = (pixel >> 0) & 0xff;
+          // imgData.data[j + 3] = 0xff;
+          // j += 4;
+
+          // gives values like 2, 22, 24. the original data
+          const pixelValue = values[i];
+
+          // why round at all if not doing math on the value?
+          // const pixelValue = Math.round(values[i]); // or use parseFloat if needed
+          // const pixelValue = Math.round(parseFloat(values[i]) * 10 + 100000);
+
+          // set all RGB channels to same pixelValue
+          imgData.data[j] = pixelValue; // R
+          imgData.data[j + 1] = pixelValue; // G
+          imgData.data[j + 2] = pixelValue; // B
+          imgData.data[j + 3] = 0xff; // A
           j += 4;
         }
         ctx.putImageData(imgData, 0, 0);
@@ -130,6 +153,89 @@ export function lercTilesLoader() {
     } catch (error) {
       console.error('LERC tile load error', error);
       tile.setState(TileState.ERROR);
+    }
+  };
+}
+
+/**
+ * Create tile data with a single value for all pixels.
+ * @param width
+ * @param height
+ * @param value
+ */
+export function createUniformTile(width: number, height: number, value: number): Float32Array {
+  const length = width * height;
+  const data = new Float32Array(length);
+  for (let i = 0; i < length; i++) {
+    data[i] = value;
+  }
+  return data;
+}
+
+/**
+ * Returns a data tile loader function that decodes LERC images as Float32Array.
+ *
+ * Current Limitations:
+ * - Only supports single band
+ * - Ignores LERC masks
+ * - Ignores LoaderOptions (e.g. abort signal not used), crossOrigin, maxY
+ *
+ * @param urlTemplate
+ * @param tileWidth
+ * @param tileHeight
+ * @returns DataTileLoader
+ */
+export function lerc1BandDataTileLoader(
+  urlTemplate: string,
+  tileWidth: number,
+  tileHeight: number
+): DataTileLoader {
+  const errData = createUniformTile(tileWidth, tileHeight, 0);
+
+  // OpenLayers does not have url property on DataTile like ImageTile,
+  // so need to manage url template.
+  // FIXME tileGrid arg
+  const urlFn = createFromTemplate(urlTemplate, null);
+
+  return async (z, x, y, _options): Promise<Float32Array> => {
+    // urlFn arguments: TileCoord, pixel ration, Projection
+    // However, createFromTemplate impl does not actually use these, so dummy null values
+    const pixelRatio: any = null;
+    const projection: any = null;
+    const url = urlFn([z, x, y], pixelRatio, projection);
+    if (url === undefined) {
+      throw new Error('Tile url generation failed');
+    }
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      console.warn(`LERC tile response (${response.statusText}) not ok`);
+      return errData;
+    }
+
+    const data = await response.arrayBuffer();
+    if (data !== undefined) {
+      const image = Lerc.decode(data);
+      console.log(`loaded LERC tile data ${image.width}x${image.height}`, url);
+      console.log(
+        `LERC image has ${image.pixels.length} bands, depthCount=${image.depthCount}`,
+        image.statistics
+      );
+
+      // lerc docs demonstrate working with the mask, not sure if necessary
+      // https://www.npmjs.com/package/lerc
+
+      // get first band's values
+      const values = image.pixels[0] as Int8Array;
+
+      // https://openlayers.org/en/latest/apidoc/module-ol_DataTile.html#~Data
+      // Supported types: ArrayLike{Uint8Array} {Uint8ClampedArray} {Float32Array} {DataView}
+      // Int8Array does not work. Float32Array renders correctly.
+      return new Float32Array(values);
+    } else {
+      console.warn('undefined array buffer from response');
+      return errData;
     }
   };
 }
@@ -219,29 +325,39 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
 
       return xyzLayer;
 
+    // NOW 1Band LERC assumed? params design
     case 'ArcGisImageServer':
       // initial layer, source is set later on lerc load
       const tileLayer2 = new TileLayer({
         properties,
         ...layerDef.layerOptions,
         ...mixin
+        // TODO extent
       });
 
       // TODO share lerc loading promise/state
-      lercLoad({
+      Lerc.load({
         locateFile: (wasmFileName): string => {
           // see angular.json assets configuration
           return `assets/lerc/${wasmFileName}`;
         }
       }).then(() => {
-        console.log('lerc loaded');
+        const urlTemplate = `${layerDef.url}/tile/{z}/{y}/{x}`;
+        const tileSize = [256, 256];
 
-        const xyzSource = new XYZ({
-          url: `${layerDef.url}/tile/{z}/{y}/{x}`,
-          tileLoadFunction: lercTilesLoader()
+        // REVIEW OpenLayers DataTile vs DataTileSource?
+        const xyzSource = new DataTileSource({
+          bandCount: 1,
+          tileSize,
+          loader: lerc1BandDataTileLoader(urlTemplate, tileSize[0], tileSize[1])
+          // transition: 0  // disable tile transition animation
         });
 
-        // @ts-expect-error ignore DataTileSource type check issue
+        // uses exportImage method, HTTP 400, maybe could fix, but LERC seems better anyway
+        // const xyzSource = new TileArcGISRest({
+        //   url: layerDef.url
+        // });
+
         tileLayer2.setSource(xyzSource);
       });
 

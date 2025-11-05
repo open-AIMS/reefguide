@@ -659,6 +659,54 @@ export class WebApiService {
             }
           } satisfies StyleFunction
         }
+      },
+      {
+        id: 'hyb_geo',
+        title: 'Geomorphic',
+        url: 'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgTownsville_Whitsunday_hybrid_geomorphichyb/ImageServer',
+        urlType: 'ArcGisImageServer',
+        layerOptions: {
+          style: {
+            // color for each category
+            color: [
+              'palette',
+              ['band', 1],
+              [
+                'rgba(0,0,0,0)', // transparent for no data
+                '#3aa35b',
+                '#ff0000',
+                '#00ff00',
+                '#0000ff',
+                '#ffff00',
+                '#ff00ff',
+                '#00ffff',
+                '#800000',
+                '#008000',
+                '#000080',
+                '#808000',
+                '#800080',
+                '#008080',
+                '#c0c0c0',
+                '#808080',
+                '#9999ff',
+                '#993366',
+                '#ffffcc',
+                '#ccffff',
+                '#660066',
+                '#ff8080',
+                '#0066cc',
+                '#ccccff',
+                '#000080',
+                '#ff00ff',
+                '#ffff00',
+                '#00ffff',
+                '#800080',
+                '#800000',
+                '#008080'
+              ]
+            ]
+          }
+        }
       }
     ];
   }
