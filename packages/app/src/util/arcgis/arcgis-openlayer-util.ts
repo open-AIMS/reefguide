@@ -13,10 +13,10 @@ import { createXYZ } from 'ol/tilegrid';
 import TileLayer from 'ol/layer/WebGLTile';
 import { Tile } from 'ol';
 import { clusterLayerSource } from '../../app/map/openlayers-util';
-import * as Lerc from 'lerc';
 import DataTileSource from 'ol/source/DataTile';
 import { Loader as DataTileLoader } from 'ol/source/DataTile';
 import { createFromTemplate } from 'ol/tileurlfunction';
+import { Lerc, loadLerc } from '../lerc-loader';
 
 /**
  * Create WMTS source based from capabilities XML file url.
@@ -92,7 +92,7 @@ export function errorTilesLoader(
  * @deprecated prefer DataTile approach
  * Keep this function in case useful in the future.
  */
-export function lercImgTilesLoader() {
+export function lercImgTilesLoader(lerc: Lerc) {
   // REVIEW ok keep canvas element like this?
   const canvas = document.createElement('canvas');
 
@@ -110,7 +110,7 @@ export function lercImgTilesLoader() {
 
       const data = await response.arrayBuffer();
       if (data !== undefined) {
-        const image = Lerc.decode(data);
+        const image = lerc.decode(data);
         canvas.width = image.width;
         canvas.height = image.height;
         const ctx = canvas.getContext('2d')!;
@@ -180,17 +180,23 @@ export function createUniformTile(width: number, height: number, value: number):
  * - Ignores LERC masks
  * - Ignores LoaderOptions (e.g. abort signal not used), crossOrigin, maxY
  *
+ * @param lerc loaded lerc module
  * @param urlTemplate
  * @param tileWidth
  * @param tileHeight
  * @returns DataTileLoader
  */
 export function lerc1BandDataTileLoader(
+  lerc: Lerc,
   urlTemplate: string,
   tileWidth: number,
   tileHeight: number
 ): DataTileLoader {
   const errData = createUniformTile(tileWidth, tileHeight, 0);
+  if (!lerc.isLoaded()) {
+    throw new Error('lerc not loaded');
+  }
+  const decodeLerc = lerc.decode;
 
   // OpenLayers does not have url property on DataTile like ImageTile,
   // so need to manage url template.
@@ -216,7 +222,7 @@ export function lerc1BandDataTileLoader(
 
     const data = await response.arrayBuffer();
     if (data !== undefined) {
-      const image = Lerc.decode(data);
+      const image = decodeLerc(data);
       console.log(`loaded LERC tile data ${image.width}x${image.height}`, url);
       console.log(
         `LERC image has ${image.pixels.length} bands, depthCount=${image.depthCount}`,
@@ -335,13 +341,7 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
         // TODO extent
       });
 
-      // TODO share lerc loading promise/state
-      Lerc.load({
-        locateFile: (wasmFileName): string => {
-          // see angular.json assets configuration
-          return `assets/lerc/${wasmFileName}`;
-        }
-      }).then(() => {
+      loadLerc().then(lerc => {
         const urlTemplate = `${layerDef.url}/tile/{z}/{y}/{x}`;
         const tileSize = [256, 256];
 
@@ -349,7 +349,7 @@ export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mix
         const xyzSource = new DataTileSource({
           bandCount: 1,
           tileSize,
-          loader: lerc1BandDataTileLoader(urlTemplate, tileSize[0], tileSize[1])
+          loader: lerc1BandDataTileLoader(lerc, urlTemplate, tileSize[0], tileSize[1])
           // transition: 0  // disable tile transition animation
         });
 
