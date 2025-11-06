@@ -55,7 +55,6 @@ import { Geometry } from 'ol/geom';
 import { DrawEvent } from 'ol/interaction/Draw';
 import { disposeLayerGroup, onLayerDispose } from '../../util/openlayers/openlayers-util';
 import Layer from 'ol/layer/Layer';
-import { createLayerFromDef } from '../../util/arcgis/arcgis-openlayer-util';
 import { LayerController, LayerControllerOptions } from '../map/layer-controller';
 import { LayerProperties } from '../../types/layer.type';
 import { singleBandColorGradientLayerStyle } from '../../util/openlayers/openlayers-styles';
@@ -91,6 +90,7 @@ export interface PolygonDrawHandlers {
 
 import { PolygonMapService } from './polygon-map.service';
 import { LAYER_ADJUSTMENT } from '../map/openlayers-hardcoded';
+import { createLayerFromDef } from '../../util/openlayers/layer-creation';
 
 /**
  * Reef Guide map context and layer management.
@@ -703,7 +703,6 @@ export class ReefGuideMapService {
       const { id } = layerDef;
       try {
         const layer = createLayerFromDef(layerDef, {
-          id: `criteria_${id}`,
           visible: false,
           opacity: 0.8
         });

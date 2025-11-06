@@ -1,22 +1,14 @@
 import WMTSCapabilities from 'ol/format/WMTSCapabilities';
 import WMTS, { optionsFromCapabilities } from 'ol/source/WMTS';
-import { LayerDef } from '@reefguide/types';
-import Layer, { Options } from 'ol/layer/Layer';
-import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
-import XYZ from 'ol/source/XYZ';
 import { EsriJSON } from 'ol/format';
-import { LayerProperties } from '../../types/layer.type';
 import TileState from 'ol/TileState';
 import { tile as tileStrategy } from 'ol/loadingstrategy.js';
 import { createXYZ } from 'ol/tilegrid';
-import TileLayer from 'ol/layer/WebGLTile';
 import { Tile } from 'ol';
-import { clusterLayerSource } from '../openlayers/openlayers-util';
-import DataTileSource from 'ol/source/DataTile';
 import { Loader as DataTileLoader } from 'ol/source/DataTile';
 import { createFromTemplate } from 'ol/tileurlfunction';
-import { Lerc, loadLerc } from '../lerc-loader';
+import { Lerc } from '../lerc-loader';
 
 /**
  * Create WMTS source based from capabilities XML file url.
@@ -265,115 +257,14 @@ async function getErrorTileUrl(): Promise<string> {
 }
 
 /**
- * Create Layer from definition object.
- * Source may be set async depending on the layer.
- * @param layerDef layer definition
- * @param mixin layer constructor properties to mixin
- */
-export function createLayerFromDef<M = Partial<Options>>(layerDef: LayerDef, mixin?: M): Layer {
-  const properties: LayerProperties = {
-    id: layerDef.id,
-    title: layerDef.title,
-    infoUrl: layerDef.infoUrl,
-    labelProp: layerDef.labelProp,
-    layerPostfix: layerDef.layerPostfix,
-    layerPrefix: layerDef.layerPrefix
-  };
-
-  switch (layerDef.urlType) {
-    case 'ArcGisFeatureServer':
-      const source = createVectorSourceForFeatureServer(layerDef.url, layerDef.layerId);
-      const vectorLayer = new VectorLayer({
-        properties,
-        source,
-        // want to show new features while panning by default
-        updateWhileInteracting: true,
-        ...layerDef.layerOptions,
-        ...mixin
-      });
-
-      if (layerDef.cluster) {
-        clusterLayerSource(vectorLayer);
-      }
-
-      return vectorLayer;
-
-    case 'WMTSCapabilitiesXml':
-      const tileLayer = new TileLayer({
-        properties,
-        ...layerDef.layerOptions,
-        ...mixin
-      });
-
-      setTimeout(() => {
-        createSourceFromCapabilitiesXml(layerDef.url).then(source => {
-          // OpenLayers types bug? WMTS source does work with TileLayer
-          // @ts-expect-error
-          tileLayer.setSource(source);
-        });
-      }, 2_000);
-
-      return tileLayer;
-
-    case 'XYZ':
-      const xyzLayer = new TileLayer({
-        properties,
-        ...layerDef.layerOptions,
-        ...mixin,
-        // @ts-expect-error this source works with WebGLTileLayer, ignore the type error
-        // https://github.com/openlayers/openlayers/issues/16794
-        source: new XYZ({
-          url: layerDef.url,
-          // TODO set attributions across layer types in generic way
-          attributions: layerDef.attributions
-        })
-      });
-
-      return xyzLayer;
-
-    // NOW 1Band LERC assumed? params design
-    case 'ArcGisImageServer':
-      // initial layer, source is set later on lerc load
-      const tileLayer2 = new TileLayer({
-        properties,
-        ...layerDef.layerOptions,
-        ...mixin
-        // TODO extent
-      });
-
-      loadLerc().then(lerc => {
-        const urlTemplate = `${layerDef.url}/tile/{z}/{y}/{x}`;
-        const tileSize = [256, 256];
-
-        // REVIEW OpenLayers DataTile vs DataTileSource?
-        const xyzSource = new DataTileSource({
-          bandCount: 1,
-          tileSize,
-          loader: lerc1BandDataTileLoader(lerc, urlTemplate, tileSize[0], tileSize[1])
-          // transition: 0  // disable tile transition animation
-        });
-
-        // uses exportImage method, HTTP 400, maybe could fix, but LERC seems better anyway
-        // const xyzSource = new TileArcGISRest({
-        //   url: layerDef.url
-        // });
-
-        tileLayer2.setSource(xyzSource);
-      });
-
-      return tileLayer2;
-
-    default:
-      throw new Error(`Unsupported urlType: ${layerDef.urlType}`);
-  }
-}
-
-/**
  * Constructs a VectorSource for the ArcGIS feature server.
  * @param featureServerUrl ArcGIS .../FeatureServer URL
  * @param layer layer ID to use /FeatureServer/{id}
  */
-function createVectorSourceForFeatureServer(featureServerUrl: string, layer = '0'): VectorSource {
+export function createVectorSourceForFeatureServer(
+  featureServerUrl: string,
+  layer = '0'
+): VectorSource {
   // see example: https://openlayers.org/en/latest/examples/vector-esri.html
   const vectorSource = new VectorSource({
     format: new EsriJSON(),
