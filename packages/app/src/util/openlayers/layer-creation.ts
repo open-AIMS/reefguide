@@ -10,6 +10,7 @@ import DataTileSource from 'ol/source/DataTile';
 import {
   createSourceFromCapabilitiesXml,
   createVectorSourceForFeatureServer,
+  getImageServerSetup,
   lerc1BandDataTileLoader
 } from '../arcgis/arcgis-openlayer-util';
 
@@ -92,24 +93,33 @@ const LAYER_BUILDERS: Record<
 
   // NOW 1Band LERC assumed? params design
   ArcGisImageServer(layerDef, properties, mixin) {
-    // initial layer, source is set later on lerc load
+    // type narrowing
+    if (layerDef.urlType !== 'ArcGisImageServer') {
+      throw new Error('unexpected LayerDef urlType');
+    }
+    type Options = (typeof layerDef)['layerOptions'];
+
+    // initial layer without source, source is set later on lerc load
     const layer = new TileLayer({
       properties,
-      ...(layerDef.layerOptions as any),
-      ...mixin
-      // TODO extent
+      ...layerDef.layerOptions,
+      ...(mixin as Options)
+      // NOW extent here too?
     });
 
-    loadLerc().then(lerc => {
+    Promise.all([
+      loadLerc(),
+      getImageServerSetup(layerDef.url, { minZoom: layerDef.layerOptions?.minZoom })
+    ]).then(([lerc, imageServerSetup]) => {
       const urlTemplate = `${layerDef.url}/tile/{z}/{y}/{x}`;
       const tileSize = [256, 256];
 
-      // REVIEW OpenLayers DataTile vs DataTileSource?
       const source = new DataTileSource({
         bandCount: 1,
         tileSize,
-        loader: lerc1BandDataTileLoader(lerc, urlTemplate, tileSize[0], tileSize[1])
+        loader: lerc1BandDataTileLoader(lerc, urlTemplate, tileSize[0], tileSize[1]),
         // transition: 0  // disable tile transition animation
+        ...imageServerSetup
       });
 
       // uses exportImage method, HTTP 400, maybe could fix, but LERC seems better anyway

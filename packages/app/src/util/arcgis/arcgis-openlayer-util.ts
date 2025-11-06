@@ -4,10 +4,11 @@ import VectorSource from 'ol/source/Vector';
 import { EsriJSON } from 'ol/format';
 import TileState from 'ol/TileState';
 import { tile as tileStrategy } from 'ol/loadingstrategy.js';
-import { createXYZ } from 'ol/tilegrid';
+import { createXYZ, TileGrid } from 'ol/tilegrid';
 import { Tile } from 'ol';
 import { Loader as DataTileLoader } from 'ol/source/DataTile';
 import { createFromTemplate } from 'ol/tileurlfunction';
+import { get as getProjection } from 'ol/proj.js';
 import { Lerc } from '../lerc-loader';
 
 /**
@@ -215,11 +216,11 @@ export function lerc1BandDataTileLoader(
     const data = await response.arrayBuffer();
     if (data !== undefined) {
       const image = decodeLerc(data);
-      console.log(`loaded LERC tile data ${image.width}x${image.height}`, url);
-      console.log(
-        `LERC image has ${image.pixels.length} bands, depthCount=${image.depthCount}`,
-        image.statistics
-      );
+      // console.log(`loaded LERC tile data ${image.width}x${image.height}`, url);
+      // console.log(
+      //   `LERC image has ${image.pixels.length} bands, depthCount=${image.depthCount}`,
+      //   image.statistics
+      // );
 
       // lerc docs demonstrate working with the mask, not sure if necessary
       // https://www.npmjs.com/package/lerc
@@ -311,4 +312,96 @@ export function createVectorSourceForFeatureServer(
   });
 
   return vectorSource;
+}
+
+// TODO get type from ESRI lib?
+interface ImageServerJson {
+  name: string;
+  serviceDescription: string;
+  description: string;
+  serviceItemId: string;
+  compressionType: string;
+  // band info
+  bandCount: number;
+  noDataValue: number;
+  // metrics for the band at index
+  noDataValues: number[];
+  minValues: number[];
+  maxValues: number[];
+  meanValues: number[];
+  stdvValues: number[];
+
+  spatialReference: {
+    wkid: number;
+    latestWkid: number;
+  };
+  // decimal lat/lon
+  // Note: there's also initialExtent, fullExtent, but always identical values?
+  extent: {
+    xmin: number;
+    ymin: number;
+    xmax: number;
+    ymax: number;
+    spatialReference: {
+      wkid: number;
+      latestWkid: number;
+    };
+  };
+
+  tileInfo: {
+    // tile height
+    rows: number;
+    // tile width
+    cols: number;
+    dpi: number;
+    preciseDpi: number;
+    format: 'LERC2D';
+    storageFormat: 'esriMapCacheStorageModeCompactV2';
+    packetSize: number;
+    compressionQuality: number;
+    antialiasing: boolean;
+    origin: {
+      x: number; // 146.437877893789,
+      y: number; // -17.8491653685222
+    };
+    spatialReference: {
+      wkid: number; // 7844,
+      latestWkid: number; // 7844
+    };
+    lods: Array<{ level: number; resolution: number; scale: number }>;
+  };
+  /*
+   there's also spatialReference and extents at root, but getting everything from tileInfo.
+   */
+}
+
+export async function getImageServerSetup(url: string, tileGridOptions?: { minZoom?: number }) {
+  const resp = await fetch(`${url}?f=json`);
+  const json: ImageServerJson = await resp.json();
+  const { extent, tileInfo } = json;
+
+  const lastLod = tileInfo.lods.at(-1)!;
+  if (lastLod === undefined) {
+    console.warn('No tileInfo lods!');
+  }
+
+  const pId = `EPSG:${tileInfo.spatialReference.wkid}`;
+  const projection = getProjection(pId);
+  if (projection == null) {
+    throw new Error(`Failed to get projection ${pId}`);
+  }
+
+  return {
+    projection,
+    // DataTileSource calls createXYZ to create default TileGrid.
+    // However, ESRI provides us all the information that's needed.
+    tileGrid: new TileGrid({
+      // An array of numbers representing an extent: [minx, miny, maxx, maxy].
+      extent: [extent.xmin, extent.ymin, extent.xmax, extent.ymax],
+      origin: [tileInfo.origin.x, tileInfo.origin.y],
+      resolutions: tileInfo.lods.map(lod => lod.resolution),
+      tileSize: [tileInfo.cols, tileInfo.rows],
+      minZoom: tileGridOptions?.minZoom
+    })
+  };
 }
