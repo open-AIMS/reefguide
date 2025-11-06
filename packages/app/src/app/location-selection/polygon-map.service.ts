@@ -12,7 +12,7 @@ import { Fill, Stroke, Style } from 'ol/style';
 import { BehaviorSubject, finalize, firstValueFrom, Subject, tap } from 'rxjs';
 import { WebApiService } from '../../api/web-api.service';
 import { LayerDownload, LayerProperties } from '../../types/layer.type';
-import { disposeLayerGroup } from '../map/openlayers-util';
+import { disposeLayerGroup } from '../../util/openlayers/openlayers-util';
 
 export const USER_POLYGON_LAYER_ID = 'user-polygon-layer';
 

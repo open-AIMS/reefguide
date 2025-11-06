@@ -4,7 +4,7 @@ import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MAP_UI, ReefGuideMapService } from '../../location-selection/reef-guide-map.service';
-import { LayerController } from '../../map/openlayers-model';
+import { LayerController } from '../../map/layer-controller';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { downloadFile } from '../../../util/js-util';
 import { MatSnackBar } from '@angular/material/snack-bar';

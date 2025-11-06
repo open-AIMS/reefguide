@@ -44,7 +44,7 @@ import { fromLonLat } from 'ol/proj';
 import LayerGroup from 'ol/layer/Group';
 import { GeoTIFF } from 'ol/source';
 import TileLayer from 'ol/layer/WebGLTile';
-import { openlayersRegisterEPSG7844 } from '../map/openlayers-config';
+import { openlayersRegisterEPSG7844 } from '../../util/openlayers/openlayers-config';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { GeoJSON } from 'ol/format';
@@ -53,12 +53,12 @@ import Draw from 'ol/interaction/Draw';
 import { Feature } from 'ol';
 import { Geometry } from 'ol/geom';
 import { DrawEvent } from 'ol/interaction/Draw';
-import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
+import { disposeLayerGroup, onLayerDispose } from '../../util/openlayers/openlayers-util';
 import Layer from 'ol/layer/Layer';
 import { createLayerFromDef } from '../../util/arcgis/arcgis-openlayer-util';
-import { LayerController, LayerControllerOptions } from '../map/openlayers-model';
+import { LayerController, LayerControllerOptions } from '../map/layer-controller';
 import { LayerProperties } from '../../types/layer.type';
-import { singleBandColorGradientLayerStyle } from '../map/openlayers-styles';
+import { singleBandColorGradientLayerStyle } from '../../util/openlayers/openlayers-styles';
 import { fromString as colorFromString } from 'ol/color';
 
 /**

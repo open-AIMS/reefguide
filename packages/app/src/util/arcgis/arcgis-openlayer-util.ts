@@ -12,7 +12,7 @@ import { tile as tileStrategy } from 'ol/loadingstrategy.js';
 import { createXYZ } from 'ol/tilegrid';
 import TileLayer from 'ol/layer/WebGLTile';
 import { Tile } from 'ol';
-import { clusterLayerSource } from '../../app/map/openlayers-util';
+import { clusterLayerSource } from '../openlayers/openlayers-util';
 import DataTileSource from 'ol/source/DataTile';
 import { Loader as DataTileLoader } from 'ol/source/DataTile';
 import { createFromTemplate } from 'ol/tileurlfunction';

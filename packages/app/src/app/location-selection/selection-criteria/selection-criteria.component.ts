@@ -32,7 +32,7 @@ import { WebApiService } from '../../../api/web-api.service';
 import { CriteriaRangeOutput, SuitabilityAssessmentInput, SharedCriteria } from '@reefguide/types';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
-import { LayerController } from '../../map/openlayers-model';
+import { LayerController } from '../../map/layer-controller';
 import { retryHTTPErrors } from '../../../util/http-util';
 import { AsyncPipe } from '@angular/common';
 

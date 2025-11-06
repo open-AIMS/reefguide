@@ -5,7 +5,7 @@ import type Layer from 'ol/layer/Layer';
 import TileLayer from 'ol/layer/WebGLTile';
 import { debounceTime, map, of, shareReplay, Subject, switchMap, takeUntil } from 'rxjs';
 import { LayerProperties } from '../../types/layer.type';
-import { fromOpenLayersEvent } from './openlayers-util';
+import { fromOpenLayersEvent } from '../../util/openlayers/openlayers-util';
 
 type LayerStyleModes = 'default' | 'pixel-filtering';
 
