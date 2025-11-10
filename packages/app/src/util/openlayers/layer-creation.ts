@@ -112,12 +112,11 @@ const LAYER_BUILDERS: Record<
       getImageServerSetup(layerDef.url, { minZoom: layerDef.layerOptions?.minZoom })
     ]).then(([lerc, imageServerSetup]) => {
       const urlTemplate = `${layerDef.url}/tile/{z}/{y}/{x}`;
-      const tileSize = [256, 256];
+      const [tileWidth, tileHeight] = imageServerSetup.tileSize;
 
       const source = new DataTileSource({
         bandCount: 1,
-        tileSize,
-        loader: lerc1BandDataTileLoader(lerc, urlTemplate, tileSize[0], tileSize[1]),
+        loader: lerc1BandDataTileLoader(lerc, urlTemplate, tileWidth, tileHeight),
         // transition: 0  // disable tile transition animation
         ...imageServerSetup
       });

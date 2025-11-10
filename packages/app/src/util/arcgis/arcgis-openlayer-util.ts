@@ -380,11 +380,6 @@ export async function getImageServerSetup(url: string, tileGridOptions?: { minZo
   const json: ImageServerJson = await resp.json();
   const { extent, tileInfo } = json;
 
-  const lastLod = tileInfo.lods.at(-1)!;
-  if (lastLod === undefined) {
-    console.warn('No tileInfo lods!');
-  }
-
   const pId = `EPSG:${tileInfo.spatialReference.wkid}`;
   const projection = getProjection(pId);
   if (projection == null) {
@@ -402,6 +397,7 @@ export async function getImageServerSetup(url: string, tileGridOptions?: { minZo
       resolutions: tileInfo.lods.map(lod => lod.resolution),
       tileSize: [tileInfo.cols, tileInfo.rows],
       minZoom: tileGridOptions?.minZoom
-    })
+    }),
+    tileSize: [tileInfo.cols, tileInfo.rows]
   };
 }
