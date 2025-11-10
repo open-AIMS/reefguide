@@ -7,8 +7,8 @@ import { tile as tileStrategy } from 'ol/loadingstrategy.js';
 import { createXYZ, TileGrid } from 'ol/tilegrid';
 import { Tile } from 'ol';
 import { Loader as DataTileLoader } from 'ol/source/DataTile';
-import { createFromTemplate } from 'ol/tileurlfunction';
 import { get as getProjection } from 'ol/proj.js';
+import { renderXYZTemplate } from 'ol/uri';
 import { Lerc } from '../lerc-loader';
 
 /**
@@ -191,21 +191,8 @@ export function lerc1BandDataTileLoader(
   }
   const decodeLerc = lerc.decode;
 
-  // OpenLayers does not have url property on DataTile like ImageTile,
-  // so need to manage url template.
-  // FIXME tileGrid arg
-  const urlFn = createFromTemplate(urlTemplate, null);
-
-  return async (z, x, y, _options): Promise<Float32Array> => {
-    // urlFn arguments: TileCoord, pixel ration, Projection
-    // However, createFromTemplate impl does not actually use these, so dummy null values
-    const pixelRatio: any = null;
-    const projection: any = null;
-    const url = urlFn([z, x, y], pixelRatio, projection);
-    if (url === undefined) {
-      throw new Error('Tile url generation failed');
-    }
-
+  return async (z, x, y, options): Promise<Float32Array> => {
+    const url = renderXYZTemplate(urlTemplate, z, x, y, options.maxY);
     const response = await fetch(url);
 
     if (!response.ok) {
