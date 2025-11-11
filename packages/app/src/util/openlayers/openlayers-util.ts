@@ -13,6 +13,10 @@ import { Cluster, TileDebug } from 'ol/source';
 import CircleStyle from 'ol/style/Circle';
 import TileLayer from 'ol/layer/WebGLTile';
 import DataTileSource from 'ol/source/DataTile';
+import VectorSource from 'ol/source/Vector';
+import { fromExtent } from 'ol/geom/Polygon';
+import { LayerProperties } from '../../types/layer.type';
+import { Extent } from 'ol/extent';
 
 /**
  * Call the function when the layer is disposed.
@@ -182,4 +186,36 @@ export function logFeaturesInfo(layer: VectorLayer, props: string[]) {
       console.log(`GBRMPZoning ${totalCount} features. ALT_ZONEs, TYPEs`, distinctValues);
     });
   }
+}
+
+/**
+ * Creates a VectorLayer with a rectangle feature from the given extent.
+ * @param extent An Extent in the map's projection.
+ */
+export function createExtentLayer(extent: Extent): VectorLayer {
+  const rectangle = fromExtent(extent);
+
+  const feature = new Feature(rectangle);
+
+  const source = new VectorSource({
+    features: [feature]
+  });
+
+  const style = new Style({
+    stroke: new Stroke({
+      color: '#FF5722',
+      width: 2
+    }),
+    fill: new Fill({
+      color: 'rgba(255, 87, 34, 0.2)'
+    })
+  });
+
+  return new VectorLayer({
+    properties: {
+      title: 'Extent View'
+    } as LayerProperties,
+    source,
+    style
+  });
 }

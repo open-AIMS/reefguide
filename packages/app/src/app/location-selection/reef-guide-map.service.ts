@@ -53,7 +53,11 @@ import Draw from 'ol/interaction/Draw';
 import { Feature } from 'ol';
 import { Geometry } from 'ol/geom';
 import { DrawEvent } from 'ol/interaction/Draw';
-import { disposeLayerGroup, onLayerDispose } from '../../util/openlayers/openlayers-util';
+import {
+  createExtentLayer,
+  disposeLayerGroup,
+  onLayerDispose
+} from '../../util/openlayers/openlayers-util';
 import Layer from 'ol/layer/Layer';
 import { LayerController, LayerControllerOptions } from '../map/layer-controller';
 import { LayerProperties } from '../../types/layer.type';
@@ -573,6 +577,21 @@ export class ReefGuideMapService {
 
         layerGroup.getLayers().push(layer);
       });
+  }
+
+  /**
+   * Add a temporary layer to represent the extent of this Layer
+   * @param layer
+   */
+  addExtentLayer(layer: Layer) {
+    // extent must already be in the map projection
+    const extent = layer.getExtent();
+    if (!extent) {
+      return;
+    }
+
+    const extentLayer = createExtentLayer(extent);
+    extentLayer.setMap(this.map);
   }
 
   private removeActiveSiteSuitabilityRegion(region: string) {

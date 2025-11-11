@@ -8,6 +8,7 @@ import XYZ from 'ol/source/XYZ';
 import { loadLerc } from '../lerc-loader';
 import DataTileSource from 'ol/source/DataTile';
 import {
+  convertArcGISExtent,
   createSourceFromCapabilitiesXml,
   createVectorSourceForFeatureServer,
   getImageServerSetup,
@@ -118,7 +119,9 @@ const LAYER_BUILDERS: Record<
         bandCount: 1,
         loader: lerc1BandDataTileLoader(lerc, urlTemplate, tileWidth, tileHeight),
         // transition: 0  // disable tile transition animation
-        ...imageServerSetup
+        projection: imageServerSetup.projection,
+        tileGrid: imageServerSetup.tileGrid,
+        tileSize: imageServerSetup.tileSize
       });
 
       // uses exportImage method, HTTP 400, maybe could fix, but LERC seems better anyway
@@ -127,6 +130,9 @@ const LAYER_BUILDERS: Record<
       // });
 
       layer.setSource(source);
+
+      // extent must be in the map's projection
+      layer.setExtent(convertArcGISExtent(imageServerSetup.json.extent, 'EPSG:3857'));
     });
 
     return layer;

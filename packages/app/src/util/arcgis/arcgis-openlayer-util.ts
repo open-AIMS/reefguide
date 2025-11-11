@@ -7,9 +7,10 @@ import { tile as tileStrategy } from 'ol/loadingstrategy.js';
 import { createXYZ, TileGrid } from 'ol/tilegrid';
 import { Tile } from 'ol';
 import { Loader as DataTileLoader } from 'ol/source/DataTile';
-import { get as getProjection } from 'ol/proj.js';
+import { get as getProjection, ProjectionLike } from 'ol/proj.js';
 import { renderXYZTemplate } from 'ol/uri';
 import { Lerc } from '../lerc-loader';
+import { transformExtent } from 'ol/proj';
 
 /**
  * Create WMTS source based from capabilities XML file url.
@@ -301,6 +302,17 @@ export function createVectorSourceForFeatureServer(
   return vectorSource;
 }
 
+export interface ArcGISExtent {
+  xmin: number;
+  ymin: number;
+  xmax: number;
+  ymax: number;
+  spatialReference: {
+    wkid: number;
+    latestWkid: number;
+  };
+}
+
 // TODO get type from ESRI lib?
 interface ImageServerJson {
   name: string;
@@ -324,16 +336,7 @@ interface ImageServerJson {
   };
   // decimal lat/lon
   // Note: there's also initialExtent, fullExtent, but always identical values?
-  extent: {
-    xmin: number;
-    ymin: number;
-    xmax: number;
-    ymax: number;
-    spatialReference: {
-      wkid: number;
-      latestWkid: number;
-    };
-  };
+  extent: ArcGISExtent;
 
   tileInfo: {
     // tile height
@@ -374,6 +377,7 @@ export async function getImageServerSetup(url: string, tileGridOptions?: { minZo
   }
 
   return {
+    json,
     projection,
     // DataTileSource calls createXYZ to create default TileGrid.
     // However, ESRI provides us all the information that's needed.
@@ -387,4 +391,17 @@ export async function getImageServerSetup(url: string, tileGridOptions?: { minZo
     }),
     tileSize: [tileInfo.cols, tileInfo.rows]
   };
+}
+
+/**
+ * Convert the ArcGIS extent to the given projection
+ * @param extent ArcGis extent json
+ * @param projection target projection
+ */
+export function convertArcGISExtent(extent: ArcGISExtent, projection: ProjectionLike) {
+  return transformExtent(
+    [extent.xmin, extent.ymin, extent.xmax, extent.ymax],
+    `EPSG:${extent.spatialReference.wkid}`,
+    projection
+  );
 }
