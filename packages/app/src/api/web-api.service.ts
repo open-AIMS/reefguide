@@ -408,17 +408,6 @@ export class WebApiService {
           opacity: 0.5
         }
       },
-
-      // can zoom in approx to scale 36100, 134MB
-      // {
-      //   id: 'hybrid_benthic_2',
-      //   title: 'Hybrid Benthic',
-      //   infoUrl:
-      //     'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/ExportTilecache/MapServer',
-      //   url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/ExportTilecache/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
-      //   urlType: 'WMTSCapabilitiesXml'
-      // },
-      // can zoom in approx to scale 18055, 443MB
       {
         id: 'hybrid_benthic',
         title: 'Hybrid Benthic',
