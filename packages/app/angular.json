@@ -27,6 +27,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "*.wasm",
+                "input": "node_modules/lerc",
+                "output": "assets/lerc"
               }
             ],
             "styles": [
@@ -34,7 +39,13 @@
               "src/styles.scss",
               "node_modules/ol/ol.css"
             ],
-            "scripts": []
+            "scripts": [
+              {
+                "input": "node_modules/lerc/LercDecode.es.min.js",
+                "inject": false,
+                "bundleName": "lerc-module"
+              }
+            ]
           },
           "configurations": {
             "production": {

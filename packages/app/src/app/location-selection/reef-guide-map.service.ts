@@ -24,6 +24,7 @@ import {
   of,
   Subject,
   switchMap,
+  take,
   takeUntil,
   tap,
   throttleTime
@@ -44,7 +45,7 @@ import { fromLonLat } from 'ol/proj';
 import LayerGroup from 'ol/layer/Group';
 import { GeoTIFF } from 'ol/source';
 import TileLayer from 'ol/layer/WebGLTile';
-import { openlayersRegisterEPSG7844 } from '../map/openlayers-config';
+import { openlayersRegisterEPSG7844 } from '../../util/openlayers/openlayers-config';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { GeoJSON } from 'ol/format';
@@ -53,12 +54,15 @@ import Draw from 'ol/interaction/Draw';
 import { Feature } from 'ol';
 import { Geometry } from 'ol/geom';
 import { DrawEvent } from 'ol/interaction/Draw';
-import { disposeLayerGroup, onLayerDispose } from '../map/openlayers-util';
+import {
+  createExtentLayer,
+  disposeLayerGroup,
+  onLayerDispose
+} from '../../util/openlayers/openlayers-util';
 import Layer from 'ol/layer/Layer';
-import { createLayerFromDef } from '../../util/arcgis/arcgis-openlayer-util';
-import { LayerController, LayerControllerOptions } from '../map/openlayers-model';
+import { LayerController, LayerControllerOptions } from '../map/layer-controller';
 import { LayerProperties } from '../../types/layer.type';
-import { singleBandColorGradientLayerStyle } from '../map/openlayers-styles';
+import { singleBandColorGradientLayerStyle } from '../../util/openlayers/openlayers-styles';
 import { fromString as colorFromString } from 'ol/color';
 
 /**
@@ -67,7 +71,7 @@ import { fromString as colorFromString } from 'ol/color';
  * @see LocationSelectionComponent
  */
 export interface MapUI {
-  openLayerStyleEditor(layer: Layer): void;
+  openLayerStyleEditor(layer: BaseLayer): void;
 }
 
 export const MAP_UI = new InjectionToken<MapUI>('high-level map UI service');
@@ -91,6 +95,10 @@ export interface PolygonDrawHandlers {
 
 import { PolygonMapService } from './polygon-map.service';
 import { LAYER_ADJUSTMENT } from '../map/openlayers-hardcoded';
+import { createLayerFromDef } from '../../util/openlayers/layer-creation';
+import BaseLayer from 'ol/layer/Base';
+import { Group } from 'ol/layer';
+import { fromOpenLayersProperty } from '../../util/openlayers/openlayers-rxjs';
 
 /**
  * Reef Guide map context and layer management.
@@ -152,7 +160,7 @@ export class ReefGuideMapService {
   // suitable sites polygons group layer
   private readonly siteSuitabilityLayerGroup = signal<LayerGroup | undefined>(undefined);
 
-  private layerControllers = new Map<Layer, LayerController>();
+  private layerControllers = new Map<BaseLayer, LayerController>();
 
   // Polygon drawing state
   public isDrawingPolygon: boolean = false;
@@ -575,6 +583,40 @@ export class ReefGuideMapService {
       });
   }
 
+  /**
+   * Add a temporary layer to represent the extent of this Layer
+   * If given a group, extent will be rendered for each child layer.
+   *
+   * @param layer
+   */
+  addExtentLayer(layer: BaseLayer) {
+    // Note: layer extents should be in the map projection
+    if (layer instanceof Group) {
+      layer.getLayers().forEach(layer => {
+        fromOpenLayersProperty(layer, 'extent')
+          .pipe(take(1))
+          .subscribe(extent => {
+            if (extent) {
+              const extentLayer = createExtentLayer(extent);
+              extentLayer.setMap(this.map);
+            }
+          });
+      });
+    } else {
+      const extent = layer.getExtent();
+      if (!extent) {
+        return;
+      }
+
+      fromOpenLayersProperty(layer, 'extent')
+        .pipe(take(1))
+        .subscribe(extent => {
+          const extentLayer = createExtentLayer(extent);
+          extentLayer.setMap(this.map);
+        });
+    }
+  }
+
   private removeActiveSiteSuitabilityRegion(region: string) {
     this.activeSiteSuitabilityRegions.delete(region);
 
@@ -693,32 +735,40 @@ export class ReefGuideMapService {
 
     const layerGroup = new LayerGroup({
       properties: {
-        title: 'Criteria'
-      }
+        title: 'Criteria',
+        expandChildrenInList: true
+      } as LayerProperties
     });
     this.criteriaLayerGroup.set(layerGroup);
     this.map.getLayers().push(layerGroup);
 
     for (let layerDef of layers) {
       const { id } = layerDef;
-      const layer = createLayerFromDef(layerDef, {
-        id: `criteria_${id}`,
-        visible: false,
-        opacity: 0.8
-      });
+      try {
+        const layer = createLayerFromDef(layerDef, {
+          visible: false,
+          opacity: 0.8
+        });
 
-      this.criteriaLayers[id] = this.afterCreateLayer(layer, { layerDef });
+        this.criteriaLayers[id] = this.afterCreateLayer(layer, { layerDef });
 
-      layerGroup.getLayers().push(layer);
+        layerGroup.getLayers().push(layer);
+      } catch (err) {
+        console.error(`Error loading criteria layer ${id}`, err);
+      }
     }
   }
 
   private addInfoLayers() {
     const infoLayerDefs = this.api.getInfoLayers();
     for (const layerDef of infoLayerDefs) {
-      const layer = createLayerFromDef(layerDef);
-      this.afterCreateLayer(layer, { layerDef });
-      this.map.getLayers().push(layer);
+      try {
+        const layer = createLayerFromDef(layerDef);
+        this.afterCreateLayer(layer, { layerDef });
+        this.map.getLayers().push(layer);
+      } catch (err) {
+        console.error(`Error loading info layer ${layerDef.id}`, err);
+      }
     }
   }
 
@@ -733,7 +783,7 @@ export class ReefGuideMapService {
    * Creates a new LayerController if one does not exist.
    * @param layer any OpenLayers layer that LayerController supports.
    */
-  public getLayerController(layer: Layer): LayerController {
+  public getLayerController(layer: BaseLayer): LayerController {
     let controller = this.layerControllers.get(layer);
     if (controller) {
       return controller;
@@ -742,7 +792,10 @@ export class ReefGuideMapService {
     }
   }
 
-  private createLayerController(layer: Layer, options?: LayerControllerOptions): LayerController {
+  private createLayerController(
+    layer: BaseLayer,
+    options?: LayerControllerOptions
+  ): LayerController {
     runInInjectionContext(this.injector, () => {
       const controller = new LayerController(layer, options);
       // TODO remove on layer remove/dispose
@@ -762,7 +815,7 @@ export class ReefGuideMapService {
    * @param layer new Layer
    * @param options should be provided if created from LayerDef
    */
-  private afterCreateLayer(layer: Layer, options?: LayerControllerOptions): LayerController {
+  private afterCreateLayer(layer: BaseLayer, options?: LayerControllerOptions): LayerController {
     const layerId = layer.get('id');
     // call hardcoded adjustment function for this layer if it has one.
     const adjustFn = LAYER_ADJUSTMENT[layerId];
@@ -774,9 +827,12 @@ export class ReefGuideMapService {
     layer.on('error', e => {
       console.error('layer error', e);
     });
-    layer.getSource()?.on('error', e => {
-      console.error('layer source error', e);
-    });
+
+    if (layer instanceof Layer) {
+      layer.getSource()?.on('error', (e: any) => {
+        console.error('layer source error', e);
+      });
+    }
 
     return this.createLayerController(layer, options);
   }

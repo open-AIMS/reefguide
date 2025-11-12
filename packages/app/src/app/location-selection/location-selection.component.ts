@@ -10,8 +10,6 @@ import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltip } from '@angular/material/tooltip';
-import { SuitabilityAssessmentInput } from '@reefguide/types';
-import Layer from 'ol/layer/Layer';
 import { fromLonLat } from 'ol/proj';
 import { combineLatest, map, Observable } from 'rxjs';
 import { WebApiService } from '../../api/web-api.service';
@@ -26,6 +24,7 @@ import { SelectionCriteriaComponent } from './selection-criteria/selection-crite
 import { MapToolbarComponent } from './map-toolbar/map-toolbar.component';
 import { PolygonMapService } from './polygon-map.service';
 import { ActivatedRoute } from '@angular/router';
+import BaseLayer from 'ol/layer/Base';
 
 type DrawerModes = 'criteria' | 'style';
 
@@ -79,7 +78,7 @@ export class LocationSelectionComponent implements MapUI {
   /**
    * Layer style that is currently being edited
    */
-  editingLayerStyle = signal<Layer | undefined>(undefined);
+  editingLayerStyle = signal<BaseLayer | undefined>(undefined);
 
   /**
    * Assess related layer is loading.
@@ -109,7 +108,7 @@ export class LocationSelectionComponent implements MapUI {
     );
   }
 
-  openLayerStyleEditor(layer: Layer): void {
+  openLayerStyleEditor(layer: BaseLayer): void {
     this.editingLayerStyle.set(layer);
     this.openDrawer('style');
   }

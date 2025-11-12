@@ -2,9 +2,9 @@ import { Component, computed, inject, input } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
-import Layer from 'ol/layer/Layer';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { ReefGuideMapService } from '../../location-selection/reef-guide-map.service';
+import BaseLayer from 'ol/layer/Base';
 
 // TODO layer blend mode. was for ArcGis, but these are standard canvas blend modes
 const BLEND_MODES = [
@@ -55,7 +55,7 @@ const BLEND_MODES = [
 export class LayerStyleEditorComponent {
   private readonly mapService = inject(ReefGuideMapService);
 
-  layer = input.required<Layer>();
+  layer = input.required<BaseLayer>();
 
   layerController = computed(() => {
     return this.mapService.getLayerController(this.layer());

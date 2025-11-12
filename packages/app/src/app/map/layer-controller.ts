@@ -1,11 +1,11 @@
 import { computed, effect, Signal, signal, WritableSignal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { LayerDef } from '@reefguide/types';
-import type Layer from 'ol/layer/Layer';
 import TileLayer from 'ol/layer/WebGLTile';
 import { debounceTime, map, of, shareReplay, Subject, switchMap, takeUntil } from 'rxjs';
 import { LayerProperties } from '../../types/layer.type';
-import { fromOpenLayersEvent } from './openlayers-util';
+import BaseLayer from 'ol/layer/Base';
+import { fromOpenLayersEvent } from '../../util/openlayers/openlayers-rxjs';
 
 type LayerStyleModes = 'default' | 'pixel-filtering';
 
@@ -55,7 +55,7 @@ export class LayerController {
   private destroyed$ = new Subject<void>();
 
   constructor(
-    public readonly layer: Layer,
+    public readonly layer: BaseLayer,
     public readonly options?: LayerControllerOptions
   ) {
     const download: LayerProperties['download'] = layer.get('download');

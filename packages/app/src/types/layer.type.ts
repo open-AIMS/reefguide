@@ -1,5 +1,7 @@
 /**
  * Properties app code may set on the layers.
+ *
+ * Important: these keys must not conflict with the names used by OpenLayers.
  */
 export type LayerProperties = {
   id?: string;
@@ -28,6 +30,10 @@ export type LayerProperties = {
    * Do not show this layer in lists visible to user.
    */
   hideInList?: boolean;
+  /**
+   * Show the children in the layer list instead of the group layer.
+   */
+  expandChildrenInList?: boolean;
   /**
    * Download all data for this layer.
    */

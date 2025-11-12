@@ -5,8 +5,8 @@ import { LayerListItemComponent } from '../layer-list-item/layer-list-item.compo
 import { MatExpansionPanel, MatExpansionPanelHeader } from '@angular/material/expansion';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import Layer from 'ol/layer/Layer';
 import { MatIconModule } from '@angular/material/icon';
+import BaseLayer from 'ol/layer/Base';
 
 @Component({
   selector: 'app-layer-list',
@@ -27,7 +27,7 @@ export class LayerListComponent {
 
   constructor() {}
 
-  onDrop(event: CdkDragDrop<Layer[]>) {
+  onDrop(event: CdkDragDrop<BaseLayer[]>) {
     // const layer = event.item.data as Layer;
     this.mapComponent.reorderLayer(event.previousIndex, event.currentIndex);
   }

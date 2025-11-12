@@ -31,6 +31,7 @@
     "apache-arrow": "^21.0.0",
     "fuzzysort": "^3.1.0",
     "jwt-decode": "^4.0.0",
+    "lerc": "^4.0.4",
     "ol": "^10.6.1",
     "parquet-wasm": "^0.6.1",
     "proj4": "^2.19.5",

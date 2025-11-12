@@ -1,5 +1,6 @@
 import { Options as VectorLayerOptions } from 'ol/layer/Vector';
 import { Options as WebGLTileLayerOptions } from 'ol/layer/WebGLTile';
+import { Options as LayerGroupOptions } from 'ol/layer/Group';
 
 type VectorOptions = Omit<VectorLayerOptions, 'source' | 'properties'>;
 type TileOptions = Omit<WebGLTileLayerOptions, 'source' | 'properties'>;
@@ -20,8 +21,10 @@ type BaseLayerDef = {
 
   /**
    * layer URL
+   *
+   * Layer group created if multiple urls are given
    */
-  url: string;
+  url: string | string[];
 
   /**
    * layer to query within the service.
@@ -63,6 +66,12 @@ type BaseLayerDef = {
    * Text to append to all feature labels in this layer.
    */
   layerPostfix?: string;
+
+  /**
+   * Options to mixin to the LayerGroup.
+   * (in the case of multiple urls causing a layer group)
+   */
+  layerGroupOptions?: LayerGroupOptions;
 };
 
 type VectorLayerDef = BaseLayerDef & {

@@ -2,17 +2,16 @@ import Layer from 'ol/layer/Layer';
 import LayerGroup from 'ol/layer/Group';
 import { Collection, Feature } from 'ol';
 import BaseLayer from 'ol/layer/Base';
-import { fromEventPattern, Observable } from 'rxjs';
-import { EventsKey } from 'ol/events';
-import OLBaseEvent from 'ol/events/Event';
-import BaseObject, { ObjectEvent } from 'ol/Object';
-import { TileSourceEvent } from 'ol/source/Tile';
 import VectorLayer from 'ol/layer/Vector';
 import { Fill, Stroke, Style, Text } from 'ol/style';
 import { Cluster, TileDebug } from 'ol/source';
 import CircleStyle from 'ol/style/Circle';
 import TileLayer from 'ol/layer/WebGLTile';
 import DataTileSource from 'ol/source/DataTile';
+import VectorSource from 'ol/source/Vector';
+import { fromExtent } from 'ol/geom/Polygon';
+import { LayerProperties } from '../../types/layer.type';
+import { Extent } from 'ol/extent';
 
 /**
  * Call the function when the layer is disposed.
@@ -62,25 +61,6 @@ export function disposeLayerGroup(
     layerGroup.dispose();
     parentCollection.remove(layerGroup);
   }
-}
-
-/**
- * Create an Observable from an OpenLayer's object event.
- * @param obj
- * @param eventName
- *
- * TODO fix V type, it can be ObjectEvent
- */
-export function fromOpenLayersEvent<
-  O extends BaseObject,
-  E = Parameters<O['on']>[0],
-  V = OLBaseEvent | ObjectEvent | TileSourceEvent
->(obj: O, eventName: E): Observable<V> {
-  return fromEventPattern<V>(
-    // TODO figure out whey eventName type check not happy
-    handler => obj.on(eventName as any, handler),
-    (handler, key: EventsKey) => obj.un(eventName as any, handler)
-  );
 }
 
 /**
@@ -182,4 +162,36 @@ export function logFeaturesInfo(layer: VectorLayer, props: string[]) {
       console.log(`GBRMPZoning ${totalCount} features. ALT_ZONEs, TYPEs`, distinctValues);
     });
   }
+}
+
+/**
+ * Creates a VectorLayer with a rectangle feature from the given extent.
+ * @param extent An Extent in the map's projection.
+ */
+export function createExtentLayer(extent: Extent): VectorLayer {
+  const rectangle = fromExtent(extent);
+
+  const feature = new Feature(rectangle);
+
+  const source = new VectorSource({
+    features: [feature]
+  });
+
+  const style = new Style({
+    stroke: new Stroke({
+      color: '#FF5722',
+      width: 2
+    }),
+    fill: new Fill({
+      color: 'rgba(255, 87, 34, 0.2)'
+    })
+  });
+
+  return new VectorLayer({
+    properties: {
+      title: 'Extent View'
+    } as LayerProperties,
+    source,
+    style
+  });
 }

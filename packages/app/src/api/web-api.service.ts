@@ -78,6 +78,7 @@ import { environment } from '../environments/environment';
 import { retryHTTPErrors } from '../util/http-util';
 import Style, { StyleFunction } from 'ol/style/Style';
 import { Fill, Stroke } from 'ol/style';
+import { getGeomorphicZonationColorPaletteStyle } from '../app/map/openlayers-hardcoded';
 
 type JobId = CreateJobResponse['jobId'];
 
@@ -408,6 +409,41 @@ export class WebApiService {
         }
       },
       {
+        id: 'hybrid_benthic',
+        title: 'Hybrid Benthic',
+        infoUrl:
+          'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer',
+        url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+        urlType: 'WMTSCapabilitiesXml',
+        layerOptions: {
+          opacity: 0.8,
+          visible: false
+        }
+      },
+      {
+        id: 'hybrid_geomorphic',
+        title: 'Hybrid Geomorphic',
+        // for now, just link here so users can lookup colors
+        // should work on legend and better layer info design soon
+        infoUrl:
+          'https://developers.google.com/earth-engine/datasets/catalog/ACA_reef_habitat_v2_0#bands',
+        url: [
+          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgFarNorthern_hybrid_geomorphichyb/ImageServer',
+          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgCairns_Cooktown_hybrid_geomorphichyb/ImageServer',
+          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgTownsville_Whitsunday_hybrid_geomorphichyb/ImageServer',
+          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgMackay_Capricorn_hybrid_geomorphichyb/ImageServer'
+        ],
+        urlType: 'ArcGisImageServer',
+        layerGroupOptions: {
+          visible: false
+        },
+        layerOptions: {
+          style: {
+            color: getGeomorphicZonationColorPaletteStyle()
+          }
+        }
+      },
+      {
         id: 'canonical_reefs',
         title: 'RRAP Canonical Reefs',
         layerPrefix: 'Reef: ',
@@ -456,29 +492,6 @@ export class WebApiService {
             // reduce how many labels are shown when crowded by setting padding
             'text-padding': [4, 2, 4, 2] // top, right, bottom, left
           }
-        }
-      },
-
-      // can zoom in approx to scale 36100, 134MB
-      // {
-      //   id: 'hybrid_benthic_2',
-      //   title: 'Hybrid Benthic',
-      //   infoUrl:
-      //     'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/ExportTilecache/MapServer',
-      //   url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/ExportTilecache/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
-      //   urlType: 'WMTSCapabilitiesXml'
-      // },
-      // can zoom in approx to scale 18055, 443MB
-      {
-        id: 'hybrid_benthic',
-        title: 'Hybrid Benthic',
-        infoUrl:
-          'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer',
-        url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
-        urlType: 'WMTSCapabilitiesXml',
-        layerOptions: {
-          opacity: 0.8,
-          visible: false
         }
       },
       {
