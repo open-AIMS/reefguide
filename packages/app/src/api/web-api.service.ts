@@ -408,6 +408,46 @@ export class WebApiService {
           opacity: 0.5
         }
       },
+
+      // can zoom in approx to scale 36100, 134MB
+      // {
+      //   id: 'hybrid_benthic_2',
+      //   title: 'Hybrid Benthic',
+      //   infoUrl:
+      //     'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/ExportTilecache/MapServer',
+      //   url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/ExportTilecache/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+      //   urlType: 'WMTSCapabilitiesXml'
+      // },
+      // can zoom in approx to scale 18055, 443MB
+      {
+        id: 'hybrid_benthic',
+        title: 'Hybrid Benthic',
+        infoUrl:
+          'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer',
+        url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+        urlType: 'WMTSCapabilitiesXml',
+        layerOptions: {
+          opacity: 0.8,
+          visible: false
+        }
+      },
+      {
+        id: 'hybrid_geomorphic',
+        title: 'Hybrid Geomorphic',
+        url: [
+          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgFarNorthern_hybrid_geomorphichyb/ImageServer',
+          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgCairns_Cooktown_hybrid_geomorphichyb/ImageServer',
+          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgTownsville_Whitsunday_hybrid_geomorphichyb/ImageServer',
+          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgMackay_Capricorn_hybrid_geomorphichyb/ImageServer'
+        ],
+        urlType: 'ArcGisImageServer',
+        layerOptions: {
+          visible: false,
+          style: {
+            color: getGeomorphicZonationColorPaletteStyle()
+          }
+        }
+      },
       {
         id: 'canonical_reefs',
         title: 'RRAP Canonical Reefs',
@@ -457,29 +497,6 @@ export class WebApiService {
             // reduce how many labels are shown when crowded by setting padding
             'text-padding': [4, 2, 4, 2] // top, right, bottom, left
           }
-        }
-      },
-
-      // can zoom in approx to scale 36100, 134MB
-      // {
-      //   id: 'hybrid_benthic_2',
-      //   title: 'Hybrid Benthic',
-      //   infoUrl:
-      //     'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/ExportTilecache/MapServer',
-      //   url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/ExportTilecache/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
-      //   urlType: 'WMTSCapabilitiesXml'
-      // },
-      // can zoom in approx to scale 18055, 443MB
-      {
-        id: 'hybrid_benthic',
-        title: 'Hybrid Benthic',
-        infoUrl:
-          'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer',
-        url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
-        urlType: 'WMTSCapabilitiesXml',
-        layerOptions: {
-          opacity: 0.8,
-          visible: false
         }
       },
       {
@@ -659,22 +676,6 @@ export class WebApiService {
               });
             }
           } satisfies StyleFunction
-        }
-      },
-      {
-        id: 'hybrid_geomorphic',
-        title: 'Hybrid Geomorphic',
-        url: [
-          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgFarNorthern_hybrid_geomorphichyb/ImageServer',
-          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgCairns_Cooktown_hybrid_geomorphichyb/ImageServer',
-          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgTownsville_Whitsunday_hybrid_geomorphichyb/ImageServer',
-          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgMackay_Capricorn_hybrid_geomorphichyb/ImageServer'
-        ],
-        urlType: 'ArcGisImageServer',
-        layerOptions: {
-          style: {
-            color: getGeomorphicZonationColorPaletteStyle()
-          }
         }
       }
     ];
