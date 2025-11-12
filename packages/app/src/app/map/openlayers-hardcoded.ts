@@ -3,6 +3,7 @@ import { Style, Text, Fill, Stroke } from 'ol/style';
 import VectorSource from 'ol/source/Vector';
 import { Feature } from 'ol';
 import { StyleFunction } from 'ol/style/Style';
+import { ColorLike } from 'ol/colorlike';
 
 // Style that is returned in order to hide the feature.
 const hideStyle = new Style();
@@ -230,4 +231,116 @@ function getZoneStyle(zoneType: string): ZoneStyleConfig {
       description: 'Unknown zone type'
     }
   );
+}
+
+/**
+ * Colors for *_hybrid_geomorphic band values.
+ * https://developers.google.com/earth-engine/datasets/catalog/ACA_reef_habitat_v2_0#bands
+ */
+const geomorphicZonationClasses: Record<number, { color: string; desc: string } | undefined> = {
+  // -1 is the default for where there are gaps, i.e. 1 to 11
+  // this is to highlight unknown values that are not expected.
+  '-1': {
+    color: '#ff0000',
+    desc: 'Unknown'
+  },
+  // No data
+  0: {
+    color: 'rgba(0,0,0,0)', // transparent for no data
+    desc: 'Unmapped'
+  },
+  2: {
+    // Deep water isn't interesting to display
+    color: 'rgba(0,0,0,0)', // transparent
+    desc: 'Deep'
+  },
+  // geomorphic
+  11: {
+    color: '#77d0fc',
+    desc: 'Shallow Lagoon - Shallow Lagoon is any closed to semi-enclosed, sheltered, flat-bottomed shallow sediment-dominated lagoon area.'
+  },
+  12: {
+    color: '#2ca2f9',
+    desc: 'Deep Lagoon - Deep Lagoon is any sheltered broad body of water semi-enclosed to enclosed by reef, with a variable depth (but shallower than surrounding ocean) and a soft bottom dominated by reef-derived sediment.'
+  },
+  13: {
+    color: '#c5a7cb',
+    desc: 'Inner Reef Flat - Inner Reef Flat is a low energy, sediment-dominated, horizontal to gently sloping platform behind the Outer Reef Flat.'
+  },
+  14: {
+    color: '#92739d',
+    desc: 'Outer Reef Flat - Adjacent to the seaward edge of the reef, Outer Reef Flat is a level (near horizontal), broad and shallow platform that displays strong wave-driven zonation.'
+  },
+  15: {
+    color: '#614272',
+    desc: 'Reef Crest - Reef Crest is a zone marking the boundary between the reef flat and the reef slope, generally shallow and characterized by highest wave energy absorbance.'
+  },
+  16: {
+    color: '#fbdefb',
+    desc: 'Terrestrial Reef Flat - Terrestrial Reef Flat is a broad, flat, shallow to semi-exposed area of fringing reef found directly attached to land at one side, and subject to freshwater run-off, nutrients and sediment.'
+  },
+  21: {
+    color: '#10bda6',
+    desc: 'Sheltered Reef Slope - Sheltered Reef Slope is any submerged, sloping area extending into Deep Water but protected from strong directional prevailing wind or current, either by land or by opposing reef structures.'
+  },
+  22: {
+    color: '#288471',
+    desc: 'Reef Slope - Reef Slope is a submerged, sloping area extending seaward from the Reef Crest (or Flat) towards the shelf break. Windward facing, or any direction if no dominant prevailing wind or current exists.'
+  },
+  23: {
+    color: '#cd6812',
+    desc: 'Plateau - Plateau is any deeper submerged, hard-bottomed, horizontal to gently sloping seaward facing reef feature.'
+  },
+  24: {
+    color: '#befbff',
+    desc: 'Back Reef Slope - Back Reef Slope is a complex, interior, - often gently sloping - reef zone occurring behind the Reef Flat. Of variable depth (but deeper than Reef Flat and more sloped), it is sheltered, sediment-dominated and often punctuated by coral outcrops.'
+  },
+  25: {
+    color: '#ffba15',
+    desc: 'Patch Reef - Patch Reef is any small, detached to semi-detached lagoonal coral outcrop arising from sand-bottomed area.'
+  },
+  // benthic
+  26: {
+    color: '#ffffbe',
+    desc: 'Sand - Sand is any soft-bottom area dominated by fine unconsolidated sediments.'
+  },
+  27: {
+    color: '#e0d05e',
+    desc: 'Rubble - Rubble is any habitat featuring loose, rough fragments of broken reef material.     '
+  },
+  28: {
+    color: '#b19c3a',
+    desc: 'Rock - Rock is any exposed area of hard bare substrate.'
+  },
+  29: {
+    color: '#668438',
+    desc: 'Seagrass - Seagrass is any habitat where seagrass is the dominant biota.'
+  },
+  30: {
+    color: '#ff6161',
+    desc: 'Coral/Algae - Coral/Algae is any hard-bottom area supporting living coral and/or algae.'
+  },
+  31: {
+    color: '#9bcc4f',
+    desc: 'Microalgal Mats - Microalgal Mats are any visible accumulations of microscopic algae in sandy sediments.'
+  }
+};
+
+export function getGeomorphicZonationColorPaletteStyle() {
+  const colors: ColorLike[] = [];
+
+  const transparentColor = geomorphicZonationClasses[0]?.color!;
+  const defaultColor = geomorphicZonationClasses[-1]?.color;
+  if (!defaultColor) {
+    throw new Error('no default');
+  }
+
+  const possibleValues = Object.keys(geomorphicZonationClasses).map(k => Number(k));
+  const lastValue = Math.max(...possibleValues);
+
+  for (let i = 0; i <= lastValue; i++) {
+    colors[i] = geomorphicZonationClasses[i]?.color ?? defaultColor;
+  }
+
+  return ['palette', ['band', 1], colors];
 }
