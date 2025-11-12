@@ -8,9 +8,10 @@ mat-progress-spinner {
   color: #606060;
 }
 
-// limit the height and show scrollbar when not enough vertical space
+// limit the height and show scrollbar when not enough vertical space.
+// without this, the left map ui is pushed off the bottom, causing map to show scrollbar
 // MatExpansionPanel doesn't seem to have default scrollbar, setting max-height on root didn't work.
 ::ng-deep .mat-expansion-panel-content {
-  max-height: calc(100vh - 240px) !important;
+  max-height: calc(100vh - 300px) !important;
   overflow: auto !important;
 }
