@@ -18,7 +18,6 @@ import View from 'ol/View';
 import ScaleLine from 'ol/control/ScaleLine';
 import { Polygon } from 'ol/geom';
 import LayerGroup from 'ol/layer/Group';
-import Layer from 'ol/layer/Layer';
 import { debounceTime, map, Observable, Subject } from 'rxjs';
 import { LayerProperties } from '../../types/layer.type';
 import { ReefGuideMapService } from '../location-selection/reef-guide-map.service';
@@ -32,6 +31,7 @@ import { LayerListComponent } from '../widgets/layer-list/layer-list.component';
 import { ReefSearchService } from './reef-search.service';
 import { ReefSearchComponent } from './reef-search/reef-search.component';
 import { PolygonMapService } from '../location-selection/polygon-map.service';
+import BaseLayer from 'ol/layer/Base';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -83,26 +83,43 @@ export class ReefMapComponent implements AfterViewInit {
   private map!: Map;
 
   private layersChange$ = new Subject<void>();
-  private _lastEmittedLayers?: Layer[];
+  private _lastEmittedLayers?: BaseLayer[];
 
   /**
-   * Flat list of all layers ordered by zIndex descending.
+   * Flat list of root layers ordered by zIndex descending.
    */
-  public sortedLayers$: Observable<Layer[]> = this.layersChange$.pipe(
+  public sortedLayers$: Observable<BaseLayer[]> = this.layersChange$.pipe(
     debounceTime(50),
     map(() => {
       // For now show all layers in flat list;
       // in future could display tree by recursing through getLayers()
-      // getAllLayers will recursively get all leaf layers
-      const allLayers = this.map.getAllLayers().filter(layer => {
+      // getAllLayers will recursively get all leaf layers, leafs are Layer type vs BaseLayer
+      const displayedLayers: BaseLayer[] = [];
+      this.map.getLayers().forEach(layer => {
         const props: LayerProperties = layer.getProperties();
-        return props.hideInList !== true;
+        if (props.hideInList) {
+          return;
+        }
+
+        if (props.expandChildrenInList) {
+          if (layer instanceof LayerGroup) {
+            // assuming single level
+            layer.getLayers().forEach(childLayer => {
+              displayedLayers.push(childLayer);
+            });
+          } else {
+            console.warn(`Layer ${props.id} has expandChildrenInList but is not LayerGroup`);
+            displayedLayers.push(layer);
+          }
+        } else {
+          displayedLayers.push(layer);
+        }
       });
 
-      this.setMissingZindexes(allLayers);
-      allLayers.sort((a, b) => b.getZIndex()! - a.getZIndex()!);
-      this._lastEmittedLayers = allLayers;
-      return allLayers;
+      this.setMissingZindexes(displayedLayers);
+      displayedLayers.sort((a, b) => b.getZIndex()! - a.getZIndex()!);
+      this._lastEmittedLayers = displayedLayers;
+      return displayedLayers;
     })
   );
 
@@ -206,7 +223,7 @@ export class ReefMapComponent implements AfterViewInit {
     });
   }
 
-  private setMissingZindexes(allLayers: Layer[]) {
+  private setMissingZindexes(allLayers: BaseLayer[]) {
     let highest_zIndex = 0;
     allLayers.forEach(layer => {
       const zIndex = layer.getZIndex();

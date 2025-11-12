@@ -1,5 +1,4 @@
 import { Component, inject, input, OnInit } from '@angular/core';
-import Layer from 'ol/layer/Layer';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -8,6 +7,7 @@ import { LayerController } from '../../map/layer-controller';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { downloadFile } from '../../../util/js-util';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import BaseLayer from 'ol/layer/Base';
 
 @Component({
   selector: 'app-layer-list-item',
@@ -20,7 +20,7 @@ export class LayerListItemComponent implements OnInit {
   private readonly mapUI = inject(MAP_UI);
   private readonly snackbar = inject(MatSnackBar);
 
-  layer = input.required<Layer>();
+  layer = input.required<BaseLayer>();
 
   layerController!: LayerController;
 

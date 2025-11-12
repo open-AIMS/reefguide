@@ -71,7 +71,7 @@ import { fromString as colorFromString } from 'ol/color';
  * @see LocationSelectionComponent
  */
 export interface MapUI {
-  openLayerStyleEditor(layer: Layer): void;
+  openLayerStyleEditor(layer: BaseLayer): void;
 }
 
 export const MAP_UI = new InjectionToken<MapUI>('high-level map UI service');
@@ -735,8 +735,9 @@ export class ReefGuideMapService {
 
     const layerGroup = new LayerGroup({
       properties: {
-        title: 'Criteria'
-      }
+        title: 'Criteria',
+        expandChildrenInList: true
+      } as LayerProperties
     });
     this.criteriaLayerGroup.set(layerGroup);
     this.map.getLayers().push(layerGroup);
@@ -782,7 +783,7 @@ export class ReefGuideMapService {
    * Creates a new LayerController if one does not exist.
    * @param layer any OpenLayers layer that LayerController supports.
    */
-  public getLayerController(layer: Layer): LayerController {
+  public getLayerController(layer: BaseLayer): LayerController {
     let controller = this.layerControllers.get(layer);
     if (controller) {
       return controller;
