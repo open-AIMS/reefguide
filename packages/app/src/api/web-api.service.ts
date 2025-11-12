@@ -445,8 +445,10 @@ export class WebApiService {
           'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgMackay_Capricorn_hybrid_geomorphichyb/ImageServer'
         ],
         urlType: 'ArcGisImageServer',
+        layerGroupOptions: {
+          visible: false
+        },
         layerOptions: {
-          visible: false,
           style: {
             color: getGeomorphicZonationColorPaletteStyle()
           }

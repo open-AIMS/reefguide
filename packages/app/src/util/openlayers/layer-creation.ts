@@ -183,7 +183,8 @@ export function createLayerFromDef(layerDef: LayerDef, mixin?: Partial<Options>)
             url
           };
           return builder(childLayerDef, properties, mixin);
-        })
+        }),
+        ...layerDef.layerGroupOptions
       });
     } else {
       return builder(layerDef as SingularLayerDef, properties, mixin);
