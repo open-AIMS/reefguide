@@ -24,6 +24,7 @@ import {
   of,
   Subject,
   switchMap,
+  take,
   takeUntil,
   tap,
   throttleTime
@@ -96,6 +97,8 @@ import { PolygonMapService } from './polygon-map.service';
 import { LAYER_ADJUSTMENT } from '../map/openlayers-hardcoded';
 import { createLayerFromDef } from '../../util/openlayers/layer-creation';
 import BaseLayer from 'ol/layer/Base';
+import { Group } from 'ol/layer';
+import { fromOpenLayersProperty } from '../../util/openlayers/openlayers-rxjs';
 
 /**
  * Reef Guide map context and layer management.
@@ -582,17 +585,36 @@ export class ReefGuideMapService {
 
   /**
    * Add a temporary layer to represent the extent of this Layer
+   * If given a group, extent will be rendered for each child layer.
+   *
    * @param layer
    */
   addExtentLayer(layer: BaseLayer) {
-    // extent must already be in the map projection
-    const extent = layer.getExtent();
-    if (!extent) {
-      return;
-    }
+    // Note: layer extents should be in the map projection
+    if (layer instanceof Group) {
+      layer.getLayers().forEach(layer => {
+        fromOpenLayersProperty(layer, 'extent')
+          .pipe(take(1))
+          .subscribe(extent => {
+            if (extent) {
+              const extentLayer = createExtentLayer(extent);
+              extentLayer.setMap(this.map);
+            }
+          });
+      });
+    } else {
+      const extent = layer.getExtent();
+      if (!extent) {
+        return;
+      }
 
-    const extentLayer = createExtentLayer(extent);
-    extentLayer.setMap(this.map);
+      fromOpenLayersProperty(layer, 'extent')
+        .pipe(take(1))
+        .subscribe(extent => {
+          const extentLayer = createExtentLayer(extent);
+          extentLayer.setMap(this.map);
+        });
+    }
   }
 
   private removeActiveSiteSuitabilityRegion(region: string) {

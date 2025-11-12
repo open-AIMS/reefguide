@@ -4,8 +4,8 @@ import { LayerDef } from '@reefguide/types';
 import TileLayer from 'ol/layer/WebGLTile';
 import { debounceTime, map, of, shareReplay, Subject, switchMap, takeUntil } from 'rxjs';
 import { LayerProperties } from '../../types/layer.type';
-import { fromOpenLayersEvent } from '../../util/openlayers/openlayers-util';
 import BaseLayer from 'ol/layer/Base';
+import { fromOpenLayersEvent } from '../../util/openlayers/openlayers-rxjs';
 
 type LayerStyleModes = 'default' | 'pixel-filtering';
 
