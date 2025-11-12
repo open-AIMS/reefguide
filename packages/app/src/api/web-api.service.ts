@@ -434,6 +434,10 @@ export class WebApiService {
       {
         id: 'hybrid_geomorphic',
         title: 'Hybrid Geomorphic',
+        // for now, just link here so users can lookup colors
+        // should work on legend and better layer info design soon
+        infoUrl:
+          'https://developers.google.com/earth-engine/datasets/catalog/ACA_reef_habitat_v2_0#bands',
         url: [
           'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgFarNorthern_hybrid_geomorphichyb/ImageServer',
           'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgCairns_Cooktown_hybrid_geomorphichyb/ImageServer',
