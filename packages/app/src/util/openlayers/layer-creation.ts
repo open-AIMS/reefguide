@@ -14,8 +14,8 @@ import {
   getImageServerSetup,
   lerc1BandDataTileLoader
 } from '../arcgis/arcgis-openlayer-util';
-import { Group } from 'ol/layer';
 import BaseLayer from 'ol/layer/Base';
+import LayerGroup from 'ol/layer/Group';
 
 /**
  * More specific LayerDef type.
@@ -168,7 +168,7 @@ export function createLayerFromDef(layerDef: LayerDef, mixin?: Partial<Options>)
   const builder = LAYER_BUILDERS[layerDef.urlType];
   if (builder) {
     if (Array.isArray(layerDef.url)) {
-      const group = new Group({
+      return new LayerGroup({
         // only include informational properties in the group
         properties: {
           // TODO should sub layers have incremented ids?
@@ -185,8 +185,6 @@ export function createLayerFromDef(layerDef: LayerDef, mixin?: Partial<Options>)
           return builder(childLayerDef, properties, mixin);
         })
       });
-
-      return group;
     } else {
       return builder(layerDef as SingularLayerDef, properties, mixin);
     }
