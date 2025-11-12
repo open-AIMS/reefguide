@@ -663,7 +663,12 @@ export class WebApiService {
       {
         id: 'hyb_geo',
         title: 'Geomorphic',
-        url: 'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgTownsville_Whitsunday_hybrid_geomorphichyb/ImageServer',
+        url: [
+          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgFarNorthern_hybrid_geomorphichyb/ImageServer',
+          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgCairns_Cooktown_hybrid_geomorphichyb/ImageServer',
+          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgTownsville_Whitsunday_hybrid_geomorphichyb/ImageServer',
+          'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgMackay_Capricorn_hybrid_geomorphichyb/ImageServer'
+        ],
         urlType: 'ArcGisImageServer',
         layerOptions: {
           style: {

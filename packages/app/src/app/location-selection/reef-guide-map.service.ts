@@ -95,6 +95,7 @@ export interface PolygonDrawHandlers {
 import { PolygonMapService } from './polygon-map.service';
 import { LAYER_ADJUSTMENT } from '../map/openlayers-hardcoded';
 import { createLayerFromDef } from '../../util/openlayers/layer-creation';
+import BaseLayer from 'ol/layer/Base';
 
 /**
  * Reef Guide map context and layer management.
@@ -156,7 +157,7 @@ export class ReefGuideMapService {
   // suitable sites polygons group layer
   private readonly siteSuitabilityLayerGroup = signal<LayerGroup | undefined>(undefined);
 
-  private layerControllers = new Map<Layer, LayerController>();
+  private layerControllers = new Map<BaseLayer, LayerController>();
 
   // Polygon drawing state
   public isDrawingPolygon: boolean = false;
@@ -583,7 +584,7 @@ export class ReefGuideMapService {
    * Add a temporary layer to represent the extent of this Layer
    * @param layer
    */
-  addExtentLayer(layer: Layer) {
+  addExtentLayer(layer: BaseLayer) {
     // extent must already be in the map projection
     const extent = layer.getExtent();
     if (!extent) {
@@ -768,7 +769,10 @@ export class ReefGuideMapService {
     }
   }
 
-  private createLayerController(layer: Layer, options?: LayerControllerOptions): LayerController {
+  private createLayerController(
+    layer: BaseLayer,
+    options?: LayerControllerOptions
+  ): LayerController {
     runInInjectionContext(this.injector, () => {
       const controller = new LayerController(layer, options);
       // TODO remove on layer remove/dispose
@@ -788,7 +792,7 @@ export class ReefGuideMapService {
    * @param layer new Layer
    * @param options should be provided if created from LayerDef
    */
-  private afterCreateLayer(layer: Layer, options?: LayerControllerOptions): LayerController {
+  private afterCreateLayer(layer: BaseLayer, options?: LayerControllerOptions): LayerController {
     const layerId = layer.get('id');
     // call hardcoded adjustment function for this layer if it has one.
     const adjustFn = LAYER_ADJUSTMENT[layerId];
@@ -800,9 +804,12 @@ export class ReefGuideMapService {
     layer.on('error', e => {
       console.error('layer error', e);
     });
-    layer.getSource()?.on('error', e => {
-      console.error('layer source error', e);
-    });
+
+    if (layer instanceof Layer) {
+      layer.getSource()?.on('error', (e: any) => {
+        console.error('layer source error', e);
+      });
+    }
 
     return this.createLayerController(layer, options);
   }

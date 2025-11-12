@@ -20,8 +20,10 @@ type BaseLayerDef = {
 
   /**
    * layer URL
+   *
+   * Layer group created if multiple urls are given
    */
-  url: string;
+  url: string | string[];
 
   /**
    * layer to query within the service.

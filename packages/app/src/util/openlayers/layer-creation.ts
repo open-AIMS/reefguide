@@ -14,6 +14,16 @@ import {
   getImageServerSetup,
   lerc1BandDataTileLoader
 } from '../arcgis/arcgis-openlayer-util';
+import { Group } from 'ol/layer';
+import BaseLayer from 'ol/layer/Base';
+
+/**
+ * More specific LayerDef type.
+ * Distinguishes between multi-layer/multi-url and singular.
+ */
+type SingularLayerDef = LayerDef & {
+  url: string;
+};
 
 /**
  * Functions that create each layer url type.
@@ -22,7 +32,7 @@ import {
  */
 const LAYER_BUILDERS: Record<
   LayerDef['urlType'],
-  (def: LayerDef, properties: LayerProperties, mixin?: Partial<Options>) => Layer
+  (def: SingularLayerDef, properties: LayerProperties, mixin?: Partial<Options>) => Layer
 > = {
   ArcGisFeatureServer(layerDef, properties, mixin) {
     // type narrowing
@@ -145,7 +155,7 @@ const LAYER_BUILDERS: Record<
  * @param layerDef layer definition
  * @param mixin layer constructor properties to mixin
  */
-export function createLayerFromDef(layerDef: LayerDef, mixin?: Partial<Options>): Layer {
+export function createLayerFromDef(layerDef: LayerDef, mixin?: Partial<Options>): BaseLayer {
   const properties: LayerProperties = {
     id: layerDef.id,
     title: layerDef.title,
@@ -157,7 +167,29 @@ export function createLayerFromDef(layerDef: LayerDef, mixin?: Partial<Options>)
 
   const builder = LAYER_BUILDERS[layerDef.urlType];
   if (builder) {
-    return builder(layerDef, properties, mixin);
+    if (Array.isArray(layerDef.url)) {
+      const group = new Group({
+        // only include informational properties in the group
+        properties: {
+          // TODO should sub layers have incremented ids?
+          id: layerDef.id,
+          title: layerDef.title,
+          // TODO update LayerDef and UI to link to multiple
+          infoUrl: layerDef.infoUrl
+        } as LayerProperties,
+        layers: layerDef.url.map(url => {
+          const childLayerDef: SingularLayerDef = {
+            ...layerDef,
+            url
+          };
+          return builder(childLayerDef, properties, mixin);
+        })
+      });
+
+      return group;
+    } else {
+      return builder(layerDef as SingularLayerDef, properties, mixin);
+    }
   } else {
     throw new Error(`Unsupported urlType: ${layerDef.urlType}`);
   }
