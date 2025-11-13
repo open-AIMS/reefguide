@@ -39,7 +39,10 @@ const LAYER_BUILDERS: Record<
     if (layerDef.urlType !== 'ArcGisFeatureServer') {
       throw new Error('unexpected LayerDef urlType');
     }
-    type Options = (typeof layerDef)['layerOptions'];
+    // TODO improve type resolution, this worked before OpenLayers 10.7.0
+    // type Options = (typeof layerDef)['layerOptions'];
+    // type Options = Partial<ConstructorParameters<typeof VectorLayer>>;
+    type Options = any;
 
     const source = createVectorSourceForFeatureServer(layerDef.url, layerDef.layerId);
     const vectorLayer = new VectorLayer({
@@ -47,7 +50,7 @@ const LAYER_BUILDERS: Record<
       source,
       // want to show new features while panning by default
       updateWhileInteracting: true,
-      ...layerDef.layerOptions,
+      ...(layerDef.layerOptions as Options),
       ...(mixin as Options)
     });
 
@@ -67,7 +70,9 @@ const LAYER_BUILDERS: Record<
     if (layerDef.urlType !== 'WMTSCapabilitiesXml') {
       throw new Error('unexpected LayerDef urlType');
     }
-    type Options = (typeof layerDef)['layerOptions'];
+    // TODO improve type resolution, this worked before OpenLayers 10.7.0
+    // type Options = (typeof layerDef)['layerOptions'];
+    type Options = any;
 
     const layer = new TileLayer({
       properties,
@@ -108,7 +113,9 @@ const LAYER_BUILDERS: Record<
     if (layerDef.urlType !== 'ArcGisImageServer') {
       throw new Error('unexpected LayerDef urlType');
     }
-    type Options = (typeof layerDef)['layerOptions'];
+    // TODO improve type resolution, this worked before OpenLayers 10.7.0
+    // type Options = (typeof layerDef)['layerOptions'];
+    type Options = any;
 
     // initial layer without source, source is set later on lerc load
     const layer = new TileLayer({
@@ -177,6 +184,7 @@ export function createLayerFromDef(layerDef: LayerDef, mixin?: Partial<Options>)
           // TODO update LayerDef and UI to link to multiple
           infoUrl: layerDef.infoUrl
         } as LayerProperties,
+        // @ts-expect-error OpenLayers types issue
         layers: layerDef.url.map(url => {
           const childLayerDef: SingularLayerDef = {
             ...layerDef,
