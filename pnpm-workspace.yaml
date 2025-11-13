@@ -14,3 +14,5 @@ minimumReleaseAgeExclude:
   - '@angular-devkit/*'
   - '@ngtools/webpack'
   - '@schematics/angular'
+
+trustPolicy: no-downgrade
