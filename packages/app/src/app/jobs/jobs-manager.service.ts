@@ -5,7 +5,6 @@ import { CreateJobResponse, JobDetailsResponse, ListJobsResponse } from '@reefgu
 import {
   BehaviorSubject,
   finalize,
-  interval,
   map,
   shareReplay,
   switchMap,
@@ -15,7 +14,8 @@ import {
   Observable,
   of,
   Subject,
-  takeUntil
+  takeUntil,
+  repeat
 } from 'rxjs';
 import { retryHTTPErrors } from '../../util/http-util';
 import { AuthService } from '../auth/auth.service';
@@ -250,16 +250,12 @@ export class JobsManagerService {
     status$: BehaviorSubject<ExtendedJobStatus>,
     cancel$: Observable<void>
   ): StartedJob['jobDetails$'] {
-    return interval(this.jobDetailsInterval).pipe(
-      // FUTURE if client is tracking many jobs, it would be more efficient to
-      //  share the query/request for all of them (i.e. switchMap to shared observable),
-      //  but this is simplest for now.
-      switchMap(() =>
-        this.webApi
-          .getJob(jobId)
-          // infinite retry
-          .pipe(retryHTTPErrors(undefined, 50))
-      ),
+    // FUTURE if client is tracking many jobs, it would be more efficient to
+    //  share the query/request for all of them (i.e. switchMap to shared observable),
+    //  but this is simplest for now.
+    return this.webApi.getJob(jobId).pipe(
+      // infinite retry
+      retryHTTPErrors(undefined, 50),
       // discard extra wrapping object, which has no information.
       map(details => details.job),
       // only emit when job status changes.
@@ -277,6 +273,9 @@ export class JobsManagerService {
         details => details.status === 'PENDING' || details.status === 'IN_PROGRESS',
         true // inclusive: emit the first value that fails the predicate
       ),
+      repeat({
+        delay: this.jobDetailsInterval
+      }),
       takeUntil(cancel$),
       takeUntil(this._reset$),
       finalize(() => {
