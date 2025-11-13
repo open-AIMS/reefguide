@@ -24,7 +24,7 @@
     "dependencies": {
         "@reefguide/db": "workspace:*",
         "@reefguide/types": "workspace:*",
-        "axios": "^1.10.0",
+        "axios": "^1.13.2",
         "commander": "^14.0.0",
         "csv-parse": "^5.6.0",
         "csv-stringify": "^6.5.2",

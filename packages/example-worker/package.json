@@ -20,7 +20,7 @@
     "dependencies": {
         "@reefguide/db": "workspace:*",
         "@reefguide/types": "workspace:*",
-        "axios": "^1.10.0",
+        "axios": "^1.13.2",
         "env-cmd": "^10.1.0",
         "express": "^4.21.1",
         "jwt-decode": "^4.0.0",

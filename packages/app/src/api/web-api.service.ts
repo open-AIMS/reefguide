@@ -645,32 +645,24 @@ export class WebApiService {
         layerOptions: {
           visible: false,
           opacity: 0.8,
-          // TODO should convert to JSON or hardcoded style
-          style: function (feature, resolution) {
-            if (feature.get('OBJECTID') == 1) {
-              return new Style({
-                fill: new Fill({
-                  color: 'rgba(149, 246, 22, 0.14)'
-                }),
-                stroke: new Stroke({
-                  color: 'rgba(129, 209, 16, 0.28)',
-                  lineDash: [4, 6],
-                  width: 2
-                })
-              });
-            } else {
-              return new Style({
-                fill: new Fill({
-                  color: 'rgba(255, 94, 0, 0.2)'
-                }),
-                stroke: new Stroke({
-                  color: 'rgba(255, 4, 0, 0.48)',
-                  lineDash: [4, 6],
-                  width: 2
-                })
-              });
-            }
-          } satisfies StyleFunction
+          style: {
+            'fill-color': [
+              'match',
+              ['get', 'OBJECTID'],
+              1,
+              'rgba(149, 246, 22, 0.14)',
+              'rgba(255, 94, 0, 0.2)'
+            ],
+            'stroke-color': [
+              'match',
+              ['get', 'OBJECTID'],
+              1,
+              'rgba(129, 209, 16, 0.28)',
+              'rgba(255, 4, 0, 0.48)'
+            ],
+            'stroke-line-dash': [4, 6],
+            'stroke-width': 2
+          }
         }
       }
     ];
