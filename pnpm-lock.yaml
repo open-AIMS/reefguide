@@ -157,8 +157,8 @@ importers:
         specifier: ^10.4.0
         version: 10.4.0
       axios:
-        specifier: ^1.10.0
-        version: 1.10.0
+        specifier: ^1.13.2
+        version: 1.13.2
       env-cmd:
         specifier: ^10.1.0
         version: 10.1.0
@@ -200,8 +200,8 @@ importers:
         specifier: workspace:*
         version: link:../types
       axios:
-        specifier: ^1.10.0
-        version: 1.10.0
+        specifier: ^1.13.2
+        version: 1.13.2
       commander:
         specifier: ^14.0.0
         version: 14.0.0
@@ -256,8 +256,8 @@ importers:
         specifier: workspace:*
         version: link:../types
       axios:
-        specifier: ^1.10.0
-        version: 1.10.0
+        specifier: ^1.13.2
+        version: 1.13.2
       env-cmd:
         specifier: ^10.1.0
         version: 10.1.0
@@ -388,8 +388,8 @@ importers:
         specifier: 2.202.0
         version: 2.202.0(constructs@10.4.2)
       axios:
-        specifier: ^1.10.0
-        version: 1.10.0
+        specifier: ^1.13.2
+        version: 1.13.2
       bcrypt:
         specifier: ^6.0.0
         version: 6.0.0
@@ -433,8 +433,8 @@ importers:
         specifier: ^4.1.1
         version: 4.1.1
       nodemailer:
-        specifier: ^7.0.5
-        version: 7.0.5
+        specifier: ^7.0.10
+        version: 7.0.10
       passport:
         specifier: ^0.7.0
         version: 0.7.0
@@ -4210,8 +4210,8 @@ packages:
     engines: {node: '>= 18.0.0'}
     hasBin: true
 
-  axios@1.10.0:
-    resolution: {integrity: sha512-/1xYAC4MP/HEG+3duIhFr4ZQXR4sQXOIe+o6sdqzeykGLx6Upp/1p8MHqhINOvGeP7xyNHe7tsiJByc4SSVUxw==}
+  axios@1.13.2:
+    resolution: {integrity: sha512-VPk9ebNqPcy5lRGuSlKx752IlDatOjT9paPlm8A7yOuW2Fbvp4X3JznJtT4f0GzGLLiWE9W8onz51SqLYwzGaA==}
 
   babel-jest@29.7.0:
     resolution: {integrity: sha512-BrvGY3xZSwEcCzKvKsCi2GgHqDqsYkOP4/by5xCgIwGXQxIEh+8ew3gmrE1y7XRR6LHZIj6yLYnUi/mm2KXKBg==}
@@ -5407,8 +5407,8 @@ packages:
     resolution: {integrity: sha512-gIXjKqtFuWEgzFRJA9WCQeSJLZDjgJUOMCMzxtvFq/37KojM1BFGufqsCy0r4qSQmYLsZYMeyRqzIWOMup03sw==}
     engines: {node: '>=14'}
 
-  form-data@4.0.3:
-    resolution: {integrity: sha512-qsITQPfmvMOSAdeyZ+12I1c+CKSstAFAwu+97zrnWAbIr5u8wfsExUzCesVLC8NgHuRUqNN4Zy6UPWUTRGslcA==}
+  form-data@4.0.4:
+    resolution: {integrity: sha512-KrGhL9Q4zjj0kiUt5OO4Mr/A/jlI2jDYs5eHBpYHPcBEVSiipAvn2Ko2HnPe20rmcuuvMHNdZFp+4IlGTMF0Ow==}
     engines: {node: '>= 6'}
 
   formdata-polyfill@4.0.10:
@@ -6666,8 +6666,8 @@ packages:
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
 
-  nodemailer@7.0.5:
-    resolution: {integrity: sha512-nsrh2lO3j4GkLLXoeEksAMgAOqxOv6QumNRVQTJwKH4nuiww6iC2y7GyANs9kRAxCexg3+lTWM3PZ91iLlVjfg==}
+  nodemailer@7.0.10:
+    resolution: {integrity: sha512-Us/Se1WtT0ylXgNFfyFSx4LElllVLJXQjWi2Xz17xWw7amDKO2MLtFnVp1WACy7GkVGs+oBlRopVNUzlrGSw1w==}
     engines: {node: '>=6.0.0'}
 
   nopt@8.1.0:
@@ -13052,7 +13052,7 @@ snapshots:
       '@types/cookiejar': 2.1.5
       '@types/methods': 1.1.4
       '@types/node': 24.0.4
-      form-data: 4.0.3
+      form-data: 4.0.4
 
   '@types/supertest@6.0.3':
     dependencies:
@@ -13426,10 +13426,10 @@ snapshots:
     optionalDependencies:
       fsevents: 2.3.2
 
-  axios@1.10.0:
+  axios@1.13.2:
     dependencies:
       follow-redirects: 1.15.9(debug@4.4.1)
-      form-data: 4.0.3
+      form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
@@ -14777,7 +14777,7 @@ snapshots:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
-  form-data@4.0.3:
+  form-data@4.0.4:
     dependencies:
       asynckit: 0.4.0
       combined-stream: 1.0.8
@@ -16288,7 +16288,7 @@ snapshots:
 
   node-releases@2.0.19: {}
 
-  nodemailer@7.0.5: {}
+  nodemailer@7.0.10: {}
 
   nopt@8.1.0:
     dependencies:
@@ -17440,7 +17440,7 @@ snapshots:
       cookiejar: 2.1.4
       debug: 4.4.1
       fast-safe-stringify: 2.1.1
-      form-data: 4.0.3
+      form-data: 4.0.4
       formidable: 3.5.4
       methods: 1.1.2
       mime: 2.6.0
