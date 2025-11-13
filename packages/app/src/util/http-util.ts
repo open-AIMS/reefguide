@@ -105,11 +105,14 @@ function isRetryableHTTPError(err: HttpErrorResponse): boolean {
 /**
  * Retry HTTP 5XX errors.
  * Expects HttpErrorResponse value from HttpClient.
- * @param count how many times to retry (default 1)
+ * @param count how many times to retry (default 1), undefined for infinite retry
  * @param delayTime delay in milliseconds before retrying (default no delay)
  * @returns
  */
-export function retryHTTPErrors<T>(count = 1, delayTime = 0): MonoTypeOperatorFunction<T> {
+export function retryHTTPErrors<T>(
+  count: number | undefined = 1,
+  delayTime = 0
+): MonoTypeOperatorFunction<T> {
   // retryWhen deprecated, delay is recommended instead.
   return retry({
     count,

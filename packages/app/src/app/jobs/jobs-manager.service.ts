@@ -66,6 +66,10 @@ export class JobsManagerService {
   // poll job details every milliseconds
   jobDetailsInterval: number = 2_000;
 
+  /**
+   * Jobs manager reset
+   * @see reset()
+   */
   private _reset$ = new Subject<void>();
 
   constructor() {
@@ -174,26 +178,34 @@ export class JobsManagerService {
   }
 
   /**
-   * Create a job and poll its details every period. Returns 3 observables to track the job
+   * Create a job and poll its details. Returns 3 observables to track the job
    * creation, job details, and status.
    * @param jobType job type
    * @param payload job type's payload
-   * @param period how often to request job status in milliseconds (default 2 seconds)
    * @returns StartedJob with observables to track creation, job details, and status.
+   * @see _watchJobDetails
    */
   private _startJob(jobType: JobType, payload: Record<string, any>): StartedJob {
-    const createJob$ = this.webApi.createJob(jobType, payload).pipe(shareReplay(1));
-    const cancel$ = new Subject<void>();
     const status$ = new BehaviorSubject<ExtendedJobStatus>('CREATING');
+    const cancel$ = new Subject<void>();
+
+    const createJob$ = this.webApi.createJob(jobType, payload).pipe(
+      retryHTTPErrors(3),
+      tap(value => {
+        if (!value.cached) {
+          // eagerly change to next status (PENDING) so UI can reflect this before jobDetails responds
+          status$.next('PENDING');
+        }
+        // REVIEW else does cached always mean SUCCEEDED?
+      }),
+      // this observable is returned and of interest to multiple subscribers
+      shareReplay(1)
+    );
 
     const jobDetails$ = createJob$.pipe(
-      retryHTTPErrors(3),
-      tap({
-        error: err => {
-          status$.next('CREATE_FAILED');
-        }
-      }),
-      switchMap(createJobResp => this._watchJobDetails(createJobResp.jobId, status$, cancel$))
+      switchMap(createJobResp => this._watchJobDetails(createJobResp.jobId, status$, cancel$)),
+      // replay needed here, otherwise each subscription will execute a new switchMap
+      shareReplay({ bufferSize: 1, refCount: true })
     );
 
     return { createJob$, jobDetails$, status$, cancel$ };
@@ -216,45 +228,60 @@ export class JobsManagerService {
     const cancel$ = new Subject<void>();
     const status$ = new BehaviorSubject<ExtendedJobStatus>(job.status);
 
-    const jobDetails$ = this._watchJobDetails(job.id, status$, cancel$);
+    const jobDetails$ = this._watchJobDetails(job.id, status$, cancel$).pipe(
+      shareReplay({ bufferSize: 1, refCount: true })
+    );
 
     return { createJob$, jobDetails$, status$, cancel$ };
   }
 
+  /**
+   * Poll the job's details on jobDetailsInterval until unsubscribed.
+   * Completes when status is not PENDING or IN_PROGRESS
+   * Errors when FAILED, CANCELLED, TIMED_OUT
+   * Caller is responsible for reploy
+   * @param jobId
+   * @param status$
+   * @param cancel$
+   * @private
+   */
   private _watchJobDetails(
     jobId: number,
     status$: BehaviorSubject<ExtendedJobStatus>,
     cancel$: Observable<void>
   ): StartedJob['jobDetails$'] {
-    status$.next('PENDING');
     return interval(this.jobDetailsInterval).pipe(
-      // Future: if client is tracking many jobs, it would be more efficient to
-      // share the query/request for all of them (i.e. switchMap to shared observable),
-      // but this is simplest for now.
-      switchMap(() => this.webApi.getJob(jobId).pipe(retryHTTPErrors(3))),
+      // FUTURE if client is tracking many jobs, it would be more efficient to
+      //  share the query/request for all of them (i.e. switchMap to shared observable),
+      //  but this is simplest for now.
+      switchMap(() =>
+        this.webApi
+          .getJob(jobId)
+          // infinite retry
+          .pipe(retryHTTPErrors(undefined, 50))
+      ),
       // discard extra wrapping object, which has no information.
-      map(v => v.job),
+      map(details => details.job),
       // only emit when job status changes.
       distinctUntilKeyChanged('status'),
       // convert job error statuses to thrown errors.
-      tap(job => {
-        const s = job.status;
+      tap(details => {
+        const s = details.status;
         status$.next(s);
         if (s === 'FAILED' || s === 'CANCELLED' || s === 'TIMED_OUT') {
-          throw new Error(`Job id=${job.id} ${s}`);
+          throw new Error(`Job id=${details.id} ${s}`);
         }
       }),
       // complete observable when not pending/in-progress; emit the last value
       takeWhile(
-        x => x.status === 'PENDING' || x.status === 'IN_PROGRESS',
+        details => details.status === 'PENDING' || details.status === 'IN_PROGRESS',
         true // inclusive: emit the first value that fails the predicate
       ),
       takeUntil(cancel$),
       takeUntil(this._reset$),
       finalize(() => {
         status$.complete();
-      }),
-      shareReplay(1)
+      })
     );
   }
 }
