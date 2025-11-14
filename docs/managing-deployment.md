@@ -60,3 +60,14 @@ Use the workflow dispatch on the action to select:
 - environment (currently test or dev) - these are defined as dropdown options in the workflow file - so you may need to update to include additional options
 
 The pipeline final stage should console log the diff/deploy steps. This is the preferred operational deployment pathway as it reduces the chance of localised build environment differences to deployed artifacts.
+
+### What code was deployed?
+
+Currently, we do not version releases and the commit sha is not captured in the deployment itself.
+To determine what code was deployed:
+
+1. open the [CDK Deploy workflow run on GitHub](https://github.com/open-AIMS/reefguide/actions/workflows/deploy-aws-cdk.yml)
+2. expand "Display Repository Info"
+3. copy the Commit SHA
+4. lookup this commit in your git log viewer or GitHub
+  `https://github.com/open-AIMS/reefguide/tree/<commit sha>`

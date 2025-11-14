@@ -44,6 +44,8 @@ Database credentials are stored in AWS Secrets Manager as an auto-generated secr
 
 Now fill out your `.env` template file:
 
+⚠️ Specify both `DATABASE_URL` and `DIRECT_URL` (used by migration commands); for more information, see [db package README](../packages/db/README.md). This document only mentions `DATABASE_URL` but your `.env` should contain both.
+
 ```env
 DATABASE_URL=postgresql://username:password@host:port/database?sslmode=require
 ```

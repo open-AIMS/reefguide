@@ -172,7 +172,7 @@ const customClient = new PrismaClient();
 ### Required Variables
 
 - `DATABASE_URL`: Primary database connection string (used for application queries)
-- `DIRECT_URL`: Direct database connection (used for migrations and schema operations)
+- `DIRECT_URL`: Direct database connection (used for migrations and schema operations - [Prisma documentation](https://www.prisma.io/docs/orm/reference/prisma-config-reference#datasourcedirecturl))
 
 ## Binary Targets
 

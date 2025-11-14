@@ -6,6 +6,8 @@ generator client {
 datasource db {
     provider  = "postgresql"
     url       = env("DATABASE_URL")
+    // direct url is used for migration
+    // https://www.prisma.io/docs/orm/reference/prisma-config-reference#datasourcedirecturl
     directUrl = env("DIRECT_URL")
 }
 
