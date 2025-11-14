@@ -254,8 +254,12 @@ export class JobsManagerService {
     //  share the query/request for all of them (i.e. switchMap to shared observable),
     //  but this is simplest for now.
     return this.webApi.getJob(jobId).pipe(
-      // infinite retry
+      // infinite error retry
       retryHTTPErrors(undefined, 50),
+      // keep polling job details until unsubscribed
+      repeat({
+        delay: this.jobDetailsInterval
+      }),
       // discard extra wrapping object, which has no information.
       map(details => details.job),
       // only emit when job status changes.
@@ -273,9 +277,6 @@ export class JobsManagerService {
         details => details.status === 'PENDING' || details.status === 'IN_PROGRESS',
         true // inclusive: emit the first value that fails the predicate
       ),
-      repeat({
-        delay: this.jobDetailsInterval
-      }),
       takeUntil(cancel$),
       takeUntil(this._reset$),
       finalize(() => {
