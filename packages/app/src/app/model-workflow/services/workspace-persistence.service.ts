@@ -94,14 +94,25 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
     );
   }
 
-  // ==================
-  // VALIDATION METHODS
-  // ==================
+  protected generateDefaultWorkspaceState(): WorkspaceState {
+    return {
+      version: '1.0',
+      activeWorkspaceId: null,
+      workspaces: [],
+      workspaceCounter: 0
+    };
+  }
+
+  protected migrateWorkspaceState(state: unknown): WorkspaceState | undefined {
+    console.warn('Migration not implemented');
+    return undefined;
+  }
 
   public isValidWorkspaceState(state: any, repair: boolean): state is WorkspaceState {
     const isRootValid =
       state &&
       typeof state === 'object' &&
+      typeof state.version === 'string' &&
       Array.isArray(state.workspaces) &&
       typeof state.workspaceCounter === 'number' &&
       (state.activeWorkspaceId === null || typeof state.activeWorkspaceId === 'string');
@@ -112,11 +123,6 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
 
     if (repair) {
       state.workspaces = state.workspaces.filter(isValidPersistedWorkspace);
-
-      if (state.version === undefined) {
-        // original state did not have version property within object
-        state.version = '1.0';
-      }
     } else {
       if (!state.workspaces.every(isValidPersistedWorkspace)) {
         console.warn('invalid workspace invalidated entire workspace state');
@@ -126,15 +132,5 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
     }
 
     return true;
-  }
-
-  protected validateAndMigrateWorkspaceState(state: unknown): WorkspaceState | undefined {
-    // FUTURE check version and migrate
-
-    if (this.isValidWorkspaceState(state, true)) {
-      return state;
-    }
-
-    return undefined;
   }
 }

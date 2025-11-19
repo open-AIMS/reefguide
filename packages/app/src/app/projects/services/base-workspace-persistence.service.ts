@@ -214,16 +214,44 @@ export abstract class BaseWorkspacePersistenceService<T> {
     }
   }
 
-  // ==================
-  // VALIDATION METHODS
-  // ==================
+  /**
+   * Procedure:
+   * 1. If empty, generate default state
+   * 2. If valid, return current state (with repair)
+   * 3. Attempt to migrate and return the migrated state
+   * 4. return undefined
+
+   * @param state workspace state, which may be an old version
+   */
+  protected validateAndMigrateWorkspaceState(state: unknown): T | undefined {
+    if (this.isEmptyWorkspaceState(state)) {
+      return this.generateDefaultWorkspaceState();
+    } else if (this.isValidWorkspaceState(state, true)) {
+      return state;
+    } else {
+      return this.migrateWorkspaceState(state);
+    }
+  }
 
   /**
-   * Migrate the workspace state if needed and ensure the state is valid.
-   * @param state workspace state, which may be an old version
-   * @returns T if migrated and valid, undefined if not.
+   * Check if the workspace state is undefined or empty.
+   * @param state
    */
-  protected abstract validateAndMigrateWorkspaceState(state: unknown): T | undefined;
+  protected isEmptyWorkspaceState(state: unknown): boolean {
+    return state == null || Object.keys(state).length === 0;
+  }
+
+  /**
+   * Generate default workspace state to use.
+   */
+  protected abstract generateDefaultWorkspaceState(): T;
+
+  /**
+   * Attempt to migrate old/invalid workspace state.
+   * @param state old state
+   * @returns T migrated state otherwise undefined.
+   */
+  protected abstract migrateWorkspaceState(state: unknown): T | undefined;
 
   /**
    * Validate workspace state structure is valid and the latest version.
