@@ -1,4 +1,3 @@
-// src/app/model-workflow/model-workflow.component.ts
 import {
   Component,
   computed,
