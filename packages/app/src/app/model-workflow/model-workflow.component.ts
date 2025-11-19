@@ -397,6 +397,7 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
       const persistedWorkspaces = workspaces.map(w => toPersistedWorkspace(w));
 
       const state: WorkspaceState = {
+        version: '1.0',
         workspaces: persistedWorkspaces,
         activeWorkspaceId: this.activeWorkspaceId(),
         workspaceCounter: this.workspaceCounter()

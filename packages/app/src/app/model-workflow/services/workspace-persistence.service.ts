@@ -4,12 +4,11 @@ import { BaseWorkspacePersistenceService } from '../../projects/services/base-wo
 import { isValidPersistedWorkspace, PersistedWorkspace } from './workspace-persistence.types';
 
 /**
- * All projects have this base workspaces structure.
- * hmmm
- * Workspaces correspond to tabs in ADRIA Analysis projects.
- * Currently, Site Assessment has a single workspace.
+ * Workspace state for ADRIA Analysis projects.
+ * workspaces property correspond to tabs in the UI.
  */
 export interface WorkspaceState {
+  version: '1.0';
   workspaces: PersistedWorkspace[];
   activeWorkspaceId: string | null;
   workspaceCounter: number;
@@ -23,12 +22,7 @@ export interface WorkspaceState {
 })
 export class WorkspacePersistenceService extends BaseWorkspacePersistenceService<WorkspaceState> {
   protected readonly STORAGE_KEY = 'reef-guide-workspaces';
-  protected readonly VERSION = '1.0';
-  protected readonly VERSION_KEY = 'reef-guide-workspaces-version';
-
-  constructor() {
-    super();
-  }
+  private readonly LATEST_VERSION: WorkspaceState['version'] = '1.0';
 
   /**
    * Save a single workspace.
@@ -118,6 +112,11 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
 
     if (repair) {
       state.workspaces = state.workspaces.filter(isValidPersistedWorkspace);
+
+      if (state.version === undefined) {
+        // original state did not have version property within object
+        state.version = '1.0';
+      }
     } else {
       if (!state.workspaces.every(isValidPersistedWorkspace)) {
         console.warn('invalid workspace invalidated entire workspace state');

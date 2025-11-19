@@ -18,14 +18,6 @@ export abstract class BaseWorkspacePersistenceService<T> {
    * local storage key for workspace state.
    */
   protected abstract readonly STORAGE_KEY: string;
-  /**
-   * @deprecated version should be in workspace state objects
-   */
-  protected abstract readonly VERSION: string;
-  /**
-   * @deprecated version should be in workspace state objects
-   */
-  protected abstract readonly VERSION_KEY: string;
 
   private projectId: number | null = null;
 
@@ -169,7 +161,6 @@ export abstract class BaseWorkspacePersistenceService<T> {
     try {
       const serializedState = JSON.stringify(state);
       localStorage.setItem(this.STORAGE_KEY, serializedState);
-      localStorage.setItem(this.VERSION_KEY, this.VERSION);
       return of(void 0);
     } catch (error) {
       console.warn('Failed to save workspace state to localStorage:', error);
@@ -218,7 +209,6 @@ export abstract class BaseWorkspacePersistenceService<T> {
   private clearFromLocalStorageSync(): void {
     try {
       localStorage.removeItem(this.STORAGE_KEY);
-      localStorage.removeItem(this.VERSION_KEY);
     } catch (error) {
       console.warn('Failed to clear workspace state from localStorage:', error);
     }
