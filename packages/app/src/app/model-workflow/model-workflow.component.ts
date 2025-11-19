@@ -590,6 +590,8 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
         this.activeWorkspaceId.set(updatedWorkspaces[newIndex].id);
       }
     }
+
+    this.triggerSave();
   }
 
   // Select a workspace (when tab is clicked)
