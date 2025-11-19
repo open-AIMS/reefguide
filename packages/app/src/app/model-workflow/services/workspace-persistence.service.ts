@@ -104,22 +104,35 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
   // VALIDATION METHODS
   // ==================
 
-  public isValidWorkspaceState(state: any): state is WorkspaceState {
-    // TODO delete invalid workspaces rather than invalidate whole state
-    return (
+  public isValidWorkspaceState(state: any, repair: boolean): state is WorkspaceState {
+    const isRootValid =
       state &&
       typeof state === 'object' &&
       Array.isArray(state.workspaces) &&
       typeof state.workspaceCounter === 'number' &&
-      (state.activeWorkspaceId === null || typeof state.activeWorkspaceId === 'string') &&
-      state.workspaces.every((w: any) => isValidPersistedWorkspace(w))
-    );
+      (state.activeWorkspaceId === null || typeof state.activeWorkspaceId === 'string');
+
+    if (!isRootValid) {
+      return false;
+    }
+
+    if (repair) {
+      state.workspaces = state.workspaces.filter(isValidPersistedWorkspace);
+    } else {
+      if (!state.workspaces.every(isValidPersistedWorkspace)) {
+        console.warn('invalid workspace invalidated entire workspace state');
+        this.showUserErrorMessage('Invalid workspaces were discarded');
+        return false;
+      }
+    }
+
+    return true;
   }
 
   protected validateAndMigrateWorkspaceState(state: unknown): WorkspaceState | undefined {
     // FUTURE check version and migrate
 
-    if (this.isValidWorkspaceState(state)) {
+    if (this.isValidWorkspaceState(state, true)) {
       return state;
     }
 

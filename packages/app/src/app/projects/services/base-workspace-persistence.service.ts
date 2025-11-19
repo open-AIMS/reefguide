@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { WebApiService } from '../../../api/web-api.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 /**
  * Base service that manages a project's persisted state.
@@ -10,7 +11,8 @@ import { WebApiService } from '../../../api/web-api.service';
   providedIn: 'root'
 })
 export abstract class BaseWorkspacePersistenceService<T> {
-  private readonly api = inject(WebApiService);
+  protected readonly api = inject(WebApiService);
+  protected readonly snackbar = inject(MatSnackBar);
 
   /**
    * local storage key for workspace state.
@@ -42,8 +44,9 @@ export abstract class BaseWorkspacePersistenceService<T> {
 
   // Save complete workspace state
   saveWorkspaceState(state: T): Observable<void> {
-    if (!this.isValidWorkspaceState(state)) {
+    if (!this.isValidWorkspaceState(state, false)) {
       console.error('invalid state', state);
+      this.showUserErrorMessage('Failed to save project state');
       throw new Error('App generated invalid workspace state');
     }
 
@@ -86,6 +89,11 @@ export abstract class BaseWorkspacePersistenceService<T> {
     }
   }
 
+  // TODO standardize app user messaging system
+  protected showUserErrorMessage(message: string): void {
+    this.snackbar.open(`ERROR: ${message}`);
+  }
+
   // ==================
   // BACKEND PERSISTENCE METHODS
   // ==================
@@ -122,6 +130,7 @@ export abstract class BaseWorkspacePersistenceService<T> {
           return validMigrated;
         } else {
           console.warn('Invalid workspace state found in project, returning null');
+          this.showUserErrorMessage('Workspace state invalid and reset');
           return null;
         }
       }),
@@ -181,8 +190,8 @@ export abstract class BaseWorkspacePersistenceService<T> {
         return of(null);
       }
 
-      // Validate the loaded state
-      if (!this.isValidWorkspaceState(state)) {
+      // Validate the loaded state, allow repairs
+      if (!this.isValidWorkspaceState(state, true)) {
         console.warn('Invalid workspace state found in localStorage, clearing storage');
         this.clearFromLocalStorageSync();
         return of(null);
@@ -228,6 +237,8 @@ export abstract class BaseWorkspacePersistenceService<T> {
 
   /**
    * Validate workspace state structure is valid and the latest version.
+   * @param state workspace state object
+   * @param repair make minor repairs (mutations) to make state valid
    */
-  protected abstract isValidWorkspaceState(state: any): state is T;
+  protected abstract isValidWorkspaceState(state: any, repair: boolean): state is T;
 }
