@@ -1,37 +1,47 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, numberAttribute } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { WebApiService } from '../../../api/web-api.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 /**
  * Base service that manages a project's persisted state.
  */
-@Injectable({
-  providedIn: 'root'
-})
 export abstract class BaseWorkspacePersistenceService<T> {
   protected readonly api = inject(WebApiService);
   protected readonly snackbar = inject(MatSnackBar);
+  private readonly route = inject(ActivatedRoute);
 
   /**
    * local storage key for workspace state.
    */
   protected abstract readonly STORAGE_KEY: string;
 
-  private projectId: number | null = null;
+  public readonly projectId: number | null;
 
-  /**
-   * Set the project ID for persistence operations
-   * if projectId set, workspace state will be saved to API instead of local storage.
-   */
-  setProjectId(projectId: number): void {
-    this.projectId = projectId;
-  }
+  constructor() {
+    // route param available now since the routed project components provide this service.
+    const initialProjectId = numberAttribute(this.route.snapshot.params['projectId']);
 
-  // Get current project ID
-  getProjectId(): number | null {
-    return this.projectId;
+    if (!isNaN(initialProjectId)) {
+      this.projectId = initialProjectId;
+
+      // important sanity check to verify service is not being reused with different projects.
+      // if route directly between projects, Angular will reuse the component, which may trigger this.
+      // configure Angular to create always create new components with projectId changes in route
+      // https://angular.dev/guide/routing/customizing-route-behavior#route-reuse-strategy
+      this.route.params.pipe(takeUntilDestroyed()).subscribe(params => {
+        const projectId = numberAttribute(params['projectId']);
+        if (projectId !== this.projectId) {
+          throw new Error(`projectId changed from ${this.projectId} to ${projectId}`);
+        }
+      });
+    } else {
+      // no project id
+      this.projectId = null;
+    }
   }
 
   // Save complete workspace state

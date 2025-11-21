@@ -7,7 +7,9 @@ import {
   HostListener,
   ElementRef,
   OnInit,
-  OnDestroy
+  OnDestroy,
+  input,
+  numberAttribute
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -208,7 +210,8 @@ class WorkspaceService {
     MapResultsViewComponent
   ],
   templateUrl: './model-workflow.component.html',
-  styleUrl: './model-workflow.component.scss'
+  styleUrl: './model-workflow.component.scss',
+  providers: [WorkspacePersistenceService]
 })
 export class ModelWorkflowComponent implements OnInit, OnDestroy {
   private readonly api = inject(WebApiService);
@@ -220,7 +223,12 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   // Project management
-  private projectId = signal<number | null>(null);
+
+  /**
+   * Current project ID
+   * via route param
+   */
+  public readonly projectId = input(undefined, { transform: numberAttribute });
   private isLoading = signal(true);
 
   // Workspace management

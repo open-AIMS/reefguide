@@ -16,10 +16,10 @@ export interface WorkspaceState {
 
 /**
  * Workspace persistence service for ADRIA Analysis projects.
+ *
+ * Provided by project components.
  */
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable()
 export class WorkspacePersistenceService extends BaseWorkspacePersistenceService<WorkspaceState> {
   protected readonly STORAGE_KEY = 'reef-guide-workspaces';
   private readonly LATEST_VERSION: WorkspaceState['version'] = '1.0';
