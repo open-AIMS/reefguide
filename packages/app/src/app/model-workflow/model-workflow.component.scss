@@ -1,4 +1,5 @@
 /* src/app/model-workflow/model-workflow.component.scss */
+@use '@angular/material' as mat;
 
 .workflow-container {
   height: 100vh;
@@ -21,6 +22,12 @@
   flex: 0 0 auto; // Don't expand to fill width
   max-width: calc(100% - 60px); // Leave space for the new workspace button
 
+  // Override M3 tabs component styles
+  // https://material.angular.dev/components/tabs/styling
+  //@include mat.tabs-overrides((
+  //  label-text-size: 1rem
+  //));
+
   // Override Material tabs styling
   :deep(.mat-mdc-tab-group) {
     --mdc-secondary-navigation-tab-container-height: 56px; // Increased from 48px
@@ -36,37 +43,13 @@
     display: none; // Hide pagination arrows for cleaner look
   }
 
-  :deep(.mat-mdc-tab) {
-    min-width: 180px; // Increased from 160px
-    max-width: 280px; // Increased from 240px
-    width: auto;
-    flex: 0 1 220px; // Increased preferred width from 200px
-    padding: 0 12px; // Increased from 8px
-    border-right: 1px solid rgba(0, 0, 0, 0.12); // Add border between tabs
-    position: relative;
-
-    &:last-child {
-      border-right: none; // Remove border from last tab
-    }
-
-    // Add subtle background on hover
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.04);
-    }
-
-    // Active tab styling
-    &.mat-mdc-tab-active {
-      background-color: rgba(25, 118, 210, 0.04);
-    }
+  ::ng-deep .mat-mdc-tab {
+    // left padding not as necessary with leading context-menu button
+    padding-left: 8px;
   }
 
   :deep(.mat-mdc-tab .mdc-tab__content) {
     padding: 0;
-  }
-
-  :deep(.mat-mdc-tab .mdc-tab__text-label) {
-    padding: 0;
-    width: 100%;
   }
 
   // When there are multiple tabs, make them shrink proportionally like Chrome
@@ -89,84 +72,6 @@
   :deep(.mat-mdc-tab-body-wrapper) {
     display: none;
   }
-}
-
-.tab-label {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  height: 40px; // Increased from 32px
-  padding: 0 4px; // Increased from 0 8px 0 4px
-  gap: 30px; // Increased from 8px
-}
-
-.context-menu-button {
-  width: 20px !important; // Increased from 18px
-  height: 20px !important; // Increased from 18px
-  min-width: 20px !important;
-  max-width: 20px !important;
-  flex-shrink: 0;
-  border-radius: 50%;
-  padding: 0 !important;
-  margin: 0;
-  margin-left: 0; // Align to left edge
-  order: 1; // Show first
-
-  // Override all Material button styling
-  :deep(.mat-mdc-button-base) {
-    width: 20px !important;
-    height: 20px !important;
-    padding: 0 !important;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  :deep(.mat-mdc-button-touch-target) {
-    display: none !important;
-  }
-
-  :deep(.mat-mdc-button-ripple),
-  :deep(.mat-mdc-button-persistent-ripple) {
-    border-radius: 50%;
-  }
-
-  :deep(.mat-icon) {
-    font-size: 14px !important; // Increased from 12px
-    width: 14px !important; // Increased from 12px
-    height: 14px !important; // Increased from 12px
-    line-height: 14px !important;
-    color: rgba(0, 0, 0, 0.6);
-  }
-
-  &:hover:not(:disabled) {
-    background-color: rgba(0, 0, 0, 0.08);
-
-    :deep(.mat-icon) {
-      color: rgba(0, 0, 0, 0.87);
-    }
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-
-    &:hover {
-      background-color: transparent;
-    }
-  }
-}
-
-.tab-name {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 14px; // Increased from 13px
-  font-weight: 500;
-  min-width: 0; // Important for text truncation
-  order: 2; // Show second
 }
 
 .new-workspace-button {
@@ -502,6 +407,14 @@
   }
 
   .workspace-tabs {
+    // Override M3 tabs component styles
+    @include mat.tabs-overrides(
+      (
+        // Slightly smaller on mobile
+        label-text-size: 13px
+      )
+    );
+
     max-width: calc(100% - 50px); // Adjust for smaller new workspace button
 
     :deep(.mat-mdc-tab) {
@@ -519,53 +432,6 @@
     &:has(:deep(.mat-mdc-tab:nth-child(4))) :deep(.mat-mdc-tab) {
       flex: 1 1 90px;
       max-width: 110px;
-    }
-  }
-
-  .tab-label {
-    gap: 6px; // Further reduced gap for mobile
-    padding: 0 6px 0 2px; // Adjusted mobile padding for context menu
-  }
-
-  .tab-name {
-    font-size: 13px; // Slightly smaller on mobile but still larger than before
-  }
-
-  .context-menu-button {
-    width: 16px !important; // Smaller on mobile
-    height: 16px !important;
-    min-width: 16px !important;
-    max-width: 16px !important;
-
-    :deep(.mat-mdc-button-base) {
-      width: 16px !important;
-      height: 16px !important;
-    }
-
-    :deep(.mat-icon) {
-      font-size: 10px !important; // Smaller icon on mobile
-      width: 10px !important;
-      height: 10px !important;
-      line-height: 10px !important;
-    }
-  }
-
-  .close-button {
-    width: 18px !important; // Smaller on mobile
-    height: 18px !important;
-    min-width: 18px !important;
-    max-width: 18px !important;
-
-    :deep(.mat-mdc-button-base) {
-      width: 18px !important;
-      height: 18px !important;
-    }
-
-    :deep(.mat-icon) {
-      font-size: 10px !important; // Smaller icon on mobile
-      width: 10px !important;
-      height: 10px !important;
-      line-height: 10px !important;
     }
   }
 
