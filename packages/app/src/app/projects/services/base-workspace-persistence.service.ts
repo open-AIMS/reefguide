@@ -1,5 +1,5 @@
 import { inject, numberAttribute } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, of, tap, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { WebApiService } from '../../../api/web-api.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -49,7 +49,7 @@ export abstract class BaseWorkspacePersistenceService<T> {
     if (!this.isValidWorkspaceState(state, false)) {
       console.error('invalid state', state);
       this.showUserErrorMessage('Failed to save project state');
-      throw new Error('App generated invalid workspace state');
+      throwError(() => new Error('App generated invalid workspace state'));
     }
 
     // If we have a project ID, save to backend; otherwise use localStorage
@@ -105,21 +105,31 @@ export abstract class BaseWorkspacePersistenceService<T> {
       return throwError(() => new Error('Project ID not set'));
     }
 
+    if (!this.isValidWorkspaceState(state, false)) {
+      return throwError(() => new Error('Cannot save invalid workspace state'));
+    }
+
     return this.api
       .updateProject(this.projectId, {
         project_state: state
       })
       .pipe(
         map(() => void 0),
-        catchError(error => {
-          console.warn('Failed to save workspace state to backend:', error);
-          // Fallback to localStorage
-          return this.saveToLocalStorage(state);
+        tap({
+          error: error => {
+            console.warn('Failed to save workspace state to backend:', error);
+            // Fallback to localStorage
+            // FIXME there is no recovery mechanism since local storage is only loaded when no projectId
+            //  Also, all projects share the same local storage key
+            //  Should always save to local storage!?
+            //  GitHub issue: https://github.com/open-AIMS/reefguide/issues/232
+            return this.saveToLocalStorage(state);
+          }
         })
       );
   }
 
-  private loadFromBackend(): Observable<T | null> {
+  private loadFromBackend(): Observable<T> {
     if (!this.projectId) {
       return throwError(() => new Error('Project ID not set'));
     }
@@ -131,16 +141,18 @@ export abstract class BaseWorkspacePersistenceService<T> {
         if (validMigrated) {
           return validMigrated;
         } else {
-          console.warn('Invalid workspace state found in project, returning null');
-          this.showUserErrorMessage('Workspace state invalid and reset');
-          return null;
+          throw new Error('Project failed to validate/migrate');
         }
-      }),
-      catchError(error => {
-        console.warn('Failed to load workspace state from backend:', error);
-        // Fallback to localStorage
-        return this.loadFromLocalStorage();
       })
+      // FIXME Relates to https://github.com/open-AIMS/reefguide/issues/232
+      //  disabled because I disagree with silently loading from local storage when there's an error;
+      //  this fallback, should be explicit.
+      //
+      // catchError(error => {
+      //   console.warn('Failed to load workspace state from backend:', error);
+      //   // Fallback to localStorage
+      //   return this.loadFromLocalStorage();
+      // })
     );
   }
 

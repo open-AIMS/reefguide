@@ -1,18 +1,19 @@
 import {
   Component,
   computed,
-  inject,
-  signal,
+  DestroyRef,
   effect,
-  HostListener,
   ElementRef,
-  OnInit,
-  OnDestroy,
+  HostListener,
+  inject,
   input,
-  numberAttribute
+  numberAttribute,
+  OnDestroy,
+  OnInit,
+  signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,14 +22,14 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Subject, takeUntil, switchMap, tap, of } from 'rxjs';
+import { tap } from 'rxjs';
 import { JobDetailsResponse } from '@reefguide/types';
 import { WebApiService } from '../../api/web-api.service';
 import { JobStatusComponent } from '../jobs/job-status/job-status.component';
 import { JobStatusConfig, mergeJobConfig } from '../jobs/job-status/job-status.types';
 import {
-  ParameterConfigComponent,
-  ModelParameters
+  ModelParameters,
+  ParameterConfigComponent
 } from './parameter-config/parameter-config.component';
 import { ResultsViewComponent } from './results-view/results-view.component';
 import { MapResultsViewComponent } from './map-results-view/map-results-view.component';
@@ -38,6 +39,8 @@ import {
   WorkspaceState
 } from './services/workspace-persistence.service';
 import { toPersistedWorkspace, toRuntimeWorkspace } from './services/workspace-persistence.types';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { UserMessageService } from '../user-messages/user-message.service';
 
 type WorkflowState = 'configuring' | 'submitting' | 'monitoring' | 'viewing';
 
@@ -216,11 +219,11 @@ class WorkspaceService {
 export class ModelWorkflowComponent implements OnInit, OnDestroy {
   private readonly api = inject(WebApiService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
   private readonly persistenceService = inject(WorkspacePersistenceService);
+  private readonly userMessageService = inject(UserMessageService);
   private readonly elementRef = inject(ElementRef);
-  private readonly destroy$ = new Subject<void>();
+  private readonly destroyRef = inject(DestroyRef);
 
   // Project management
 
@@ -281,32 +284,16 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Extract project ID from route and initialize workspace state
-    this.route.params
-      .pipe(
-        takeUntil(this.destroy$),
-        tap(params => {
-          const projectId = params['projectId'] ? parseInt(params['projectId'], 10) : null;
-          this.projectId.set(projectId);
-
-          if (projectId) {
-            this.persistenceService.setProjectId(projectId);
-          }
-        }),
-        switchMap(() => this.loadWorkspacesFromPersistence())
-      )
-      .subscribe({
-        next: () => {
-          this.isLoading.set(false);
-          console.debug('Workspace initialization complete');
-        },
-        error: error => {
-          console.error('Failed to initialize workspaces:', error);
-          this.isLoading.set(false);
-          // Create default workspace as fallback
-          this.createWorkspaceWithName('Workspace 1');
-        }
-      });
+    this.loadWorkspacesFromPersistence().subscribe({
+      next: () => {
+        console.debug('Workspace initialization complete');
+      },
+      error: error => {
+        console.error('Failed to initialize workspaces:', error);
+        // Create default workspace as fallback
+        this.userMessageService.showProjectLoadFailed('Failed to initialize project workspace');
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -314,9 +301,6 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
     }
-
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   // Panel management methods
@@ -355,38 +339,48 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
 
   // Load workspaces from persistence
   private loadWorkspacesFromPersistence() {
+    this.isLoading.set(true);
     return this.persistenceService.loadWorkspaceState().pipe(
-      tap(savedState => {
-        if (savedState && savedState.workspaces.length > 0) {
-          // Restore from saved state
-          this.workspaceCounter.set(savedState.workspaceCounter);
+      // cancel request if navigate away
+      takeUntilDestroyed(this.destroyRef),
+      tap({
+        next: savedState => {
+          if (savedState && savedState.workspaces.length > 0) {
+            // Restore from saved state
+            this.workspaceCounter.set(savedState.workspaceCounter);
 
-          const runtimeWorkspaces = savedState.workspaces.map(pw => toRuntimeWorkspace(pw));
-          this.workspaces.set(runtimeWorkspaces);
+            const runtimeWorkspaces = savedState.workspaces.map(pw => toRuntimeWorkspace(pw));
+            this.workspaces.set(runtimeWorkspaces);
 
-          // Restore active workspace (with fallback)
-          const activeId =
-            savedState.activeWorkspaceId &&
-            runtimeWorkspaces.find(w => w.id === savedState.activeWorkspaceId)
-              ? savedState.activeWorkspaceId
-              : runtimeWorkspaces[0].id;
+            // Restore active workspace (with fallback)
+            const activeId =
+              savedState.activeWorkspaceId &&
+              runtimeWorkspaces.find(w => w.id === savedState.activeWorkspaceId)
+                ? savedState.activeWorkspaceId
+                : runtimeWorkspaces[0].id;
 
-          this.activeWorkspaceId.set(activeId);
+            this.activeWorkspaceId.set(activeId);
 
-          // Initialize services for restored workspaces
-          runtimeWorkspaces.forEach(workspace => {
-            this.getWorkspaceService(workspace.id);
-          });
+            // Initialize services for restored workspaces
+            runtimeWorkspaces.forEach(workspace => {
+              this.getWorkspaceService(workspace.id);
+            });
 
-          // Restore jobs for workspaces that have submitted job IDs
-          setTimeout(() => {
-            this.restoreJobsForWorkspaces();
-          }, 100); // Small delay to ensure services are initialized
+            // REVIEW should this be moved to WorkspaceService? consider RxJS
+            // Restore jobs for workspaces that have submitted job IDs
+            setTimeout(() => {
+              this.restoreJobsForWorkspaces();
+            }, 100); // Small delay to ensure services are initialized
 
-          console.debug(`Restored ${runtimeWorkspaces.length} workspaces from persistence`);
-        } else {
-          // No saved state, create default workspace
-          this.createWorkspaceWithName('Workspace 1');
+            console.debug(`Restored ${runtimeWorkspaces.length} workspaces from persistence`);
+          } else {
+            console.info('Project has no workspaces, creating one');
+            // No saved state, create default workspace
+            this.createWorkspaceWithName('Workspace 1');
+          }
+        },
+        finalize: () => {
+          this.isLoading.set(false);
         }
       })
     );
@@ -394,6 +388,7 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
 
   // Save workspaces to persistence with debouncing
   private saveWorkspacesToPersistence(): void {
+    // TODO ideally this should be throttled subject that replaces any existing save request
     // Clear any existing timeout
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
@@ -411,17 +406,15 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
         workspaceCounter: this.workspaceCounter()
       };
 
-      this.persistenceService
-        .saveWorkspaceState(state)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            console.debug('Workspace state saved successfully');
-          },
-          error: error => {
-            console.warn('Failed to save workspace state:', error);
-          }
-        });
+      this.persistenceService.saveWorkspaceState(state).subscribe({
+        next: () => {
+          console.debug('Workspace state saved successfully');
+        },
+        error: error => {
+          console.warn('Failed to save workspace state:', error);
+          this.userMessageService.error('Failed to save workspace');
+        }
+      });
     }, 500); // 500ms debounce
   }
 
@@ -826,6 +819,7 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
   private restoreJobsForWorkspaces(): void {
     const workspaces = this.workspaces();
 
+    // REVIEW does every workspace job need to be restored? or just active tab?
     workspaces.forEach(workspace => {
       if (workspace.submittedJobId) {
         const service = this.getWorkspaceService(workspace.id);

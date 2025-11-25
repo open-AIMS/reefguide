@@ -1,0 +1,11 @@
+<h2 mat-dialog-title>
+  <mat-icon>error</mat-icon>
+  Failed to load project
+</h2>
+<mat-dialog-content>
+  <p>{{ data.message }}</p>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button routerLink="/" matDialogClose>Back to Projects</button>
+  <button mat-button (click)="reload()">Reload</button>
+</mat-dialog-actions>
