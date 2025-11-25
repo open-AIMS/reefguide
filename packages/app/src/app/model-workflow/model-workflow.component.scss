@@ -38,10 +38,13 @@
   margin-left: 4px;
 
   // small because mini-fab
-  @include mat.fab-overrides((
-    small-container-shape: 20px,  // border-radius (circle shape)
-    small-container-elevation-shadow: var(--mat-sys-level1)  // minimal shadow
-  ))
+  @include mat.fab-overrides(
+    (
+      small-container-shape: 20px,
+      // border-radius (circle shape)
+      small-container-elevation-shadow: var(--mat-sys-level1) // minimal shadow
+    )
+  );
 }
 
 .workspace-content {
@@ -52,7 +55,7 @@
 }
 
 .workflow-header {
-  padding: 16px 24px;
+  padding: 8px 16px;
   background: white;
   border-bottom: 1px solid #e0e0e0;
   display: flex;
@@ -62,7 +65,7 @@
 
   h1 {
     margin: 0;
-    font-size: 24px;
+    font-size: 1.4rem;
     font-weight: 500;
     color: #1976d2;
   }
