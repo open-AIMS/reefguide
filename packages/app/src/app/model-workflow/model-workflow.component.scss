@@ -35,9 +35,13 @@
 }
 
 .new-workspace-button {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
+  margin-left: 4px;
+
+  // small because mini-fab
+  @include mat.fab-overrides((
+    small-container-shape: 20px,  // border-radius (circle shape)
+    small-container-elevation-shadow: var(--mat-sys-level1)  // minimal shadow
+  ))
 }
 
 .workspace-content {
