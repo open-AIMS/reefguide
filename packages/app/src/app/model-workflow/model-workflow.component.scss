@@ -28,49 +28,9 @@
   //  label-text-size: 1rem
   //));
 
-  // Override Material tabs styling
-  :deep(.mat-mdc-tab-group) {
-    --mdc-secondary-navigation-tab-container-height: 56px; // Increased from 48px
-    width: auto; // Let tabs determine their own width
-  }
-
-  :deep(.mat-mdc-tab-header) {
-    border-bottom: none;
-    width: auto;
-  }
-
-  :deep(.mat-mdc-tab-header-pagination) {
-    display: none; // Hide pagination arrows for cleaner look
-  }
-
   ::ng-deep .mat-mdc-tab {
     // left padding not as necessary with leading context-menu button
     padding-left: 8px;
-  }
-
-  :deep(.mat-mdc-tab .mdc-tab__content) {
-    padding: 0;
-  }
-
-  // When there are multiple tabs, make them shrink proportionally like Chrome
-  &:has(:deep(.mat-mdc-tab:nth-child(4))) :deep(.mat-mdc-tab) {
-    flex: 1 1 200px; // Increased from 180px
-    max-width: 240px; // Increased from 200px
-  }
-
-  &:has(:deep(.mat-mdc-tab:nth-child(6))) :deep(.mat-mdc-tab) {
-    flex: 1 1 180px; // Increased from 160px
-    max-width: 220px; // Increased from 180px
-  }
-
-  &:has(:deep(.mat-mdc-tab:nth-child(8))) :deep(.mat-mdc-tab) {
-    flex: 1 1 160px; // Increased from 140px
-    max-width: 200px; // Increased from 160px
-  }
-
-  // Hide the tab content since we're managing it separately
-  :deep(.mat-mdc-tab-body-wrapper) {
-    display: none;
   }
 }
 
@@ -78,10 +38,6 @@
   width: 40px;
   height: 40px;
   flex-shrink: 0;
-
-  :deep(.mat-icon) {
-    font-size: 20px;
-  }
 }
 
 .workspace-content {
@@ -400,10 +356,6 @@
   .new-workspace-button {
     width: 36px;
     height: 36px;
-
-    :deep(.mat-icon) {
-      font-size: 18px;
-    }
   }
 
   .workspace-tabs {
@@ -416,23 +368,6 @@
     );
 
     max-width: calc(100% - 50px); // Adjust for smaller new workspace button
-
-    :deep(.mat-mdc-tab) {
-      min-width: 120px;
-      max-width: 160px;
-      flex: 0 1 140px;
-    }
-
-    // Adjust shrinking behavior for mobile
-    &:has(:deep(.mat-mdc-tab:nth-child(3))) :deep(.mat-mdc-tab) {
-      flex: 1 1 100px;
-      max-width: 120px;
-    }
-
-    &:has(:deep(.mat-mdc-tab:nth-child(4))) :deep(.mat-mdc-tab) {
-      flex: 1 1 90px;
-      max-width: 110px;
-    }
   }
 
   .right-panel {
