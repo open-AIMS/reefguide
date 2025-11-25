@@ -169,59 +169,6 @@
   order: 2; // Show second
 }
 
-.close-button {
-  width: 22px !important; // Increased from 20px
-  height: 22px !important; // Increased from 20px
-  min-width: 22px !important;
-  max-width: 22px !important;
-  flex-shrink: 0;
-  border-radius: 50%;
-  padding: 0 !important;
-  margin: 0;
-  margin-left: auto; // Push to right edge
-  order: 3; // Show last
-
-  // Override all Material button styling
-  :deep(.mat-mdc-button-base) {
-    width: 22px !important;
-    height: 22px !important;
-    padding: 0 !important;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  :deep(.mat-mdc-button-touch-target) {
-    display: none !important;
-  }
-
-  :deep(.mat-mdc-button-ripple),
-  :deep(.mat-mdc-button-persistent-ripple) {
-    border-radius: 50%;
-  }
-
-  :deep(.mat-icon) {
-    font-size: 14px !important; // Increased from 12px
-    width: 14px !important; // Increased from 12px
-    height: 14px !important; // Increased from 12px
-    line-height: 14px !important;
-  }
-
-  &:hover:not(:disabled) {
-    background-color: rgba(0, 0, 0, 0.08);
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-
-    &:hover {
-      background-color: transparent;
-    }
-  }
-}
-
 .new-workspace-button {
   width: 40px;
   height: 40px;
