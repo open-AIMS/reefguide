@@ -3,6 +3,7 @@ import { MatSliderModule } from '@angular/material/slider';
 import {
   FormBuilder,
   FormControl,
+  FormControlStatus,
   FormGroup,
   FormRecord,
   FormsModule,
@@ -25,6 +26,7 @@ import {
   filter,
   map,
   Observable,
+  shareReplay,
   skip,
   startWith,
   Subject,
@@ -192,7 +194,7 @@ export class SelectionCriteriaComponent {
    */
   negativeFlippedCriteria = new Set(['Depth', 'LowTide', 'HighTide', '_LowHighTideDepth']);
 
-  form: FormGroup<{
+  protected readonly form: FormGroup<{
     region: FormControl<string | null>;
     reef_type: FormControl<string>;
     criteria: FormRecord<FormControl<number>>;
@@ -202,6 +204,11 @@ export class SelectionCriteriaComponent {
       threshold: FormControl<number>;
     }>;
   }>;
+
+  /**
+   * form.statusChanges with replay
+   */
+  readonly formStatus$: Observable<FormControlStatus>;
 
   /**
    * Criteria layer ID that was automatically set to visible for pixel filtering
@@ -245,6 +252,10 @@ export class SelectionCriteriaComponent {
         threshold: [suitabilityAssessmentCriteria.threshold, Validators.required]
       })
     });
+
+    this.formStatus$ = this.form.statusChanges.pipe(shareReplay(1));
+    // need to subscribe now so capture and replay status
+    this.formStatus$.pipe(takeUntilDestroyed()).subscribe();
 
     const regionControl = this.form.get('region')!;
     regionControl.valueChanges
