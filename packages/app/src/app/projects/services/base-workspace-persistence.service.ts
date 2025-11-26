@@ -2,16 +2,23 @@ import { inject, numberAttribute } from '@angular/core';
 import { Observable, of, tap, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { WebApiService } from '../../../api/web-api.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { UserMessageService } from '../../user-messages/user-message.service';
+
+/**
+ * Context around loading workspace state that may be used during validation and migration.
+ */
+export type LoadWorkspaceStateContext = {
+  projectId?: number;
+};
 
 /**
  * Base service that manages a project's persisted state.
  */
 export abstract class BaseWorkspacePersistenceService<T> {
   protected readonly api = inject(WebApiService);
-  protected readonly snackbar = inject(MatSnackBar);
+  protected readonly userMessageService = inject(UserMessageService);
   private readonly route = inject(ActivatedRoute);
 
   /**
@@ -44,30 +51,72 @@ export abstract class BaseWorkspacePersistenceService<T> {
     }
   }
 
-  // Save complete workspace state
+  /**
+   * Save complete workspace state.
+   * Takes care of logging and communicating errors to user.
+   * Callers just need to subscribe
+   */
   saveWorkspaceState(state: T): Observable<void> {
     if (!this.isValidWorkspaceState(state, false)) {
       console.error('invalid state', state);
-      this.showUserErrorMessage('Failed to save project state');
+      this.userMessageService.error('Failed to save invalid project state');
       throwError(() => new Error('App generated invalid workspace state'));
     }
 
     // If we have a project ID, save to backend; otherwise use localStorage
     if (this.projectId) {
-      return this.saveToBackend(state);
+      return this.saveToBackend(state).pipe(
+        tap({
+          next: () => {
+            console.log('Workspace state saved successfully', state);
+          },
+          error: err => {
+            console.warn('Failed to save workspace state:', err);
+            this.userMessageService.error('Failed to save project');
+          }
+        })
+      );
     } else {
       return this.saveToLocalStorage(state);
     }
   }
 
-  // Load complete workspace state
+  /**
+   * Load complete workspace state
+   * TODO remove null
+   *
+   * @throws WorkspaceStateMigrationError if invalid and migration failed.
+   */
   loadWorkspaceState(): Observable<T | null> {
     // If we have a project ID, load from backend; otherwise use localStorage
+    let load$: Observable<T | null>;
     if (this.projectId) {
-      return this.loadFromBackend();
+      load$ = this.loadFromBackend();
     } else {
-      return this.loadFromLocalStorage();
+      // warning because this is probably an initial state bug with the current design.
+      console.warn('projectId not set, loadWorkspaceState() from local storage');
+      load$ = this.loadFromLocalStorage();
     }
+
+    return load$.pipe(
+      tap({
+        error: err => {
+          if (err instanceof WorkspaceStateMigrationError) {
+            // console errors are captured by Sentry
+            // TODO add abstract service to send messages to sentry
+            console.error(`${err.message} { projectId: ${err.context.projectId} }`);
+
+            // there is no recovering from this; resetting to default state would lose what's stored
+            // and is no better than starting a new project.
+            this.userMessageService.showProjectLoadFailed(
+              `This project cannot be loaded,
+            contact the developers to fix this issue.
+            In the meantime, you will need to create a new project.`
+            );
+          }
+        }
+      })
+    );
   }
 
   // Clear all workspace state
@@ -91,22 +140,17 @@ export abstract class BaseWorkspacePersistenceService<T> {
     }
   }
 
-  // TODO standardize app user messaging system
-  protected showUserErrorMessage(message: string): void {
-    this.snackbar.open(`ERROR: ${message}`);
-  }
-
   // ==================
   // BACKEND PERSISTENCE METHODS
   // ==================
 
+  /**
+   * Save the state to API.
+   * @param state validated workspace state
+   */
   private saveToBackend(state: T): Observable<void> {
     if (!this.projectId) {
       return throwError(() => new Error('Project ID not set'));
-    }
-
-    if (!this.isValidWorkspaceState(state, false)) {
-      return throwError(() => new Error('Cannot save invalid workspace state'));
     }
 
     return this.api
@@ -129,20 +173,19 @@ export abstract class BaseWorkspacePersistenceService<T> {
       );
   }
 
+  /**
+   * Constructs a new Observable that requests the workspace state from the API.
+   */
   private loadFromBackend(): Observable<T> {
-    if (!this.projectId) {
+    const projectId = this.projectId;
+    if (!projectId) {
       return throwError(() => new Error('Project ID not set'));
     }
 
-    return this.api.getProject(this.projectId).pipe(
+    return this.api.getProject(projectId).pipe(
       map(response => {
         const projectState = response.project.project_state as unknown;
-        const validMigrated = this.validateAndMigrateWorkspaceState(projectState);
-        if (validMigrated) {
-          return validMigrated;
-        } else {
-          throw new Error('Project failed to validate/migrate');
-        }
+        return this.validateAndMigrateWorkspaceState(projectState, { projectId });
       })
       // FIXME Relates to https://github.com/open-AIMS/reefguide/issues/232
       //  disabled because I disagree with silently loading from local storage when there's an error;
@@ -198,7 +241,7 @@ export abstract class BaseWorkspacePersistenceService<T> {
         return of(null);
       }
 
-      const state = this.validateAndMigrateWorkspaceState(JSON.parse(serializedState));
+      const state = this.validateAndMigrateWorkspaceState(JSON.parse(serializedState), {});
       if (!state) {
         return of(null);
       }
@@ -240,18 +283,21 @@ export abstract class BaseWorkspacePersistenceService<T> {
    * Procedure:
    * 1. If empty, generate default state
    * 2. If valid, return current state (with repair)
-   * 3. Attempt to migrate and return the migrated state
-   * 4. return undefined
+   * 3. Attempt to migrate and return the migrated state.
 
    * @param state workspace state, which may be an old version
+   * @param context loading context
    */
-  protected validateAndMigrateWorkspaceState(state: unknown): T | undefined {
+  protected validateAndMigrateWorkspaceState(
+    state: unknown,
+    context: LoadWorkspaceStateContext
+  ): T {
     if (this.isEmptyWorkspaceState(state)) {
       return this.generateDefaultWorkspaceState();
     } else if (this.isValidWorkspaceState(state, true)) {
       return state;
     } else {
-      return this.migrateWorkspaceState(state);
+      return this.migrateWorkspaceState(state, context);
     }
   }
 
@@ -265,15 +311,19 @@ export abstract class BaseWorkspacePersistenceService<T> {
 
   /**
    * Generate default workspace state to use.
+   * This is called when project has empty initial state.
+   * (project state request successful, but in empty default state)
    */
-  protected abstract generateDefaultWorkspaceState(): T;
+  public abstract generateDefaultWorkspaceState(): T;
 
   /**
    * Attempt to migrate old/invalid workspace state.
    * @param state old state
-   * @returns T migrated state otherwise undefined.
+   * @param context
+   * @returns migrated workspace state
+   * @throws WorkspaceStateMigrationError if migration fails
    */
-  protected abstract migrateWorkspaceState(state: unknown): T | undefined;
+  protected abstract migrateWorkspaceState(state: unknown, context: LoadWorkspaceStateContext): T;
 
   /**
    * Validate workspace state structure is valid and the latest version.
@@ -281,4 +331,17 @@ export abstract class BaseWorkspacePersistenceService<T> {
    * @param repair make minor repairs (mutations) to make state valid
    */
   protected abstract isValidWorkspaceState(state: any, repair: boolean): state is T;
+}
+
+/**
+ * State could not be migrated.
+ * Occurs when state is invalid, cannot be repaired, and migration fails.
+ */
+export class WorkspaceStateMigrationError extends Error {
+  constructor(
+    message: string,
+    public readonly context: LoadWorkspaceStateContext
+  ) {
+    super(message);
+  }
 }

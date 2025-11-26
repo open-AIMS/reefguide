@@ -20,7 +20,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltip } from '@angular/material/tooltip';
 import { fromLonLat } from 'ol/proj';
-import { combineLatest, map, Observable } from 'rxjs';
+import { combineLatest, map, Observable, take } from 'rxjs';
 import { WebApiService } from '../../api/web-api.service';
 import { AuthService } from '../auth/auth.service';
 import { ReefMapComponent } from '../reef-map/reef-map.component';
@@ -121,6 +121,9 @@ export class LocationSelectionComponent implements MapUI {
       },
       { manualCleanup: true }
     );
+
+    // warm-up firstState$ so request starts before panel is opened
+    this.persistenceService.firstState$.pipe(take(1)).subscribe();
   }
 
   openLayerStyleEditor(layer: BaseLayer): void {

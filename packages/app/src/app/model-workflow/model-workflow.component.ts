@@ -406,15 +406,7 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
         workspaceCounter: this.workspaceCounter()
       };
 
-      this.persistenceService.saveWorkspaceState(state).subscribe({
-        next: () => {
-          console.debug('Workspace state saved successfully');
-        },
-        error: error => {
-          console.warn('Failed to save workspace state:', error);
-          this.userMessageService.error('Failed to save workspace');
-        }
-      });
+      this.persistenceService.saveWorkspaceState(state).subscribe();
     }, 500); // 500ms debounce
   }
 

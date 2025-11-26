@@ -1,8 +1,10 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { MatSliderModule } from '@angular/material/slider';
 import {
   FormBuilder,
+  FormControl,
   FormGroup,
+  FormRecord,
   FormsModule,
   ReactiveFormsModule,
   Validators
@@ -18,13 +20,16 @@ import { MatSelectModule } from '@angular/material/select';
 import {
   catchError,
   combineLatestWith,
+  debounceTime,
   EMPTY,
+  filter,
   map,
   Observable,
   skip,
   startWith,
   Subject,
   switchMap,
+  take,
   takeUntil,
   tap
 } from 'rxjs';
@@ -35,7 +40,16 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { LayerController } from '../../map/layer-controller';
 import { retryHTTPErrors } from '../../../util/http-util';
 import { AsyncPipe } from '@angular/common';
+import {
+  WorkspacePersistenceService,
+  WorkspaceState
+} from '../persistence/workspace-persistence.service';
+import { UserMessageService } from '../../user-messages/user-message.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+/**
+ * All information about a criteria and its slider.
+ */
 type SliderDef = {
   // original criteria definition from API
   readonly criteria: Readonly<CriteriaRangeOutput[string]>;
@@ -57,6 +71,11 @@ type SliderDef = {
   };
 };
 
+/**
+ * List of criteria sliders
+ *
+ * Lifecycle: component reused when open/closed, but new component when panel switches from other content.
+ */
 @Component({
   selector: 'app-selection-criteria',
   imports: [
@@ -80,6 +99,14 @@ export class SelectionCriteriaComponent {
   private readonly api = inject(WebApiService);
   private readonly formBuilder = inject(FormBuilder);
   readonly mapService = inject(ReefGuideMapService);
+  readonly userMessageService = inject(UserMessageService);
+
+  readonly persistenceService = inject(WorkspacePersistenceService);
+
+  /**
+   * How many milliseconds to debounce the save
+   */
+  readonly saveDebounceTime = 2_000;
 
   // HACK order regions from North to South
   // ideally regions would already be ordered by API or have geometry property to sort by.
@@ -124,6 +151,11 @@ export class SelectionCriteriaComponent {
       .sort((a, b) => idOrder.indexOf(a.criteria.id) - idOrder.indexOf(b.criteria.id));
   });
 
+  /**
+   * Enable the Site Suitability section and launch that job on Assess.
+   *
+   * Initially false, but default value is set in constructor from persistence serviec.
+   */
   enableSiteSuitability = signal(false);
 
   /**
@@ -160,26 +192,57 @@ export class SelectionCriteriaComponent {
    */
   negativeFlippedCriteria = new Set(['Depth', 'LowTide', 'HighTide', '_LowHighTideDepth']);
 
-  form: FormGroup;
+  form: FormGroup<{
+    region: FormControl<string | null>;
+    reef_type: FormControl<string>;
+    criteria: FormRecord<FormControl<number>>;
+    siteSuitability: FormGroup<{
+      x_dist: FormControl<number>;
+      y_dist: FormControl<number>;
+      threshold: FormControl<number>;
+    }>;
+  }>;
 
   /**
    * Criteria layer ID that was automatically set to visible for pixel filtering
    */
   private _autoVisible: string | undefined = undefined;
-  private reset$ = new Subject<void>();
+  /**
+   * Emits when criteria form controls are building.
+   */
+  private resetCriteria$ = new Subject<void>();
+
+  // TODO move to persistence service or a utility class?
+  private saveTrigger = new Subject<void>();
+  private saveEnabled = false;
+  private save$ = this.saveTrigger.pipe(
+    // emit while saving is enabled
+    filter(() => this.saveEnabled),
+    debounceTime(this.saveDebounceTime)
+  );
 
   constructor() {
+    // start with initial default state, but this will quickly be changed once state
+    // is loaded from the persistence service.
+    const defaultState = this.persistenceService.generateDefaultWorkspaceState();
+    const { region, reef_type, suitabilityAssessmentCriteria } = defaultState.selectionCriteria;
+
     // add type safety where payload property names must match.
     type SharedProps = Pick<SharedCriteria, 'region' | 'reef_type'> | { siteSuitability: any };
+
+    // FIXME setup form types correctly, nonNullable FormBuilder?
+    // @ts-expect-error types not happy
     this.form = this.formBuilder.group<Record<keyof SharedProps, any>>({
-      region: [null, Validators.required],
-      reef_type: ['slopes'],
+      region: [region, Validators.required],
+      reef_type: [reef_type],
+      // entries are added by load workspace state or on region change
+      criteria: this.formBuilder.record({}),
       siteSuitability: this.formBuilder.group<
         Record<keyof SuitabilityAssessmentExclusiveInput, any>
       >({
-        x_dist: [100, [Validators.min(1), Validators.required]],
-        y_dist: [20, [Validators.min(1), Validators.required]],
-        threshold: [95, Validators.required]
+        x_dist: [suitabilityAssessmentCriteria.x_dist, [Validators.min(1), Validators.required]],
+        y_dist: [suitabilityAssessmentCriteria.y_dist, [Validators.min(1), Validators.required]],
+        threshold: [suitabilityAssessmentCriteria.threshold, Validators.required]
       })
     });
 
@@ -190,29 +253,64 @@ export class SelectionCriteriaComponent {
           // TODO need loading indicator?
           this.sliderDefs.set(undefined);
         }),
+        filter(Boolean), // ignore null | undefined | ''
         switchMap(region =>
           this.api.getRegionCriteria(region).pipe(
             // catch error to prevent it from breaking parent observable
             catchError((err, caught) => {
               console.error(`${region} criteria request failed`, err);
+              this.userMessageService.error('Failed to load region information');
               return EMPTY;
             })
           )
         )
       )
       .subscribe(regionCriteria => {
-        this.buildCriteriaFormGroup(regionCriteria);
+        this.buildCriteriaFormRecord(regionCriteria);
         this.setupLayerPixelFiltering();
       });
+
+    this.form.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+      this.saveTrigger.next();
+    });
+
+    // Trigger save on toggle Site Suitability section
+    // TODO consider moving this to the form control
+    effect(() => {
+      this.enableSiteSuitability(); // react to changes
+      this.saveTrigger.next();
+    });
+
+    this.save$.pipe(takeUntilDestroyed()).subscribe(() => this.save());
+  }
+
+  ngOnInit() {
+    // TODO loading UI blocker until done, @defer?
+    // this could be cached, so
+    this.persistenceService.firstState$.pipe(take(1)).subscribe(state => {
+      try {
+        if (state == null) {
+          // TODO can we remove null type from observable now?
+          console.warn('got null state!?');
+          return;
+        }
+
+        this.loadFromState(state);
+      } finally {
+        // always enable saving regardless
+        // allow saving workspace state now that initial state loaded
+        this.saveEnabled = true;
+      }
+    });
   }
 
   /**
-   * Build and set the FormGroup and controls.
+   * Build and set the FormRecord and controls.
    * Sets regionCriteriaRanges signal.
    * @param regionCriteria
    */
-  private buildCriteriaFormGroup(regionCriteria: CriteriaRangeOutput) {
-    this.reset$.next();
+  private buildCriteriaFormRecord(regionCriteria: CriteriaRangeOutput) {
+    this.resetCriteria$.next();
 
     const enableLowHighDepthMode =
       'LowTide' in regionCriteria && 'HighTide' in regionCriteria && 'Depth' in regionCriteria;
@@ -241,25 +339,22 @@ export class SelectionCriteriaComponent {
       this.disabledCriteria.add('Depth');
     }
 
-    // formBuilder definitions for 'criteria' group
-    const criteriaControlDefs: Record<string, any> = {};
-
     for (const c of availableCriteria) {
       const sliderDef = this.createSliderDef(c);
       regionCriteriaRanges.push(sliderDef);
 
       if (!sliderDef.slider.disabled) {
         // ensure that default values are not outside the slider range.
+        // TODO test what happens if stored criteria value is outside min/max
+        const minKey = `${sliderDef.criteria.payload_property_prefix}min`;
         const minValue = Math.max(sliderDef.slider.min, sliderDef.slider.default_min);
-        const maxValue = Math.min(sliderDef.slider.max, sliderDef.slider.default_max);
+        this.addMissingCriteriaControl(minKey, minValue);
 
-        criteriaControlDefs[`${sliderDef.criteria.payload_property_prefix}min`] = [minValue];
-        criteriaControlDefs[`${sliderDef.criteria.payload_property_prefix}max`] = [maxValue];
+        const maxKey = `${sliderDef.criteria.payload_property_prefix}max`;
+        const maxValue = Math.min(sliderDef.slider.max, sliderDef.slider.default_max);
+        this.addMissingCriteriaControl(maxKey, maxValue);
       }
     }
-
-    const formGroup = this.formBuilder.group(criteriaControlDefs);
-    this.form.setControl('criteria', formGroup);
 
     this.sliderDefs.set(regionCriteriaRanges);
   }
@@ -348,7 +443,7 @@ export class SelectionCriteriaComponent {
 
         min$
           .pipe(combineLatestWith(max$))
-          .pipe(skip(1), takeUntil(this.reset$))
+          .pipe(skip(1), takeUntil(this.resetCriteria$))
           .subscribe(([min, max]) => {
             this.onSliderChange(def, layerController, min, max);
           });
@@ -411,6 +506,14 @@ export class SelectionCriteriaComponent {
 
     // console.log('criteria before/after', formValue.criteria, criteria);
 
+    // validation and make types happy
+    if (formValue.region == null) {
+      throw new Error('region not defined!');
+    }
+    if (formValue.reef_type == null) {
+      throw new Error('reef_type not defined!');
+    }
+
     const sharedCriteria: SharedCriteria = {
       region: formValue.region,
       reef_type: formValue.reef_type,
@@ -458,6 +561,75 @@ export class SelectionCriteriaComponent {
     }
 
     // TODO reset site suitability?
+  }
+
+  /**
+   * Save current state to the persistence service.
+   */
+  save() {
+    // value property type is deep partial, so using getRawValue()
+    const formValue = this.form.getRawValue();
+    const ss = formValue.siteSuitability;
+
+    const state: WorkspaceState = {
+      version: '1.0',
+      selectionCriteria: {
+        region: formValue.region,
+        reef_type: formValue.reef_type,
+        criteria: formValue.criteria,
+        enableSuitabilityAssessment: this.enableSiteSuitability(),
+        suitabilityAssessmentCriteria: {
+          x_dist: ss.x_dist,
+          y_dist: ss.y_dist,
+          threshold: ss.threshold
+        }
+      }
+    };
+
+    this.persistenceService.saveWorkspaceState(state).subscribe();
+  }
+
+  /**
+   * Update form to match the workspace state
+   * @param state
+   */
+  private loadFromState(state: WorkspaceState) {
+    const {
+      region,
+      reef_type,
+      criteria,
+      enableSuitabilityAssessment,
+      suitabilityAssessmentCriteria
+    } = state.selectionCriteria;
+
+    this.enableSiteSuitability.set(enableSuitabilityAssessment);
+
+    for (const key in criteria) {
+      this.addMissingCriteriaControl(key, criteria[key]);
+    }
+
+    this.form.setValue({
+      region,
+      reef_type,
+      criteria,
+      siteSuitability: {
+        ...suitabilityAssessmentCriteria
+      }
+    });
+  }
+
+  /**
+   * Add FormControl<number> for the criteria key if it's missing from the 'criteria' FormRecord.
+   * @param key
+   * @param value
+   */
+  private addMissingCriteriaControl(key: string, value: number) {
+    const criteriaFormRecord = this.form.get('criteria') as FormRecord<FormControl<number>>;
+    if (!criteriaFormRecord.get(key)) {
+      criteriaFormRecord.addControl(key, new FormControl(value, { nonNullable: true }), {
+        emitEvent: false
+      });
+    }
   }
 
   onSliderChange(sliderDef: SliderDef, layerController: LayerController, min: number, max: number) {

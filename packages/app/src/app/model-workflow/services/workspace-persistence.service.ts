@@ -1,6 +1,10 @@
 import { Injectable } from '@angular/core';
 import { map, Observable, of, switchMap } from 'rxjs';
-import { BaseWorkspacePersistenceService } from '../../projects/services/base-workspace-persistence.service';
+import {
+  BaseWorkspacePersistenceService,
+  LoadWorkspaceStateContext,
+  WorkspaceStateMigrationError
+} from '../../projects/services/base-workspace-persistence.service';
 import { isValidPersistedWorkspace, PersistedWorkspace } from './workspace-persistence.types';
 
 /**
@@ -94,7 +98,7 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
     );
   }
 
-  protected generateDefaultWorkspaceState(): WorkspaceState {
+  public generateDefaultWorkspaceState(): WorkspaceState {
     return {
       version: '1.0',
       activeWorkspaceId: null,
@@ -103,9 +107,11 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
     };
   }
 
-  protected migrateWorkspaceState(state: unknown): WorkspaceState | undefined {
-    console.warn('Migration not implemented');
-    return undefined;
+  protected migrateWorkspaceState(
+    state: unknown,
+    context: LoadWorkspaceStateContext
+  ): WorkspaceState {
+    throw new WorkspaceStateMigrationError('migration not implemented', context);
   }
 
   public isValidWorkspaceState(state: any, repair: boolean): state is WorkspaceState {
@@ -126,7 +132,7 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
     } else {
       if (!state.workspaces.every(isValidPersistedWorkspace)) {
         console.warn('invalid workspace invalidated entire workspace state');
-        this.showUserErrorMessage('Invalid workspaces were discarded');
+        this.userMessageService.error('Invalid workspaces were discarded');
         return false;
       }
     }
