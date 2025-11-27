@@ -5,8 +5,7 @@ import {
 } from '../../projects/services/base-workspace-persistence.service';
 import { Injectable } from '@angular/core';
 import { RegionalAssessmentInput } from '@reefguide/types';
-import { shareReplay, tap } from 'rxjs';
-import { tapDebug } from '../../../util/rxjs-util';
+import { Observable, throwError } from 'rxjs';
 
 /**
  * Site Assessment project state.
@@ -20,6 +19,9 @@ export interface WorkspaceState {
 
     /**
      * Criteria min|max values
+     *
+     * IMPORTANT: this is in app-space, the representation within SelectionCriteriaComponent.
+     * These are not the same properties or values as the job payload.
      */
     criteria: Record<string, number>;
 
@@ -36,6 +38,16 @@ export interface WorkspaceState {
       threshold: number;
     };
   };
+
+  regionalAssessmentJob?: {
+    jobId: number;
+    region: string;
+  };
+
+  suitabilityAssessmentJob?: {
+    jobId: number;
+    region: string;
+  };
 }
 
 /**
@@ -48,17 +60,28 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
   protected override STORAGE_KEY = 'site-assessment-workspace';
 
   /**
-   * Replay of the first loaded state.
-   *
-   * Note: currently not coordinated with loadWorkspaceState, subscribers only interested in the
-   * first state should prefer using this observable.
+   * Save the selection criteria.
+   * This patches other state but discards jobs
+   * @param state
    */
-  firstState$ = this.loadWorkspaceState().pipe(
-    tap(state => {
-      console.log('firstState$', state);
-    }),
-    shareReplay(1)
-  );
+  public saveCriteria(state: WorkspaceState['selectionCriteria']): Observable<void> {
+    const lastState = this.lastSavedState;
+    if (lastState === undefined) {
+      return throwError(() => new Error('cannot patch, initial state never loaded'));
+    }
+
+    console.log('saveCriteria', state);
+
+    const newState: WorkspaceState = {
+      ...lastState,
+      ...state
+    };
+
+    delete newState.regionalAssessmentJob;
+    delete newState.suitabilityAssessmentJob;
+
+    return this.saveWorkspaceState(newState);
+  }
 
   public override generateDefaultWorkspaceState(): WorkspaceState {
     return {

@@ -33,7 +33,10 @@ import { SelectionCriteriaComponent } from './selection-criteria/selection-crite
 import { MapToolbarComponent } from './map-toolbar/map-toolbar.component';
 import { PolygonMapService } from './polygon-map.service';
 import BaseLayer from 'ol/layer/Base';
-import { WorkspacePersistenceService } from './persistence/workspace-persistence.service';
+import {
+  WorkspacePersistenceService,
+  WorkspaceState
+} from './persistence/workspace-persistence.service';
 
 type DrawerModes = 'criteria' | 'style';
 
@@ -122,8 +125,30 @@ export class LocationSelectionComponent implements MapUI {
       { manualCleanup: true }
     );
 
-    // warm-up firstState$ so request starts before panel is opened
-    this.persistenceService.firstState$.pipe(take(1)).subscribe();
+    // warm-up so request starts before panel is opened
+    this.persistenceService.initialState$.pipe(take(1)).subscribe(state => {
+      if (state) {
+        this.onLoadInitialState(state);
+      }
+    });
+  }
+
+  onLoadInitialState(state: WorkspaceState) {
+    const { regionalAssessmentJob, suitabilityAssessmentJob } = state;
+    if (regionalAssessmentJob) {
+      console.log('loading saved regional assessment job', regionalAssessmentJob);
+      this.mapService.loadLayerFromJobResults(
+        regionalAssessmentJob.jobId,
+        regionalAssessmentJob.region
+      );
+    }
+    if (suitabilityAssessmentJob) {
+      console.log('loading saved suitability assessment job', suitabilityAssessmentJob);
+      this.mapService.loadLayerFromJobResults(
+        suitabilityAssessmentJob.jobId,
+        suitabilityAssessmentJob.region
+      );
+    }
   }
 
   openLayerStyleEditor(layer: BaseLayer): void {
@@ -180,8 +205,6 @@ export class LocationSelectionComponent implements MapUI {
     void this.drawer.close();
 
     this.mapService.addRegionalAssessmentJob(regionalAssessment);
-    // could load previous job result like this:
-    // this.mapService.loadLayerFromJobResults(31);
 
     if (suitabilityAssessment) {
       this.mapService.addSuitabilityAssessmentJob(suitabilityAssessment);

@@ -232,7 +232,6 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
    * via route param
    */
   public readonly projectId = input(undefined, { transform: numberAttribute });
-  private isLoading = signal(true);
 
   // Workspace management
   private workspaceCounter = signal(0);
@@ -339,8 +338,7 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
 
   // Load workspaces from persistence
   private loadWorkspacesFromPersistence() {
-    this.isLoading.set(true);
-    return this.persistenceService.loadWorkspaceState().pipe(
+    return this.persistenceService.initialState$.pipe(
       // cancel request if navigate away
       takeUntilDestroyed(this.destroyRef),
       tap({
@@ -378,9 +376,6 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
             // No saved state, create default workspace
             this.createWorkspaceWithName('Workspace 1');
           }
-        },
-        finalize: () => {
-          this.isLoading.set(false);
         }
       })
     );

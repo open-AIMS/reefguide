@@ -298,7 +298,7 @@ export class SelectionCriteriaComponent {
   ngOnInit() {
     // TODO loading UI blocker until done, @defer?
     // this could be cached, so
-    this.persistenceService.firstState$.pipe(take(1)).subscribe(state => {
+    this.persistenceService.initialState$.pipe(take(1)).subscribe(state => {
       try {
         if (state == null) {
           // TODO can we remove null type from observable now?
@@ -582,22 +582,19 @@ export class SelectionCriteriaComponent {
     const formValue = this.form.getRawValue();
     const ss = formValue.siteSuitability;
 
-    const state: WorkspaceState = {
-      version: '1.0',
-      selectionCriteria: {
-        region: formValue.region,
-        reef_type: formValue.reef_type,
-        criteria: formValue.criteria,
-        enableSuitabilityAssessment: this.enableSiteSuitability(),
-        suitabilityAssessmentCriteria: {
-          x_dist: ss.x_dist,
-          y_dist: ss.y_dist,
-          threshold: ss.threshold
-        }
+    const state: WorkspaceState['selectionCriteria'] = {
+      region: formValue.region,
+      reef_type: formValue.reef_type,
+      criteria: formValue.criteria,
+      enableSuitabilityAssessment: this.enableSiteSuitability(),
+      suitabilityAssessmentCriteria: {
+        x_dist: ss.x_dist,
+        y_dist: ss.y_dist,
+        threshold: ss.threshold
       }
     };
 
-    this.persistenceService.saveWorkspaceState(state).subscribe();
+    this.persistenceService.saveCriteria(state).subscribe();
   }
 
   /**

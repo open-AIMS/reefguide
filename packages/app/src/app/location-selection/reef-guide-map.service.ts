@@ -99,6 +99,7 @@ import { createLayerFromDef } from '../../util/openlayers/layer-creation';
 import BaseLayer from 'ol/layer/Base';
 import { Group } from 'ol/layer';
 import { fromOpenLayersProperty } from '../../util/openlayers/openlayers-rxjs';
+import { WorkspacePersistenceService } from './persistence/workspace-persistence.service';
 
 /**
  * Reef Guide map context and layer management.
@@ -112,6 +113,7 @@ export class ReefGuideMapService {
   private readonly api = inject(WebApiService);
   private readonly snackbar = inject(MatSnackBar);
   private readonly jobsManager = inject(JobsManagerService);
+  private readonly persistenceService = inject(WorkspacePersistenceService);
   readonly polygonMapService = inject(PolygonMapService);
 
   // map is set shortly after construction
@@ -420,7 +422,20 @@ export class ReefGuideMapService {
         // unsubscribe when this component is destroyed
         takeUntilDestroyed(this.destroyRef),
         takeUntil(this.cancelAssess$),
-        switchMap(results => this.jobResultsToReadyRegion(results))
+        switchMap(results => {
+          if (results.job.status === 'SUCCEEDED') {
+            this.persistenceService
+              .patchWorkspaceState({
+                regionalAssessmentJob: {
+                  jobId: results.job.id,
+                  region: results.region
+                }
+              })
+              .subscribe();
+          }
+
+          return this.jobResultsToReadyRegion(results);
+        })
       )
       .subscribe({
         next: readyRegion => {
@@ -544,6 +559,16 @@ export class ReefGuideMapService {
           console.log(`Job id=${job.id} type=${job.type} update`, job);
         }),
         filter(x => x.status === 'SUCCEEDED'),
+        tap(job => {
+          this.persistenceService
+            .patchWorkspaceState({
+              suitabilityAssessmentJob: {
+                jobId: job.id,
+                region
+              }
+            })
+            .subscribe();
+        }),
         switchMap(job => this.api.downloadJobResults(job.id)),
         takeUntil(this.cancelAssess$),
         finalize(() => this.removeActiveSiteSuitabilityRegion(region))

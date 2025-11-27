@@ -1,5 +1,5 @@
-import { inject, numberAttribute } from '@angular/core';
-import { Observable, of, tap, throwError } from 'rxjs';
+import { inject, numberAttribute, signal } from '@angular/core';
+import { Observable, of, shareReplay, Subject, takeUntil, tap, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { WebApiService } from '../../../api/web-api.service';
 import { ActivatedRoute } from '@angular/router';
@@ -15,6 +15,12 @@ export type LoadWorkspaceStateContext = {
 
 /**
  * Base service that manages a project's persisted state.
+ *
+ * Instances should NOT be reused between projects.
+ *
+ * Saving state before initialState$ loads is considered an error. UI should not allow
+ * the user to modify the project state before initial state is loaded. Providing component
+ * is expected to subscribe to initialState$
  */
 export abstract class BaseWorkspacePersistenceService<T> {
   protected readonly api = inject(WebApiService);
@@ -27,6 +33,32 @@ export abstract class BaseWorkspacePersistenceService<T> {
   protected abstract readonly STORAGE_KEY: string;
 
   public readonly projectId: number | null;
+
+  /**
+   * Replay of the initial workspace state.
+   * This is requested early in the life of this service and providing component.
+   *
+   * Note: currently not coordinated with loadWorkspaceState, subscribers only interested in the
+   * initial state should prefer using this observable.
+   */
+  readonly initialState$: Observable<T | null>;
+
+  /**
+   * true until initialState$ completes or errors.
+   */
+  readonly isInitialStateLoading = signal(true);
+
+  /**
+   * The last saved state.
+   * Initially from initialState$ and later set by {@link saveWorkspaceState}
+   * @see setLastState
+   */
+  protected lastSavedState?: T;
+
+  /**
+   * Emits when a save starts in order to cancel any previous active request.
+   */
+  private cancelRequest$ = new Subject<void>();
 
   constructor() {
     // route param available now since the routed project components provide this service.
@@ -49,19 +81,57 @@ export abstract class BaseWorkspacePersistenceService<T> {
       // no project id
       this.projectId = null;
     }
+
+    this.initialState$ = this.loadWorkspaceState().pipe(
+      tap({
+        next: state => {
+          // FIXME remove null possibility
+          if (state == null) {
+            throw new Error('initial state null!');
+          }
+
+          console.info('initial workspace state', state);
+          this.setLastState(state);
+        },
+        finalize: () => {
+          this.isInitialStateLoading.set(false);
+        }
+      }),
+      shareReplay(1)
+    );
+  }
+
+  /**
+   * Freeze the state object and set it to lastSavedState
+   * Note: this is a shallow freeze
+   * @param state
+   */
+  private setLastState(state: T) {
+    state = Object.freeze(state);
+    this.lastSavedState = state;
   }
 
   /**
    * Save complete workspace state.
    * Takes care of logging and communicating errors to user.
-   * Callers just need to subscribe
+   * Callers just need to subscribe.
+   * Successive calls will cancel previous save requests.
+   *
+   * @param state the full state to save
+   * @returns Observable that must be subscribed to start API request
    */
   saveWorkspaceState(state: T): Observable<void> {
+    if (this.lastSavedState === undefined) {
+      throwError(() => new Error('cannot saveWorkspaceState before initial state loaded'));
+    }
+
     if (!this.isValidWorkspaceState(state, false)) {
       console.error('invalid state', state);
       this.userMessageService.error('Failed to save invalid project state');
       throwError(() => new Error('App generated invalid workspace state'));
     }
+
+    this.setLastState(state);
 
     // If we have a project ID, save to backend; otherwise use localStorage
     if (this.projectId) {
@@ -79,6 +149,28 @@ export abstract class BaseWorkspacePersistenceService<T> {
     } else {
       return this.saveToLocalStorage(state);
     }
+  }
+
+  /**
+   * Patch the last state with this partial state and save it.
+   * Currently shallow, so must fully define a property until implementation changed to deep merge.
+   * @param partialState
+   * @returns Observable that must be subscribed to start API request
+   */
+  patchWorkspaceState(partialState: Partial<T>): Observable<void> {
+    const lastState = this.lastSavedState;
+    if (lastState === undefined) {
+      return throwError(() => new Error('cannot patch, initial state never loaded'));
+    }
+
+    console.log('patchWorkspaceState', partialState);
+
+    const newState: T = {
+      ...lastState,
+      ...partialState
+    };
+
+    return this.saveWorkspaceState(newState);
   }
 
   /**
@@ -153,11 +245,16 @@ export abstract class BaseWorkspacePersistenceService<T> {
       return throwError(() => new Error('Project ID not set'));
     }
 
+    // cancel previous save requests
+    this.cancelRequest$.next();
+
     return this.api
       .updateProject(this.projectId, {
         project_state: state
       })
       .pipe(
+        // unsubscribe on next cancel
+        takeUntil(this.cancelRequest$),
         map(() => void 0),
         tap({
           error: error => {
