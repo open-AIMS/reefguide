@@ -62,19 +62,19 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
   /**
    * Save the selection criteria.
    * This patches other state but discards jobs
-   * @param state
+   * @param selectionCriteria selectionCriteria part of workspace state
    */
-  public saveCriteria(state: WorkspaceState['selectionCriteria']): Observable<void> {
+  public saveCriteria(selectionCriteria: WorkspaceState['selectionCriteria']): Observable<void> {
     const lastState = this.lastSavedState;
     if (lastState === undefined) {
       return throwError(() => new Error('cannot patch, initial state never loaded'));
     }
 
-    console.log('saveCriteria', state);
+    console.log('saveCriteria', selectionCriteria);
 
     const newState: WorkspaceState = {
       ...lastState,
-      ...state
+      selectionCriteria
     };
 
     delete newState.regionalAssessmentJob;

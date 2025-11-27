@@ -137,17 +137,15 @@ export class LocationSelectionComponent implements MapUI {
     const { regionalAssessmentJob, suitabilityAssessmentJob } = state;
     if (regionalAssessmentJob) {
       console.log('loading saved regional assessment job', regionalAssessmentJob);
-      this.mapService.loadLayerFromJobResults(
-        regionalAssessmentJob.jobId,
-        regionalAssessmentJob.region
-      );
+      this.mapService
+        .loadLayerFromJobResults(regionalAssessmentJob.jobId, regionalAssessmentJob.region)
+        .subscribe();
     }
     if (suitabilityAssessmentJob) {
       console.log('loading saved suitability assessment job', suitabilityAssessmentJob);
-      this.mapService.loadLayerFromJobResults(
-        suitabilityAssessmentJob.jobId,
-        suitabilityAssessmentJob.region
-      );
+      this.mapService
+        .loadLayerFromJobResults(suitabilityAssessmentJob.jobId, suitabilityAssessmentJob.region)
+        .subscribe();
     }
   }
 

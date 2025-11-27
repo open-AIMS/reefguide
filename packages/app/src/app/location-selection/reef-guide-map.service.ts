@@ -39,7 +39,11 @@ import {
   RegionDownloadResponse,
   RegionJobsManager
 } from './selection-criteria/region-jobs-manager';
-import { RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
+import {
+  DownloadResponse,
+  RegionalAssessmentInput,
+  SuitabilityAssessmentInput
+} from '@reefguide/types';
 import { JobsManagerService } from '../jobs/jobs-manager.service';
 import { fromLonLat } from 'ol/proj';
 import LayerGroup from 'ol/layer/Group';
@@ -461,10 +465,10 @@ export class ReefGuideMapService {
   /**
    * Download job results and create map layer to display it.
    * @param jobId
+   * @param region (optional) region if known, avoids extra request to getJob
+   * @returns Observable that must be subscribed
    */
   loadLayerFromJobResults(jobId: number, region?: string) {
-    const layerGroup = this.setupCOGAssessRegionsLayerGroup();
-
     // standardize getting region as an Observable
     let region$: Observable<string>;
     if (region !== undefined) {
@@ -473,12 +477,21 @@ export class ReefGuideMapService {
       region$ = this.api.getJob(jobId).pipe(map(x => x.job.input_payload.region));
     }
 
-    forkJoin([region$, this.api.downloadJobResults(jobId)]).subscribe(([region, results]) => {
-      const regionResults = { ...results, region };
-      this.jobResultsToReadyRegion(regionResults).subscribe(readyRegion => {
-        this.addRegionalAssessmentLayer(readyRegion, layerGroup);
-      });
-    });
+    return forkJoin([region$, this.api.downloadJobResults(jobId)]).pipe(
+      tap(([region, results]) => {
+        const regionResults = { ...results, region };
+        const jobType = results.job.type;
+        this.jobResultsToReadyRegion(regionResults).subscribe(readyRegion => {
+          if (jobType === 'REGIONAL_ASSESSMENT') {
+            const layerGroup = this.setupCOGAssessRegionsLayerGroup();
+            this.addRegionalAssessmentLayer(readyRegion, layerGroup);
+          } else if (jobType === 'SUITABILITY_ASSESSMENT') {
+            const layerGroup = this.setupSiteSuitabilityLayerGroup();
+            this.addSuitabilityAssessmentLayer(results, region, layerGroup);
+          }
+        });
+      })
+    );
   }
 
   private jobResultsToReadyRegion(results: RegionDownloadResponse): Observable<ReadyRegion> {
@@ -574,37 +587,7 @@ export class ReefGuideMapService {
         finalize(() => this.removeActiveSiteSuitabilityRegion(region))
       )
       .subscribe(jobResults => {
-        this.removeActiveSiteSuitabilityRegion(region);
-        const url = getFirstFileFromResults(jobResults);
-
-        const style = new Style({
-          stroke: new Stroke({
-            color: 'rgba(203,8,229,0.7)',
-            width: 1
-          }),
-          fill: new Fill({
-            color: 'rgba(203,8,229,0.4)'
-          })
-        });
-
-        const source = new VectorSource({
-          url,
-          format: new GeoJSON()
-        });
-
-        const layer = new VectorLayer({
-          properties: {
-            title: `${region} site suitability`,
-            downloadUrl: url,
-            labelProp: 'row_ID'
-          } satisfies LayerProperties,
-          source,
-          style
-        });
-
-        this.afterCreateLayer(layer);
-
-        layerGroup.getLayers().push(layer);
+        this.addSuitabilityAssessmentLayer(jobResults, region, layerGroup);
       });
   }
 
@@ -705,7 +688,7 @@ export class ReefGuideMapService {
     console.warn('TODO polygon notes openlayers');
   }
 
-  private async addRegionalAssessmentLayer(region: ReadyRegion, layerGroup: LayerGroup) {
+  private addRegionalAssessmentLayer(region: ReadyRegion, layerGroup: LayerGroup) {
     console.log('addRegionalAssessmentLayer', region.region, region.originalUrl);
 
     const color = '#F1C00C';
@@ -751,6 +734,44 @@ export class ReefGuideMapService {
       },
       { injector: this.injector }
     );
+
+    layerGroup.getLayers().push(layer);
+  }
+
+  private addSuitabilityAssessmentLayer(
+    jobResults: DownloadResponse,
+    region: string,
+    layerGroup: LayerGroup
+  ) {
+    this.removeActiveSiteSuitabilityRegion(region);
+    const url = getFirstFileFromResults(jobResults);
+
+    const style = new Style({
+      stroke: new Stroke({
+        color: 'rgba(203,8,229,0.7)',
+        width: 1
+      }),
+      fill: new Fill({
+        color: 'rgba(203,8,229,0.4)'
+      })
+    });
+
+    const source = new VectorSource({
+      url,
+      format: new GeoJSON()
+    });
+
+    const layer = new VectorLayer({
+      properties: {
+        title: `${region} site suitability`,
+        downloadUrl: url,
+        labelProp: 'row_ID'
+      } satisfies LayerProperties,
+      source,
+      style
+    });
+
+    this.afterCreateLayer(layer);
 
     layerGroup.getLayers().push(layer);
   }
