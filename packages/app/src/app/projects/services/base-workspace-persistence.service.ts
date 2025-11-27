@@ -1,6 +1,16 @@
-import { inject, numberAttribute, signal } from '@angular/core';
-import { Observable, of, shareReplay, Subject, takeUntil, tap, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { DestroyRef, inject, numberAttribute, signal } from '@angular/core';
+import {
+  debounceTime,
+  Observable,
+  of,
+  shareReplay,
+  Subject,
+  take,
+  takeUntil,
+  tap,
+  throwError
+} from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { WebApiService } from '../../../api/web-api.service';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -26,6 +36,7 @@ export abstract class BaseWorkspacePersistenceService<T> {
   protected readonly api = inject(WebApiService);
   protected readonly userMessageService = inject(UserMessageService);
   private readonly route = inject(ActivatedRoute);
+  protected readonly destroyRef = inject(DestroyRef);
 
   /**
    * local storage key for workspace state.
@@ -33,6 +44,11 @@ export abstract class BaseWorkspacePersistenceService<T> {
   protected abstract readonly STORAGE_KEY: string;
 
   public readonly projectId: number | null;
+
+  /**
+   * Debounce the save to backend. During this time, lastSavedState is updated
+   */
+  public readonly backendSaveDebounceTime: number = 500;
 
   /**
    * Replay of the initial workspace state.
@@ -54,6 +70,11 @@ export abstract class BaseWorkspacePersistenceService<T> {
    * @see setLastState
    */
   protected lastSavedState?: T;
+
+  private scheduleBackendSave = new Subject<T>();
+  private doBackendSave$ = this.scheduleBackendSave.pipe(
+    debounceTime(this.backendSaveDebounceTime)
+  );
 
   /**
    * Emits when a save starts in order to cancel any previous active request.
@@ -83,6 +104,7 @@ export abstract class BaseWorkspacePersistenceService<T> {
     }
 
     this.initialState$ = this.loadWorkspaceState().pipe(
+      takeUntilDestroyed(),
       tap({
         next: state => {
           // FIXME remove null possibility
@@ -99,6 +121,33 @@ export abstract class BaseWorkspacePersistenceService<T> {
       }),
       shareReplay(1)
     );
+
+    // switchMap used to cancel any previous request in progress
+    this.doBackendSave$
+      .pipe(
+        takeUntilDestroyed(),
+        switchMap(state => {
+          console.log('Saving workspace state to backend API', state);
+          return this.saveToBackend(state);
+        })
+      )
+      .subscribe({
+        next: () => {
+          console.log('Workspace state saved successfully');
+        },
+        error: err => {
+          console.warn('Failed to save workspace state:', err);
+          this.userMessageService.error('Failed to save project');
+        }
+      });
+
+    // Angular complains about ngOnDestroy in base class, so doing it this way
+    this.destroyRef.onDestroy(() => this.destroy());
+  }
+
+  destroy(): void {
+    this.scheduleBackendSave.complete();
+    this.cancelRequest$.complete();
   }
 
   /**
@@ -118,7 +167,7 @@ export abstract class BaseWorkspacePersistenceService<T> {
    * Successive calls will cancel previous save requests.
    *
    * @param state the full state to save
-   * @returns Observable that must be subscribed to start API request
+   * @returns Observable that indicates when save is done.
    */
   saveWorkspaceState(state: T): Observable<void> {
     if (this.lastSavedState === undefined) {
@@ -135,16 +184,14 @@ export abstract class BaseWorkspacePersistenceService<T> {
 
     // If we have a project ID, save to backend; otherwise use localStorage
     if (this.projectId) {
-      return this.saveToBackend(state).pipe(
-        tap({
-          next: () => {
-            console.log('Workspace state saved successfully', state);
-          },
-          error: err => {
-            console.warn('Failed to save workspace state:', err);
-            this.userMessageService.error('Failed to save project');
-          }
-        })
+      this.scheduleBackendSave.next(state);
+
+      // what to return? tricky, there's probably some way to make all callers get the same
+      // observable and share it, but not worth the effort since don't actually need the API response.
+      return this.doBackendSave$.pipe(
+        take(1),
+        // make type check happy
+        map(() => void null)
       );
     } else {
       return this.saveToLocalStorage(state);

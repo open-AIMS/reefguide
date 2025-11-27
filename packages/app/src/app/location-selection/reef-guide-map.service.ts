@@ -745,6 +745,8 @@ export class ReefGuideMapService {
     region: string,
     layerGroup: LayerGroup
   ) {
+    console.log(`addSuitabilityAssessmentLayer jobId=${jobResults.job.id}, region=${region}`);
+
     this.removeActiveSiteSuitabilityRegion(region);
     const url = getFirstFileFromResults(jobResults);
 
