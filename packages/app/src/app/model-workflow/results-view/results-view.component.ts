@@ -23,8 +23,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AdriaModelRunResult, JobDetailsResponse } from '@reefguide/types';
-import { debounceTime, of, Subject, takeUntil } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { debounceTime, of, Subject, takeUntil, catchError, map, switchMap } from 'rxjs';
 import embed, { EmbedOptions, Result } from 'vega-embed';
 import { WebApiService } from '../../../api/web-api.service';
 

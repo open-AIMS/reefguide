@@ -1,16 +1,19 @@
 import { DestroyRef, inject, numberAttribute, signal } from '@angular/core';
 import {
+  catchError,
   debounceTime,
+  delay,
+  map,
   Observable,
   of,
   shareReplay,
   Subject,
+  switchMap,
   take,
   takeUntil,
   tap,
   throwError
 } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
 import { WebApiService } from '../../../api/web-api.service';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -62,7 +65,7 @@ export abstract class BaseWorkspacePersistenceService<T> {
   /**
    * true until initialState$ completes or errors.
    */
-  readonly isInitialStateLoading = signal(true);
+  public readonly isInitialStateLoading = signal(true);
 
   /**
    * The last saved state.

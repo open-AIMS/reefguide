@@ -12,7 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AdriaModelRunInput } from '@reefguide/types';
-import { debounceTime, distinctUntilChanged, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, tap } from 'rxjs';
 
 type DataPackage = 'MOORE' | 'GBR';
 type RcpScenario = AdriaModelRunInput['rcp_scenario'];
