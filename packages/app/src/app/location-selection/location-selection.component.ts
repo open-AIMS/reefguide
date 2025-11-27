@@ -37,6 +37,7 @@ import {
   WorkspacePersistenceService,
   WorkspaceState
 } from './persistence/workspace-persistence.service';
+import { LoadingOverlayComponent } from '../widgets/loading-overlay/loading-overlay.component';
 
 type DrawerModes = 'criteria' | 'style';
 
@@ -63,7 +64,8 @@ type DrawerModes = 'criteria' | 'style';
     ReefMapComponent,
     LayerStyleEditorComponent,
     ProfileButtonComponent,
-    MapToolbarComponent
+    MapToolbarComponent,
+    LoadingOverlayComponent
   ],
   providers: [
     ReefGuideMapService,
