@@ -127,9 +127,7 @@ export class LocationSelectionComponent implements MapUI {
 
     // warm-up so request starts before panel is opened
     this.persistenceService.initialState$.pipe(take(1)).subscribe(state => {
-      if (state) {
-        this.onLoadInitialState(state);
-      }
+      this.onLoadInitialState(state);
     });
   }
 

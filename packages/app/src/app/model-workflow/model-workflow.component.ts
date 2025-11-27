@@ -283,7 +283,7 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loadWorkspacesFromPersistence().subscribe({
+    this.setupInitialState().subscribe({
       next: () => {
         console.debug('Workspace initialization complete');
       },
@@ -336,46 +336,49 @@ export class ModelWorkflowComponent implements OnInit, OnDestroy {
     document.body.classList.remove('dragging-active');
   }
 
-  // Load workspaces from persistence
-  private loadWorkspacesFromPersistence() {
+  /**
+   * Initial workspace state load and setup.
+   */
+  private setupInitialState() {
     return this.persistenceService.initialState$.pipe(
       // cancel request if navigate away
       takeUntilDestroyed(this.destroyRef),
       tap({
         next: savedState => {
-          if (savedState && savedState.workspaces.length > 0) {
-            // Restore from saved state
-            this.workspaceCounter.set(savedState.workspaceCounter);
-
-            const runtimeWorkspaces = savedState.workspaces.map(pw => toRuntimeWorkspace(pw));
-            this.workspaces.set(runtimeWorkspaces);
-
-            // Restore active workspace (with fallback)
-            const activeId =
-              savedState.activeWorkspaceId &&
-              runtimeWorkspaces.find(w => w.id === savedState.activeWorkspaceId)
-                ? savedState.activeWorkspaceId
-                : runtimeWorkspaces[0].id;
-
-            this.activeWorkspaceId.set(activeId);
-
-            // Initialize services for restored workspaces
-            runtimeWorkspaces.forEach(workspace => {
-              this.getWorkspaceService(workspace.id);
-            });
-
-            // REVIEW should this be moved to WorkspaceService? consider RxJS
-            // Restore jobs for workspaces that have submitted job IDs
-            setTimeout(() => {
-              this.restoreJobsForWorkspaces();
-            }, 100); // Small delay to ensure services are initialized
-
-            console.debug(`Restored ${runtimeWorkspaces.length} workspaces from persistence`);
-          } else {
+          if (savedState.workspaces.length === 0) {
             console.info('Project has no workspaces, creating one');
             // No saved state, create default workspace
             this.createWorkspaceWithName('Workspace 1');
+            return;
           }
+
+          // Restore from saved state
+          this.workspaceCounter.set(savedState.workspaceCounter);
+
+          const runtimeWorkspaces = savedState.workspaces.map(pw => toRuntimeWorkspace(pw));
+          this.workspaces.set(runtimeWorkspaces);
+
+          // Restore active workspace (with fallback)
+          const activeId =
+            savedState.activeWorkspaceId &&
+            runtimeWorkspaces.find(w => w.id === savedState.activeWorkspaceId)
+              ? savedState.activeWorkspaceId
+              : runtimeWorkspaces[0].id;
+
+          this.activeWorkspaceId.set(activeId);
+
+          // Initialize services for restored workspaces
+          runtimeWorkspaces.forEach(workspace => {
+            this.getWorkspaceService(workspace.id);
+          });
+
+          // REVIEW should this be moved to WorkspaceService? consider RxJS
+          // Restore jobs for workspaces that have submitted job IDs
+          setTimeout(() => {
+            this.restoreJobsForWorkspaces();
+          }, 100); // Small delay to ensure services are initialized
+
+          console.debug(`Restored ${runtimeWorkspaces.length} workspaces from persistence`);
         }
       })
     );

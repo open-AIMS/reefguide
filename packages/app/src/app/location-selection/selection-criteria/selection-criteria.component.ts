@@ -279,16 +279,9 @@ export class SelectionCriteriaComponent {
   }
 
   ngOnInit() {
-    // TODO loading UI blocker until done, @defer?
-    // this could be cached, so
+    // Note: this could be cached and execute instantly.
     this.persistenceService.initialState$.pipe(take(1)).subscribe(state => {
       try {
-        if (state == null) {
-          // TODO can we remove null type from observable now?
-          console.warn('got null state!?');
-          return;
-        }
-
         this.loadFromState(state);
       } finally {
         // always enable saving regardless

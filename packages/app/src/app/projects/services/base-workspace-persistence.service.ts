@@ -57,7 +57,7 @@ export abstract class BaseWorkspacePersistenceService<T> {
    * Note: currently not coordinated with loadWorkspaceState, subscribers only interested in the
    * initial state should prefer using this observable.
    */
-  readonly initialState$: Observable<T | null>;
+  readonly initialState$: Observable<T>;
 
   /**
    * true until initialState$ completes or errors.
@@ -107,11 +107,6 @@ export abstract class BaseWorkspacePersistenceService<T> {
       takeUntilDestroyed(),
       tap({
         next: state => {
-          // FIXME remove null possibility
-          if (state == null) {
-            throw new Error('initial state null!');
-          }
-
           console.info('initial workspace state', state);
           this.setLastState(state);
         },
@@ -222,20 +217,24 @@ export abstract class BaseWorkspacePersistenceService<T> {
 
   /**
    * Load complete workspace state
-   * TODO remove null
    *
    * @throws WorkspaceStateMigrationError if invalid and migration failed.
    */
-  loadWorkspaceState(): Observable<T | null> {
+  loadWorkspaceState(): Observable<T> {
     // If we have a project ID, load from backend; otherwise use localStorage
-    let load$: Observable<T | null>;
+    let load$: Observable<T>;
     if (this.projectId) {
       load$ = this.loadFromBackend();
     } else {
       // warning because this is probably an initial state bug with the current design.
       console.warn('projectId not set, loadWorkspaceState() from local storage');
-      load$ = this.loadFromLocalStorage();
+      load$ = this.loadFromLocalStorage().pipe(
+        map(state => state ?? this.generateDefaultWorkspaceState())
+      );
     }
+
+    // TODO should consolidate the validation and default fallback logic here instead of load* methods,
+    //  but local storage code is messy and not being used now.
 
     return load$.pipe(
       tap({

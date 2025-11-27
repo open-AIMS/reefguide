@@ -35,8 +35,6 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
   saveWorkspace(workspace: PersistedWorkspace): Observable<void> {
     return this.loadWorkspaceState().pipe(
       map(currentState => {
-        if (!currentState) return;
-
         const existingIndex = currentState.workspaces.findIndex(w => w.id === workspace.id);
         if (existingIndex >= 0) {
           currentState.workspaces[existingIndex] = workspace;
@@ -59,8 +57,6 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
   removeWorkspace(workspaceId: string): Observable<void> {
     return this.loadWorkspaceState().pipe(
       map(currentState => {
-        if (!currentState) return null;
-
         currentState.workspaces = currentState.workspaces.filter(w => w.id !== workspaceId);
 
         // Update active workspace if it was removed
@@ -84,8 +80,6 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
   setActiveWorkspace(workspaceId: string): Observable<void> {
     return this.loadWorkspaceState().pipe(
       map(currentState => {
-        if (!currentState) return null;
-
         currentState.activeWorkspaceId = workspaceId;
         return currentState;
       }),
