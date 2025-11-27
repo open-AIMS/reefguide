@@ -83,6 +83,25 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
     return this.saveWorkspaceState(newState);
   }
 
+  /**
+   * Delete the regional and site assessments jobs from the workspace state.
+   * @returns Observable that must be subscribed
+   */
+  clearAssessmentJobs() {
+    if (this.lastSavedState === undefined) {
+      throw new Error('cannot clear assessment jobs, no last saved state');
+    }
+
+    const newState: WorkspaceState = {
+      ...this.lastSavedState
+    };
+
+    delete newState.regionalAssessmentJob;
+    delete newState.suitabilityAssessmentJob;
+
+    return this.saveWorkspaceState(newState);
+  }
+
   public override generateDefaultWorkspaceState(): WorkspaceState {
     return {
       version: '1.0',

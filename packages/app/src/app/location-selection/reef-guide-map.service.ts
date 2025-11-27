@@ -647,6 +647,8 @@ export class ReefGuideMapService {
    * Cancel any CriteriaRequest and destroy map layers.
    */
   clearAssessedLayers() {
+    this.persistenceService.clearAssessmentJobs().subscribe();
+
     // cancel current request if any
     this.cancelAssess();
 

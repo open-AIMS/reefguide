@@ -68,16 +68,15 @@
           </div>
         }
       </div>
-
+      @let enableSiteSuitability = form.get('enableSiteSuitability')?.value === true;
+      <mat-slide-toggle
+        labelPosition="before"
+        formControlName="enableSiteSuitability"
+      >
+        Site Suitability
+      </mat-slide-toggle>
       <div class="ss-container" formGroupName="siteSuitability">
-        <mat-slide-toggle
-          labelPosition="before"
-          [checked]="enableSiteSuitability()"
-          (change)="enableSiteSuitability.set($event.checked)"
-        >
-          Site Suitability
-        </mat-slide-toggle>
-        @if (enableSiteSuitability()) {
+        @if (enableSiteSuitability) {
           <div>
             <div class="row">
               <mat-form-field>

@@ -99,7 +99,7 @@ type SliderDef = {
 })
 export class SelectionCriteriaComponent {
   private readonly api = inject(WebApiService);
-  private readonly formBuilder = inject(FormBuilder);
+  private readonly formBuilder = inject(FormBuilder).nonNullable;
   readonly mapService = inject(ReefGuideMapService);
   readonly userMessageService = inject(UserMessageService);
 
@@ -154,13 +154,6 @@ export class SelectionCriteriaComponent {
   });
 
   /**
-   * Enable the Site Suitability section and launch that job on Assess.
-   *
-   * Initially false, but default value is set in constructor from persistence serviec.
-   */
-  enableSiteSuitability = signal(false);
-
-  /**
    * Criteria ID that is currently pixel-filtering.
    */
   previewingCriteriaFilter = signal<string | undefined>(undefined);
@@ -195,9 +188,10 @@ export class SelectionCriteriaComponent {
   negativeFlippedCriteria = new Set(['Depth', 'LowTide', 'HighTide', '_LowHighTideDepth']);
 
   protected readonly form: FormGroup<{
-    region: FormControl<string | null>;
+    region: FormControl<string>;
     reef_type: FormControl<string>;
     criteria: FormRecord<FormControl<number>>;
+    enableSiteSuitability: FormControl<boolean>;
     siteSuitability: FormGroup<{
       x_dist: FormControl<number>;
       y_dist: FormControl<number>;
@@ -232,21 +226,17 @@ export class SelectionCriteriaComponent {
     // start with initial default state, but this will quickly be changed once state
     // is loaded from the persistence service.
     const defaultState = this.persistenceService.generateDefaultWorkspaceState();
-    const { region, reef_type, suitabilityAssessmentCriteria } = defaultState.selectionCriteria;
+    const { region, reef_type, enableSuitabilityAssessment, suitabilityAssessmentCriteria } =
+      defaultState.selectionCriteria;
 
-    // add type safety where payload property names must match.
-    type SharedProps = Pick<SharedCriteria, 'region' | 'reef_type'> | { siteSuitability: any };
-
-    // FIXME setup form types correctly, nonNullable FormBuilder?
     // @ts-expect-error types not happy
-    this.form = this.formBuilder.group<Record<keyof SharedProps, any>>({
-      region: [region, Validators.required],
+    this.form = this.formBuilder.group({
+      region: [region ?? '', Validators.required],
       reef_type: [reef_type],
       // entries are added by load workspace state or on region change
       criteria: this.formBuilder.record({}),
-      siteSuitability: this.formBuilder.group<
-        Record<keyof SuitabilityAssessmentExclusiveInput, any>
-      >({
+      enableSiteSuitability: [enableSuitabilityAssessment, Validators.required],
+      siteSuitability: this.formBuilder.group({
         x_dist: [suitabilityAssessmentCriteria.x_dist, [Validators.min(1), Validators.required]],
         y_dist: [suitabilityAssessmentCriteria.y_dist, [Validators.min(1), Validators.required]],
         threshold: [suitabilityAssessmentCriteria.threshold, Validators.required]
@@ -282,13 +272,6 @@ export class SelectionCriteriaComponent {
       });
 
     this.form.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
-      this.saveTrigger.next();
-    });
-
-    // Trigger save on toggle Site Suitability section
-    // TODO consider moving this to the form control
-    effect(() => {
-      this.enableSiteSuitability(); // react to changes
       this.saveTrigger.next();
     });
 
@@ -534,7 +517,7 @@ export class SelectionCriteriaComponent {
 
     let siteSuitability: SuitabilityAssessmentInput | undefined = undefined;
     const siteForm = this.form.get('siteSuitability')!;
-    if (this.enableSiteSuitability() && siteForm.valid) {
+    if (formValue.enableSiteSuitability && siteForm.valid) {
       siteSuitability = {
         ...sharedCriteria,
         ...siteForm.value
@@ -586,7 +569,7 @@ export class SelectionCriteriaComponent {
       region: formValue.region,
       reef_type: formValue.reef_type,
       criteria: formValue.criteria,
-      enableSuitabilityAssessment: this.enableSiteSuitability(),
+      enableSuitabilityAssessment: formValue.enableSiteSuitability,
       suitabilityAssessmentCriteria: {
         x_dist: ss.x_dist,
         y_dist: ss.y_dist,
@@ -610,16 +593,15 @@ export class SelectionCriteriaComponent {
       suitabilityAssessmentCriteria
     } = state.selectionCriteria;
 
-    this.enableSiteSuitability.set(enableSuitabilityAssessment);
-
     for (const key in criteria) {
       this.addMissingCriteriaControl(key, criteria[key]);
     }
 
     this.form.setValue({
-      region,
+      region: region ?? '',
       reef_type,
       criteria,
+      enableSiteSuitability: enableSuitabilityAssessment,
       siteSuitability: {
         ...suitabilityAssessmentCriteria
       }
