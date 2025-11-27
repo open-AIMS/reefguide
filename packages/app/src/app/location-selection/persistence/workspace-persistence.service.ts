@@ -125,10 +125,7 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
   ): WorkspaceState {
     throw new WorkspaceStateMigrationError('migration not implemented', context);
   }
-  protected override isValidWorkspaceState(
-    state: WorkspaceState,
-    repair: boolean
-  ): state is WorkspaceState {
+  protected override isValidWorkspaceState(state: WorkspaceState): state is WorkspaceState {
     const isRootValid =
       state &&
       typeof state === 'object' &&

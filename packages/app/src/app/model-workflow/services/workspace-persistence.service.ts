@@ -108,7 +108,7 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
     throw new WorkspaceStateMigrationError('migration not implemented', context);
   }
 
-  public isValidWorkspaceState(state: any, repair: boolean): state is WorkspaceState {
+  public isValidWorkspaceState(state: any): state is WorkspaceState {
     const isRootValid =
       state &&
       typeof state === 'object' &&
@@ -121,14 +121,12 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
       return false;
     }
 
-    if (repair) {
-      state.workspaces = state.workspaces.filter(isValidPersistedWorkspace);
-    } else {
-      if (!state.workspaces.every(isValidPersistedWorkspace)) {
-        console.warn('invalid workspace invalidated entire workspace state');
-        this.userMessageService.error('Invalid workspaces were discarded');
-        return false;
-      }
+    // TODO maybe allow invalid workspace objects through; their component should check valid
+    //  and show invalid UI state.
+    if (!state.workspaces.every(isValidPersistedWorkspace)) {
+      console.warn('invalid workspace invalidated entire workspace state');
+      this.userMessageService.error('Invalid workspaces prevent the project from loading');
+      return false;
     }
 
     return true;

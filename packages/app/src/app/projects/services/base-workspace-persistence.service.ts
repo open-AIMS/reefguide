@@ -169,7 +169,7 @@ export abstract class BaseWorkspacePersistenceService<T> {
       throwError(() => new Error('cannot saveWorkspaceState before initial state loaded'));
     }
 
-    if (!this.isValidWorkspaceState(state, false)) {
+    if (!this.isValidWorkspaceState(state)) {
       console.error('invalid state', state);
       this.userMessageService.error('Failed to save invalid project state');
       throwError(() => new Error('App generated invalid workspace state'));
@@ -390,7 +390,7 @@ export abstract class BaseWorkspacePersistenceService<T> {
       }
 
       // Validate the loaded state, allow repairs
-      if (!this.isValidWorkspaceState(state, true)) {
+      if (!this.isValidWorkspaceState(state)) {
         console.warn('Invalid workspace state found in localStorage, clearing storage');
         this.clearFromLocalStorageSync();
         return of(null);
@@ -437,10 +437,15 @@ export abstract class BaseWorkspacePersistenceService<T> {
   ): T {
     if (this.isEmptyWorkspaceState(state)) {
       return this.generateDefaultWorkspaceState();
-    } else if (this.isValidWorkspaceState(state, true)) {
+    } else if (this.isValidWorkspaceState(state)) {
       return state;
     } else {
-      return this.migrateWorkspaceState(state, context);
+      console.log('workspace state invalid, attempting migration/repair', state);
+      const migrated = this.migrateWorkspaceState(state, context);
+      if (!this.isValidWorkspaceState(migrated)) {
+        throw new Error('migrated state still not valid');
+      }
+      return migrated;
     }
   }
 
@@ -460,10 +465,10 @@ export abstract class BaseWorkspacePersistenceService<T> {
   public abstract generateDefaultWorkspaceState(): T;
 
   /**
-   * Attempt to migrate old/invalid workspace state.
+   * Attempt to migrate or repair old/invalid workspace state.
    * @param state old state
    * @param context
-   * @returns migrated workspace state
+   * @returns migrated/repaired workspace state
    * @throws WorkspaceStateMigrationError if migration fails
    */
   protected abstract migrateWorkspaceState(state: unknown, context: LoadWorkspaceStateContext): T;
@@ -471,9 +476,8 @@ export abstract class BaseWorkspacePersistenceService<T> {
   /**
    * Validate workspace state structure is valid and the latest version.
    * @param state workspace state object
-   * @param repair make minor repairs (mutations) to make state valid
    */
-  protected abstract isValidWorkspaceState(state: any, repair: boolean): state is T;
+  protected abstract isValidWorkspaceState(state: any): state is T;
 }
 
 /**
