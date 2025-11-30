@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, DestroyRef, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,8 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { catchError, finalize, tap } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { catchError, finalize, of, tap } from 'rxjs';
 import { MatIconModule } from '@angular/material/icon';
 import { WebApiService } from '../../../../api/web-api.service';
 import { UserRole } from '@reefguide/db';

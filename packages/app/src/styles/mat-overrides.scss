@@ -1,5 +1,15 @@
+@use '@angular/material' as mat;
+
 mat-tab-group.fixed-height {
   .mat-mdc-tab-body-wrapper {
     height: 100%;
   }
 }
+
+// Note, the correct way to override Angular Material 3 theme is documented here:
+// https://material.angular.dev/guide/theming#system-tokens
+
+// Component Overrides Example:
+//@include mat.tabs-overrides((
+//  label-text-size: 40px
+//));

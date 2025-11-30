@@ -1,6 +1,15 @@
 import { AsyncPipe, CommonModule } from '@angular/common';
-import { Component, effect, inject, signal, viewChild, ViewChild } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import {
+  Component,
+  effect,
+  inject,
+  input,
+  numberAttribute,
+  signal,
+  viewChild,
+  ViewChild
+} from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,7 +20,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltip } from '@angular/material/tooltip';
 import { fromLonLat } from 'ol/proj';
-import { combineLatest, map, Observable } from 'rxjs';
+import { combineLatest, map, Observable, take } from 'rxjs';
 import { WebApiService } from '../../api/web-api.service';
 import { AuthService } from '../auth/auth.service';
 import { ReefMapComponent } from '../reef-map/reef-map.component';
@@ -23,8 +32,12 @@ import { MAP_UI, MapUI, ReefGuideMapService } from './reef-guide-map.service';
 import { SelectionCriteriaComponent } from './selection-criteria/selection-criteria.component';
 import { MapToolbarComponent } from './map-toolbar/map-toolbar.component';
 import { PolygonMapService } from './polygon-map.service';
-import { ActivatedRoute } from '@angular/router';
 import BaseLayer from 'ol/layer/Base';
+import {
+  WorkspacePersistenceService,
+  WorkspaceState
+} from './persistence/workspace-persistence.service';
+import { LoadingOverlayComponent } from '../widgets/loading-overlay/loading-overlay.component';
 
 type DrawerModes = 'criteria' | 'style';
 
@@ -51,12 +64,14 @@ type DrawerModes = 'criteria' | 'style';
     ReefMapComponent,
     LayerStyleEditorComponent,
     ProfileButtonComponent,
-    MapToolbarComponent
+    MapToolbarComponent,
+    LoadingOverlayComponent
   ],
   providers: [
     ReefGuideMapService,
     PolygonMapService,
-    { provide: MAP_UI, useExisting: LocationSelectionComponent }
+    { provide: MAP_UI, useExisting: LocationSelectionComponent },
+    WorkspacePersistenceService
   ],
   templateUrl: './location-selection.component.html',
   styleUrl: './location-selection.component.scss'
@@ -66,9 +81,14 @@ export class LocationSelectionComponent implements MapUI {
   readonly authService = inject(AuthService);
   readonly api = inject(WebApiService);
   readonly mapService = inject(ReefGuideMapService);
+  readonly persistenceService = inject(WorkspacePersistenceService);
   private readonly snackbar = inject(MatSnackBar);
-  private activatedRoute = inject(ActivatedRoute);
-  private projectId = toSignal<string>(this.activatedRoute.params.pipe(map(p => p['projectId'])));
+
+  /**
+   * Current project ID
+   * via route param
+   */
+  public readonly projectId = input(undefined, { transform: numberAttribute });
 
   map = viewChild.required(ReefMapComponent);
 
@@ -106,6 +126,27 @@ export class LocationSelectionComponent implements MapUI {
       },
       { manualCleanup: true }
     );
+
+    // warm-up so request starts before panel is opened
+    this.persistenceService.initialState$.pipe(take(1)).subscribe(state => {
+      this.onLoadInitialState(state);
+    });
+  }
+
+  onLoadInitialState(state: WorkspaceState) {
+    const { regionalAssessmentJob, suitabilityAssessmentJob } = state;
+    if (regionalAssessmentJob) {
+      console.log('loading saved regional assessment job', regionalAssessmentJob);
+      this.mapService
+        .loadLayerFromJobResults(regionalAssessmentJob.jobId, regionalAssessmentJob.region)
+        .subscribe();
+    }
+    if (suitabilityAssessmentJob) {
+      console.log('loading saved suitability assessment job', suitabilityAssessmentJob);
+      this.mapService
+        .loadLayerFromJobResults(suitabilityAssessmentJob.jobId, suitabilityAssessmentJob.region)
+        .subscribe();
+    }
   }
 
   openLayerStyleEditor(layer: BaseLayer): void {
@@ -162,8 +203,6 @@ export class LocationSelectionComponent implements MapUI {
     void this.drawer.close();
 
     this.mapService.addRegionalAssessmentJob(regionalAssessment);
-    // could load previous job result like this:
-    // this.mapService.loadLayerFromJobResults(31);
 
     if (suitabilityAssessment) {
       this.mapService.addSuitabilityAssessmentJob(suitabilityAssessment);
@@ -176,10 +215,11 @@ export class LocationSelectionComponent implements MapUI {
    */
   onPolygonDrawn(geojson: string): void {
     try {
+      const projectId = this.projectId();
       const polygon = JSON.parse(geojson);
 
       // Create the polygon via API
-      if (!this.projectId()) {
+      if (projectId == null) {
         // Routing stuffed up here!
         console.error('There is no project ID, this route should not have loaded!');
         this.snackbar.open(
@@ -190,14 +230,14 @@ export class LocationSelectionComponent implements MapUI {
           }
         );
       } else {
-        this.api.createPolygon({ polygon, projectId: parseInt(this.projectId()!) }).subscribe({
+        this.api.createPolygon({ polygon, projectId }).subscribe({
           next: () => {
             this.snackbar.open('Polygon saved successfully', 'OK', {
               duration: 3000
             });
 
             // Refresh the polygon layer on the map
-            this.mapService.polygonMapService.refresh(parseInt(this.projectId()!));
+            this.mapService.polygonMapService.refresh(projectId);
           },
           error: error => {
             console.error('Error creating polygon:', error);

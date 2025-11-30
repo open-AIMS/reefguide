@@ -15,6 +15,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Map as OLMap } from 'ol';
 import {
   BehaviorSubject,
+  combineLatestWith,
+  debounceTime,
   filter,
   finalize,
   forkJoin,
@@ -22,6 +24,7 @@ import {
   map,
   Observable,
   of,
+  skip,
   Subject,
   switchMap,
   take,
@@ -39,9 +42,13 @@ import {
   RegionDownloadResponse,
   RegionJobsManager
 } from './selection-criteria/region-jobs-manager';
-import { RegionalAssessmentInput, SuitabilityAssessmentInput } from '@reefguide/types';
+import {
+  DownloadResponse,
+  RegionalAssessmentInput,
+  SuitabilityAssessmentInput
+} from '@reefguide/types';
 import { JobsManagerService } from '../jobs/jobs-manager.service';
-import { fromLonLat } from 'ol/proj';
+import { fromLonLat, toLonLat } from 'ol/proj';
 import LayerGroup from 'ol/layer/Group';
 import { GeoTIFF } from 'ol/source';
 import TileLayer from 'ol/layer/WebGLTile';
@@ -57,6 +64,7 @@ import { DrawEvent } from 'ol/interaction/Draw';
 import {
   createExtentLayer,
   disposeLayerGroup,
+  isValidCoordinate,
   onLayerDispose
 } from '../../util/openlayers/openlayers-util';
 import Layer from 'ol/layer/Layer';
@@ -99,6 +107,8 @@ import { createLayerFromDef } from '../../util/openlayers/layer-creation';
 import BaseLayer from 'ol/layer/Base';
 import { Group } from 'ol/layer';
 import { fromOpenLayersProperty } from '../../util/openlayers/openlayers-rxjs';
+import { WorkspacePersistenceService } from './persistence/workspace-persistence.service';
+import { Coordinate } from 'ol/coordinate';
 
 /**
  * Reef Guide map context and layer management.
@@ -112,10 +122,15 @@ export class ReefGuideMapService {
   private readonly api = inject(WebApiService);
   private readonly snackbar = inject(MatSnackBar);
   private readonly jobsManager = inject(JobsManagerService);
+  private readonly persistenceService = inject(WorkspacePersistenceService);
   readonly polygonMapService = inject(PolygonMapService);
 
   // map is set shortly after construction
   private map!: OLMap;
+
+  mapViewCenter$?: Observable<Coordinate>;
+  // Note: using resolution instead of zoom because zoom event value seems to be rounded
+  mapViewResolution$?: Observable<number>;
 
   criteriaLayers: Record<string, LayerController | undefined> = {};
 
@@ -228,6 +243,41 @@ export class ReefGuideMapService {
   }
 
   /**
+   * Persist the Map view after 5 second debounce.
+   */
+  private setupMapViewPersistence() {
+    if (!this.mapViewCenter$ || !this.mapViewResolution$) {
+      console.warn('mapViewCenter$ and mapViewZoom$ is not defined!');
+      return;
+    }
+    // Save map view with 5 second debounce
+    this.mapViewCenter$
+      .pipe(
+        combineLatestWith(this.mapViewResolution$),
+        debounceTime(5000),
+        // skip first emit that occurs during init
+        skip(1),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => {
+        if (!this.map) return;
+
+        const view = this.map.getView();
+        // resolution event (more reliable), but get and store zoom
+        const center = view.getCenter();
+        const zoom = view.getZoom();
+
+        if (center !== undefined && zoom !== undefined) {
+          this.persistenceService.saveMapView({
+            // type cast to fix Array<number> type issue
+            center: toLonLat(center, view.getProjection()) as [number, number],
+            zoom
+          });
+        }
+      });
+  }
+
+  /**
    * Map provided by ReefGuideMapComponent
    * @param map
    */
@@ -239,6 +289,30 @@ export class ReefGuideMapService {
 
     // Initialize polygon map service with the map
     this.polygonMapService.configureMapService(map, projectId);
+
+    // Listen to map view changes (pan and zoom)
+    const view = map.getView();
+
+    this.mapViewCenter$ = fromOpenLayersProperty(view, 'center' as any);
+    // Note: 'zoom' gets rounded?
+    this.mapViewResolution$ = fromOpenLayersProperty(view, 'resolution' as any);
+
+    this.setupMapViewPersistence();
+
+    this.persistenceService.initialState$.subscribe(state => {
+      const { mapView: mapViewState } = state;
+      if (mapViewState) {
+        console.log('setting Map to initial persisted view', state.mapView);
+        if (!isValidCoordinate(mapViewState.center)) {
+          console.warn('ignoring invalid center coordinate', mapViewState.center);
+          return;
+        }
+
+        const mapView = this.map.getView();
+        mapView.setCenter(fromLonLat(mapViewState.center, mapView.getProjection()));
+        mapView.setZoom(mapViewState.zoom);
+      }
+    });
   }
 
   /**
@@ -420,7 +494,20 @@ export class ReefGuideMapService {
         // unsubscribe when this component is destroyed
         takeUntilDestroyed(this.destroyRef),
         takeUntil(this.cancelAssess$),
-        switchMap(results => this.jobResultsToReadyRegion(results))
+        switchMap(results => {
+          if (results.job.status === 'SUCCEEDED') {
+            this.persistenceService
+              .patchWorkspaceState({
+                regionalAssessmentJob: {
+                  jobId: results.job.id,
+                  region: results.region
+                }
+              })
+              .subscribe();
+          }
+
+          return this.jobResultsToReadyRegion(results);
+        })
       )
       .subscribe({
         next: readyRegion => {
@@ -446,10 +533,10 @@ export class ReefGuideMapService {
   /**
    * Download job results and create map layer to display it.
    * @param jobId
+   * @param region (optional) region if known, avoids extra request to getJob
+   * @returns Observable that must be subscribed
    */
   loadLayerFromJobResults(jobId: number, region?: string) {
-    const layerGroup = this.setupCOGAssessRegionsLayerGroup();
-
     // standardize getting region as an Observable
     let region$: Observable<string>;
     if (region !== undefined) {
@@ -458,12 +545,21 @@ export class ReefGuideMapService {
       region$ = this.api.getJob(jobId).pipe(map(x => x.job.input_payload.region));
     }
 
-    forkJoin([region$, this.api.downloadJobResults(jobId)]).subscribe(([region, results]) => {
-      const regionResults = { ...results, region };
-      this.jobResultsToReadyRegion(regionResults).subscribe(readyRegion => {
-        this.addRegionalAssessmentLayer(readyRegion, layerGroup);
-      });
-    });
+    return forkJoin([region$, this.api.downloadJobResults(jobId)]).pipe(
+      tap(([region, results]) => {
+        const regionResults = { ...results, region };
+        const jobType = results.job.type;
+        this.jobResultsToReadyRegion(regionResults).subscribe(readyRegion => {
+          if (jobType === 'REGIONAL_ASSESSMENT') {
+            const layerGroup = this.setupCOGAssessRegionsLayerGroup();
+            this.addRegionalAssessmentLayer(readyRegion, layerGroup);
+          } else if (jobType === 'SUITABILITY_ASSESSMENT') {
+            const layerGroup = this.setupSiteSuitabilityLayerGroup();
+            this.addSuitabilityAssessmentLayer(results, region, layerGroup);
+          }
+        });
+      })
+    );
   }
 
   private jobResultsToReadyRegion(results: RegionDownloadResponse): Observable<ReadyRegion> {
@@ -544,42 +640,22 @@ export class ReefGuideMapService {
           console.log(`Job id=${job.id} type=${job.type} update`, job);
         }),
         filter(x => x.status === 'SUCCEEDED'),
+        tap(job => {
+          this.persistenceService
+            .patchWorkspaceState({
+              suitabilityAssessmentJob: {
+                jobId: job.id,
+                region
+              }
+            })
+            .subscribe();
+        }),
         switchMap(job => this.api.downloadJobResults(job.id)),
         takeUntil(this.cancelAssess$),
         finalize(() => this.removeActiveSiteSuitabilityRegion(region))
       )
       .subscribe(jobResults => {
-        this.removeActiveSiteSuitabilityRegion(region);
-        const url = getFirstFileFromResults(jobResults);
-
-        const style = new Style({
-          stroke: new Stroke({
-            color: 'rgba(203,8,229,0.7)',
-            width: 1
-          }),
-          fill: new Fill({
-            color: 'rgba(203,8,229,0.4)'
-          })
-        });
-
-        const source = new VectorSource({
-          url,
-          format: new GeoJSON()
-        });
-
-        const layer = new VectorLayer({
-          properties: {
-            title: `${region} site suitability`,
-            downloadUrl: url,
-            labelProp: 'row_ID'
-          } satisfies LayerProperties,
-          source,
-          style
-        });
-
-        this.afterCreateLayer(layer);
-
-        layerGroup.getLayers().push(layer);
+        this.addSuitabilityAssessmentLayer(jobResults, region, layerGroup);
       });
   }
 
@@ -639,6 +715,8 @@ export class ReefGuideMapService {
    * Cancel any CriteriaRequest and destroy map layers.
    */
   clearAssessedLayers() {
+    this.persistenceService.clearAssessmentJobs().subscribe();
+
     // cancel current request if any
     this.cancelAssess();
 
@@ -680,7 +758,7 @@ export class ReefGuideMapService {
     console.warn('TODO polygon notes openlayers');
   }
 
-  private async addRegionalAssessmentLayer(region: ReadyRegion, layerGroup: LayerGroup) {
+  private addRegionalAssessmentLayer(region: ReadyRegion, layerGroup: LayerGroup) {
     console.log('addRegionalAssessmentLayer', region.region, region.originalUrl);
 
     const color = '#F1C00C';
@@ -726,6 +804,46 @@ export class ReefGuideMapService {
       },
       { injector: this.injector }
     );
+
+    layerGroup.getLayers().push(layer);
+  }
+
+  private addSuitabilityAssessmentLayer(
+    jobResults: DownloadResponse,
+    region: string,
+    layerGroup: LayerGroup
+  ) {
+    console.log(`addSuitabilityAssessmentLayer jobId=${jobResults.job.id}, region=${region}`);
+
+    this.removeActiveSiteSuitabilityRegion(region);
+    const url = getFirstFileFromResults(jobResults);
+
+    const style = new Style({
+      stroke: new Stroke({
+        color: 'rgba(203,8,229,0.7)',
+        width: 1
+      }),
+      fill: new Fill({
+        color: 'rgba(203,8,229,0.4)'
+      })
+    });
+
+    const source = new VectorSource({
+      url,
+      format: new GeoJSON()
+    });
+
+    const layer = new VectorLayer({
+      properties: {
+        title: `${region} site suitability`,
+        downloadUrl: url,
+        labelProp: 'row_ID'
+      } satisfies LayerProperties,
+      source,
+      style
+    });
+
+    this.afterCreateLayer(layer);
 
     layerGroup.getLayers().push(layer);
   }

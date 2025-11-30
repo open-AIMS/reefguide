@@ -29,7 +29,7 @@
             @if (isBusy) {
               <mat-progress-spinner mode="indeterminate" diameter="32"> </mat-progress-spinner>
             }
-            @let formStatus = criteria.form.statusChanges | async;
+            @let formStatus = criteria.formStatus$ | async;
             <button
               mat-flat-button
               [disabled]="isBusy || formStatus !== 'VALID'"
@@ -103,3 +103,7 @@
     <app-profile-button />
   </mat-drawer-content>
 </mat-drawer-container>
+<!-- TODO fade-out animation in Angular 21 -->
+@if (persistenceService.isInitialStateLoading()) {
+  <app-loading-overlay></app-loading-overlay>
+}
