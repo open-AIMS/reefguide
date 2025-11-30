@@ -9,8 +9,7 @@ describe('LoadingOverlayComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [LoadingOverlayComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(LoadingOverlayComponent);
     component = fixture.componentInstance;
