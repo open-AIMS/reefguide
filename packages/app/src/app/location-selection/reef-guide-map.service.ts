@@ -15,6 +15,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Map as OLMap } from 'ol';
 import {
   BehaviorSubject,
+  combineLatestWith,
+  debounceTime,
   filter,
   finalize,
   forkJoin,
@@ -22,6 +24,7 @@ import {
   map,
   Observable,
   of,
+  skip,
   Subject,
   switchMap,
   take,
@@ -45,7 +48,7 @@ import {
   SuitabilityAssessmentInput
 } from '@reefguide/types';
 import { JobsManagerService } from '../jobs/jobs-manager.service';
-import { fromLonLat } from 'ol/proj';
+import { fromLonLat, toLonLat } from 'ol/proj';
 import LayerGroup from 'ol/layer/Group';
 import { GeoTIFF } from 'ol/source';
 import TileLayer from 'ol/layer/WebGLTile';
@@ -61,6 +64,7 @@ import { DrawEvent } from 'ol/interaction/Draw';
 import {
   createExtentLayer,
   disposeLayerGroup,
+  isValidCoordinate,
   onLayerDispose
 } from '../../util/openlayers/openlayers-util';
 import Layer from 'ol/layer/Layer';
@@ -104,6 +108,7 @@ import BaseLayer from 'ol/layer/Base';
 import { Group } from 'ol/layer';
 import { fromOpenLayersProperty } from '../../util/openlayers/openlayers-rxjs';
 import { WorkspacePersistenceService } from './persistence/workspace-persistence.service';
+import { Coordinate } from 'ol/coordinate';
 
 /**
  * Reef Guide map context and layer management.
@@ -122,6 +127,10 @@ export class ReefGuideMapService {
 
   // map is set shortly after construction
   private map!: OLMap;
+
+  mapViewCenter$?: Observable<Coordinate>;
+  // Note: using resolution instead of zoom because zoom event value seems to be rounded
+  mapViewResolution$?: Observable<number>;
 
   criteriaLayers: Record<string, LayerController | undefined> = {};
 
@@ -234,6 +243,41 @@ export class ReefGuideMapService {
   }
 
   /**
+   * Persist the Map view after 5 second debounce.
+   */
+  private setupMapViewPersistence() {
+    if (!this.mapViewCenter$ || !this.mapViewResolution$) {
+      console.warn('mapViewCenter$ and mapViewZoom$ is not defined!');
+      return;
+    }
+    // Save map view with 5 second debounce
+    this.mapViewCenter$
+      .pipe(
+        combineLatestWith(this.mapViewResolution$),
+        debounceTime(5000),
+        // skip first emit that occurs during init
+        skip(1),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => {
+        if (!this.map) return;
+
+        const view = this.map.getView();
+        // resolution event (more reliable), but get and store zoom
+        const center = view.getCenter();
+        const zoom = view.getZoom();
+
+        if (center !== undefined && zoom !== undefined) {
+          this.persistenceService.saveMapView({
+            // type cast to fix Array<number> type issue
+            center: toLonLat(center, view.getProjection()) as [number, number],
+            zoom
+          });
+        }
+      });
+  }
+
+  /**
    * Map provided by ReefGuideMapComponent
    * @param map
    */
@@ -245,6 +289,30 @@ export class ReefGuideMapService {
 
     // Initialize polygon map service with the map
     this.polygonMapService.configureMapService(map, projectId);
+
+    // Listen to map view changes (pan and zoom)
+    const view = map.getView();
+
+    this.mapViewCenter$ = fromOpenLayersProperty(view, 'center' as any);
+    // Note: 'zoom' gets rounded?
+    this.mapViewResolution$ = fromOpenLayersProperty(view, 'resolution' as any);
+
+    this.setupMapViewPersistence();
+
+    this.persistenceService.initialState$.subscribe(state => {
+      const { mapView: mapViewState } = state;
+      if (mapViewState) {
+        console.log('setting Map to initial persisted view', state.mapView);
+        if (!isValidCoordinate(mapViewState.center)) {
+          console.warn('ignoring invalid center coordinate', mapViewState.center);
+          return;
+        }
+
+        const mapView = this.map.getView();
+        mapView.setCenter(fromLonLat(mapViewState.center, mapView.getProjection()));
+        mapView.setZoom(mapViewState.zoom);
+      }
+    });
   }
 
   /**

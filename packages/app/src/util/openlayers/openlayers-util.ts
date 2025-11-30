@@ -12,6 +12,7 @@ import VectorSource from 'ol/source/Vector';
 import { fromExtent } from 'ol/geom/Polygon';
 import { LayerProperties } from '../../types/layer.type';
 import { Extent } from 'ol/extent';
+import { Coordinate } from 'ol/coordinate';
 
 /**
  * Call the function when the layer is disposed.
@@ -194,4 +195,19 @@ export function createExtentLayer(extent: Extent): VectorLayer {
     source,
     style
   });
+}
+
+/**
+ * Check that coordinate is 2-number Array that is not Nan
+ * @param coordinate
+ */
+export function isValidCoordinate(coordinate: unknown): coordinate is Coordinate {
+  return (
+    Array.isArray(coordinate) &&
+    coordinate.length === 2 &&
+    typeof coordinate[0] === 'number' &&
+    typeof coordinate[1] === 'number' &&
+    !isNaN(coordinate[0]) &&
+    !isNaN(coordinate[1])
+  );
 }

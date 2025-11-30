@@ -48,6 +48,12 @@ export interface WorkspaceState {
     jobId: number;
     region: string;
   };
+
+  mapView?: {
+    // View center (lon, lat)
+    center: [number, number];
+    zoom: number;
+  };
 }
 
 /**
@@ -79,6 +85,25 @@ export class WorkspacePersistenceService extends BaseWorkspacePersistenceService
 
     delete newState.regionalAssessmentJob;
     delete newState.suitabilityAssessmentJob;
+
+    return this.saveWorkspaceState(newState);
+  }
+
+  /**
+   * Save the current map view (center and zoom).
+   * This patches the workspace state without affecting other state.
+   * @param mapView Map view state (center coordinates and zoom level)
+   */
+  public saveMapView(mapView: WorkspaceState['mapView']): Observable<void> {
+    const lastState = this.lastSavedState;
+    if (lastState === undefined) {
+      return throwError(() => new Error('cannot patch, initial state never loaded'));
+    }
+
+    const newState: WorkspaceState = {
+      ...lastState,
+      mapView
+    };
 
     return this.saveWorkspaceState(newState);
   }
