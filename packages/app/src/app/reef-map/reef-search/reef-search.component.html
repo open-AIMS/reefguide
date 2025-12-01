@@ -1,16 +1,17 @@
 <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
-  <mat-label>Search for reefs</mat-label>
+  <mat-icon matPrefix class="search-icon">search</mat-icon>
   <input
     matInput
     [matAutocomplete]="auto"
     [formControl]="searchControl"
-    placeholder="Type to search reefs..."
+    placeholder="Search for reefs..."
   />
-  <mat-icon matPrefix class="search-icon">search</mat-icon>
 </mat-form-field>
 
 <mat-autocomplete
   #auto="matAutocomplete"
+  panelWidth="30em"
+  autoActiveFirstOption="true"
   [displayWith]="displayReef"
   (optionSelected)="onReefSelected($event)"
 >
