@@ -34,6 +34,9 @@ MC_CACHED="$CACHE_DIR/mc"
 NODE_MANAGER=""
 NODE_MANAGER_CMD=""
 
+# Docker/podman
+DOCKER="docker"
+
 # Script flags
 CLEAR_DB=false
 CLEANUP_ON_EXIT=false
@@ -229,11 +232,19 @@ check_docker() {
 
     log_info "Checking Docker installation..."
 
+    # Look for docker or podman
+    # $DOCKER docker compose compatibility should install docker-compose
+    # podman compose wrapper works as well, though shows a warning message
     if ! command_exists docker; then
-        error_exit "Docker is not installed. Please install Docker Desktop or Docker Engine."
+        if command_exists podman; then
+            log_info "using podman"
+            DOCKER="podman"
+        else
+            error_exit "docker or podman must be installed."
+        fi
     fi
 
-    if ! docker info >/dev/null 2>&1; then
+    if ! $DOCKER info >/dev/null 2>&1; then
         error_exit "Docker daemon is not running. Please start Docker."
     fi
 
@@ -241,9 +252,9 @@ check_docker() {
     if command_exists "docker-compose"; then
         COMPOSE_CMD="docker-compose"
         COMPOSE_VERSION=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-    elif docker compose version >/dev/null 2>&1; then
-        COMPOSE_CMD="docker compose"
-        COMPOSE_VERSION=$(docker compose version --short 2>/dev/null || docker compose version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    elif $DOCKER compose version >/dev/null 2>&1; then
+        COMPOSE_CMD="$DOCKER compose"
+        COMPOSE_VERSION=$($DOCKER compose version --short 2>/dev/null || $DOCKER compose version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
     else
         error_exit "Docker Compose is not available. Please install Docker Compose."
     fi
@@ -330,13 +341,13 @@ wait_for_postgres() {
     local postgres_container="local-web-api-psql"
 
     # Check if container exists and is running
-    if ! docker ps -q -f "name=$postgres_container" | grep -q .; then
+    if ! $DOCKER ps -q -f "name=$postgres_container" | grep -q .; then
         error_exit "PostgreSQL container '$postgres_container' not found or not running"
     fi
 
     # Wait for PostgreSQL to be ready
     while [ $count -lt $timeout ]; do
-        if docker exec "$postgres_container" pg_isready -U admin -d database >/dev/null 2>&1; then
+        if $DOCKER exec "$postgres_container" pg_isready -U admin -d database >/dev/null 2>&1; then
             log_success "PostgreSQL is ready"
             return 0
         fi
@@ -367,7 +378,7 @@ wait_for_minio() {
     local minio_container="local-web-api-minio"
 
     # Check if container exists and is running
-    if ! docker ps -q -f "name=$minio_container" | grep -q .; then
+    if ! $DOCKER ps -q -f "name=$minio_container" | grep -q .; then
         error_exit "MinIO container '$minio_container' not found or not running"
     fi
 
