@@ -71,3 +71,22 @@ To determine what code was deployed:
 3. copy the Commit SHA
 4. lookup this commit in your git log viewer or GitHub
   `https://github.com/open-AIMS/reefguide/tree/<commit sha>`
+
+#### Worker Image Version?
+
+In the config project `imageTag` is `latest`, which makes deployment less deterministic. The Image URL is something like:  
+`ghcr.io/open-aims/reefguideworker.jl/reefguide-worker:latest`
+
+Open AWS Console, look at a ECS Task and find the "Image Digest"
+
+<img width="1290" height="344" alt="image" src="https://github.com/user-attachments/assets/c701679d-39fc-404f-b0ea-4862a2d57e22" />
+
+In the corresponding worker GitHub project, view the [Packages](https://github.com/open-AIMS/ReefGuideWorker.jl/pkgs/container/reefguideworker.jl%2Freefguide-worker). 
+Find the matching digest SHA (expand `...`).
+
+<img width="1053" height="311" alt="image" src="https://github.com/user-attachments/assets/12a1f291-c5e2-4186-afc4-4c38ed89a714" />
+
+The other sha is the git commit that was built and uploaded to the container registry. In this example, it's [sha-600005f](https://github.com/open-AIMS/ReefGuideWorker.jl/commit/600005fc677bd06ff5df0b6c72bd84b22eb826a0)
+
+_TODOC is there a way to query on this digest SHA?_  
+_TODOC - does AWS ECS pull the image at cdk deploy time, or when tasks are created?_
