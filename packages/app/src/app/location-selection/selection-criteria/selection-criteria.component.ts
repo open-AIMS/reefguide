@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { MatSliderModule } from '@angular/material/slider';
 import {
   FormBuilder,
@@ -13,7 +13,7 @@ import {
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { ReefGuideMapService } from '../reef-guide-map.service';
-import { CriteriaPayloads, SuitabilityAssessmentExclusiveInput } from '../reef-guide-api.types';
+import { CriteriaPayloads } from '../reef-guide-api.types';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
@@ -36,7 +36,7 @@ import {
   tap
 } from 'rxjs';
 import { WebApiService } from '../../../api/web-api.service';
-import { CriteriaRangeOutput, SuitabilityAssessmentInput, SharedCriteria } from '@reefguide/types';
+import { CriteriaRangeOutput, SharedCriteria, SuitabilityAssessmentInput } from '@reefguide/types';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { LayerController } from '../../map/layer-controller';
@@ -133,7 +133,7 @@ export class SelectionCriteriaComponent {
   );
 
   /**
-   * The slider definitions in the original order from the API.
+   * The slider definitions for the current region in the original order from the API.
    */
   sliderDefs = signal<SliderDef[] | undefined>(undefined);
 
@@ -233,7 +233,8 @@ export class SelectionCriteriaComponent {
     this.form = this.formBuilder.group({
       region: [region ?? '', Validators.required],
       reef_type: [reef_type],
-      // entries are added by load workspace state or on region change
+      // entries are added by load workspace state or on region change and NEVER REMOVED.
+      // this means that a previous region may add criteria that don't exist in the current one
       criteria: this.formBuilder.record({}),
       enableSiteSuitability: [enableSuitabilityAssessment, Validators.required],
       siteSuitability: this.formBuilder.group({
@@ -452,11 +453,16 @@ export class SelectionCriteriaComponent {
       throw new Error('Form invalid!');
     }
 
-    // form values for the criteria group.
-    const formValues: Record<string, number | undefined> = {
+    // current form values of the criteria form record.
+    // IMPORTANT: some of these may be from a previous region and invalid criteria for the current region.
+    const formValues = {
       ...formValue.criteria
-    };
+    } as Record<string, number>;
 
+    // final valid/enabled criteria to be merged into the payload for this region.
+    const criteriaValues: Record<string, number> = {};
+
+    // only include criteria defined by the current sliderDefs
     // fix values of negative-flipped criteria
     for (const sliderDef of sliderDefs) {
       const { criteria } = sliderDef;
@@ -464,34 +470,46 @@ export class SelectionCriteriaComponent {
       const minKey = `${criteria.payload_property_prefix}min`;
       const maxKey = `${criteria.payload_property_prefix}max`;
 
-      // convert back to un-flipped criteria coordinates if needed
-      const minValue = isFlipped ? -formValues[maxKey]! : formValues[minKey]!;
-      const maxValue = isFlipped ? -formValues[minKey]! : formValues[maxKey]!;
+      const origMinValue = formValues[minKey];
+      const origMaxValue = formValues[maxKey];
+      // being paranoid, but make sure values are not null, undefined, NaN
+      // indicates a bug with managing slider/criteria definitions for the region.
+      if (
+        origMinValue == null ||
+        isNaN(origMinValue) ||
+        origMaxValue == null ||
+        isNaN(origMaxValue)
+      ) {
+        throw new Error(
+          `Invalid min/max value for criteria ${criteria.id} [${minKey}]=${origMinValue} [${maxKey}]=${origMaxValue}`
+        );
+      }
 
-      // clamp values since could be outside range due to slider floor(min), ceil(max)
-      formValues[minKey] = Math.max(minValue, criteria.min_val);
-      formValues[maxKey] = Math.min(maxValue, criteria.max_val);
+      // convert back to un-flipped criteria coordinates if needed
+      const minValue = isFlipped ? -origMaxValue : origMinValue;
+      const maxValue = isFlipped ? -origMinValue : origMaxValue;
 
       if (criteria.id === '_LowHighTideDepth') {
         // Low-High tide mode
         // FUTURE Depth could toggle modes between LowTide, HighTide, MSL, and Low-High.
         // in this context, depth is already negative-flipped so more negative is deeper
 
+        // TODO should clamp these values too
         // depth_max is shallowest (least negative)
-        formValues['low_tide_max'] = formValues['_low_high_tide_depth_max'];
+        criteriaValues['low_tide_max'] = maxValue;
         // omit low_tide_min, ReefGuideWorker will default to criteria bounds min.
 
         // depth_min is deepest (most negative)
-        formValues['high_tide_min'] = formValues['_low_high_tide_depth_min'];
+        criteriaValues['high_tide_min'] = minValue;
         // omit high_tide_max, ReefGuideWorker will default to criteria bounds max.
-
-        // replace the virtual properties
-        delete formValues['_low_high_tide_depth_min'];
-        delete formValues['_low_high_tide_depth_max'];
+      } else {
+        // clamp values since could be outside range due to slider floor(min), ceil(max)
+        criteriaValues[minKey] = Math.max(minValue, criteria.min_val);
+        criteriaValues[maxKey] = Math.min(maxValue, criteria.max_val);
       }
     }
 
-    // console.log('criteria before/after', formValue.criteria, criteria);
+    // console.log('criteria before/after', formValue.criteria, criteriaValues);
 
     // validation and make types happy
     if (formValue.region == null) {
@@ -504,8 +522,8 @@ export class SelectionCriteriaComponent {
     const sharedCriteria: SharedCriteria = {
       region: formValue.region,
       reef_type: formValue.reef_type,
-      // the *_min, *_max values
-      ...formValues
+      // the *_min, *_max values valid for this region
+      ...criteriaValues
     };
 
     let siteSuitability: SuitabilityAssessmentInput | undefined = undefined;
