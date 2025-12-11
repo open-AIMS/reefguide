@@ -2,10 +2,12 @@
 
 The `ReefGuide` system provides information about regions and assessment criteria available to the frontend through an object called the `data spec`. This is updated daily as a cron-job. The job can also be [run manually using the cli](#run-the-data-spec-reload-job). Adjustments to the criteria made by the app are [described here](../packages/app/docs/assessment_criteria.md).
 
-* Criteria metadata is from [ReefGuide.jl ASSESSMENT_CRITERIA](https://github.com/open-AIMS/ReefGuide.jl/blob/main/src/utility/regions_criteria_setup.jl)
+* Criteria metadata such as default bounds is from [ReefGuide.jl ASSESSMENT_CRITERIA](https://github.com/open-AIMS/ReefGuide.jl/blob/main/src/utility/regions_criteria_setup.jl)
 * Other metadata (statistics) are calculated from the regions dataset during the data spec job execution.
 
-Changes to `ASSESSMENT_CRITERIA` requires deploying [ReefGuideWorker.jl](https://github.com/open-AIMS/ReefGuideWorker.jl) with the latest version of [ReefGuide.jl](https://github.com/open-AIMS/ReefGuide.jl). Currently, for dataset changes to have effect, you need to perform a cleanup process of the cached Regional Data to see dataset statistics changes reflected; this is described below.
+Changes to `ASSESSMENT_CRITERIA` requires deploying [ReefGuideWorker.jl](https://github.com/open-AIMS/ReefGuideWorker.jl) with the latest version of [ReefGuide.jl](https://github.com/open-AIMS/ReefGuide.jl). Once a new Docker Image is published, the ECS Task will pull the latest image when a new Task/worker instance starts, so a cdk deployment is not necessary.
+
+**App Note:** project workspace persistence will have saved the previous criteria values; so users must `Reset` criteria to defaults or start a new project to see these new default criteria bounds.
 
 This guide **follows on from [managing EFS data](./managing-efs-data.md)** - it is **assumed you have uploaded replacement data to your EC2 management instance and have an active SSM session** - if not, please see this guide first!
 
