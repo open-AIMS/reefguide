@@ -107,11 +107,20 @@ For detailed setup instructions, see the [Local Development Setup](#local-develo
 
 ## Prerequisites
 
-- Node.js (v18+)
+- Node.js v24 (setup for you by `local-dev.sh`)  
+  _Developers should work with the same Node version as is specified in web-api's [Dockerfile](../../Dockerfile)_
 - AWS CLI configured with appropriate permissions
 - Docker (for local development with Prisma)
 
+**Tip:**
+After a Node release, run `fnm alias v24 reefguide`, which creates a `reefguide` alias pointing to the latest Node 24 version. (or use `default` alias). Set your IDE to that Node alias path managed by fnm:  
+`~/.local/share/fnm/aliases/reefguide/bin/node`  
+(default in Linux, see `fnm env` `FNM_DIR`)  
+This ensures your IDE's Node.js version matches what `local-dev.sh` is using.
+
 ## Local Development Setup
+
+Alternatively, run `local-dev.sh`
 
 1. Clone the repository
 2. Install dependencies: `npm install`

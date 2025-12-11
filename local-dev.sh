@@ -14,6 +14,14 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
+
+# Node.js Version
+# This should match the web-api Dockerfile, currently node:24-alpine
+# Specifying the major version means Node.js versions may differ across deployments and developer environments.
+# e.g. 24.11.1 on one and 24.12.0 on another depending on deploy time
+# However, it's important to get the latest security updates for Node.js and it's a mature project that
+# is unlikely to break our code with minor/patch releases.
+# pnpm version is determined by root package.json packageManager property. Update with: pnpm self-update
 NODE_VERSION="24"
 REQUIRED_DOCKER_COMPOSE_VERSION="2.0.0"
 DB_READY_TIMEOUT=60
