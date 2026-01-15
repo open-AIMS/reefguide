@@ -763,11 +763,13 @@ export class ReefGuideMapService {
 
     const color = '#F1C00C';
 
+    // cogUrl could be a Blob URL, we want to send users to the original
+    const downloadUrl = region.originalUrl;
+
     const layer = new TileLayer({
       properties: {
         title: `${region.region} criteria assessment`,
-        // cogUrl could be Blob URL, we want to send users to the original
-        downloadUrl: region.originalUrl
+        downloadUrl
       } satisfies LayerProperties,
       source: new GeoTIFF({
         interpolate: false,
@@ -806,6 +808,11 @@ export class ReefGuideMapService {
     );
 
     layerGroup.getLayers().push(layer);
+
+    // set downloadUrl on the group so that the layer list shows download button.
+    // this will be a problem if we return to multiple layers in the layer group,
+    // but that requires a UI and download system redesign anyway.
+    layerGroup.set('downloadUrl', downloadUrl);
   }
 
   private addSuitabilityAssessmentLayer(
@@ -846,6 +853,9 @@ export class ReefGuideMapService {
     this.afterCreateLayer(layer);
 
     layerGroup.getLayers().push(layer);
+
+    // set downloadUrl on group so layer list shows download button
+    layerGroup.set('downloadUrl', url);
   }
 
   private async addCriteriaLayers() {
