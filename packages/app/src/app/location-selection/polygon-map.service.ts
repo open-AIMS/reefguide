@@ -287,13 +287,13 @@ export class PolygonMapService {
     // Create new vector layer
     const source = new VectorSource();
 
-    const layerTitle = `Project Polygons`;
+    const download = () => this.download();
 
     const layer = new VectorLayer({
       properties: {
-        title: layerTitle,
+        title: 'Project Polygons',
         id: USER_POLYGON_LAYER_ID,
-        download: () => this.download()
+        download
         // Alternative, but won't work without cookies-based auth or token in URL
         // downloadUrl: this.api.getPolygonsFileUrl({ projectId: this.currentProjectId })
       } satisfies LayerProperties,
@@ -302,6 +302,10 @@ export class PolygonMapService {
     });
 
     layerGroup.getLayers().push(layer);
+
+    // set on group so download button displays in layer list
+    layerGroup.set('download', download);
+
     return layer;
   }
 
@@ -330,11 +334,9 @@ export class PolygonMapService {
       return existingLayerGroup;
     }
 
-    const groupTitle = `Project ${projectId} Polygons`;
-
     const layerGroup = new LayerGroup({
       properties: {
-        title: groupTitle
+        title: 'Project Polygons'
       }
     });
 
