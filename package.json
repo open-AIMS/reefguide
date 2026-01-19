@@ -16,14 +16,14 @@
     "generate": "pnpm --filter @reefguide/db run generate"
   },
   "devDependencies": {
-    "@types/node": "^24.0.4",
+    "@types/node": "^24.10.9",
     "eslint": "^8.57.0",
     "gts": "^6.0.2",
     "prettier": "^3.6.2",
     "turbo": "^2.6.1",
     "typescript": "^5.9.3"
   },
-  "packageManager": "pnpm@10.25.0",
+  "packageManager": "pnpm@10.28.1",
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=10.0.0"

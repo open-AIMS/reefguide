@@ -39,7 +39,7 @@ export class Db extends Construct {
     // Create the RDS instance
     const instance = new rds.DatabaseInstance(this, 'instance', {
       engine: rds.DatabaseInstanceEngine.postgres({
-        version: rds.PostgresEngineVersion.VER_16_4
+        version: rds.PostgresEngineVersion.VER_16_11
       }),
       vpc: props.vpc,
       securityGroups: [sg],

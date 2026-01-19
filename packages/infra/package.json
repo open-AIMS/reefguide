@@ -16,21 +16,21 @@
     "author": "AIMS",
     "license": "MIT",
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.835.0",
+        "@aws-sdk/client-s3": "^3.971.0",
         "@cloudcomponents/cdk-static-website": "^2.2.0",
         "@reefguide/db": "workspace:*",
         "@reefguide/types": "workspace:*",
-        "aws-cdk-lib": "2.202.0",
-        "constructs": "^10.4.2",
+        "aws-cdk-lib": "2.235.0",
+        "constructs": "^10.4.5",
         "source-map-support": "^0.5.21",
         "zod": "^3.25.67"
     },
     "devDependencies": {
-        "@aws-sdk/client-secrets-manager": "^3.835.0",
+        "@aws-sdk/client-secrets-manager": "^3.971.0",
         "@types/jest": "^29.5.12",
         "@types/supertest": "^6.0.3",
-        "aws-cdk": "2.1019.1",
-        "cdk-dia": "^0.12.0",
+        "aws-cdk": "2.1101.0",
+        "cdk-dia": "^0.12.1",
         "ts-node": "^10.9.2"
     }
 }
