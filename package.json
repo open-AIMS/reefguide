@@ -16,7 +16,7 @@
     "generate": "pnpm --filter @reefguide/db run generate"
   },
   "devDependencies": {
-    "@types/node": "^24.0.4",
+    "@types/node": "^24.10.9",
     "eslint": "^8.57.0",
     "gts": "^6.0.2",
     "prettier": "^3.6.2",
