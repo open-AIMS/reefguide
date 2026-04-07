@@ -48,6 +48,7 @@ import {
 } from '../persistence/workspace-persistence.service';
 import { UserMessageService } from '../../user-messages/user-message.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FeaturesService } from '../../features.service';
 
 /**
  * All information about a criteria and its slider.
@@ -100,6 +101,7 @@ type SliderDef = {
 export class SelectionCriteriaComponent {
   private readonly api = inject(WebApiService);
   private readonly formBuilder = inject(FormBuilder).nonNullable;
+  readonly features = inject(FeaturesService);
   readonly mapService = inject(ReefGuideMapService);
   readonly userMessageService = inject(UserMessageService);
 
@@ -528,7 +530,7 @@ export class SelectionCriteriaComponent {
 
     let siteSuitability: SuitabilityAssessmentInput | undefined = undefined;
     const siteForm = this.form.get('siteSuitability')!;
-    if (formValue.enableSiteSuitability && siteForm.valid) {
+    if (this.features.siteSuitability() && formValue.enableSiteSuitability && siteForm.valid) {
       siteSuitability = {
         ...sharedCriteria,
         ...siteForm.value

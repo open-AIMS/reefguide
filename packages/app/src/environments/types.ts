@@ -32,6 +32,10 @@ export interface EnvironmentConfig {
   webApiUrl: string;
   splashConfig: SplashConfig;
   sentryDsn?: string;
+  // feature flags
+  features: {
+    siteSuitability: boolean;
+  };
 }
 
 // Type for raw environment variables
@@ -68,6 +72,13 @@ export function buildConfig(): EnvironmentConfig {
       aboutLink: validatedEnv.ABOUT_LINK,
       documentationLink: validatedEnv.DOCUMENTATION_LINK
     },
-    sentryDsn: validatedEnv.SENTRY_DSN
+    sentryDsn: validatedEnv.SENTRY_DSN,
+    // Feature Flags
+    // Default features for the current environment.
+    // see: FeatureService
+    features: {
+      // disabled for everyone for now
+      siteSuitability: false
+    }
   };
 }
