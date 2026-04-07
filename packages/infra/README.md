@@ -302,6 +302,12 @@ Connects to EFS management instance via SSM for direct access.
 CONFIG_FILE_NAME=test.json ./connect-efs.sh [stack-name]
 ```
 
+This script can also forward ports; this is useful for connecting to the database.
+First, set these environment variables: `PORT_FWD_HOST`, `PORT_FWD_PORT`, `PORT_FWD_LOCALPORT`
+```bash
+./scripts/connect-efs.sh [stack-name] fwd
+```
+
 ### Configuration
 
 #### Environment Variables

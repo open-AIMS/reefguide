@@ -199,30 +199,31 @@ start_interactive_session() {
     exec aws ssm start-session --target "$instance_id"
 }
 
-# TODO add to command arg design, add port forwarding config file
 # Start a port forwarding session
 start_port_forwarding_session() {
-    local instance_id=$1
+    local local_port=$1
+    local remote_host=$2
+    local remote_port=$3
+    local instance_id=$4
 
     log_blue "Starting port forwarding SSM session with instance: $instance_id"
+    log_blue "Forwarding $local_port to $remote_host:$remote_port"
     echo ""
-
-    local LOCAL_PORT=25432
-    local REMOTE_HOST="" # DB hostname
-    local REMOTE_PORT=5432
 
     exec aws ssm start-session \
       --target "$instance_id" \
       --document-name AWS-StartPortForwardingSessionToRemoteHost \
-      --parameters "{\"portNumber\":[\"$REMOTE_PORT\"],\"localPortNumber\":[\"$LOCAL_PORT\"],\"host\":[\"$REMOTE_HOST\"]}"
+      --parameters "{\"portNumber\":[\"$remote_port\"],\"localPortNumber\":[\"$local_port\"],\"host\":[\"$remote_host\"]}"
 }
 
 # Main function
+# To do port forwarding, call with 2 arguments: <stack> fwd
 main() {
     local stack_name="${1:-}"
-    
-    log_info "Starting connect-efs script"
-    
+    local port_forward="${2:-}"
+
+    log_info "Starting connect-efs script $stack_name"
+
     validate_requirements
     
     # Get EFS connection info
@@ -254,9 +255,14 @@ main() {
     
     # Wait for SSM connectivity
     wait_for_ssm "$ec2_instance_id"
-    
-    # Start interactive session
-    start_interactive_session "$ec2_instance_id"
+
+    if [[ "$port_forward" == "fwd" ]]; then
+      # Start port forwarding
+      start_port_forwarding_session "$PORT_FWD_LOCALPORT" "$PORT_FWD_HOST" "$PORT_FWD_PORT" "$ec2_instance_id"
+    else
+      # Start interactive session
+      start_interactive_session "$ec2_instance_id"
+    fi
 }
 
 # Usage function
