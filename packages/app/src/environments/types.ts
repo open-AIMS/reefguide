@@ -15,7 +15,7 @@ export const envSchema = z.object({
     .string()
     .email('SPLASH_ADMIN_EMAIL must be a valid email')
     .default('admin@example.com'),
-  SPLASH_APP_NAME: z.string().default('MADAME'),
+  SPLASH_APP_NAME: z.string().default('ReefGuide'),
   SPLASH_SHOW_BACKGROUND_MAP: z
     .string()
     .transform(val => val === 'true')

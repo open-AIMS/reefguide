@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { WebApiService } from './web-api.service';
 
-describe('MadameApiService', () => {
+describe('WebApiService', () => {
   let service: WebApiService;
 
   beforeEach(() => {

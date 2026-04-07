@@ -1,4 +1,4 @@
-# MADAME App
+# ReefGuide App
 
 Model Assessment and Decision Analysis for Marine Environments web application.
 Prototype Decision Support app for the [ADRIA.jl](https://github.com/open-AIMS/ADRIA.jl)
@@ -22,10 +22,6 @@ platform and CoralBlox model. This project also contains the Reef Guide app.
 ## Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/open-AIMS/MADAME-app.git
-cd MADAME-app
-
 # For Linux: Install Node with NVM
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 source ~/.bashrc
