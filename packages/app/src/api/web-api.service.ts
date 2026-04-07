@@ -76,8 +76,6 @@ import {
 } from 'rxjs';
 import { environment } from '../environments/environment';
 import { retryHTTPErrors } from '../util/http-util';
-import Style, { StyleFunction } from 'ol/style/Style';
-import { Fill, Stroke } from 'ol/style';
 import { getGeomorphicZonationColorPaletteStyle } from '../app/map/openlayers-hardcoded';
 
 type JobId = CreateJobResponse['jobId'];
