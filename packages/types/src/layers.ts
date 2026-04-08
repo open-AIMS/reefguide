@@ -20,6 +20,12 @@ type BaseLayerDef = {
   title: string;
 
   /**
+   * Primary category
+   * May affect how the UI presents the layer.
+   */
+  category?: 'basemap';
+
+  /**
    * layer URL
    *
    * Layer group created if multiple urls are given
