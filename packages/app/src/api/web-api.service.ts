@@ -353,17 +353,29 @@ export class WebApiService {
      */
     return [
       {
-        id: 'world_imagery_basemap',
-        title: 'Base map (Esri World Imagery Firefly)',
+        id: 'esri_world_imagery_firefly',
+        title: 'ESRI World Imagery Firefly',
+        category: 'basemap',
         infoUrl: 'https://www.esri.com/',
         url: 'https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer/tile/{z}/{y}/{x}',
         urlType: 'XYZ',
+        layerOptions: {
+          visible: false
+        },
         attributions:
           'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
       },
       {
+        id: 'google_imagery',
+        title: 'Google Imagery',
+        category: 'basemap',
+        url: 'https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}&hl=en',
+        urlType: 'XYZ'
+      },
+      {
         id: 'ssr_sentinel_2018',
         title: 'SSR Sentinel 2018',
+        category: 'basemap',
         infoUrl:
           'https://tiles-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/SSR_Sentinel_2018/MapServer',
         url: 'https://tiles-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/SSR_Sentinel_2018/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',

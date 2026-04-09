@@ -52,12 +52,19 @@ export class LayerController {
    */
   readonly download?: LayerProperties['download'];
 
+  /**
+   * Definition used to create this layer (if any).
+   */
+  readonly def?: LayerDef;
+
   private destroyed$ = new Subject<void>();
 
   constructor(
     public readonly layer: BaseLayer,
     public readonly options?: LayerControllerOptions
   ) {
+    this.def = options?.layerDef;
+
     const download: LayerProperties['download'] = layer.get('download');
     this.download = typeof download === 'function' ? download : undefined;
 
