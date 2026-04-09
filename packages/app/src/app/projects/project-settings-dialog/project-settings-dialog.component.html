@@ -13,8 +13,21 @@
       <button mat-button (click)="loadProject()">Retry</button>
     </div>
 
-    <div *ngIf="!isLoading() && !loadError() && projectDetails()">
-      <p class="project-name">{{ projectDetails()!.name }}</p>
+    @let details = projectDetails();
+    <div *ngIf="!isLoading() && !loadError() && details">
+      <p class="project-name">{{ details.name }}</p>
+
+      <h3>Author</h3>
+
+      <!-- TODO user button/link component -->
+      <div class="row">
+        <a mat-button [href]="`mailto:${details.user.email}`">{{ details.user.email }}</a>
+
+        <div class="meta-item">
+          <mat-icon>schedule</mat-icon>
+          <span>{{ details.created_at | date: 'MMM d, y' }}</span>
+        </div>
+      </div>
 
       <h3>Visibility</h3>
 

@@ -146,6 +146,12 @@
                   <mat-icon>edit</mat-icon>
                   <span>{{ project.updated_at | date: 'MMM d, y' }}</span>
                 </div>
+                @if (!isProjectCreator(project)) {
+                  <div class="meta-item">
+                    <mat-icon>person</mat-icon>
+                    <span>{{ getProjectCreator(project) }}</span>
+                  </div>
+                }
                 @if (project.is_public) {
                   <mat-icon
                     class="public-icon"
@@ -156,15 +162,13 @@
                 }
               </div>
               @if (canManageProjectSettings(project)) {
-                <div>
-                  <button
-                    mat-icon-button
-                    matTooltip="Project settings"
-                    (click)="openProjectSettings(project); $event.stopPropagation()"
-                  >
-                    <mat-icon>settings</mat-icon>
-                  </button>
-                </div>
+                <button
+                  mat-icon-button
+                  matTooltip="Project settings"
+                  (click)="openProjectSettings(project); $event.stopPropagation()"
+                >
+                  <mat-icon>settings</mat-icon>
+                </button>
               }
             </div>
           </div>

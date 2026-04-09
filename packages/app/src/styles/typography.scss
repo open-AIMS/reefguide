@@ -1,0 +1,15 @@
+.meta-item {
+  flex: 1 0 content;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #888;
+  font-size: 0.8rem;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: #999;
+  }
+}
