@@ -1,6 +1,7 @@
 import {
   computed,
   DestroyRef,
+  DOCUMENT,
   effect,
   inject,
   Injectable,
@@ -21,6 +22,7 @@ import {
   finalize,
   forkJoin,
   from,
+  fromEvent,
   map,
   Observable,
   of,
@@ -116,6 +118,7 @@ import { Coordinate } from 'ol/coordinate';
  */
 @Injectable()
 export class ReefGuideMapService {
+  private readonly document = inject(DOCUMENT);
   readonly config = inject(ReefGuideConfigService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(INJECTOR);
@@ -213,6 +216,10 @@ export class ReefGuideMapService {
         // err.details.url
         // this.snackbar.open(`Map layer error (HTTP ${status})`, 'OK');
       });
+
+    fromEvent<KeyboardEvent>(this.document, 'keydown')
+      .pipe(takeUntilDestroyed())
+      .subscribe(event => this.onKeydown(event));
   }
 
   private setupOpenLayers() {
@@ -278,6 +285,21 @@ export class ReefGuideMapService {
   }
 
   /**
+   * Handle key press.
+   */
+  onKeydown(event: KeyboardEvent): void {
+    // all current keyboard shortcuts require the map.
+    if (!this.map) {
+      return;
+    }
+
+    const key = event.key;
+    if (key === 'b' || key === 'B') {
+      this.cycleBasemap();
+    }
+  }
+
+  /**
    * Map provided by ReefGuideMapComponent
    * @param map
    */
@@ -323,6 +345,36 @@ export class ReefGuideMapService {
       center: fromLonLat([146.1979986145376, -16.865253472483754]),
       zoom: 10
     });
+  }
+
+  /**
+   * Cycle through basemaps.
+   */
+  cycleBasemap() {
+    // currently all basemap layers are added to the Map, so swap the visibility
+    const basemapLayers = this.map
+      .getAllLayers()
+      .map(l => this.getLayerController(l))
+      .filter(lc => lc.def?.category === 'basemap');
+
+    if (basemapLayers.length === 0) {
+      console.warn('no basemap layers found');
+      return;
+    }
+
+    const firstVisibleIndex = basemapLayers.findIndex(lc => lc.visible());
+    // invalid index will be undefined
+    const showLayer = basemapLayers[firstVisibleIndex + 1] ?? basemapLayers[0];
+    showLayer.visible.set(true);
+
+    // hide others
+    for (const layer of basemapLayers) {
+      if (layer !== showLayer) {
+        layer.visible.set(false);
+      }
+    }
+
+    this.snackbar.open(`Changed basemap to: ${showLayer.def?.title}`);
   }
 
   /**
