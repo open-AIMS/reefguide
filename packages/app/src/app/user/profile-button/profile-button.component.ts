@@ -6,10 +6,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ClusterAdminDialogComponent } from '../../admin/cluster/ClusterAdminDialog.component';
-import { AdminPanelComponent } from '../../admin/user-panel/user-panel.component';
 import { AuthService } from '../../auth/auth.service';
 import { ConfigDialogComponent } from '../../location-selection/config-dialog/config-dialog.component';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-profile-button',
@@ -20,7 +19,8 @@ import { Router } from '@angular/router';
     MatIconModule,
     MatMenuModule,
     MatTooltipModule,
-    MatDialogModule
+    MatDialogModule,
+    RouterLink
   ],
   templateUrl: './profile-button.component.html',
   styleUrl: './profile-button.component.scss'
@@ -40,16 +40,6 @@ export class ProfileButtonComponent {
     if (this.authService) {
       this.authService.logout();
     }
-  }
-
-  onAdminPanelClick(): void {
-    this.dialog.open(AdminPanelComponent, {
-      width: '800px'
-    });
-  }
-
-  onGroupClick(): void {
-    this.router.navigate(['/groups']);
   }
 
   onClusterAdminClick(): void {

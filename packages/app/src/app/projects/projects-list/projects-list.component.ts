@@ -60,7 +60,7 @@ export class ProjectsListComponent implements OnInit {
   private readonly webApi = inject(WebApiService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
-  private readonly authService = inject(AuthService);
+  readonly authService = inject(AuthService);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
@@ -98,12 +98,28 @@ export class ProjectsListComponent implements OnInit {
       );
     })
   );
+
   // Show settings if current user is the project owner
   public canManageProjectSettings = (project: Project) => {
     if (this.authService.getCurrentUser()?.roles.includes('ADMIN')) {
       return true;
     } else {
       return project.user_id === this.authService.getCurrentUser()?.id;
+    }
+  };
+
+  public isProjectCreator = (project: Project) => {
+    return project.user_id === this.authService.getCurrentUser()?.id;
+  };
+
+  public getProjectCreator = (project: Project) => {
+    // TODO fix Project type
+    // @ts-expect-error
+    if (project.user !== undefined) {
+      // @ts-expect-error
+      return project.user.email;
+    } else {
+      return project.user_id;
     }
   };
 
@@ -247,9 +263,11 @@ export class ProjectsListComponent implements OnInit {
   openProjectSettings(project: GetProjectsResponse['projects'][number]) {
     const dialogRef = this.dialog.open(ProjectSettingsDialogComponent, {
       disableClose: false,
-      width: '30vw',
-      maxWidth: '30vw',
-      height: '60vh',
+      // avoid focusing author button
+      autoFocus: false,
+      width: '40vw',
+      maxWidth: '48em',
+      height: '70vh',
       data: {
         projectId: project.id
       } satisfies UpdateProjectDialogInput

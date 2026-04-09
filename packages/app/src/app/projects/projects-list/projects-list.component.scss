@@ -305,8 +305,10 @@
     outline-offset: 2px;
   }
 
+  $rightPadding: 8px;
+
   .project-card-header {
-    padding: 20px 20px 0;
+    padding: 20px $rightPadding 0 20px;
     display: flex;
     align-items: flex-start;
     gap: 12px;
@@ -374,27 +376,12 @@
     }
 
     .quick-open-button {
-      width: 36px;
-      height: 36px;
-      flex-shrink: 0;
-      color: #667eea;
-      transition: all 0.2s ease;
-
-      &:hover {
-        background: rgba(102, 126, 234, 0.1);
-        color: #764ba2;
-      }
-
-      mat-icon {
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
-      }
+      color: var(--mat-sys-primary);
     }
   }
 
   .project-card-content {
-    padding: 16px 20px 20px;
+    padding: 8px $rightPadding 8px 20px;
 
     .project-description {
       margin: 0 0 12px 0;
@@ -403,26 +390,18 @@
       font-size: 0.9rem;
       overflow: hidden;
       text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      min-height: 2.7em;
     }
 
     .project-meta-container {
       display: flex;
-      flex-direction: row;
+      flex-flow: row nowrap;
       justify-content: space-between;
-
-      .project-meta-right {
-        display: flex;
-        flex-direction: row;
-        gap: 16px;
-      }
+      gap: 4px;
 
       .project-meta-left {
         display: flex;
-        flex-direction: row;
-        gap: 16px;
+        flex-flow: row wrap;
+        gap: 2px 16px;
         align-items: center;
 
         .public-icon {
@@ -433,21 +412,6 @@
         @media (max-width: 480px) {
           flex-direction: column;
           gap: 6px;
-        }
-
-        .meta-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          color: #888;
-          font-size: 0.8rem;
-
-          mat-icon {
-            font-size: 14px;
-            width: 14px;
-            height: 14px;
-            color: #999;
-          }
         }
       }
     }

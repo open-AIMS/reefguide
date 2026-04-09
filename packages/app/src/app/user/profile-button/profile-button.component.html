@@ -19,15 +19,15 @@
       <mat-icon>logout</mat-icon>
       <span>Logout</span>
     </button>
-    <button mat-menu-item (click)="onGroupClick()">
+    <button mat-menu-item routerLink="/groups">
       <mat-icon>group</mat-icon>
       <span>Manage Groups</span>
     </button>
     @if (isAdmin) {
-      <button mat-menu-item (click)="onAdminPanelClick()">
+      <a mat-menu-item routerLink="/users">
         <mat-icon>supervised_user_circle</mat-icon>
         <span>Manage Users</span>
-      </button>
+      </a>
       <button mat-menu-item (click)="onClusterAdminClick()">
         <mat-icon>dns</mat-icon>
         <span>Manage Cluster</span>

@@ -32,6 +32,7 @@ import { ReefSearchService } from './reef-search.service';
 import { ReefSearchComponent } from './reef-search/reef-search.component';
 import { PolygonMapService } from '../location-selection/polygon-map.service';
 import BaseLayer from 'ol/layer/Base';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 /**
  * OpenLayers map and UI for layer management and map navigation.
@@ -59,6 +60,8 @@ export class ReefMapComponent implements AfterViewInit {
   polygonMapService = inject(PolygonMapService);
 
   private readonly router = inject(Router);
+
+  private readonly reefSearchComponent = viewChild(ReefSearchComponent);
 
   /**
    * View that is associated with OpenLayers Map.
@@ -125,7 +128,15 @@ export class ReefMapComponent implements AfterViewInit {
 
   public readonly loading = signal(false);
 
-  constructor(private route: ActivatedRoute) {}
+  constructor(private route: ActivatedRoute) {
+    this.mapService?.mapSearch.pipe(takeUntilDestroyed()).subscribe(value => {
+      if (value === '') {
+        this.reefSearchComponent()?.focus();
+      } else {
+        console.warn('TODO implement immediate search');
+      }
+    });
+  }
 
   /**
    * Create OpenLayers Map and hookup everything.

@@ -20,6 +20,9 @@ import { AuthService } from '../../auth/auth.service';
 import { AdminCreateUserDialogComponent } from './user-create/create-user.component';
 import { UserEditRolesDialogComponent } from './user-edit-roles/edit-user-roles.component';
 import { AdminUpdateUserPasswordDialogComponent } from './user-update-password/update-password.component';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { RouterLink } from '@angular/router';
+import { MatChip, MatChipSet } from '@angular/material/chips';
 
 @Component({
   selector: 'app-admin-panel',
@@ -36,7 +39,11 @@ import { AdminUpdateUserPasswordDialogComponent } from './user-update-password/u
     MatFormFieldModule,
     MatInputModule,
     FormsModule,
-    MatProgressBar
+    MatProgressBar,
+    MatToolbarModule,
+    RouterLink,
+    MatChip,
+    MatChipSet
   ],
   templateUrl: './user-panel.component.html',
   styleUrl: './user-panel.component.scss'

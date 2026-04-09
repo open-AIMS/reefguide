@@ -47,5 +47,12 @@ export const routes: Routes = [
       import('./groups/group-detail/group-detail.component').then(m => m.GroupDetailComponent),
     title: 'Group Detail',
     canActivate: [authGuard]
+  },
+  {
+    path: 'users',
+    loadComponent: () =>
+      import('./admin/user-panel/user-panel.component').then(m => m.AdminPanelComponent),
+    title: 'Users',
+    canActivate: [authGuard]
   }
 ];
