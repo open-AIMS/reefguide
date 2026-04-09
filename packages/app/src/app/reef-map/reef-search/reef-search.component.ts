@@ -1,9 +1,9 @@
-import { Component, inject, output } from '@angular/core';
+import { Component, inject, output, viewChild } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
+import { MatInput, MatInputModule } from '@angular/material/input';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { ReefSearchService } from '../reef-search.service';
 
@@ -20,6 +20,7 @@ import { ReefSearchService } from '../reef-search.service';
   styleUrl: './reef-search.component.scss'
 })
 export class ReefSearchComponent {
+  private readonly input = viewChild.required(MatInput);
   public reefSearchService = inject(ReefSearchService);
   searchControl = new FormControl<string>('');
   private destroy$ = new Subject<void>();
@@ -40,6 +41,10 @@ export class ReefSearchComponent {
 
         this.search(searchTerm || undefined);
       });
+  }
+
+  focus() {
+    this.input().focus();
   }
 
   search(query: string | undefined) {

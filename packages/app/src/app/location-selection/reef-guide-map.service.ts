@@ -135,6 +135,13 @@ export class ReefGuideMapService {
   // Note: using resolution instead of zoom because zoom event value seems to be rounded
   mapViewResolution$?: Observable<number>;
 
+  /**
+   * Values trigger map search feature.
+   * If text, this sets the search input text and searches.
+   * If empty string, just focuses the search input.
+   */
+  mapSearch = new Subject<string>();
+
   criteriaLayers: Record<string, LayerController | undefined> = {};
 
   /**
@@ -296,6 +303,9 @@ export class ReefGuideMapService {
     const key = event.key;
     if (key === 'b' || key === 'B') {
       this.cycleBasemap();
+    } else if (event.ctrlKey && key === 'k') {
+      // focus the search input
+      this.mapSearch.next('');
     }
   }
 
