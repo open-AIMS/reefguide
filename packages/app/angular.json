@@ -41,7 +41,7 @@
             ],
             "scripts": [
               {
-                "input": "node_modules/lerc/LercDecode.es.min.js",
+                "input": "node_modules/lerc/LercDecode.es.js",
                 "inject": false,
                 "bundleName": "lerc-module"
               }
