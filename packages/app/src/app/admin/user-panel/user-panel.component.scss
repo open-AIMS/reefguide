@@ -1,21 +1,13 @@
-.admin-panel {
-  padding: 0;
-
-  h2 {
-    margin: 0;
-    padding: 24px 24px 16px;
-    font-size: 24px;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.87);
-  }
-}
-
 .table-container {
   position: relative;
   min-height: 200px;
   max-height: 400px;
   overflow: auto;
   background: white;
+}
+
+.add-user-button {
+  margin-left: 2em;
 }
 
 table {
@@ -56,19 +48,6 @@ table {
     font-weight: 500;
     color: rgba(0, 0, 0, 0.87);
   }
-}
-
-.dialog-actions {
-  padding: 16px 24px;
-  background: #fafafa;
-  margin: 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-mat-dialog-content {
-  padding: 0 24px;
-  margin: 0;
-  max-height: 400px;
 }
 
 .delete-action {
