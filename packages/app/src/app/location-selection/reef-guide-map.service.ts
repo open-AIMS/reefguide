@@ -374,7 +374,9 @@ export class ReefGuideMapService {
       }
     }
 
-    this.snackbar.open(`Changed basemap to: ${showLayer.def?.title}`);
+    this.snackbar.open(`Changed basemap to: ${showLayer.def?.title}`, undefined, {
+      duration: 2_000
+    });
   }
 
   /**
