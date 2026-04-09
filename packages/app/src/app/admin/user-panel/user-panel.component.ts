@@ -22,6 +22,7 @@ import { UserEditRolesDialogComponent } from './user-edit-roles/edit-user-roles.
 import { AdminUpdateUserPasswordDialogComponent } from './user-update-password/update-password.component';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink } from '@angular/router';
+import { MatChip, MatChipSet } from '@angular/material/chips';
 
 @Component({
   selector: 'app-admin-panel',
@@ -40,7 +41,9 @@ import { RouterLink } from '@angular/router';
     FormsModule,
     MatProgressBar,
     MatToolbarModule,
-    RouterLink
+    RouterLink,
+    MatChip,
+    MatChipSet
   ],
   templateUrl: './user-panel.component.html',
   styleUrl: './user-panel.component.scss'

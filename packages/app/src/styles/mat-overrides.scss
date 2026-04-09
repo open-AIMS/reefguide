@@ -13,3 +13,12 @@ mat-tab-group.fixed-height {
 //@include mat.tabs-overrides((
 //  label-text-size: 40px
 //));
+
+// Extra Classes
+
+button.danger {
+  color: var(--mat-sys-error);
+  > mat-icon {
+    color: var(--mat-sys-error) !important;
+  }
+}

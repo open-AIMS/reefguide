@@ -34,24 +34,3 @@ table {
     background-color: rgba(0, 0, 0, 0.04);
   }
 }
-
-.role-chips {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-
-  .role-chip {
-    background: #e0e0e0;
-    padding: 4px 12px;
-    border-radius: 16px;
-    font-size: 12px;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.87);
-  }
-}
-
-.delete-action {
-  .warn-text {
-    color: #f44336;
-  }
-}
