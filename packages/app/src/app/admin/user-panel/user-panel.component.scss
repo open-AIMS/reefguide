@@ -1,9 +1,18 @@
+:host {
+  display: flex;
+  flex-flow: column nowrap;
+  height: 100vh;
+}
+
+mat-tab-group {
+  flex: 1;
+  min-height: 0; // flex fix
+}
+
 .table-container {
   position: relative;
-  min-height: 200px;
-  max-height: 400px;
+  min-height: 112px;
   overflow: auto;
-  background: white;
 }
 
 .add-user-button {

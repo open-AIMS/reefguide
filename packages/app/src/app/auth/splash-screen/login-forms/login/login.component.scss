@@ -1,0 +1,12 @@
+:host {
+  // HACK to align spinner with label
+  // ideally should do this with own class, but had issues with @if block
+  // and <ng-container> so using ::ng-deep for now
+  // TODO make busy button style or directive.
+  ::ng-deep .mdc-button__label {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 8px;
+    align-items: center;
+  }
+}
