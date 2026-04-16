@@ -101,7 +101,7 @@ export class SplashDialogComponent {
         case 'resetConfirm':
           return 'Enter the reset code from your email and your new password';
         case 'register':
-            return 'Register a new account'
+          return 'Register a new account';
         default:
           return 'Please sign in to access the platform.';
       }
