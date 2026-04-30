@@ -691,21 +691,57 @@ export class WebApiService {
       }
     ];
 
-    const levels = [
-      'L1 - Desktop',
-      'L2 - Heuristics',
-      'L3 - Site Bank',
-      'L4 - Deployments',
-      'L5 - Monitoring'
+    const a = 0.8;
+
+    const levels: Array<{
+      name: string;
+      fillColor: string;
+      strokeColor: string;
+    }> = [
+      {
+        name: 'L1 - Desktop',
+        fillColor: `rgba(178, 178, 178, ${a})`,
+        strokeColor: 'rgba(100, 100, 100, 0.9)'
+      },
+      {
+        name: 'L2 - Heuristics',
+        fillColor: `rgba(255, 230, 100, ${a})`,
+        strokeColor: 'rgba(200, 160, 0, 0.9)'
+      },
+      {
+        name: 'L3 - Site Bank',
+        fillColor: `rgba(100, 200, 255, ${a})`,
+        strokeColor: 'rgba(0, 120, 200, 0.9)'
+      },
+      {
+        name: 'L4 - Deployments',
+        fillColor: `rgba(100, 220, 100, ${a})`,
+        strokeColor: 'rgba(0, 150, 0, 0.9)'
+      },
+      {
+        name: 'L5 - Monitoring',
+        fillColor: `rgba(255, 100, 100, ${a})`,
+        strokeColor: 'rgba(200, 0, 0, 0.9)'
+      }
     ];
 
     for (const level of levels) {
       layers.push({
-        id: `SiteLevelsPDP_${level}`,
-        title: `PDP Site ${level}`,
+        id: `SiteLevelsPDP_${level.name}`,
+        title: `PDP Site ${level.name}`,
         // Note: Angular page does not cause error. OpenLayers bug?
-        url: `/site-levels-pdp/SiteLevelsPDP_29Apr2026_${level}.geojson`,
-        urlType: 'File_GeoJSON'
+        url: `/site-levels-pdp/SiteLevelsPDP_29Apr2026_${level.name}.geojson`,
+        urlType: 'File_GeoJSON',
+        layerOptions: {
+          style: {
+            // for point data, need to use circle-*
+            // fill-* is for polygons
+            'circle-fill-color': level.fillColor,
+            'circle-radius': 5,
+            'stroke-color': level.strokeColor,
+            'stroke-width': 2
+          }
+        }
       });
     }
 
