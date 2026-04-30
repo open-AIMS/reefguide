@@ -86,7 +86,7 @@ type VectorLayerDef = BaseLayerDef & {
    *
    * ArcGisFeatureServer - .../FeatureServer URL
    */
-  urlType: 'ArcGisFeatureServer';
+  urlType: 'ArcGisFeatureServer' | 'File_GeoJSON';
 
   /**
    * Layer Options to mixin during construction.

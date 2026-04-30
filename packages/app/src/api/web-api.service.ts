@@ -678,6 +678,40 @@ export class WebApiService {
     ];
   }
 
+  getPDPLayers(): Array<LayerDef> {
+    const layers: Array<LayerDef> = [
+      {
+        id: 'pdp_reefscan_surveys',
+        title: 'PDP ReefScan Surveys',
+        url: '/reefscan-surveys/pdp_dgs_23Apr2026.geojson',
+        urlType: 'File_GeoJSON',
+        layerOptions: {
+          visible: false
+        }
+      }
+    ];
+
+    const levels = [
+      'L1 - Desktop',
+      'L2 - Heuristics',
+      'L3 - Site Bank',
+      'L4 - Deployments',
+      'L5 - Monitoring'
+    ];
+
+    for (const level of levels) {
+      layers.push({
+        id: `SiteLevelsPDP_${level}`,
+        title: `PDP Site ${level}`,
+        // Note: Angular page does not cause error. OpenLayers bug?
+        url: `/site-levels-pdp/SiteLevelsPDP_29Apr2026_${level}.geojson`,
+        urlType: 'File_GeoJSON'
+      });
+    }
+
+    return layers;
+  }
+
   getRegions(): Observable<ListRegionsResponse> {
     return this.http.get<ListRegionsResponse>(`${this.base}/admin/regions`);
   }
