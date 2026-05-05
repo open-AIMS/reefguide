@@ -1,0 +1,66 @@
+<div class="report">
+  <h1>Site Survey Report</h1>
+
+  <section class="header-info">
+    <h2>{{ data.name }}</h2>
+    <p class="subtitle">{{ data.reef }} Reef &mdash; {{ data.reef_zone }} zone</p>
+    <p class="date">{{ data.datetime | date:'medium' }}</p>
+  </section>
+
+  <section class="details">
+    <h3>Survey Details</h3>
+    <div class="grid">
+      <div class="field"><span class="label">Observer</span><span class="value">{{ data.observer }}</span></div>
+      <div class="field"><span class="label">Method</span><span class="value">{{ data.survey_method }}</span></div>
+      <div class="field"><span class="label">Visibility (m)</span><span class="value">{{ data.visibility_m }}</span></div>
+      <div class="field"><span class="label">Depth (m)</span><span class="value">{{ data.depth }}</span></div>
+      <div class="field"><span class="label">Slope</span><span class="value">{{ data.slope }}</span></div>
+      <div class="field"><span class="label">Rugosity</span><span class="value">{{ data.rugosity }}</span></div>
+      <div class="field"><span class="label">Depth Zone</span><span class="value">{{ data.depth_zone }}</span></div>
+      <div class="field"><span class="label">Wave Exposure</span><span class="value">{{ data.wave_expose }}</span></div>
+    </div>
+  </section>
+
+  <section class="details">
+    <h3>Substrate &amp; Coverage</h3>
+    <div class="grid">
+      <div class="field"><span class="label">Free Hard Substrate (%)</span><span class="value">{{ data.pct_free_hard_substrate }}</span></div>
+      <div class="field"><span class="label">Macroalgae (%)</span><span class="value">{{ data.pct_ma }}</span></div>
+      <div class="field"><span class="label">Hard Coral (%)</span><span class="value">{{ data.pct_hc }}</span></div>
+      <div class="field"><span class="label">Soft Coral (%)</span><span class="value">{{ data.pct_sc }}</span></div>
+      <div class="field"><span class="label">Turf/Algae Height</span><span class="value">{{ data.turf_height_algae }}</span></div>
+      <div class="field"><span class="label">Deployable Area (ha)</span><span class="value">{{ data.deployable_area_ha }}</span></div>
+      <div class="field"><span class="label">Sediment</span><span class="value">{{ data.sediment }}</span></div>
+      <div class="field"><span class="label">Sediment Type</span><span class="value">{{ data.type_of_sediment }}</span></div>
+    </div>
+  </section>
+
+  @if (data.notes) {
+    <section class="notes">
+      <h3>Notes</h3>
+      <p>{{ data.notes }}</p>
+    </section>
+  }
+
+  <section class="species-section">
+    <h3>Species</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Species</th>
+          <th>Morphotype</th>
+          <th>Presence</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (sp of data.species; track sp.col_name) {
+          <tr>
+            <td>{{ sp.species_name }}</td>
+            <td>{{ sp.is_morphotype ? 'Yes' : 'No' }}</td>
+            <td>{{ sp.presence }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+</div>
