@@ -52,6 +52,9 @@ npm run build
 
 ### Database Management
 
+See Prisma's [db push](https://www.prisma.io/docs/orm/reference/prisma-cli-reference#db-push) and
+[Prototyping Your Schema](https://www.prisma.io/docs/orm/prisma-migrate/workflows/prototyping-your-schema) documentation.
+
 ```bash
 # Reset database (⚠️ DESTRUCTIVE - removes all data)
 npm run db-reset
@@ -122,6 +125,10 @@ npm run db-reset
 # If you have seed data
 npx prisma db seed
 ```
+
+Note: `db-reset` runs `prisma db push --force-reset`, if this doesn't work, another option is
+`prisma migrate reset`
+
 
 ### Inspecting the Database
 
@@ -207,3 +214,8 @@ binaryTargets = ["native", "rhel-openssl-1.0.x"]
 - Verify `DATABASE_URL` and `DIRECT_URL` environment variables
 - Check database connectivity and credentials
 - Ensure database exists and is accessible
+
+# Tech Decisions
+
+The current plan is to stay on Prisma 6. [Prisma 7 has major changes](https://www.prisma.io/blog/announcing-prisma-orm-7-0-0),
+the implementation changes from Rust to TypeScript. There's also [Prisma Next](https://www.prisma.io/blog/the-next-evolution-of-prisma-orm) to look into. Migrating would introduce significant risks and effort with little benefit to this project.
