@@ -46,7 +46,7 @@ const LAYER_BUILDERS: Record<
     // type Options = Partial<ConstructorParameters<typeof VectorLayer>>;
     type Options = any;
 
-    const source = createVectorSourceForFeatureServer(layerDef.url, layerDef.layerId);
+    const source = createVectorSourceForFeatureServer(layerDef.url, layerDef.serverLayerId);
     const vectorLayer = new VectorLayer({
       properties,
       source,

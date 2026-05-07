@@ -389,7 +389,7 @@ export class WebApiService {
         title: 'Cities',
         url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/Cities/FeatureServer/',
         urlType: 'ArcGisFeatureServer',
-        layerId: '0',
+        serverLayerId: '0',
         labelProp: 'name',
         infoUrl:
           'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/Cities/FeatureServer/',
@@ -408,7 +408,7 @@ export class WebApiService {
         title: 'GBRMPA Zoning',
         // NAME exists, specific id like P-16-15, but TYPE more friendly text
         labelProp: 'TYPE',
-        layerId: '53',
+        serverLayerId: '53',
         infoUrl:
           'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer/',
         url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer/',
@@ -530,7 +530,7 @@ export class WebApiService {
           visible: false
         },
         // This is the layer to target - notice stripped from URL above
-        layerId: '20',
+        serverLayerId: '20',
         // Clustering enabled
         cluster: true
       },
@@ -549,7 +549,7 @@ export class WebApiService {
           visible: false
         },
         // This is the layer to target - notice stripped from URL above
-        layerId: '10',
+        serverLayerId: '10',
         // Clustering enabled
         cluster: true
       },
@@ -558,7 +558,7 @@ export class WebApiService {
         title: 'GBRMPA Management Regions',
         layerPrefix: 'Management Region: ',
         labelProp: 'AREA_DESCR',
-        layerId: '59',
+        serverLayerId: '59',
         infoUrl:
           'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Management_Areas_20/FeatureServer',
         url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Management_Areas_20/FeatureServer',
@@ -581,7 +581,7 @@ export class WebApiService {
         title: 'GBRMPA Cruise Ship Transit Lanes',
         layerPrefix: 'Cruiseship Lanes: ',
         labelProp: 'AREA_DESCR',
-        layerId: '61',
+        serverLayerId: '61',
         infoUrl:
           'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Cruise_Ship_Transit_Lanes_20/FeatureServer',
         url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Cruise_Ship_Transit_Lanes_20/FeatureServer',
@@ -603,7 +603,7 @@ export class WebApiService {
         title: 'Maritime Safety Port Limits',
         layerPrefix: 'Port Limits: ',
         labelProp: 'NAME',
-        layerId: '0',
+        serverLayerId: '0',
         infoUrl:
           'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Maritime_Safety_Port_Limits/FeatureServer/',
         url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Maritime_Safety_Port_Limits/FeatureServer/',
@@ -625,7 +625,7 @@ export class WebApiService {
         title: 'Traditional Use of Marine Resources Agreement',
         layerPrefix: 'TUMRA: ',
         labelProp: 'NAME',
-        layerId: '55',
+        serverLayerId: '55',
         infoUrl:
           'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Traditional_Use_of_Marine_Resources_TUMRA_20/FeatureServer',
         url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Traditional_Use_of_Marine_Resources_TUMRA_20/FeatureServer',
@@ -647,7 +647,7 @@ export class WebApiService {
         title: 'Designated Shipping Areas',
         layerPrefix: 'Shipping Area: ',
         labelProp: 'NAME',
-        layerId: '74',
+        serverLayerId: '74',
         infoUrl:
           'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Designated_Shipping_Areas_201/FeatureServer',
         url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Designated_Shipping_Areas_201/FeatureServer',

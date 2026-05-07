@@ -36,7 +36,7 @@ type BaseLayerDef = {
    * layer to query within the service.
    * Currently only applicable to ArcGisFeatureServer
    */
-  layerId?: string;
+  serverLayerId?: string;
 
   /**
    * Web page where user can learn about the layer.

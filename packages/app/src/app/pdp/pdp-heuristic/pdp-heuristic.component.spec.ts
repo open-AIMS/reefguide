@@ -9,8 +9,7 @@ describe('PdpHeuristicComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PdpHeuristicComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(PdpHeuristicComponent);
     component = fixture.componentInstance;
