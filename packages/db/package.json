@@ -21,11 +21,11 @@
         "db:restore": "./scripts/restore-db.sh"
     },
     "dependencies": {
-        "@prisma/client": "^6.10.1",
+        "@prisma/client": "^6.19.3",
         "dotenv-cli": "^10.0.0"
     },
     "devDependencies": {
-        "prisma": "^6.10.1",
+        "prisma": "^6.19.3",
         "typescript": "^5.8.3"
     },
     "prisma": {
