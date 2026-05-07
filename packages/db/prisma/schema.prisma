@@ -38,12 +38,12 @@ model User {
     PreApprovedUser PreApprovedUser[]
     projects        Project[]
     resetCodes      PasswordResetCode[]
-    
+
     // Group relations
     ownedGroups     Group[]             @relation("GroupOwner")
     managedGroups   GroupManager[]
     groupMemberships GroupMember[]
-    
+
     // Project sharing relations
     sharedProjects  ProjectUserShare[]
 }
@@ -116,7 +116,7 @@ model Group {
     // Relations
     managers GroupManager[]
     members  GroupMember[]
-    
+
     // Project sharing relations
     sharedProjects ProjectGroupShare[]
 
@@ -177,7 +177,7 @@ model Project {
     // Sharing relations
     userShares  ProjectUserShare[]
     groupShares ProjectGroupShare[]
-    
+
     // Polygon relations
     polygons    Polygon[]
 
@@ -464,4 +464,27 @@ model PasswordResetCode {
     // Index on code_hash for fast lookup during verification
     @@index([code_hash])
     @@map("password_reset_codes")
+}
+
+model MapLayer {
+    id              Int      @id @default(autoincrement())
+    layer_id        String   @unique
+    title           String
+    category        String?
+    url             String[]
+    url_type        String
+    server_layer_id_ref    String?
+    info_url        String?
+    attributions    String?
+    reverse_range   Boolean  @default(false)
+    cluster         Boolean  @default(false)
+    label_prop      String?
+    layer_prefix    String?
+    layer_postfix   String?
+    layer_options   Json?
+    layer_group_options Json?
+    created_at      DateTime @default(now())
+    updated_at      DateTime @updatedAt
+
+    @@map("spatial_layers")
 }
