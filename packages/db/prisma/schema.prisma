@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
+  // Ignore the Prisma plugin errors here. prisma@6 init still defines url here
   url       = env("DATABASE_URL")
   // direct url is used for migration
   // https://www.prisma.io/docs/orm/reference/prisma-config-reference#datasourcedirecturl
@@ -467,8 +468,8 @@ model PasswordResetCode {
 }
 
 model MapLayer {
-  id                  Int      @id @default(autoincrement())
-  layer_id            String   @unique
+  id                  String   @unique
+  layer_id            String?  @unique
   title               String
   category            String?
   url                 String[]

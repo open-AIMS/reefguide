@@ -59,15 +59,25 @@ See Prisma's [db push](https://www.prisma.io/docs/orm/reference/prisma-cli-refer
 # Reset database (⚠️ DESTRUCTIVE - removes all data)
 npm run db-reset
 
-# Apply schema changes to database
+# Apply schema changes to database without creating migration
 npx prisma db push
 
 # Create a new migration
 npx prisma migrate dev --name <migration-name>
+# Alternatively, this will prompt you for the migration name if one is needed
+npx prisma migrate dev
 
 # Apply migrations in production
 npx prisma migrate deploy
 ```
+
+#### Seed
+
+Certain prisma commands will [seed the database](https://www.prisma.io/docs/orm/prisma-migrate/workflows/seeding)
+automatically. To run seed manually:\
+`npx prisma db seed`
+
+Currently, this is used to populate the database with default map layer definitions.
 
 ### Code Quality
 
