@@ -77,7 +77,6 @@ import {
 import { environment } from '../environments/environment';
 import { retryHTTPErrors } from '../util/http-util';
 
-
 type JobId = CreateJobResponse['jobId'];
 
 /**

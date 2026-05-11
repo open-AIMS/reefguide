@@ -1,4 +1,3 @@
-
 import VectorLayer from 'ol/layer/Vector';
 import { Style, Text, Fill, Stroke } from 'ol/style';
 import VectorSource from 'ol/source/Vector';
