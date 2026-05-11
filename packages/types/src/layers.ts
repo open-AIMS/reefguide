@@ -108,4 +108,5 @@ type TileLayerDef = BaseLayerDef & {
   layerOptions?: TileOptions;
 };
 
+// TODO better to move this to Zod once it's in the database
 export type LayerDef = VectorLayerDef | TileLayerDef;

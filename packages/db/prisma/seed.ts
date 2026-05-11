@@ -1,44 +1,54 @@
 import 'dotenv/config';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
-// Note: other packages in this project do:
+
+// Note: other packages in this project import statement is:
 // import { PrismaClient } from '@reefguide/db';
+// but within the db package, the import is:
+import { PrismaClient } from '@prisma/client';
+
+// TODO try TypeScript Project References again, had issues with turbo build vs tsc
+// can't do normal depency because it creates a cycle.
+// see: https://www.typescriptlang.org/docs/handbook/project-references.html
+import type { LayerDef } from '../../types';
+import { infoLayerDefs } from './seed/map_layers';
 
 const connectionString = `${process.env.DATABASE_URL}`;
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-async function upsertMapLayersInfo() {
-  const x = await prisma.mapLayer.upsert({
-    where: { id: 'esri_world_imagery_firefly' },
+type MapLayerUpsert = Parameters<(typeof prisma)['mapLayer']['upsert']>[0];
+
+function layerDefToUpsert(l: LayerDef): MapLayerUpsert {
+  return {
+    where: { id: l.id },
     create: {
-      id: 'esri_world_imagery_firefly',
-      title: 'ESRI World Imagery Firefly',
-      category: 'basemap',
-      info_url: 'https://www.esri.com/',
-      // REVIEW url array or not
-      url: [
-        'https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer/tile/{z}/{y}/{x}'
-      ],
-      url_type: 'XYZ',
-      layer_options: {
-        visible: false
-      },
-      attributions:
-        'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+      id: l.id,
+      title: l.title,
+      category: l.category,
+      info_url: l.infoUrl,
+      url: typeof l.url === 'string' ? [l.url] : l.url,
+      url_type: l.urlType,
+      // @ts-expect-error FIXME types
+      layer_options: l.layerOptions,
+      attributions: l.attributions
     },
     update: {}
-  });
+  };
+}
 
-  return [x];
+async function upsertMapLayersInfo() {
+  console.info(`Upserting ${infoLayerDefs.length} info map layers`);
+  for (const layerDef of infoLayerDefs) {
+    const upsert = layerDefToUpsert(layerDef);
+    console.log('  ', layerDef.id);
+    await prisma.mapLayer.upsert(upsert);
+  }
 }
 
 async function main() {
-  const infoLayers = await upsertMapLayersInfo();
-  console.log(`${infoLayers.length} info map layers`);
-  console.log(infoLayers);
+  await upsertMapLayersInfo();
 }
 main()
   .then(async () => {

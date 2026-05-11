@@ -76,7 +76,7 @@ import {
 } from 'rxjs';
 import { environment } from '../environments/environment';
 import { retryHTTPErrors } from '../util/http-util';
-import { getGeomorphicZonationColorPaletteStyle } from '../app/map/openlayers-hardcoded';
+
 
 type JobId = CreateJobResponse['jobId'];
 
@@ -446,11 +446,6 @@ export class WebApiService {
         urlType: 'ArcGisImageServer',
         layerGroupOptions: {
           visible: false
-        },
-        layerOptions: {
-          style: {
-            color: getGeomorphicZonationColorPaletteStyle()
-          }
         }
       },
       {
