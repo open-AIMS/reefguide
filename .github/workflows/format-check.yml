@@ -6,6 +6,10 @@ jobs:
   format-check:
     name: Prettier Check
     runs-on: ubuntu-latest
+    env:
+      # tell Turbo not to track telemetry
+      # https://turborepo.dev/docs/telemetry#how-do-i-opt-out
+      DO_NOT_TRACK: 1
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

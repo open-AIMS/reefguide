@@ -28,6 +28,10 @@ jobs:
     # This means the workflow can only run from the selected environments branches
     environment: ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
+    env:
+      # tell Turbo not to track telemetry
+      # https://turborepo.dev/docs/telemetry#how-do-i-opt-out
+      DO_NOT_TRACK: 1
     steps:
       - name: Display Workflow Inputs
         run: |
