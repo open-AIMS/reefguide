@@ -1,3 +1,5 @@
 {
-  "prisma.pinToPrisma6": true
+  "prisma.pinToPrisma6": true,
+  "jest.rootPath": "packages/web-api",
+  "jest.jestCommandLine": "npx jest --detectOpenHandles"
 }
