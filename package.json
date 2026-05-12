@@ -16,16 +16,18 @@
     "generate": "pnpm --filter @reefguide/db run generate"
   },
   "devDependencies": {
+    "eslint": "^10.3.0",
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^10.0.1",
     "@types/node": "catalog:",
-    "eslint": "^8.57.0",
-    "gts": "^6.0.2",
+    "gts": "^7.0.0",
     "prettier": "catalog:",
     "turbo": "^2.6.1",
     "typescript": "catalog:"
   },
   "packageManager": "pnpm@10.33.4",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=24.0.0",
     "pnpm": ">=10.0.0"
   }
 }
