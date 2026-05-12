@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": ["jest"]
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts", "../src/types/**/*.ts"]
 }
