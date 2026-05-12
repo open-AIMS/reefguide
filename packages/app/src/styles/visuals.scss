@@ -10,11 +10,11 @@
     /* top cover (scrolls with content, hides top shadow when at top) */
     linear-gradient(white 30%, transparent) center top,
     /* bottom cover (scrolls with content, hides bottom shadow when at bottom) */
-      linear-gradient(transparent, white 70%) center bottom,
+    linear-gradient(transparent, white 70%) center bottom,
     /* top shadow (fixed to viewport of scroll container) */
-      radial-gradient(farthest-side at 50% 0, var(--scroll-shadow-color), transparent) center top,
+    radial-gradient(farthest-side at 50% 0, var(--scroll-shadow-color), transparent) center top,
     /* bottom shadow (fixed to viewport of scroll container) */
-      radial-gradient(farthest-side at 50% 100%, var(--scroll-shadow-color), transparent) center
+    radial-gradient(farthest-side at 50% 100%, var(--scroll-shadow-color), transparent) center
       bottom;
   background-size:
     100% var(--scroll-shadow-size),
