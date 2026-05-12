@@ -139,7 +139,6 @@ npx prisma db seed
 Note: `db-reset` runs `prisma db push --force-reset`, if this doesn't work, another option is
 `prisma migrate reset`
 
-
 ### Inspecting the Database
 
 ```bash
@@ -229,3 +228,6 @@ binaryTargets = ["native", "rhel-openssl-1.0.x"]
 
 The current plan is to stay on Prisma 6. [Prisma 7 has major changes](https://www.prisma.io/blog/announcing-prisma-orm-7-0-0),
 the implementation changes from Rust to TypeScript. There's also [Prisma Next](https://www.prisma.io/blog/the-next-evolution-of-prisma-orm) to look into. Migrating would introduce significant risks and effort with little benefit to this project.
+
+Tip: if you use the VSCode Prisma extension, it should prompt you to set:\
+`"prisma.pinToPrisma6": true`
