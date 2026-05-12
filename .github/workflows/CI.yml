@@ -31,6 +31,8 @@ jobs:
             ${{ runner.os }}-pnpm-store-
       - name: Install dependencies
         run: pnpm install
+      - name: Copy environment file and set test mode
+        run: cd packages/web-api && cp .env.dist .env && echo -en "\nTEST_MODE=true" >> .env
       - name: Prisma generate
         run: pnpm run generate
       - name: Run typecheck
@@ -56,8 +58,6 @@ jobs:
           fi
 
           echo "PostgreSQL is ready!"
-      - name: Copy environment file and set test mode
-        run: cd packages/web-api && cp .env.dist .env && echo -en "\nTEST_MODE=true" >> .env
       - name: Generate local keys
         run: cd packages/web-api && pnpm run local-keys
       - name: Reset database
