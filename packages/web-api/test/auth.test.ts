@@ -211,11 +211,11 @@ describe('Authentication', () => {
       expect(log.logs[1].action).toEqual(UserAction.LOGIN);
 
       // Now login again
-      await request(app).post('/api/auth/login').send({ email, password }).expect(200);
+      res = await request(app).post('/api/auth/login').send({ email, password }).expect(200);
       expect(res).toBeTruthy();
 
       // Check the log looks good
-      await authRequest(app, 'admin').get('/api/users/utils/log').expect(200);
+      res = await authRequest(app, 'admin').get('/api/users/utils/log').expect(200);
       log = res.body as ListUserLogsResponse;
       expect(log.logs.length).toEqual(3);
       // latest first
