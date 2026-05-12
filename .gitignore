@@ -125,6 +125,13 @@ dist
 # TernJS port file
 .tern-port
 
+# VSCode
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+# uncertain about sharing settings, so devs can copy this if they want to
+!.vscode/*.default.json
+
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 
