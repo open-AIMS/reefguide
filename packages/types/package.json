@@ -24,11 +24,11 @@
     "dependencies": {
         "@reefguide/db": "workspace:*",
         "ol": "^10.6.1",
-        "zod": "^3.25.67"
+        "zod": "^3.25.76"
     },
     "devDependencies": {
         "@types/node": "^24.0.4",
         "prettier": "^3.6.0",
-        "tsup": "^8.5.0"
+        "tsup": "^8.5.1"
     }
 }

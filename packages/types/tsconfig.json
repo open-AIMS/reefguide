@@ -1,21 +1,14 @@
 {
-    "extends": "../../tsconfig.json",
-    "compilerOptions": {
-        "outDir": "./dist",
-        "rootDir": "./src",
-        "declaration": true,
-        "declarationMap": true,
-        "sourceMap": true,
-        "lib": [
-            "dom"
-        ]
-    },
-    "include": [
-        "src/*.ts",
-        "src/**/*.ts"
-    ],
-    "exclude": [
-        "dist",
-        "node_modules"
-    ]
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "lib": ["dom"],
+    "ignoreDeprecations": "6.0"
+  },
+  "include": ["src/*.ts", "src/**/*.ts"],
+  "exclude": ["dist", "node_modules"]
 }

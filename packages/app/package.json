@@ -38,7 +38,7 @@
     "rxjs": "~7.8.2",
     "tslib": "^2.3.0",
     "vega-embed": "^7.0.2",
-    "zod": "^3.25.62"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^20.3.9",
@@ -51,6 +51,7 @@
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
-    "karma-jasmine-html-reporter": "~2.1.0"
+    "karma-jasmine-html-reporter": "~2.1.0",
+    "typescript": "~5.9.3"
   }
 }

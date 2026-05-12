@@ -1,40 +1,40 @@
 {
-    "name": "@reefguide/cli",
-    "version": "0.1",
-    "description": "Work in progress CLI for ReefGuide",
-    "main": "build/src/index.js",
-    "bin": {
-        "reefguide-cli": "build/src/index.js"
-    },
-    "scripts": {
-        "build": "tsc",
-        "start": "node build/src/index.js",
-        "buildstart": "pnpm run build && node build/src/index.js",
-        "watch": "tsc -w",
-        "lint": "gts lint",
-        "type-check": "tsc --noEmit",
-        "format:write": "prettier --write \"{src,test}/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
-        "format:check": "prettier --check \"{src,test}/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
-        "clean": "gts clean",
-        "fix": "gts fix"
-    },
-    "keywords": [],
-    "author": "AIMS",
-    "license": "MIT",
-    "dependencies": {
-        "@reefguide/db": "workspace:*",
-        "@reefguide/types": "workspace:*",
-        "axios": "^1.13.2",
-        "commander": "^14.0.0",
-        "csv-parse": "^5.6.0",
-        "csv-stringify": "^6.5.2",
-        "dotenv": "^16.5.0",
-        "env-cmd": "^10.1.0",
-        "jwt-decode": "^4.0.0",
-        "read": "^4.1.0"
-    },
-    "devDependencies": {
-        "ts-node": "^10.9.2",
-        "ts-node-dev": "^2.0.0"
-    }
+  "name": "@reefguide/cli",
+  "version": "0.1.1",
+  "description": "Work in progress CLI for ReefGuide",
+  "main": "build/src/index.js",
+  "bin": {
+    "reefguide-cli": "build/src/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/src/index.js",
+    "buildstart": "pnpm run build && node build/src/index.js",
+    "watch": "tsc -w",
+    "lint": "gts lint",
+    "type-check": "tsc --noEmit",
+    "format:write": "prettier --write \"{src,test}/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
+    "format:check": "prettier --check \"{src,test}/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
+    "clean": "gts clean",
+    "fix": "gts fix"
+  },
+  "keywords": [],
+  "author": "AIMS",
+  "license": "MIT",
+  "dependencies": {
+    "@reefguide/db": "workspace:*",
+    "@reefguide/types": "workspace:*",
+    "axios": "^1.13.2",
+    "commander": "^14.0.0",
+    "csv-parse": "^5.6.0",
+    "csv-stringify": "^6.5.2",
+    "dotenv": "^16.5.0",
+    "env-cmd": "^10.1.0",
+    "jwt-decode": "^4.0.0",
+    "read": "^4.1.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0"
+  }
 }
