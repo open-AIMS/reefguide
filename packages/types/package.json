@@ -23,12 +23,12 @@
   },
   "dependencies": {
     "@reefguide/db": "workspace:*",
-    "ol": "^10.6.1",
+    "ol": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "prettier": "^3.6.0",
+    "prettier": "catalog:",
     "tsup": "^8.5.1"
   }
 }

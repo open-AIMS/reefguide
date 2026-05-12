@@ -28,7 +28,7 @@
     "commander": "^14.0.0",
     "csv-parse": "^5.6.0",
     "csv-stringify": "^6.5.2",
-    "dotenv": "^16.5.0",
+    "dotenv": "catalog:",
     "env-cmd": "^10.1.0",
     "jwt-decode": "^4.0.0",
     "read": "^4.1.0"
