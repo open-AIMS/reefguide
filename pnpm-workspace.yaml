@@ -1,12 +1,11 @@
 packages:
   - packages/*
 
-onlyBuiltDependencies:
-  - '@prisma/client'
-  - '@prisma/engines'
-  - esbuild
-  - prisma
-  - unrs-resolver
+catalog:
+  '@types/node': '^24.12.3'
+  typescript: '~5.9.3'
+  ts-node: '^10.9.2'
+  ts-node-dev: '^2.0.0'
 
 minimumReleaseAge: 2880
 minimumReleaseAgeExclude:
@@ -14,3 +13,10 @@ minimumReleaseAgeExclude:
   - '@angular-devkit/*'
   - '@ngtools/webpack'
   - '@schematics/angular'
+
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - esbuild
+  - prisma
+  - unrs-resolver

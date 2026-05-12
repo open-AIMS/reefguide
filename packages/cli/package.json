@@ -34,7 +34,7 @@
     "read": "^4.1.0"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2",
-    "ts-node-dev": "^2.0.0"
+    "ts-node": "catalog:",
+    "ts-node-dev": "catalog:"
   }
 }

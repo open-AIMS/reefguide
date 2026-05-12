@@ -76,8 +76,8 @@
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.9",
     "ts-loader": "^9.5.2",
-    "ts-node": "^10.9.2",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.9.3"
+    "ts-node": "catalog:",
+    "ts-node-dev": "catalog:",
+    "typescript": "catalog:"
   }
 }
