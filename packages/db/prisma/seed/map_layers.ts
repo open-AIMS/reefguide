@@ -98,7 +98,7 @@ const geomorphicZonationClasses: Record<number, { color: string; desc: string } 
 export function getGeomorphicZonationColorPaletteStyle() {
   const colors: ColorLike[] = [];
 
-  const transparentColor = geomorphicZonationClasses[0]?.color!;
+  const transparentColor = geomorphicZonationClasses[0]?.color;
   const defaultColor = geomorphicZonationClasses[-1]?.color;
   if (!defaultColor) {
     throw new Error('no default');

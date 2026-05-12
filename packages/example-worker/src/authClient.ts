@@ -91,7 +91,7 @@ export class AuthApiClient {
       const response = await this.axiosInstance.post<AuthTokens>('/auth/login', this.credentials);
       this.tokens = response.data;
     } catch (error) {
-      throw new Error('Failed to login');
+      throw new Error('Failed to login', { cause: error });
     }
   }
 
