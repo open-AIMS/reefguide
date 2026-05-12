@@ -24,17 +24,17 @@
     "@reefguide/db": "workspace:*",
     "@reefguide/types": "workspace:*",
     "@sentry/node": "^10.4.0",
-    "axios": "^1.13.2",
+    "axios": "catalog:",
     "env-cmd": "^10.1.0",
-    "express": "^4.21.1",
+    "express": "catalog:",
     "jwt-decode": "^4.0.0",
     "winston": "^3.17.0",
     "winston-transport-sentry-node": "^3.0.0",
-    "zod": "^3.25.76"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@sentry/cli": "^2.53.0",
-    "@types/express": "^4.17.21",
+    "@types/express": "catalog:",
     "ts-node": "catalog:",
     "ts-node-dev": "catalog:"
   }
