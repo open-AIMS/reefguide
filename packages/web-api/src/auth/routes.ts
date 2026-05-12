@@ -38,7 +38,7 @@ import {
   isRefreshTokenValid as validateRefreshToken
 } from './utils';
 
-require('express-async-errors');
+
 export const router: Router = express.Router();
 
 // All users are granted this role by default

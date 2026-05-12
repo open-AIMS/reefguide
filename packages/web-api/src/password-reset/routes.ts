@@ -11,7 +11,7 @@ import { EMAIL_SERVICE } from '../config';
 import { BadRequestException, InternalServerError, NotFoundException } from '../exceptions';
 import { PasswordResetService } from './service';
 
-require('express-async-errors');
+
 export const router: Router = express.Router();
 
 /**
@@ -47,15 +47,15 @@ This code will expire in 30 minutes. If you did not request this reset, please i
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #333;">Password Reset Request</h2>
                 <p>You have requested to reset your password. Use the code below to reset your password:</p>
-                
+
                 <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
                   <h1 style="font-size: 2em; color: #2563eb; margin: 0; letter-spacing: 3px;">${code}</h1>
                 </div>
-                
+
                 <p><strong>This code will expire in 30 minutes.</strong></p>
-                
+
                 <p>If you did not request this password reset, please ignore this email. Your password will remain unchanged.</p>
-                
+
                 <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
                 <p style="font-size: 0.9em; color: #666;">
                   This is an automated message, please do not reply to this email.

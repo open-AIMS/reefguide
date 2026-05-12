@@ -19,7 +19,7 @@ import { initialiseAdmins } from '../initialise';
 import { getDataSpecificationService } from '../services/dataSpec';
 import { timeoutJobs } from './helpers';
 
-require('express-async-errors');
+
 export const router: Router = express.Router();
 
 /**

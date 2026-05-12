@@ -27,7 +27,7 @@ import { assertUserHasRoleMiddleware } from '../auth/utils';
 import { BadRequestException, InternalServerError, NotFoundException } from '../exceptions';
 import { GroupService } from './service';
 
-require('express-async-errors');
+
 export const router: Router = express.Router();
 
 /**

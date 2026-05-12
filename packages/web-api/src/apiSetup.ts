@@ -1,4 +1,5 @@
 import Sentry from '@sentry/node';
+import 'express-async-errors';
 import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
@@ -17,8 +18,9 @@ import { router as userRoutes } from './users/routes';
 import { router as passwordResetRoutes } from './password-reset/routes';
 import { router as groupRoutes } from './groups/routes';
 
-require('dotenv').config();
-require('express-async-errors');
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 
 // Setup app
 const app: Express = express();
