@@ -3,7 +3,6 @@ import { GetMapLayersResponse } from '@reefguide/types';
 import express, { Response, Router } from 'express';
 import { passport } from '../auth/passportConfig';
 
-
 export const router: Router = express.Router();
 
 /**

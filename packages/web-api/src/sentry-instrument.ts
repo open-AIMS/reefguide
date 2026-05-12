@@ -7,7 +7,7 @@ const sentryPromise = import('@sentry/node');
 if (config.sentryDsn) {
   console.debug('Setting up Sentry for error tracking...');
   // Import Sentry
-  sentryPromise.then((Sentry) => {
+  sentryPromise.then(Sentry => {
     Sentry.init({
       dsn: config.sentryDsn,
       // https://docs.sentry.io/platforms/javascript/guides/node/configuration/options/#sendDefaultPii

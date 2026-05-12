@@ -29,7 +29,6 @@ import { BadRequestException, UnauthorizedException } from '../exceptions';
 import { JobService } from '../services/jobs';
 import { getS3Service } from '../services/s3Storage';
 
-
 export const router: Router = express.Router();
 const jobService = new JobService();
 

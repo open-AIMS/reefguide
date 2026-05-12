@@ -16,7 +16,6 @@ import { assertUserHasRoleMiddleware, assertUserIsAdminMiddleware } from '../aut
 import { handlePrismaError, NotFoundException } from '../exceptions';
 import { changePassword, registerUser } from '../services/auth';
 
-
 export const router: Router = express.Router();
 
 /**

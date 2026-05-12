@@ -38,7 +38,6 @@ import {
   isRefreshTokenValid as validateRefreshToken
 } from './utils';
 
-
 export const router: Router = express.Router();
 
 // All users are granted this role by default

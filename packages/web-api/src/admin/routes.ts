@@ -19,7 +19,6 @@ import { initialiseAdmins } from '../initialise';
 import { getDataSpecificationService } from '../services/dataSpec';
 import { timeoutJobs } from './helpers';
 
-
 export const router: Router = express.Router();
 
 /**

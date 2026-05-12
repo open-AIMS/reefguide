@@ -21,7 +21,6 @@ import { router as groupRoutes } from './groups/routes';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-
 // Setup app
 const app: Express = express();
 

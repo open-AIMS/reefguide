@@ -20,7 +20,6 @@ import { userHasProjectAccess } from '../util';
 import tokml from '@maphubs/tokml';
 import { polygonsToGeoJSON } from './polygons-conversion';
 
-
 export const router: Router = express.Router();
 
 /**

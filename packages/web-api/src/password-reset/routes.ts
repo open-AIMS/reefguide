@@ -11,7 +11,6 @@ import { EMAIL_SERVICE } from '../config';
 import { BadRequestException, InternalServerError, NotFoundException } from '../exceptions';
 import { PasswordResetService } from './service';
 
-
 export const router: Router = express.Router();
 
 /**

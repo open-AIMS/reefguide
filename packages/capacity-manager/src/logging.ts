@@ -3,7 +3,6 @@ import { config } from './config';
 import Sentry from '@sentry/node';
 import SentryTransport from 'winston-transport-sentry-node';
 
-
 /**
  * Winston logger configuration
  *
