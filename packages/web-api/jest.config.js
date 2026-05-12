@@ -3,5 +3,13 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   modulePathIgnorePatterns: ['<rootDir>/build/'],
-  setupFiles: ['dotenv/config']
+  setupFiles: ['dotenv/config'],
+  transform: {
+    '^.+\\.ts$': [
+      'ts-jest',
+      {
+        tsconfig: 'test/tsconfig.json',
+      },
+    ],
+  }
 };
