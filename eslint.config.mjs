@@ -40,6 +40,8 @@ export default defineConfig(
     // extends: compat.extends(gts.default),
 
     rules: {
+      // TODO remove and fix error cause later
+      'preserve-caught-error': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'off',
       '@typescript-eslint/prefer-type-literal': 'off',

@@ -6,6 +6,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
+import { execSync } from 'child_process';
 import { Construct } from 'constructs';
 import { ReefGuideFrontendConfig } from '../infraConfig';
 import { STANDARD_EXCLUSIONS } from '../infra';
@@ -152,10 +153,10 @@ export class ReefGuideFrontend extends Construct {
               `
                 # Install pnpm globally
                 npm install -g pnpm@latest
-                
+
                 # Navigate to source directory
                 cd /asset-input
-                
+
                 # Install dependencies
                 pnpm install --frozen-lockfile
 
@@ -164,10 +165,10 @@ export class ReefGuideFrontend extends Construct {
 
                 # Run pnpm generate
                 pnpm run generate
-                
+
                 # Build the specific package using turbo
                 npx turbo build --filter=${packageName}
-                
+
                 # Copy built files to output, excluding map files
                 cd ${outputPath} && find . -type f ! -name "*.js.map" ! -name "*.css.map" -exec cp --parents {} /asset-output/ \\;
               `
@@ -178,8 +179,6 @@ export class ReefGuideFrontend extends Construct {
                 console.log('Attempting local bundling for ReefGuide frontend...');
 
                 try {
-                  const { execSync } = require('child_process');
-
                   // Build environment variable exports
                   const envExports = Object.entries(environment)
                     .map(

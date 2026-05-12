@@ -7,5 +7,6 @@
     "runAllTestsOnStartup": false,
     "deferred": true,
     "coverage": false
-  }
+  },
+  "jest.useJest30": true
 }

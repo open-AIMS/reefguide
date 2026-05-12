@@ -1,6 +1,6 @@
 import winston from 'winston';
 import { config } from './config';
-const Sentry = require('winston-transport-sentry-node').default;
+import Sentry from 'winston-transport-sentry-node';
 
 /**
  * Winston logger configuration
