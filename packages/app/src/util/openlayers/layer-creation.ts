@@ -7,6 +7,7 @@ import TileLayer from 'ol/layer/WebGLTile';
 import XYZ from 'ol/source/XYZ';
 import { loadLerc } from '../lerc-loader';
 import DataTileSource from 'ol/source/DataTile';
+import GeoJSON from 'ol/format/GeoJSON';
 import {
   convertArcGISExtent,
   createSourceFromCapabilitiesXml,
@@ -16,6 +17,7 @@ import {
 } from '../arcgis/arcgis-openlayer-util';
 import BaseLayer from 'ol/layer/Base';
 import LayerGroup from 'ol/layer/Group';
+import VectorSource from 'ol/source/Vector';
 
 /**
  * More specific LayerDef type.
@@ -44,7 +46,7 @@ const LAYER_BUILDERS: Record<
     // type Options = Partial<ConstructorParameters<typeof VectorLayer>>;
     type Options = any;
 
-    const source = createVectorSourceForFeatureServer(layerDef.url, layerDef.layerId);
+    const source = createVectorSourceForFeatureServer(layerDef.url, layerDef.serverLayerId);
     const vectorLayer = new VectorLayer({
       properties,
       source,
@@ -150,6 +152,28 @@ const LAYER_BUILDERS: Record<
 
       // extent must be in the map's projection
       layer.setExtent(convertArcGISExtent(imageServerSetup.json.extent, 'EPSG:3857'));
+    });
+
+    return layer;
+  },
+  File_GeoJSON(layerDef, properties, mixin) {
+    if (layerDef.urlType !== 'File_GeoJSON') {
+      throw new Error('unexpected LayerDef urlType');
+    }
+
+    const source = new VectorSource({
+      url: layerDef.url,
+      // features: new GeoJSON()
+      format: new GeoJSON()
+    });
+
+    const layer = new VectorLayer({
+      properties,
+      // @ts-expect-error
+      source,
+      updateWhileInteracting: true,
+      ...(layerDef.layerOptions as Options),
+      ...(mixin as Options)
     });
 
     return layer;

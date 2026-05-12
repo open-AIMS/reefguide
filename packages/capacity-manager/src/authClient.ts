@@ -144,7 +144,7 @@ export class AuthApiClient {
       logger.debug('Login successful, token received');
     } catch (error) {
       logger.error('Failed to login', { error });
-      throw new Error('Failed to login');
+      throw new Error('Failed to login', { cause: error });
     }
   }
 

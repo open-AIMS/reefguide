@@ -52,19 +52,32 @@ npm run build
 
 ### Database Management
 
+See Prisma's [db push](https://www.prisma.io/docs/orm/reference/prisma-cli-reference#db-push) and
+[Prototyping Your Schema](https://www.prisma.io/docs/orm/prisma-migrate/workflows/prototyping-your-schema) documentation.
+
 ```bash
 # Reset database (⚠️ DESTRUCTIVE - removes all data)
 npm run db-reset
 
-# Apply schema changes to database
+# Apply schema changes to database without creating migration
 npx prisma db push
 
 # Create a new migration
 npx prisma migrate dev --name <migration-name>
+# Alternatively, this will prompt you for the migration name if one is needed
+npx prisma migrate dev
 
 # Apply migrations in production
 npx prisma migrate deploy
 ```
+
+#### Seed
+
+Certain prisma commands will [seed the database](https://www.prisma.io/docs/orm/prisma-migrate/workflows/seeding)
+automatically. To run seed manually:\
+`npx prisma db seed`
+
+Currently, this is used to populate the database with default map layer definitions.
 
 ### Code Quality
 
@@ -122,6 +135,9 @@ npm run db-reset
 # If you have seed data
 npx prisma db seed
 ```
+
+Note: `db-reset` runs `prisma db push --force-reset`, if this doesn't work, another option is
+`prisma migrate reset`
 
 ### Inspecting the Database
 
@@ -207,3 +223,11 @@ binaryTargets = ["native", "rhel-openssl-1.0.x"]
 - Verify `DATABASE_URL` and `DIRECT_URL` environment variables
 - Check database connectivity and credentials
 - Ensure database exists and is accessible
+
+# Tech Decisions
+
+The current plan is to stay on Prisma 6. [Prisma 7 has major changes](https://www.prisma.io/blog/announcing-prisma-orm-7-0-0),
+the implementation changes from Rust to TypeScript. There's also [Prisma Next](https://www.prisma.io/blog/the-next-evolution-of-prisma-orm) to look into. Migrating would introduce significant risks and effort with little benefit to this project.
+
+Tip: if you use the VSCode Prisma extension, it should prompt you to set:\
+`"prisma.pinToPrisma6": true`

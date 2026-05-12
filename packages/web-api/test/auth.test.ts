@@ -181,7 +181,7 @@ describe('Authentication', () => {
       const userId: number = res.body.userId;
 
       // Now login
-      res = await request(app).post('/api/auth/login').send({ email, password }).expect(200);
+      await request(app).post('/api/auth/login').send({ email, password }).expect(200);
 
       // Check the log looks good
       res = await authRequest(app, 'admin').get('/api/users/utils/log').expect(200);
@@ -192,7 +192,7 @@ describe('Authentication', () => {
 
       // update password
       password = 'updateljkldsfdjskl';
-      res = await authRequest(app, 'admin')
+      await authRequest(app, 'admin')
         .put(`/api/users/${userId}/password`)
         .send({ password })
         .expect(200);
@@ -212,6 +212,7 @@ describe('Authentication', () => {
 
       // Now login again
       res = await request(app).post('/api/auth/login').send({ email, password }).expect(200);
+      expect(res).toBeTruthy();
 
       // Check the log looks good
       res = await authRequest(app, 'admin').get('/api/users/utils/log').expect(200);

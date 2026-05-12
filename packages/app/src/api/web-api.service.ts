@@ -76,7 +76,6 @@ import {
 } from 'rxjs';
 import { environment } from '../environments/environment';
 import { retryHTTPErrors } from '../util/http-util';
-import { getGeomorphicZonationColorPaletteStyle } from '../app/map/openlayers-hardcoded';
 
 type JobId = CreateJobResponse['jobId'];
 
@@ -389,7 +388,7 @@ export class WebApiService {
         title: 'Cities',
         url: 'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/Cities/FeatureServer/',
         urlType: 'ArcGisFeatureServer',
-        layerId: '0',
+        serverLayerId: '0',
         labelProp: 'name',
         infoUrl:
           'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/Cities/FeatureServer/',
@@ -408,7 +407,7 @@ export class WebApiService {
         title: 'GBRMPA Zoning',
         // NAME exists, specific id like P-16-15, but TYPE more friendly text
         labelProp: 'TYPE',
-        layerId: '53',
+        serverLayerId: '53',
         infoUrl:
           'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer/',
         url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer/',
@@ -446,11 +445,6 @@ export class WebApiService {
         urlType: 'ArcGisImageServer',
         layerGroupOptions: {
           visible: false
-        },
-        layerOptions: {
-          style: {
-            color: getGeomorphicZonationColorPaletteStyle()
-          }
         }
       },
       {
@@ -530,7 +524,7 @@ export class WebApiService {
           visible: false
         },
         // This is the layer to target - notice stripped from URL above
-        layerId: '20',
+        serverLayerId: '20',
         // Clustering enabled
         cluster: true
       },
@@ -549,7 +543,7 @@ export class WebApiService {
           visible: false
         },
         // This is the layer to target - notice stripped from URL above
-        layerId: '10',
+        serverLayerId: '10',
         // Clustering enabled
         cluster: true
       },
@@ -558,7 +552,7 @@ export class WebApiService {
         title: 'GBRMPA Management Regions',
         layerPrefix: 'Management Region: ',
         labelProp: 'AREA_DESCR',
-        layerId: '59',
+        serverLayerId: '59',
         infoUrl:
           'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Management_Areas_20/FeatureServer',
         url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Management_Areas_20/FeatureServer',
@@ -581,7 +575,7 @@ export class WebApiService {
         title: 'GBRMPA Cruise Ship Transit Lanes',
         layerPrefix: 'Cruiseship Lanes: ',
         labelProp: 'AREA_DESCR',
-        layerId: '61',
+        serverLayerId: '61',
         infoUrl:
           'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Cruise_Ship_Transit_Lanes_20/FeatureServer',
         url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Cruise_Ship_Transit_Lanes_20/FeatureServer',
@@ -603,7 +597,7 @@ export class WebApiService {
         title: 'Maritime Safety Port Limits',
         layerPrefix: 'Port Limits: ',
         labelProp: 'NAME',
-        layerId: '0',
+        serverLayerId: '0',
         infoUrl:
           'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Maritime_Safety_Port_Limits/FeatureServer/',
         url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Maritime_Safety_Port_Limits/FeatureServer/',
@@ -625,7 +619,7 @@ export class WebApiService {
         title: 'Traditional Use of Marine Resources Agreement',
         layerPrefix: 'TUMRA: ',
         labelProp: 'NAME',
-        layerId: '55',
+        serverLayerId: '55',
         infoUrl:
           'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Traditional_Use_of_Marine_Resources_TUMRA_20/FeatureServer',
         url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Traditional_Use_of_Marine_Resources_TUMRA_20/FeatureServer',
@@ -647,7 +641,7 @@ export class WebApiService {
         title: 'Designated Shipping Areas',
         layerPrefix: 'Shipping Area: ',
         labelProp: 'NAME',
-        layerId: '74',
+        serverLayerId: '74',
         infoUrl:
           'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Designated_Shipping_Areas_201/FeatureServer',
         url: 'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Designated_Shipping_Areas_201/FeatureServer',
@@ -676,6 +670,76 @@ export class WebApiService {
         }
       }
     ];
+  }
+
+  getPDPLayers(): Array<LayerDef> {
+    const layers: Array<LayerDef> = [
+      {
+        id: 'pdp_reefscan_surveys',
+        title: 'PDP ReefScan Surveys',
+        url: '/reefscan-surveys/pdp_dgs_23Apr2026.geojson',
+        urlType: 'File_GeoJSON',
+        layerOptions: {
+          visible: false
+        }
+      }
+    ];
+
+    const a = 0.8;
+
+    const levels: Array<{
+      name: string;
+      fillColor: string;
+      strokeColor: string;
+    }> = [
+      {
+        name: 'L1 - Desktop',
+        fillColor: `rgba(178, 178, 178, ${a})`,
+        strokeColor: 'rgba(100, 100, 100, 0.9)'
+      },
+      {
+        name: 'L2 - Heuristics',
+        fillColor: `rgba(255, 230, 100, ${a})`,
+        strokeColor: 'rgba(200, 160, 0, 0.9)'
+      },
+      {
+        name: 'L3 - Site Bank',
+        fillColor: `rgba(100, 200, 255, ${a})`,
+        strokeColor: 'rgba(0, 120, 200, 0.9)'
+      },
+      {
+        name: 'L4 - Deployments',
+        fillColor: `rgba(100, 220, 100, ${a})`,
+        strokeColor: 'rgba(0, 150, 0, 0.9)'
+      },
+      {
+        name: 'L5 - Monitoring',
+        fillColor: `rgba(255, 100, 100, ${a})`,
+        strokeColor: 'rgba(200, 0, 0, 0.9)'
+      }
+    ];
+
+    for (const level of levels) {
+      layers.push({
+        id: `SiteLevelsPDP_${level.name}`,
+        title: `PDP Site ${level.name}`,
+        // Note: Angular page does not cause error. OpenLayers bug?
+        url: `/site-levels-pdp/SiteLevelsPDP_29Apr2026_${level.name}.geojson`,
+        urlType: 'File_GeoJSON',
+        layerOptions: {
+          style: {
+            // for point data, need to use circle-*
+            // fill-* is for polygons
+            'circle-fill-color': level.fillColor,
+            'circle-radius': 5,
+            'stroke-color': level.strokeColor,
+            'stroke-width': 2
+          }
+        }
+      });
+    }
+
+    return layers;
   }
 
   getRegions(): Observable<ListRegionsResponse> {

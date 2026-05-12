@@ -1,12 +1,18 @@
 packages:
   - packages/*
 
-onlyBuiltDependencies:
-  - '@prisma/client'
-  - '@prisma/engines'
-  - esbuild
-  - prisma
-  - unrs-resolver
+catalog:
+  '@types/express': '^4.17.23'
+  '@types/node': '^24.12.3'
+  axios: '^1.16.0'
+  dotenv: '^16.6.1'
+  express: '^4.21.2'
+  ol: '^10.9.0'
+  prettier: '^3.6.2'
+  ts-node: '^10.9.2'
+  ts-node-dev: '^2.0.0'
+  typescript: '~5.9.3'
+  zod: '^3.25.76'
 
 minimumReleaseAge: 2880
 minimumReleaseAgeExclude:
@@ -14,3 +20,10 @@ minimumReleaseAgeExclude:
   - '@angular-devkit/*'
   - '@ngtools/webpack'
   - '@schematics/angular'
+
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - esbuild
+  - prisma
+  - unrs-resolver

@@ -36,7 +36,7 @@ type BaseLayerDef = {
    * layer to query within the service.
    * Currently only applicable to ArcGisFeatureServer
    */
-  layerId?: string;
+  serverLayerId?: string;
 
   /**
    * Web page where user can learn about the layer.
@@ -86,7 +86,7 @@ type VectorLayerDef = BaseLayerDef & {
    *
    * ArcGisFeatureServer - .../FeatureServer URL
    */
-  urlType: 'ArcGisFeatureServer';
+  urlType: 'ArcGisFeatureServer' | 'File_GeoJSON';
 
   /**
    * Layer Options to mixin during construction.
@@ -108,4 +108,5 @@ type TileLayerDef = BaseLayerDef & {
   layerOptions?: TileOptions;
 };
 
+// TODO better to move this to Zod once it's in the database
 export type LayerDef = VectorLayerDef | TileLayerDef;

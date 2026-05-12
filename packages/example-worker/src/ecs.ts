@@ -66,7 +66,8 @@ export async function getTaskMetadata(): Promise<TaskIdentifiers> {
     };
   } catch (error) {
     throw new Error(
-      `Failed to retrieve ECS task metadata: ${error instanceof Error ? error.message : 'unknown error'}`
+      `Failed to retrieve ECS task metadata: ${error instanceof Error ? error.message : 'unknown error'}`,
+      { cause: error }
     );
   }
 }

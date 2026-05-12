@@ -318,6 +318,7 @@ export class ReefGuideMapService {
 
     this.addInfoLayers();
     void this.addCriteriaLayers();
+    this.addPDPLayers();
 
     // Initialize polygon map service with the map
     this.polygonMapService.configureMapService(map, projectId);
@@ -960,6 +961,19 @@ export class ReefGuideMapService {
         this.map.getLayers().push(layer);
       } catch (err) {
         console.error(`Error loading info layer ${layerDef.id}`, err);
+      }
+    }
+  }
+
+  private addPDPLayers() {
+    const layerDefs = this.api.getPDPLayers();
+    for (const layerDef of layerDefs) {
+      try {
+        const layer = createLayerFromDef(layerDef);
+        this.afterCreateLayer(layer, { layerDef });
+        this.map.getLayers().push(layer);
+      } catch (err) {
+        console.error(`Error loading PDP layer ${layerDef.id}`, err);
       }
     }
   }

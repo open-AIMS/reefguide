@@ -1,5 +1,5 @@
 // Sentry initialization for error tracking - must be run first
-require('./sentry-instrument');
+import './sentry-instrument';
 
 import app from './apiSetup';
 import { config } from './config';

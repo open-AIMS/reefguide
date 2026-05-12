@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "orta.vscode-jest",
+    "ms-azuretools.vscode-containers",
+    "prisma.prisma",
+    "angular.ng-template"
+  ]
+}

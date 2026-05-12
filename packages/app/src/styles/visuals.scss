@@ -1,0 +1,26 @@
+// show shadow when can scroll
+// works with mat-dialog-content
+// only seems to work on bottom, but that's ok
+.scroll-shadow {
+  --scroll-shadow-size: 40px;
+  --scroll-shadow-color: rgba(0, 0, 0, 0.12);
+
+  overflow-y: auto;
+  background:
+    /* top cover (scrolls with content, hides top shadow when at top) */
+    linear-gradient(white 30%, transparent) center top,
+    /* bottom cover (scrolls with content, hides bottom shadow when at bottom) */
+    linear-gradient(transparent, white 70%) center bottom,
+    /* top shadow (fixed to viewport of scroll container) */
+    radial-gradient(farthest-side at 50% 0, var(--scroll-shadow-color), transparent) center top,
+    /* bottom shadow (fixed to viewport of scroll container) */
+    radial-gradient(farthest-side at 50% 100%, var(--scroll-shadow-color), transparent) center
+      bottom;
+  background-size:
+    100% var(--scroll-shadow-size),
+    100% var(--scroll-shadow-size),
+    100% calc(var(--scroll-shadow-size) / 2),
+    100% calc(var(--scroll-shadow-size) / 2);
+  background-repeat: no-repeat;
+  background-attachment: local, local, scroll, scroll;
+}

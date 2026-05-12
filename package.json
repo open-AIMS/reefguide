@@ -1,6 +1,7 @@
 {
   "name": "reefguide",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "description": "ReefGuide mono repo",
   "scripts": {
@@ -16,16 +17,20 @@
     "generate": "pnpm --filter @reefguide/db run generate"
   },
   "devDependencies": {
-    "@types/node": "^24.10.9",
-    "eslint": "^8.57.0",
-    "gts": "^6.0.2",
-    "prettier": "^3.6.2",
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "catalog:",
+    "eslint": "^10.3.0",
+    "eslint-plugin-jsdoc": "^62.9.0",
+    "gts": "^7.0.0",
+    "prettier": "catalog:",
     "turbo": "^2.6.1",
-    "typescript": "^5.9.3"
+    "typescript": "catalog:",
+    "typescript-eslint": "^8.59.2"
   },
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@10.33.4",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=24.0.0",
     "pnpm": ">=10.0.0"
   }
 }

@@ -1,0 +1,12 @@
+{
+  "prisma.pinToPrisma6": true,
+  "jest.rootPath": "packages/web-api",
+  "jest.jestCommandLine": "node_modules/jest/bin/jest.js --detectOpenHandles",
+  "jest.runMode": {
+    "type": "on-demand",
+    "runAllTestsOnStartup": false,
+    "deferred": false,
+    "coverage": false
+  },
+  "jest.useJest30": true
+}

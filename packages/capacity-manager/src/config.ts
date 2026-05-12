@@ -232,10 +232,10 @@ export function loadConfig(): Config {
       console.error('Configuration validation failed', {
         errors: formattedErrors
       });
-      throw new Error(`Configuration validation failed:\n${formattedErrors}`);
+      throw new Error(`Configuration validation failed:\n${formattedErrors}`, { cause: error });
     }
     console.error('Failed to load configuration', { error });
-    throw new Error(`Failed to load configuration: ${error}`);
+    throw new Error(`Failed to load configuration: ${error}`, { cause: error });
   }
 }
 

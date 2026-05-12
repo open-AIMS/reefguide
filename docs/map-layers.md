@@ -1,4 +1,10 @@
-# ReefGuide layer sources
+# ReefGuide Map Layers
+
+
+## Original Documentation
+
+Prior to moving layers to the database, these were the layers. \
+TODO create and link to layers overview page in ReefGuide 
 
 Below is documented the current reefguide contextual layers, and their associated status and data source.
 

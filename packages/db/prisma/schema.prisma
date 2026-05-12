@@ -1,467 +1,491 @@
 generator client {
-    provider      = "prisma-client-js"
-    binaryTargets = ["native", "rhel-openssl-1.0.x"]
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
 datasource db {
-    provider  = "postgresql"
-    url       = env("DATABASE_URL")
-    // direct url is used for migration
-    // https://www.prisma.io/docs/orm/reference/prisma-config-reference#datasourcedirecturl
-    directUrl = env("DIRECT_URL")
+  provider  = "postgresql"
+  // Ignore the Prisma plugin errors here. prisma@6 init still defines url here
+  url       = env("DATABASE_URL")
+  // direct url is used for migration
+  // https://www.prisma.io/docs/orm/reference/prisma-config-reference#datasourcedirecturl
+  directUrl = env("DIRECT_URL")
 }
 
 enum UserRole {
-    ADMIN
-    ANALYST
-    DEFAULT
+  ADMIN
+  ANALYST
+  DEFAULT
 }
 
 enum ProjectType {
-    SITE_SELECTION
-    ADRIA_ANALYSIS
+  SITE_SELECTION
+  ADRIA_ANALYSIS
 }
 
 // User - linked to passport js
 model User {
-    id              Int                 @id @default(autoincrement())
-    email           String              @unique
-    password        String
-    // What roles does the user have?
-    roles           UserRole[]          @default([])
-    polygons        Polygon[]
-    notes           PolygonNote[]
-    refreshTokens   RefreshToken[]
-    jobs            Job[]
-    jobRequests     JobRequest[]
-    log             UserLog[]
-    PreApprovedUser PreApprovedUser[]
-    projects        Project[]
-    resetCodes      PasswordResetCode[]
-    
-    // Group relations
-    ownedGroups     Group[]             @relation("GroupOwner")
-    managedGroups   GroupManager[]
-    groupMemberships GroupMember[]
-    
-    // Project sharing relations
-    sharedProjects  ProjectUserShare[]
+  id              Int                 @id @default(autoincrement())
+  email           String              @unique
+  password        String
+  // What roles does the user have?
+  roles           UserRole[]          @default([])
+  polygons        Polygon[]
+  notes           PolygonNote[]
+  refreshTokens   RefreshToken[]
+  jobs            Job[]
+  jobRequests     JobRequest[]
+  log             UserLog[]
+  PreApprovedUser PreApprovedUser[]
+  projects        Project[]
+  resetCodes      PasswordResetCode[]
+
+  // Group relations
+  ownedGroups      Group[]        @relation("GroupOwner")
+  managedGroups    GroupManager[]
+  groupMemberships GroupMember[]
+
+  // Project sharing relations
+  sharedProjects ProjectUserShare[]
 }
 
 enum UserAction {
-    LOGIN
-    LOGOUT
-    CHANGE_PASSWORD
-    UPDATED
-    CREATE_GROUP
-    UPDATE_GROUP
-    DELETE_GROUP
-    ADD_GROUP_MEMBER
-    REMOVE_GROUP_MEMBER
-    ADD_GROUP_MANAGER
-    REMOVE_GROUP_MANAGER
-    SHARE_PROJECT
-    UNSHARE_PROJECT
-    UPDATE_PROJECT_SHARING
+  LOGIN
+  LOGOUT
+  CHANGE_PASSWORD
+  UPDATED
+  CREATE_GROUP
+  UPDATE_GROUP
+  DELETE_GROUP
+  ADD_GROUP_MEMBER
+  REMOVE_GROUP_MEMBER
+  ADD_GROUP_MANAGER
+  REMOVE_GROUP_MANAGER
+  SHARE_PROJECT
+  UNSHARE_PROJECT
+  UPDATE_PROJECT_SHARING
 }
 
 model UserLog {
-    // ID for the action
-    id Int @id @default(autoincrement())
+  // ID for the action
+  id Int @id @default(autoincrement())
 
-    // When did this occur
-    time DateTime @default(now())
+  // When did this occur
+  time DateTime @default(now())
 
-    // Action type
-    action UserAction
+  // Action type
+  action UserAction
 
-    // Optional metadata field to hold any data associated with this action
-    metadata Json?
+  // Optional metadata field to hold any data associated with this action
+  metadata Json?
 
-    // Which user was this for?
-    user   User @relation(fields: [userId], references: [id])
-    userId Int
+  // Which user was this for?
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
 }
 
 // Pre-approved users - stores email addresses and roles before user registration
 model PreApprovedUser {
-    id                 Int        @id @default(autoincrement())
-    email              String     @unique
-    // What roles should this user get when they register?
-    roles              UserRole[]
-    created_at         DateTime   @default(now())
-    updated_at         DateTime   @updatedAt
-    // Who created this pre-approval? (admin user)
-    created_by_user_id Int?
-    created_by_user    User?      @relation(fields: [created_by_user_id], references: [id], onDelete: SetNull)
-    // Track if this pre-approval has been used (when user actually registers)
-    used               Boolean    @default(false)
-    used_at            DateTime?
+  id                 Int        @id @default(autoincrement())
+  email              String     @unique
+  // What roles should this user get when they register?
+  roles              UserRole[]
+  created_at         DateTime   @default(now())
+  updated_at         DateTime   @updatedAt
+  // Who created this pre-approval? (admin user)
+  created_by_user_id Int?
+  created_by_user    User?      @relation(fields: [created_by_user_id], references: [id], onDelete: SetNull)
+  // Track if this pre-approval has been used (when user actually registers)
+  used               Boolean    @default(false)
+  used_at            DateTime?
 
-    @@map("pre_approved_users")
+  @@map("pre_approved_users")
 }
 
 // Group model - collection of users with ownership and management
 model Group {
-    id          Int      @id @default(autoincrement())
-    name        String
-    description String?
-    created_at  DateTime @default(now())
-    updated_at  DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
-    // Group ownership
-    owner    User @relation("GroupOwner", fields: [owner_id], references: [id], onDelete: Cascade)
-    owner_id Int
+  // Group ownership
+  owner    User @relation("GroupOwner", fields: [owner_id], references: [id], onDelete: Cascade)
+  owner_id Int
 
-    // Relations
-    managers GroupManager[]
-    members  GroupMember[]
-    
-    // Project sharing relations
-    sharedProjects ProjectGroupShare[]
+  // Relations
+  managers GroupManager[]
+  members  GroupMember[]
 
-    @@map("groups")
+  // Project sharing relations
+  sharedProjects ProjectGroupShare[]
+
+  @@map("groups")
 }
 
 // Group managers - users who can manage the group (but are not owners)
 model GroupManager {
-    id       Int @id @default(autoincrement())
-    group_id Int
-    user_id  Int
+  id       Int @id @default(autoincrement())
+  group_id Int
+  user_id  Int
 
-    created_at DateTime @default(now())
+  created_at DateTime @default(now())
 
-    // Relations
-    group Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
-    user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  // Relations
+  group Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-    // Ensure a user can only be a manager of a group once
-    @@unique([group_id, user_id])
-    @@map("group_managers")
+  // Ensure a user can only be a manager of a group once
+  @@unique([group_id, user_id])
+  @@map("group_managers")
 }
 
 // Group members - regular users in the group
 model GroupMember {
-    id       Int @id @default(autoincrement())
-    group_id Int
-    user_id  Int
+  id       Int @id @default(autoincrement())
+  group_id Int
+  user_id  Int
 
-    created_at DateTime @default(now())
+  created_at DateTime @default(now())
 
-    // Relations
-    group Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
-    user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  // Relations
+  group Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-    // Ensure a user can only be a member of a group once
-    @@unique([group_id, user_id])
-    @@map("group_members")
+  // Ensure a user can only be a member of a group once
+  @@unique([group_id, user_id])
+  @@map("group_members")
 }
 
 // Project model - users can have multiple projects
 model Project {
-    id            Int         @id @default(autoincrement())
-    name          String
-    description   String?
-    type          ProjectType
-    // JSON field for project state - will be typed with Zod in application layer
-    project_state Json
-    // Privacy setting - defaults to private
-    is_public     Boolean     @default(false)
-    created_at    DateTime    @default(now())
-    updated_at    DateTime    @updatedAt
+  id            Int         @id @default(autoincrement())
+  name          String
+  description   String?
+  type          ProjectType
+  // JSON field for project state - will be typed with Zod in application layer
+  project_state Json
+  // Privacy setting - defaults to private
+  is_public     Boolean     @default(false)
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
 
-    // Relations
-    user    User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-    user_id Int
+  // Relations
+  user    User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id Int
 
-    // Sharing relations
-    userShares  ProjectUserShare[]
-    groupShares ProjectGroupShare[]
-    
-    // Polygon relations
-    polygons    Polygon[]
+  // Sharing relations
+  userShares  ProjectUserShare[]
+  groupShares ProjectGroupShare[]
 
-    @@map("projects")
+  // Polygon relations
+  polygons Polygon[]
+
+  @@map("projects")
 }
 
 // Project sharing with individual users
 model ProjectUserShare {
-    id         Int @id @default(autoincrement())
-    project_id Int
-    user_id    Int
+  id         Int @id @default(autoincrement())
+  project_id Int
+  user_id    Int
 
-    created_at DateTime @default(now())
-    updated_at DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-    // Relations
-    project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
-    user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  // Relations
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-    // Ensure a project can only be shared with a user once
-    @@unique([project_id, user_id])
-    @@map("project_user_shares")
+  // Ensure a project can only be shared with a user once
+  @@unique([project_id, user_id])
+  @@map("project_user_shares")
 }
 
 // Project sharing with groups
 model ProjectGroupShare {
-    id         Int @id @default(autoincrement())
-    project_id Int
-    group_id   Int
+  id         Int @id @default(autoincrement())
+  project_id Int
+  group_id   Int
 
-    created_at DateTime @default(now())
-    updated_at DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-    // Relations
-    project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
-    group   Group   @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  // Relations
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  group   Group   @relation(fields: [group_id], references: [id], onDelete: Cascade)
 
-    // Ensure a project can only be shared with a group once
-    @@unique([project_id, group_id])
-    @@map("project_group_shares")
+  // Ensure a project can only be shared with a group once
+  @@unique([project_id, group_id])
+  @@map("project_group_shares")
 }
 
 // User submitted polygon - has notes
 model Polygon {
-    id         Int           @id @default(autoincrement())
-    created_at DateTime      @default(now())
-    // Each polygon is linked to a user
-    user       User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
-    user_id    Int
-    // Optional link to a project
-    project    Project?      @relation(fields: [project_id], references: [id], onDelete: Cascade)
-    project_id Int?
-    // Using Json type for GeoJSON
-    polygon    Json
-    // Polygon has PolygonNote
-    notes      PolygonNote[]
+  id         Int           @id @default(autoincrement())
+  created_at DateTime      @default(now())
+  // Each polygon is linked to a user
+  user       User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id    Int
+  // Optional link to a project
+  project    Project?      @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  project_id Int?
+  // Using Json type for GeoJSON
+  polygon    Json
+  // Polygon has PolygonNote
+  notes      PolygonNote[]
 }
 
 model PolygonNote {
-    id         Int      @id @default(autoincrement())
-    created_at DateTime @default(now())
-    content    String
-    user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-    user_id    Int
-    polygon    Polygon  @relation(fields: [polygon_id], references: [id], onDelete: Cascade)
-    polygon_id Int
+  id         Int      @id @default(autoincrement())
+  created_at DateTime @default(now())
+  content    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id    Int
+  polygon    Polygon  @relation(fields: [polygon_id], references: [id], onDelete: Cascade)
+  polygon_id Int
 }
 
 model RefreshToken {
-    id          Int      @id @default(autoincrement())
-    // The token value - this should be globally unique
-    token       String
-    created_at  DateTime @default(now())
-    // users have refresh token(s)
-    user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-    user_id     Int
-    // Expires at (timestamp seconds)
-    expiry_time Int
-    // Is this token valid? We can invalidate
-    valid       Boolean  @default(true)
+  id          Int      @id @default(autoincrement())
+  // The token value - this should be globally unique
+  token       String
+  created_at  DateTime @default(now())
+  // users have refresh token(s)
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id     Int
+  // Expires at (timestamp seconds)
+  expiry_time Int
+  // Is this token valid? We can invalidate
+  valid       Boolean  @default(true)
 }
 
 // Job system
 enum StorageScheme {
-    S3
-    // Could add other storage schemes here
+  S3
+  // Could add other storage schemes here
 }
 
 enum JobType {
-    // An example test job - doesn't do anything
-    TEST
-    // Performs the regional suitability assessment
-    SUITABILITY_ASSESSMENT
-    // Performs the regional assessment
-    REGIONAL_ASSESSMENT
-    // Updates the data specification
-    DATA_SPECIFICATION_UPDATE
-    // Testing adria job
-    ADRIA_MODEL_RUN
+  // An example test job - doesn't do anything
+  TEST
+  // Performs the regional suitability assessment
+  SUITABILITY_ASSESSMENT
+  // Performs the regional assessment
+  REGIONAL_ASSESSMENT
+  // Updates the data specification
+  DATA_SPECIFICATION_UPDATE
+  // Testing adria job
+  ADRIA_MODEL_RUN
 }
 
 enum JobStatus {
-    // The job has not yet been consumed by worker
-    PENDING
+  // The job has not yet been consumed by worker
+  PENDING
 
-    // The job is in progress
-    IN_PROGRESS
+  // The job is in progress
+  IN_PROGRESS
 
-    // The job is finished - see job result
-    SUCCEEDED
+  // The job is finished - see job result
+  SUCCEEDED
 
-    // The job failed
-    FAILED
+  // The job failed
+  FAILED
 
-    // The job was cancelled by the user
-    CANCELLED
+  // The job was cancelled by the user
+  CANCELLED
 
-    // The job timed out
-    TIMED_OUT
+  // The job timed out
+  TIMED_OUT
 }
 
 // Tracks when a user requests to create a job
 model JobRequest {
-    id            Int      @id @default(autoincrement())
-    created_at    DateTime @default(now())
-    // Who made the request
-    user          User     @relation(fields: [user_id], references: [id])
-    user_id       Int
-    // What type of job was requested
-    type          JobType
-    // The input parameters requested
-    input_payload Json
-    // Did this request hit an existing cache entry?
-    cache_hit     Boolean
-    // If cache hit, what was the existing job?
-    // If cache miss, what new job was created?
-    job           Job      @relation(fields: [job_id], references: [id])
-    job_id        Int
+  id            Int      @id @default(autoincrement())
+  created_at    DateTime @default(now())
+  // Who made the request
+  user          User     @relation(fields: [user_id], references: [id])
+  user_id       Int
+  // What type of job was requested
+  type          JobType
+  // The input parameters requested
+  input_payload Json
+  // Did this request hit an existing cache entry?
+  cache_hit     Boolean
+  // If cache hit, what was the existing job?
+  // If cache miss, what new job was created?
+  job           Job      @relation(fields: [job_id], references: [id])
+  job_id        Int
 }
 
 model Job {
-    id            Int             @id @default(autoincrement())
-    created_at    DateTime        @default(now())
-    updated_at    DateTime        @updatedAt
-    type          JobType
-    status        JobStatus       @default(PENDING)
-    // What is the unique cache hash for this job?
-    hash          String
-    // Who created this job
-    user          User            @relation(fields: [user_id], references: [id])
-    user_id       Int
-    // Input parameters for the job - untyped JSON - application code manages
-    // zod IO schemas
-    input_payload Json
-    // Related entities
-    assignments   JobAssignment[]
-    results       JobResult[]
+  id            Int             @id @default(autoincrement())
+  created_at    DateTime        @default(now())
+  updated_at    DateTime        @updatedAt
+  type          JobType
+  status        JobStatus       @default(PENDING)
+  // What is the unique cache hash for this job?
+  hash          String
+  // Who created this job
+  user          User            @relation(fields: [user_id], references: [id])
+  user_id       Int
+  // Input parameters for the job - untyped JSON - application code manages
+  // zod IO schemas
+  input_payload Json
+  // Related entities
+  assignments   JobAssignment[]
+  results       JobResult[]
 
-    // Link to the original request that created this job
-    requests JobRequest[]
+  // Link to the original request that created this job
+  requests JobRequest[]
 }
 
 // JobAssignment tracks attempts to process a job
 model JobAssignment {
-    id              Int           @id @default(autoincrement())
-    created_at      DateTime      @default(now())
-    updated_at      DateTime      @updatedAt
-    // Link to the job
-    job             Job           @relation(fields: [job_id], references: [id])
-    job_id          Int
-    // ECS task info
-    ecs_task_arn    String
-    ecs_cluster_arn String
-    // When this assignment expires
-    expires_at      DateTime
-    // Where the worker should write results
-    storage_scheme  StorageScheme
-    storage_uri     String
-    // Assignment status tracking
-    heartbeat_at    DateTime?
-    completed_at    DateTime?
-    // Results from this assignment
-    result          JobResult?
+  id              Int           @id @default(autoincrement())
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+  // Link to the job
+  job             Job           @relation(fields: [job_id], references: [id])
+  job_id          Int
+  // ECS task info
+  ecs_task_arn    String
+  ecs_cluster_arn String
+  // When this assignment expires
+  expires_at      DateTime
+  // Where the worker should write results
+  storage_scheme  StorageScheme
+  storage_uri     String
+  // Assignment status tracking
+  heartbeat_at    DateTime?
+  completed_at    DateTime?
+  // Results from this assignment
+  result          JobResult?
 }
 
 // JobResult stores the output of a successful job execution
 model JobResult {
-    id             Int           @id @default(autoincrement())
-    created_at     DateTime      @default(now())
-    // Links to parent entities
-    job            Job           @relation(fields: [job_id], references: [id])
-    job_id         Int
-    // Which assignment produced this result?
-    assignment     JobAssignment @relation(fields: [assignment_id], references: [id])
-    assignment_id  Int           @unique
-    // Result data - optional
-    result_payload Json?
-    // Where results were stored
-    storage_scheme StorageScheme
-    storage_uri    String
-    // Optional metadata about the results
-    metadata       Json?
-    // Cache validity - defaults to true
-    cache_valid    Boolean       @default(true)
+  id             Int           @id @default(autoincrement())
+  created_at     DateTime      @default(now())
+  // Links to parent entities
+  job            Job           @relation(fields: [job_id], references: [id])
+  job_id         Int
+  // Which assignment produced this result?
+  assignment     JobAssignment @relation(fields: [assignment_id], references: [id])
+  assignment_id  Int           @unique
+  // Result data - optional
+  result_payload Json?
+  // Where results were stored
+  storage_scheme StorageScheme
+  storage_uri    String
+  // Optional metadata about the results
+  metadata       Json?
+  // Cache validity - defaults to true
+  cache_valid    Boolean       @default(true)
 }
 
 // Criteria for regional and suitability assessments
 
 model Region {
-    id           Int      @id @default(autoincrement())
-    name         String   @unique
-    display_name String
-    description  String?
-    created_at   DateTime @default(now())
-    updated_at   DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  display_name String
+  description  String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
-    // Relations
-    criteria RegionalCriteria[]
+  // Relations
+  criteria RegionalCriteria[]
 
-    @@map("regions")
+  @@map("regions")
 }
 
 model Criteria {
-    id               Int      @id @default(autoincrement())
-    name             String   @unique
-    display_title    String
-    display_subtitle String?
-    units            String?
-    min_tooltip      String?
-    max_tooltip      String?
-    payload_prefix   String
-    created_at       DateTime @default(now())
-    updated_at       DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  name             String   @unique
+  display_title    String
+  display_subtitle String?
+  units            String?
+  min_tooltip      String?
+  max_tooltip      String?
+  payload_prefix   String
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
 
-    // Relations
-    regionalCriteria RegionalCriteria[]
+  // Relations
+  regionalCriteria RegionalCriteria[]
 
-    @@map("criteria")
+  @@map("criteria")
 }
 
 model RegionalCriteria {
-    id          Int @id @default(autoincrement())
-    region_id   Int
-    criteria_id Int
+  id          Int @id @default(autoincrement())
+  region_id   Int
+  criteria_id Int
 
-    // Actual bounds for this criteria in this region
-    min_val Float
-    max_val Float
+  // Actual bounds for this criteria in this region
+  min_val Float
+  max_val Float
 
-    // Default bounds (what users typically use)
-    default_min_val Float
-    default_max_val Float
+  // Default bounds (what users typically use)
+  default_min_val Float
+  default_max_val Float
 
-    created_at DateTime @default(now())
-    updated_at DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-    // Relations
-    region   Region   @relation(fields: [region_id], references: [id], onDelete: Cascade)
-    criteria Criteria @relation(fields: [criteria_id], references: [id], onDelete: Cascade)
+  // Relations
+  region   Region   @relation(fields: [region_id], references: [id], onDelete: Cascade)
+  criteria Criteria @relation(fields: [criteria_id], references: [id], onDelete: Cascade)
 
-    // Ensure each criteria appears only once per region
-    @@unique([region_id, criteria_id])
-    @@map("regional_criteria")
+  // Ensure each criteria appears only once per region
+  @@unique([region_id, criteria_id])
+  @@map("regional_criteria")
 }
 
 model PasswordResetCode {
-    id         Int       @id @default(autoincrement())
-    // Hashed version of the reset code for security
-    code_hash  String    @unique
-    created_at DateTime  @default(now())
-    // When this code expires (typically 15-60 minutes from creation)
-    expires_at DateTime
-    // Has this code been used?
-    used       Boolean   @default(false)
-    // When was it used (if applicable)
-    used_at    DateTime?
-    // Optional: track attempts to use this code
-    attempts   Int       @default(0)
+  id         Int       @id @default(autoincrement())
+  // Hashed version of the reset code for security
+  code_hash  String    @unique
+  created_at DateTime  @default(now())
+  // When this code expires (typically 15-60 minutes from creation)
+  expires_at DateTime
+  // Has this code been used?
+  used       Boolean   @default(false)
+  // When was it used (if applicable)
+  used_at    DateTime?
+  // Optional: track attempts to use this code
+  attempts   Int       @default(0)
 
-    // Link to the user who requested the reset
-    user    User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-    user_id Int
+  // Link to the user who requested the reset
+  user    User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id Int
 
-    // Index on code_hash for fast lookup during verification
-    @@index([code_hash])
-    @@map("password_reset_codes")
+  // Index on code_hash for fast lookup during verification
+  @@index([code_hash])
+  @@map("password_reset_codes")
+}
+
+model MapLayer {
+  id                  String   @unique
+  layer_id            String?  @unique
+  title               String
+  category            String?
+  url                 String[]
+  url_type            String
+  server_layer_id_ref String?
+  info_url            String?
+  attributions        String?
+  reverse_range       Boolean  @default(false)
+  cluster             Boolean  @default(false)
+  label_prop          String?
+  layer_prefix        String?
+  layer_postfix       String?
+  layer_options       Json?
+  layer_group_options Json?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  @@map("map_layers")
 }

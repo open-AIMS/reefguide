@@ -19,11 +19,7 @@
     "target": "ES2022",
     "module": "ES2022",
     "useDefineForClassFields": false,
-    "lib": [
-      "ESNext",
-      "ES2022",
-      "dom"
-    ]
+    "lib": ["ESNext", "ES2023", "dom"]
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
@@ -32,7 +28,5 @@
     "strictTemplates": true,
     "typeCheckHostBindings": true
   },
-  "include": [
-    "src/**/*.ts"
-  ]
+  "include": ["src/**/*.ts"]
 }
