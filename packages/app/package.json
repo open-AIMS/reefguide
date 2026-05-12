@@ -1,6 +1,6 @@
 {
   "name": "@reefguide/app",
-  "version": "0.1",
+  "version": "0.1.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -32,13 +32,13 @@
     "fuzzysort": "^3.1.0",
     "jwt-decode": "^4.0.0",
     "lerc": "^4.1.1",
-    "ol": "^10.9.0",
+    "ol": "catalog:",
     "parquet-wasm": "^0.6.1",
     "proj4": "^2.20.8",
     "rxjs": "~7.8.2",
     "tslib": "^2.3.0",
     "vega-embed": "^7.0.2",
-    "zod": "^3.25.76"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^20.3.9",
