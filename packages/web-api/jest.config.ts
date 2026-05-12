@@ -1,5 +1,6 @@
 import { defineConfig } from 'jest';
 
+process.env.TEST_MODE = 'true';
 
 // import { createDefaultPreset } from 'ts-jest';
 // const tsJestTransformCfg = createDefaultPreset().transform;
@@ -22,8 +23,8 @@ export default defineConfig({
     '^.+\\.ts$': [
       'ts-jest',
       {
-        tsconfig: 'test/tsconfig.json',
-      },
-    ],
+        tsconfig: 'test/tsconfig.json'
+      }
+    ]
   }
 });
