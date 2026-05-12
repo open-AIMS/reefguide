@@ -6,8 +6,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "lib": ["ES2023", "dom"],
-    "ignoreDeprecations": "6.0"
+    "lib": ["ES2023", "dom"]
   },
   "include": ["src/*.ts", "src/**/*.ts"],
   "exclude": ["dist", "node_modules"]

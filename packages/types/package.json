@@ -29,6 +29,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "prettier": "catalog:",
-    "tsup": "^8.5.1"
+    "tsup": "^8.5.1",
+    "typescript": "catalog:"
   }
 }

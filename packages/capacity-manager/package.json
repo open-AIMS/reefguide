@@ -36,6 +36,7 @@
     "@sentry/cli": "^2.53.0",
     "@types/express": "catalog:",
     "ts-node": "catalog:",
-    "ts-node-dev": "catalog:"
+    "ts-node-dev": "catalog:",
+    "typescript": "catalog:"
   }
 }
