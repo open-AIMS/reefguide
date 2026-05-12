@@ -938,6 +938,37 @@ export type TransferGroupOwnershipResponse = {
 };
 
 // ==================
+// Map Layer Types
+// ==================
+
+export const MapLayerSchema = z.object({
+  id: z.string(),
+  layer_id: z.string().nullable(),
+  title: z.string(),
+  category: z.string().nullable(),
+  url: z.array(z.string()),
+  url_type: z.string(),
+  server_layer_id_ref: z.string().nullable(),
+  info_url: z.string().nullable(),
+  attributions: z.string().nullable(),
+  reverse_range: z.boolean(),
+  cluster: z.boolean(),
+  label_prop: z.string().nullable(),
+  layer_prefix: z.string().nullable(),
+  layer_postfix: z.string().nullable(),
+  layer_options: z.any().nullable(),
+  layer_group_options: z.any().nullable(),
+  created_at: z.date(),
+  updated_at: z.date()
+});
+export type MapLayer = z.infer<typeof MapLayerSchema>;
+
+export const GetMapLayersResponseSchema = z.object({
+  layers: z.array(MapLayerSchema)
+});
+export type GetMapLayersResponse = z.infer<typeof GetMapLayersResponseSchema>;
+
+// ==================
 // User Search Types
 // ==================
 
