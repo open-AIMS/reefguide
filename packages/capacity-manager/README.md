@@ -60,28 +60,29 @@ VPC_ID=vpc-xxxxxxxxx
 ## Development
 
 ```bash
-# Install dependencies (from monorepo root)
-npm install
-
-# Start in development mode
-npm run dev
-
 # Build
-npm run build
+pnpm run build
 
 # Start production
-npm start
+pnpm start
 ```
 
 ## Health Check
 
 The service exposes a health check endpoint at `/health` on port 3000 (or `PORT` env var).
 
+**Note:** if capacity-manager errors on startup, the ECS configuration will never become
+healthy and the cdk deployment will fail with a circuit breaker error.
+
 ## Logging
 
 Logs are output to console with configurable levels via the `LOG_LEVEL` environment variable:
 
 - `error`, `warn`, `info` (default), `verbose`, `debug`, `silly`
+
+**Important:** [logging.ts](./src/logging.ts) will use Sentry Winston Transport if `SENTRY_DSN`
+is defined. So it's important to test with and without that env var (define in .env) when
+changing any code related to logging or these dependencies.
 
 ## Job Type Integration
 

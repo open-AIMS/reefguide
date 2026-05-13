@@ -1,6 +1,6 @@
 import winston from 'winston';
+import type { Logger, LoggerOptions } from 'winston';
 import { config } from './config';
-import Sentry from '@sentry/node';
 import SentryTransport from 'winston-transport-sentry-node';
 
 /**
@@ -23,7 +23,11 @@ import SentryTransport from 'winston-transport-sentry-node';
  * error and warn logs, but not info, http, etc.
  */
 
-let possibleSentry: typeof Sentry | undefined = undefined;
+// type Transport = LoggerOptions['transports'][number];
+type Transport = Logger['transports'][number];
+
+let possibleSentry: Transport | undefined = undefined;
+
 if (config.sentryDsn) {
   console.log('Setting up sentry logger integration');
   const options = {
@@ -37,7 +41,13 @@ if (config.sentryDsn) {
     // Bugsink prefers no traces
     tracesSampleRate: 0
   };
-  possibleSentry = new SentryTransport(options).sentry;
+  possibleSentry = new SentryTransport(options);
+}
+
+// Define where logs are sent - console for basic setup
+const transports: LoggerOptions['transports'] = [new winston.transports.Console()];
+if (possibleSentry) {
+  transports.push(possibleSentry);
 }
 
 /**
@@ -60,10 +70,5 @@ export const logger = winston.createLogger({
       }`;
     })
   ),
-
-  // Define where logs are sent - console for basic setup
-  transports: [new winston.transports.Console()].concat(
-    // @ts-expect-error was working, but type error after package updates and TS 5.9.3
-    possibleSentry !== undefined ? [possibleSentry] : []
-  )
+  transports
 });
