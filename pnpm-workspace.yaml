@@ -20,10 +20,14 @@ minimumReleaseAgeExclude:
   - '@angular-devkit/*'
   - '@ngtools/webpack'
   - '@schematics/angular'
-
-onlyBuiltDependencies:
-  - '@prisma/client'
-  - '@prisma/engines'
-  - esbuild
-  - prisma
-  - unrs-resolver
+allowBuilds:
+  '@parcel/watcher': set this to true or false
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@sentry/cli': set this to true or false
+  bcrypt: set this to true or false
+  esbuild: true
+  lmdb: set this to true or false
+  msgpackr-extract: set this to true or false
+  prisma: true
+  unrs-resolver: true
