@@ -23,7 +23,8 @@ import SentryTransport from 'winston-transport-sentry-node';
  * error and warn logs, but not info, http, etc.
  */
 
-// type Transport = LoggerOptions['transports'][number];
+// would need to add winston-transport dependency for this type,
+// so just get the Transport type off the Logger.
 type Transport = Logger['transports'][number];
 
 let possibleSentry: Transport | undefined = undefined;
