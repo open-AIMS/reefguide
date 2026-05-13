@@ -13,7 +13,8 @@ jobs:
       # https://turborepo.dev/docs/telemetry#how-do-i-opt-out
       DO_NOT_TRACK: 1
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout code
+        uses: actions/checkout@v6
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:

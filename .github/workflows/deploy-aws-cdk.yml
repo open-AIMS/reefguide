@@ -47,7 +47,7 @@ jobs:
           echo "========================================="
 
       - name: Checkout main code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Display Repository Info
         run: |
@@ -57,7 +57,7 @@ jobs:
           ls -la
 
       - name: Checkout config code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # e.g. org/repo-name
           repository: ${{ vars.CDK_CONFIG_REPO_PATH }}
@@ -105,6 +105,7 @@ jobs:
           echo "========================================="
 
       - name: Configure AWS Credentials
+        # TODO latest is @v6 or @6.1.0
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ vars.CDK_DEPLOY_GA_ROLE_ARN }}
@@ -124,10 +125,16 @@ jobs:
           echo "📦 AWS CLI installed:"
           aws --version
 
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
         with:
-          node-version: 24
+          version: 10
+
+      - name: Setup Node.js 24 with pnpm cache
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'pnpm'
 
       - name: Display Node.js Version
         run: |
@@ -135,29 +142,10 @@ jobs:
           echo "Node version: $(node --version)"
           echo "NPM version: $(npm --version)"
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10
-
       - name: Display pnpm Version
         run: |
           echo "📦 pnpm installed:"
           echo "pnpm version: $(pnpm --version)"
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-          echo "📁 pnpm store path: $(pnpm store path --silent)"
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         run: |
