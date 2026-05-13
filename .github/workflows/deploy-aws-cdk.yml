@@ -150,6 +150,7 @@ jobs:
           echo "✅ Infrastructure package built successfully"
 
       - name: Upload TS and Angular sourcemaps to BugSink
+        if: github.event.inputs.action == 'deploy'
         env:
           SENTRY_URL: ${{ secrets.SENTRY_URL }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
