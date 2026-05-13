@@ -15,6 +15,19 @@ a dependency in every package:
 
 `pnpm up <pkg-name>`
 
+### Trust
+
+Trust policy and minimum age are defined in
+[pnpm-workspace.yaml](../pnpm-workspace.yaml)
+
+### Reset/Clean
+
+`pnpm purge` - remove all node_modules directories.
+
+`pnpm clean-install` - purge then install from lockfile.
+
+`turbo clean` - clean turbo cache.
+
 ### Catalog
 
 For dependencies that we want consistent across the entire monorepo, prefer using
