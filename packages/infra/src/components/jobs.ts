@@ -113,6 +113,9 @@ export class JobSystem extends Construct {
     // Create task definitions for each job type
     this.taskDefinitions = {};
 
+    const disableCircuitBreaker = this.node.tryGetContext('disableCircuitBreaker') === 'true';
+    console.log(`JobSystem disableCircuitBreaker=${disableCircuitBreaker}`);
+
     // Ensure there are not duplicate job type configurations
     const allJobs = props.workers
       .map(w => w.jobTypes)
@@ -319,9 +322,11 @@ export class JobSystem extends Construct {
       maxHealthyPercent: 200,
       healthCheckGracePeriod: Duration.seconds(60),
       // Circuit breaker to prevent failing deployments
-      circuitBreaker: {
-        rollback: true
-      }
+      circuitBreaker: disableCircuitBreaker
+        ? undefined
+        : {
+            rollback: true
+          }
     });
 
     // Add task definition configurations to capacity manager environment
