@@ -208,7 +208,6 @@ export function createLayerFromDef(layerDef: LayerDef, mixin?: Partial<Options>)
           // TODO update LayerDef and UI to link to multiple
           infoUrl: layerDef.infoUrl
         } as LayerProperties,
-        // @ts-expect-error OpenLayers types issue
         layers: layerDef.url.map(url => {
           const childLayerDef: SingularLayerDef = {
             ...layerDef,
