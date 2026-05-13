@@ -16,9 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10
+        uses: pnpm/action-setup@v6
       - name: Use Node.js 24 with pnpm cache
         uses: actions/setup-node@v6
         with:
