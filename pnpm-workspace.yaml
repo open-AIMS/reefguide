@@ -15,11 +15,10 @@ catalog:
   zod: '^3.25.76'
 
 minimumReleaseAge: 2880
-minimumReleaseAgeExclude:
-  - '@angular/*'
-  - '@angular-devkit/*'
-  - '@ngtools/webpack'
-  - '@schematics/angular'
+
+trustPolicy: 'no-downgrade'
+trustPolicyIgnoreAfter: 17280
+
 allowBuilds:
   '@parcel/watcher': true
   '@prisma/client': true
