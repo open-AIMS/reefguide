@@ -120,11 +120,6 @@ jobs:
       - id: install-aws-cli
         uses: unfor19/install-aws-cli-action@v1
 
-      - name: Display AWS CLI Version
-        run: |
-          echo "📦 AWS CLI installed:"
-          aws --version
-
       - name: Install pnpm
         uses: pnpm/action-setup@v6
 
@@ -134,15 +129,12 @@ jobs:
           node-version: '24'
           cache: 'pnpm'
 
-      - name: Display Node.js Version
+      - name: Display Tool Versions
         run: |
-          echo "📦 Node.js setup complete:"
-          echo "Node version: $(node --version)"
-          echo "NPM version: $(npm --version)"
-
-      - name: Display pnpm Version
-        run: |
-          echo "📦 pnpm installed:"
+          echo "📦 AWS CLI installed: $(aws --version)"
+          echo "📦 Node.js and pnpm setup complete:"
+          echo "node version: $(node --version)"
+          echo "npm version: $(npm --version)"
           echo "pnpm version: $(pnpm --version)"
 
       - name: Install dependencies
