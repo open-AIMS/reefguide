@@ -128,7 +128,13 @@ mat-card-content {
 }
 
 .footer-links .mat-icon {
-  font-size: 0.9rem;
+  // TODO should create some kind of mat-icon sizing utility, if Material doesn't have one.
+  --icon-size: 1rem;
+
+  font-size: var(--icon-size);
+  width: var(--icon-size);
+  height: var(--icon-size);
+  line-height: var(--icon-size);
 }
 
 @media (max-width: 480px) {
