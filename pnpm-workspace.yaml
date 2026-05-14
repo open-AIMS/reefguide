@@ -4,7 +4,7 @@ packages:
 catalog:
   '@types/express': '^4.17.25'
   '@types/node': '^24.12.3'
-  axios: '^1.16.0'
+  axios: '~1.15.2'
   dotenv: '^16.6.1'
   express: '^4.22.1'
   ol: '^10.9.0'
