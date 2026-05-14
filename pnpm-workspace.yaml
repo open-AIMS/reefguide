@@ -15,15 +15,18 @@ catalog:
   zod: '^3.25.76'
 
 minimumReleaseAge: 2880
-minimumReleaseAgeExclude:
-  - '@angular/*'
-  - '@angular-devkit/*'
-  - '@ngtools/webpack'
-  - '@schematics/angular'
 
-onlyBuiltDependencies:
-  - '@prisma/client'
-  - '@prisma/engines'
-  - esbuild
-  - prisma
-  - unrs-resolver
+trustPolicy: 'no-downgrade'
+trustPolicyIgnoreAfter: 17280
+
+allowBuilds:
+  '@parcel/watcher': true
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@sentry/cli': true
+  bcrypt: true
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+  prisma: true
+  unrs-resolver: true

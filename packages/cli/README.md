@@ -14,7 +14,7 @@ For global access to the CLI:
 
 ```bash
 pnpm run build
-pnpm link
+pnpm add -g .
 ```
 
 Then use `reefguide-cli` from anywhere:
