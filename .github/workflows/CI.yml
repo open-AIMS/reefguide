@@ -12,6 +12,8 @@ jobs:
       # tell Turbo not to track telemetry
       # https://turborepo.dev/docs/telemetry#how-do-i-opt-out
       DO_NOT_TRACK: 1
+      # https://www.prisma.io/docs/orm/reference/environment-variables-reference#prisma_hide_update_message
+      PRISMA_HIDE_UPDATE_MESSAGE: 1
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
