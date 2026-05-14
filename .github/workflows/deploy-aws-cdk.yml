@@ -166,7 +166,15 @@ jobs:
           fi
           echo "🗺️  Uploading sourcemaps to BugSink..."
           echo "BugSink URL: $SENTRY_URL"
-          pnpm exec turbo sourcemaps --force
+          for attempt in 1 2 3; do
+            pnpm exec turbo sourcemaps --force && break
+            if [ "$attempt" -eq 3 ]; then
+              echo "❌ Sourcemap upload failed after 3 attempts"
+              exit 1
+            fi
+            echo "⚠️  Attempt $attempt failed, retrying in 10s..."
+            sleep 10
+          done
           echo "✅ Sourcemaps uploaded successfully"
 
       - name: Display Final Configuration Before CDK
