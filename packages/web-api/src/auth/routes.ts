@@ -145,6 +145,8 @@ router.post(
     // Generate a refresh token
     const refreshToken = await generateRefreshToken(user.id);
 
+    console.info(`user login successfull id=${user.id}`);
+
     // and add login to log
     await prisma.userLog.create({
       data: { action: 'LOGIN', userId: user.id }
