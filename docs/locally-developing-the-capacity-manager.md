@@ -54,7 +54,7 @@ pnpm generate
 
 The capacity manager's configuration is largely auto-generated from a large number of dynamic AWS resources, and therefore is very difficult to build manually. `infra` provides a script to automate this process by inspecting a deployed cloudformation stack and it's task definition.
 
-Move into the `infra` folder and build
+Change to the `infra` directory and build:
 
 ```
 cd packages/infra
@@ -108,7 +108,7 @@ Do you want to overwrite it? [y/N]: y
 [INFO] You can now use this file with: source ../capacity-manager/.env
 ```
 
-You may be prmopted to overrwrite an existing .env file - press yes if you would like to do this.
+You may be prompted to overrwrite an existing .env file - press yes if you would like to do this.
 
 ## Running the capacity manager
 

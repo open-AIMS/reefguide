@@ -81,7 +81,9 @@ export class ReefguideStack extends cdk.Stack {
      * @returns Secret generated with {username: <email>, password: <random>}
      */
     const credBuilder = (id: string, email: string) => {
-      return new sm.Secret(this, id, {
+      // prefix with stack name, e.g. "test-reefguide-manager-userpass"
+      const fullId = `${config.stackName}-${id}`;
+      return new sm.Secret(this, fullId, {
         // {username, password}
         generateSecretString: {
           passwordLength: 16,

@@ -244,6 +244,9 @@ export class ECSWebAPI extends Construct {
     props.sharedBalancer.addHttpRedirectedConditionalHttpsTarget(
       'web-api',
       tg,
+      // Axios 1.16.0 changes Host header behavior, which can cause capacity-manager
+      // to fail to connect to web-api. Until fixed, we're on axios@1.15.*
+      // see: https://github.com/open-AIMS/reefguide/issues/274
       [elb.ListenerCondition.hostHeaders([props.domainName])],
       110,
       110
