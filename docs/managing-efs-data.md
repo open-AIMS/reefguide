@@ -139,22 +139,17 @@ Once connected you will see output similar to
 
 ```
 [CONNECT] Starting interactive SSM session with instance: i-abcd
-[CONNECT] You will be connected as ssm-user. Use 'sudo su - ubuntu' to switch to ubuntu user.
+[CONNECT] You will be connected as ssm-user. Use 'sudo su - ec2-user' to switch to normal user.
 [CONNECT] Type 'exit' to end the session.
 
 Starting session with SessionId: 1234
 $
 ```
 
-You can now follow the tip and run
+You can now follow the tip and run:
 
 ```bash
-sudo su - ubuntu
-```
-
-Once connected and in `/home/ubuntu` as above, run the following:
-
-```bash
+sudo su - ec2-user
 ./mountefs.sh
 ```
 
@@ -162,8 +157,8 @@ You should see files inside `~/efs`, where the elastic file system is mounted, i
 
 After mounting, `ll`, if owner/group are root, then:
 
-1. `chown ubuntu efs`
-2. `chgrp ubuntu efs`
+1. `chown $(whoami) efs`
+2. `chgrp $(whoami) efs`
 
 You can use the ranger file CLI utility for navigating the file system remotely and moving data - see [docs](https://github.com/ranger/ranger/wiki/Official-User-Guide) - launchable with `ranger` in the terminal directly. Or you can use regular shell commands.
 
@@ -239,12 +234,8 @@ Once finished, don't leave superfluous data on the EFS store, as this is charged
 
 ## efs-utils
 
-Currently [cdk networking script](../packages/infra/src/components/networking.ts) installs efs-utils from GitHub.
-This takes a long time to compile.
+Originally, the efs management instance used ubuntu and compiled efs-util from GitHub,
+which was awkward to get tooling working and tool a long time.
+Now, we're [using Amazon Linux](https://github.com/aws/efs-utils/tree/master#for-amazon-linux-distributions).
 
-The deb builds are also copied to the efs volume: _~/efs/amazon-efs-utils-3.1.1-1_amd64.deb_
-
-In the future, could consider these alternatives:
-
-- [using Amazon Linux](https://github.com/aws/efs-utils/tree/master#for-amazon-linux-distributions) and `sudo yum -y install amazon-efs-utils`
-- [instaling efs-utils](https://docs.aws.amazon.com/efs/latest/ug/setting-up-aws-sys-mgr.html) with Systems Manager.
+See: [infra - networking](../packages/infra/src/components/networking.ts)

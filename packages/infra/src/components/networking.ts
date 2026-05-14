@@ -220,19 +220,6 @@ export class ReefGuideNetworking extends Construct {
       subnetType: ec2.SubnetType.PUBLIC
     });
 
-    // ========================
-    // SERVICE INSTANCE FOR EFS
-    // ========================
-
-    // EC2 Instance for EFS management - be sure to shut down when not using
-    const instanceType = ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MEDIUM);
-
-    // Use Ubuntu image as it is a bit easier for users
-    const machineImage = ec2.MachineImage.lookup({
-      // AMI: ami-0892a9c01908fafd1
-      name: 'ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20240801'
-    });
-
     // ===================
     // DATA TRANSFER SETUP
     // ===================
@@ -277,41 +264,31 @@ export class ReefGuideNetworking extends Construct {
     // grant rw for bucket
     this.dataBucket.grantReadWrite(efsManagementRole);
 
+    this.createEfsManagementInstance(efsManagementRole, fileSystem);
+  }
+
+  private createEfsManagementInstance(efsManagementRole: iam.Role, efsFileSystem: efs.FileSystem) {
+    // EC2 Instance for EFS management - be sure to shut down when not using
+    const instanceType = ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MEDIUM);
+
+    const machineImage = ec2.MachineImage.latestAmazonLinux2023();
+
     const userData = ec2.UserData.forLinux();
-    const scriptLocation = '/home/ubuntu/mountefs.sh';
+    const scriptLocation = '/home/ec2-user/mountefs.sh';
     userData.addCommands(
-      // update etc
-      'sudo apt -y update',
-      // get deps
-      // see https://github.com/aws/efs-utils/blob/master/INSTALL.md
-      // this is wrong, need to use rustup now, just for reference
-      // # remove gcc g++ here if you already installed a compatible version following GCC Version Requirements instruction
-      // sudo apt-get -y install git binutils rustc cargo libssl-dev pkg-config gettext make gcc g++ cmake wget perl
-      'sudo apt -y install unzip git binutils pkg-config libssl-dev ranger golang cmake make gettext wget perl',
-      // apt's cargo and rustc are too old now, need to use rustup
-      // TODO test this works, may need arg so it doesn't do interactive prompt
-      "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh",
-      '. "$HOME/.cargo/env"',
-      // efs utils install
-      'git clone https://github.com/aws/efs-utils',
-      'cd efs-utils',
-      './build-deb.sh',
-      'sudo apt -y install ./build/amazon-efs-utils*deb',
-      'cd home/ubuntu',
-      // setup reefguide mount in /efs of ubuntu user
-      'mkdir /home/ubuntu/efs',
+      // update packages
+      'sudo dnf -y update',
+      // install amazon-efs-utils and AWS CLI via package manager
+      'sudo dnf -y install amazon-efs-utils awscli',
+      // setup reefguide mount directory
+      'mkdir /home/ec2-user/efs',
 
       // Leave a script to help mount in the future
-      `touch ${scriptLocation} && chmod +x ${scriptLocation} && echo "sudo mount -t efs -o tls,iam ${fileSystem.fileSystemId} /home/ubuntu/efs/" > ${scriptLocation}`,
+      `touch ${scriptLocation} && chmod +x ${scriptLocation} && echo "sudo mount -t efs -o tls,iam ${efsFileSystem.fileSystemId} /home/ec2-user/efs/" > ${scriptLocation}`,
       `${scriptLocation}`,
 
-      // cache directory must exists or ReefGuideWorker will error
-      'mkdir -p /home/ubuntu/efs/data/reefguide/cache',
-
-      // Install AWS CLI
-      'curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"',
-      'unzip awscliv2.zip',
-      'sudo ./aws/install'
+      // cache directory must exist or ReefGuideWorker will error
+      'mkdir -p /home/ec2-user/efs/data/reefguide/cache'
     );
 
     const efsManagementInstance = new ec2.Instance(this, 'EFSManagementInstance', {
@@ -326,7 +303,7 @@ export class ReefGuideNetworking extends Construct {
       blockDevices: [
         {
           // modify root device
-          deviceName: '/dev/sda1',
+          deviceName: '/dev/xvda',
           volume: ec2.BlockDeviceVolume.ebs(12, {
             volumeType: ec2.EbsDeviceVolumeType.GP3,
             deleteOnTermination: true
@@ -336,7 +313,7 @@ export class ReefGuideNetworking extends Construct {
     });
 
     // Allow EC2 instance to access EFS
-    fileSystem.connections.allowDefaultPortFrom(efsManagementInstance);
+    efsFileSystem.connections.allowDefaultPortFrom(efsManagementInstance);
 
     // CfnOutputs
     new CfnOutput(this, 'efnConnectionInfo', {

@@ -225,11 +225,10 @@ The main repository contains a configuration management script that interacts wi
 You can use the below manual process to connect to the EFS volume, or use the management scripts below in [efs scripts](#efs-management-scripts).
 
 Connect to the instance using AWS SSM Connect (go to AWS -> EC2 -> Find the service instance -> Connect -> Connect using SSM)
-
-then get into the ubuntu user and mount the volume
+then switch users and mount the efs volume.
 
 ```bash
-sudo su - ubuntu
+sudo su - ec2-user
 cd ~
 ./mountefs.sh
 ```
@@ -304,6 +303,7 @@ CONFIG_FILE_NAME=test.json ./connect-efs.sh [stack-name]
 
 This script can also forward ports; this is useful for connecting to the database.
 First, set these environment variables: `PORT_FWD_HOST`, `PORT_FWD_PORT`, `PORT_FWD_LOCALPORT`
+
 ```bash
 ./scripts/connect-efs.sh [stack-name] fwd
 ```
@@ -416,9 +416,9 @@ CONFIG_FILE_NAME=test.json ./get-efs-target.sh
 CONFIG_FILE_NAME=test.json ./connect-efs.sh
 
 # Once connected:
-sudo su - ubuntu
+sudo su - ec2-user
 ./mountefs.sh
-ls -la /home/ubuntu/efs/
+ls -la /home/ec2-user/efs/
 ```
 
 ### Troubleshooting
