@@ -300,10 +300,13 @@ export class ReefGuideNetworking extends Construct {
       'cd home/ubuntu',
       // setup reefguide mount in /efs of ubuntu user
       'mkdir /home/ubuntu/efs',
-      `sudo mount -t efs -o tls,iam ${fileSystem.fileSystemId} /home/ubuntu/efs/`,
 
       // Leave a script to help mount in the future
       `touch ${scriptLocation} && chmod +x ${scriptLocation} && echo "sudo mount -t efs -o tls,iam ${fileSystem.fileSystemId} /home/ubuntu/efs/" > ${scriptLocation}`,
+      `${scriptLocation}`,
+
+      // cache directory must exists or ReefGuideWorker will error
+      'mkdir -p /home/ubuntu/efs/data/reefguide/cache',
 
       // Install AWS CLI
       'curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"',
