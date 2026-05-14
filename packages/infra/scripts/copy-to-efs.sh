@@ -18,6 +18,9 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+USER='ec2-user'
+HOME="/home/$USER"
+
 # Logging function
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
@@ -464,7 +467,7 @@ transfer_s3_to_efs_file() {
 
     # Step 1: Mount EFS
     execute_ssm_command "$instance_id" \
-        "cd /home/ubuntu && sudo -u ubuntu ./mountefs.sh" \
+        "cd $HOME && sudo -u $USER ./mountefs.sh" \
         "Mount EFS filesystem"
 
     # Step 2: Create target directory
@@ -477,10 +480,10 @@ transfer_s3_to_efs_file() {
         target_dir=$(dirname "$target_path")
     fi
 
-    local target_dir_path="/home/ubuntu/efs/$target_dir"
+    local target_dir_path="$HOME/efs/$target_dir"
 
     execute_ssm_command "$instance_id" \
-        "sudo -u ubuntu mkdir -p $target_dir_path" \
+        "sudo -u $USER mkdir -p $target_dir_path" \
         "Create target directory"
 
     if [[ "$is_zip" == "true" ]]; then
@@ -489,12 +492,12 @@ transfer_s3_to_efs_file() {
         local tmp_file="$target_dir_path/$temp_zip_name"
 
         execute_ssm_command "$instance_id" \
-            "sudo -u ubuntu aws s3 cp s3://$s3_bucket/$s3_key $tmp_file" \
+            "sudo -u $USER aws s3 cp s3://$s3_bucket/$s3_key $tmp_file" \
             "Download zip file from S3"
 
         # Step 3b: Extract zip file to target directory
         execute_ssm_command "$instance_id" \
-            "cd /home/ubuntu/efs/$target_path && sudo -u ubuntu unzip -o $tmp_file" \
+            "cd $HOME/efs/$target_path && sudo -u $USER unzip -o $tmp_file" \
             "Extract zip file to EFS target directory"
 
         # Step 3c: Clean up temporary zip file
@@ -504,22 +507,22 @@ transfer_s3_to_efs_file() {
 
         # Step 4: Verify extraction
         execute_ssm_command "$instance_id" \
-            "sudo -u ubuntu ls -la /home/ubuntu/efs/$target_path" \
+            "sudo -u $USER ls -la $HOME/efs/$target_path" \
             "Verify zip extraction"
     else
         # Step 3: Download from S3 to EFS (regular file)
         execute_ssm_command "$instance_id" \
-            "sudo -u ubuntu aws s3 cp s3://$s3_bucket/$s3_key /home/ubuntu/efs/$target_path" \
+            "sudo -u $USER aws s3 cp s3://$s3_bucket/$s3_key $HOME/efs/$target_path" \
             "Download file from S3 to EFS"
 
         # Step 4: Verify file transfer
         execute_ssm_command "$instance_id" \
-            "sudo -u ubuntu ls -la /home/ubuntu/efs/$target_path" \
+            "sudo -u $USER ls -la $HOME/efs/$target_path" \
             "Verify file transfer"
 
         # Step 5: Get file info
         execute_ssm_command "$instance_id" \
-            "sudo -u ubuntu file /home/ubuntu/efs/$target_path && sudo -u ubuntu du -h /home/ubuntu/efs/$target_path" \
+            "sudo -u $USER file $HOME/efs/$target_path && sudo -u $USER du -h $HOME/efs/$target_path" \
             "Get file information"
     fi
 }
@@ -535,27 +538,27 @@ transfer_s3_to_efs_directory() {
 
     # Step 1: Mount EFS
     execute_ssm_command "$instance_id" \
-        "cd /home/ubuntu && sudo -u ubuntu ./mountefs.sh" \
+        "cd $HOME && sudo -u $USER ./mountefs.sh" \
         "Mount EFS filesystem"
 
     # Step 2: Create target directory
     execute_ssm_command "$instance_id" \
-        "sudo -u ubuntu mkdir -p /home/ubuntu/efs/$target_path" \
+        "sudo -u $USER mkdir -p $HOME/efs/$target_path" \
         "Create target directory"
 
     # Step 3: Download directory from S3 to EFS
     execute_ssm_command "$instance_id" \
-        "sudo -u ubuntu aws s3 cp s3://$s3_bucket/$s3_key_prefix /home/ubuntu/efs/$target_path --recursive" \
+        "sudo -u $USER aws s3 cp s3://$s3_bucket/$s3_key_prefix $HOME/efs/$target_path --recursive" \
         "Download directory from S3 to EFS"
 
     # Step 4: Verify directory transfer
     execute_ssm_command "$instance_id" \
-        "sudo -u ubuntu find /home/ubuntu/efs/$target_path -type f | head -10" \
+        "sudo -u $USER find $HOME/efs/$target_path -type f | head -10" \
         "Verify directory transfer (showing first 10 files)"
 
     # Step 5: Get directory info
     execute_ssm_command "$instance_id" \
-        "sudo -u ubuntu du -sh /home/ubuntu/efs/$target_path" \
+        "sudo -u $USER du -sh $HOME/efs/$target_path" \
         "Get directory size information"
 }
 
@@ -626,15 +629,15 @@ main() {
     if [[ "$is_zip_transfer" == "true" ]]; then
         transfer_s3_to_efs_file "$EC2_INSTANCE_ID" "$S3_BUCKET" "$TEMP_S3_KEY" "$REMOTE_TARGET" "true"
         log_info "Zip file extracted successfully!"
-        log_info "Directory contents location on EFS: /home/ubuntu/efs/$REMOTE_TARGET"
+        log_info "Directory contents location on EFS: $HOME/efs/$REMOTE_TARGET"
     elif [[ "$is_directory" == "true" ]]; then
         transfer_s3_to_efs_directory "$EC2_INSTANCE_ID" "$S3_BUCKET" "$TEMP_S3_KEY" "$REMOTE_TARGET"
         log_info "Directory transfer completed successfully!"
-        log_info "Directory location on EFS: /home/ubuntu/efs/$REMOTE_TARGET"
+        log_info "Directory location on EFS: $HOME/efs/$REMOTE_TARGET"
     else
         transfer_s3_to_efs_file "$EC2_INSTANCE_ID" "$S3_BUCKET" "$TEMP_S3_KEY" "$REMOTE_TARGET" "false"
         log_info "File transfer completed successfully!"
-        log_info "File location on EFS: /home/ubuntu/efs/$REMOTE_TARGET"
+        log_info "File location on EFS: $HOME/efs/$REMOTE_TARGET"
     fi
 }
 
@@ -648,7 +651,7 @@ usage() {
     echo ""
     echo "Arguments:"
     echo "  local_path          Local file or directory to upload"
-    echo "  remote_target       Target path in EFS (relative to /home/ubuntu/efs/)"
+    echo "  remote_target       Target path in EFS (relative to $HOME/efs/)"
     echo "  s3_transfer_bucket  S3 bucket for temporary transfer storage"
     echo "  ec2_instance_id     EC2 instance ID with EFS access"
     echo ""
@@ -671,7 +674,7 @@ usage() {
     echo "Prerequisites:"
     echo "  - EC2 instance must have SSM agent installed (default on most AMIs)"
     echo "  - EC2 instance must have IAM role with AmazonSSMManagedInstanceCore policy"
-    echo "  - mountefs.sh script must exist at /home/ubuntu/mountefs.sh on the instance"
+    echo "  - mountefs.sh script must exist at $HOME/mountefs.sh on the instance"
     echo "  - AWS CLI must be configured with appropriate permissions"
     echo "  - zip and unzip commands must be available locally and on EC2 instance"
 }

@@ -139,22 +139,17 @@ Once connected you will see output similar to
 
 ```
 [CONNECT] Starting interactive SSM session with instance: i-abcd
-[CONNECT] You will be connected as ssm-user. Use 'sudo su - ubuntu' to switch to ubuntu user.
+[CONNECT] You will be connected as ssm-user. Use 'sudo su - ec2-user' to switch to normal user.
 [CONNECT] Type 'exit' to end the session.
 
 Starting session with SessionId: 1234
 $
 ```
 
-You can now follow the tip and run
+You can now follow the tip and run:
 
 ```bash
-sudo su - ubuntu
-```
-
-Once connected and in `/home/ubuntu` as above, run the following:
-
-```bash
+sudo su - ec2-user
 ./mountefs.sh
 ```
 
@@ -162,8 +157,8 @@ You should see files inside `~/efs`, where the elastic file system is mounted, i
 
 After mounting, `ll`, if owner/group are root, then:
 
-1. `chown ubuntu efs`
-2. `chgrp ubuntu efs`
+1. `chown $(whoami) efs`
+2. `chgrp $(whoami) efs`
 
 You can use the ranger file CLI utility for navigating the file system remotely and moving data - see [docs](https://github.com/ranger/ranger/wiki/Official-User-Guide) - launchable with `ranger` in the terminal directly. Or you can use regular shell commands.
 
