@@ -40,19 +40,19 @@ log_error() {
 cleanup() {
     local exit_code=$?
     log_info "Cleaning up..."
-    
+
     # Remove temporary files
     [[ -n "${TEMP_S3_KEY:-}" ]] && {
         log_info "Removing temporary S3 object: s3://${S3_BUCKET}/${TEMP_S3_KEY}"
         aws s3 rm "s3://${S3_BUCKET}/${TEMP_S3_KEY}" 2>/dev/null || log_warn "Failed to remove S3 object"
     }
-    
+
     # Remove temporary local zip file
     [[ -n "${TEMP_ZIP_FILE:-}" ]] && [[ -f "${TEMP_ZIP_FILE}" ]] && {
         log_info "Removing temporary zip file: ${TEMP_ZIP_FILE}"
         rm -f "${TEMP_ZIP_FILE}" || log_warn "Failed to remove temporary zip file"
     }
-    
+
     # Stop EC2 instance if we started it
     if [[ "${EC2_STARTED_BY_SCRIPT:-false}" == "true" ]]; then
         log_info "Stopping EC2 instance: $EC2_INSTANCE_ID"
@@ -74,7 +74,7 @@ trap cleanup EXIT
 # Validation function
 validate_requirements() {
     log_info "Validating requirements..."
-    
+
     # Check required commands
     local required_commands=("aws" "zip" "unzip")
     for cmd in "${required_commands[@]}"; do
@@ -83,19 +83,19 @@ validate_requirements() {
             exit 1
         fi
     done
-    
+
     # Check AWS CLI configuration
     if ! aws sts get-caller-identity &> /dev/null; then
         log_error "AWS CLI not configured or credentials invalid"
         exit 1
     fi
-    
+
     # Check if local path exists
     if [[ ! -e "$LOCAL_PATH" ]]; then
         log_error "Local path does not exist: $LOCAL_PATH"
         exit 1
     fi
-    
+
     # Validate zip mode usage
     if [[ "$USE_ZIP" == "true" ]]; then
         if [[ ! -d "$LOCAL_PATH" ]]; then
@@ -111,7 +111,7 @@ validate_requirements() {
             log_info "Uploading single file: $LOCAL_PATH"
         fi
     fi
-    
+
     log_info "Requirements validation passed"
 }
 
@@ -127,12 +127,12 @@ get_instance_state() {
 check_ssm_managed() {
     local instance_id=$1
     local ping_status
-    
+
     ping_status=$(aws ssm describe-instance-information \
         --filters "Key=InstanceIds,Values=$instance_id" \
         --query 'InstanceInformationList[0].PingStatus' \
         --output text 2>/dev/null || echo "None")
-    
+
     if [[ "$ping_status" == "Online" ]]; then
         return 0
     else
@@ -143,9 +143,9 @@ check_ssm_managed() {
 # Function to wait for SSM connectivity
 wait_for_ssm() {
     local instance_id=$1
-    
+
     log_info "Waiting for SSM connectivity..."
-    
+
     local attempts=0
     while [[ $attempts -lt 30 ]]; do
         if check_ssm_managed "$instance_id"; then
@@ -156,7 +156,7 @@ wait_for_ssm() {
         sleep 10
         ((attempts++))
     done
-    
+
     log_error "SSM connectivity could not be established within timeout"
     exit 1
 }
@@ -165,10 +165,10 @@ wait_for_ssm() {
 start_ec2_instance() {
     local instance_id=$1
     local current_state
-    
+
     current_state=$(get_instance_state "$instance_id")
     log_info "Current EC2 instance state: $current_state"
-    
+
     case "$current_state" in
         "running")
             log_info "EC2 instance is already running"
@@ -186,7 +186,7 @@ start_ec2_instance() {
             exit 1
             ;;
     esac
-    
+
     # Wait for instance to be running
     log_info "Waiting for EC2 instance to be running..."
     local attempts=0
@@ -200,12 +200,12 @@ start_ec2_instance() {
         sleep 10
         ((attempts++))
     done
-    
+
     if [[ "$current_state" != "running" ]]; then
         log_error "EC2 instance failed to start within timeout"
         exit 1
     fi
-    
+
     # Wait for SSM to be available
     wait_for_ssm "$instance_id"
 }
@@ -214,15 +214,15 @@ start_ec2_instance() {
 create_zip_file() {
     local source_dir=$1
     local zip_filename=$2
-    
+
     log_info "Creating zip file from directory: $source_dir"
-    
+
     # Create zip file containing the directory contents (not the directory itself)
     if ! (cd "$source_dir" && zip -r "$zip_filename" . -x "*.DS_Store" "*/__pycache__/*" "*/.*"); then
         log_error "Failed to create zip file"
         exit 1
     fi
-    
+
     local zip_size
     zip_size=$(du -h "$zip_filename" | cut -f1)
     log_info "Created zip file: $zip_filename (size: $zip_size)"
@@ -233,9 +233,9 @@ upload_to_s3() {
     local local_path=$1
     local s3_bucket=$2
     local s3_key=$3
-    
+
     log_info "Uploading $local_path to s3://$s3_bucket/$s3_key"
-    
+
     local attempts=0
     while [[ $attempts -lt $MAX_RETRIES ]]; do
         if [[ -f "$local_path" ]]; then
@@ -254,12 +254,12 @@ upload_to_s3() {
             log_error "Invalid path type: $local_path"
             exit 1
         fi
-        
+
         ((attempts++))
         log_warn "Upload attempt $attempts failed, retrying in $RETRY_DELAY seconds..."
         sleep $RETRY_DELAY
     done
-    
+
     log_error "Failed to upload to S3 after $MAX_RETRIES attempts"
     exit 1
 }
@@ -269,18 +269,18 @@ execute_ssm_command() {
     local instance_id=$1
     local commands=$2
     local description=$3
-    
+
     log_info "Executing SSM command: $description"
     log_info "Command to execute: $commands"
-    
+
     # Temporarily disable exit on error for better error handling
     set +e
-    
+
     # Send the command
     local command_id
     local send_result
     local send_exit_code
-    
+
     send_result=$(aws ssm send-command \
         --instance-ids "$instance_id" \
         --document-name "AWS-RunShellScript" \
@@ -289,27 +289,27 @@ execute_ssm_command() {
         --timeout-seconds $SSM_TIMEOUT \
         --output json 2>&1)
     send_exit_code=$?
-    
+
     # Re-enable exit on error
     set -e
-    
+
     if [[ $send_exit_code -ne 0 ]]; then
         log_error "Failed to send SSM command (exit code: $send_exit_code)"
         log_error "AWS CLI error: $send_result"
         exit 1
     fi
-    
+
     # Check if jq is available and parse the response
     if ! command -v jq &> /dev/null; then
         log_error "jq is required but not installed"
         exit 1
     fi
-    
+
     set +e
     command_id=$(echo "$send_result" | jq -r '.Command.CommandId' 2>/dev/null)
     local jq_exit_code=$?
     set -e
-    
+
     if [[ $jq_exit_code -ne 0 ]] || [[ -z "$command_id" ]] || [[ "$command_id" == "null" ]]; then
         log_error "Failed to extract command ID from response"
         log_error "jq exit code: $jq_exit_code"
@@ -317,19 +317,19 @@ execute_ssm_command() {
         log_error "Raw response: $send_result"
         exit 1
     fi
-    
+
     log_info "Command sent with ID: $command_id"
-    
+
     # Wait for command completion with better error handling
     local status=""
     local attempts=0
     local max_attempts=$((SSM_TIMEOUT / COMMAND_POLL_INTERVAL))
-    
+
     log_info "Starting to poll command status (will poll up to $max_attempts times, every $COMMAND_POLL_INTERVAL seconds)"
-    
+
     while [[ $attempts -lt $max_attempts ]]; do
         attempts=$((attempts + 1))
-        
+
         # Get command invocation with better error handling
         local invocation_result
         local invocation_exit_code
@@ -350,16 +350,16 @@ execute_ssm_command() {
             status=$(echo "$invocation_result" | jq -r '.Status' 2>/dev/null)
             local jq_status_exit=$?
             set -e
-            
+
             if [[ $jq_status_exit -ne 0 ]] || [[ -z "$status" ]] || [[ "$status" == "null" ]]; then
                 log_warn "Failed to parse status from invocation result (attempt $attempts/$max_attempts)"
                 log_warn "Raw result: $invocation_result"
                 status="InProgress"
             fi
         fi
-        
+
         log_info "Poll attempt $attempts/$max_attempts - Status: $status"
-        
+
         case "$status" in
             "Success")
                 log_info "Command completed successfully after $attempts attempts"
@@ -373,23 +373,23 @@ execute_ssm_command() {
                 ;;
             "Failed"|"Cancelled"|"Cancelling"|"TimedOut")
                 log_error "Command failed with status: $status"
-                
+
                 # Get detailed error and output information
                 if [[ -n "$invocation_result" ]]; then
                     local error_output stdout_output
-                    
+
                     set +e
                     error_output=$(echo "$invocation_result" | jq -r '.StandardErrorContent // "No error details available"' 2>/dev/null)
                     stdout_output=$(echo "$invocation_result" | jq -r '.StandardOutputContent // "No output available"' 2>/dev/null)
                     local status_details
                     status_details=$(echo "$invocation_result" | jq -r '.StatusDetails // "No status details available"' 2>/dev/null)
                     set -e
-                    
+
                     log_error "Standard output: $stdout_output"
                     log_error "Standard error: $error_output"
                     log_error "Status details: $status_details"
                 fi
-                
+
                 exit 1
                 ;;
             *)
@@ -400,12 +400,12 @@ execute_ssm_command() {
                 ;;
         esac
     done
-    
+
     # Final status check
     if [[ "$status" != "Success" ]]; then
         log_error "Command did not complete successfully after $max_attempts polling attempts"
         log_error "Final status: $status"
-        
+
         # Try one more time to get detailed error information
         local final_invocation
         set +e
@@ -415,7 +415,7 @@ execute_ssm_command() {
             --output json 2>/dev/null)
         local final_exit=$?
         set -e
-        
+
         if [[ $final_exit -eq 0 ]] && [[ -n "$final_invocation" ]]; then
             local final_error final_output
             set +e
@@ -425,10 +425,10 @@ execute_ssm_command() {
             log_error "Final command output: $final_output"
             log_error "Final command error: $final_error"
         fi
-        
+
         exit 1
     fi
-    
+
     # Get and display command output
     local output_result
     set +e
@@ -439,7 +439,7 @@ execute_ssm_command() {
         --output text 2>/dev/null)
     local output_exit=$?
     set -e
-    
+
     if [[ $output_exit -eq 0 ]] && [[ -n "$output_result" ]] && [[ "$output_result" != "None" ]] && [[ "$output_result" != "null" ]]; then
         log_info "Command output:"
         echo "$output_result" | sed 's/^/  /'
@@ -459,14 +459,14 @@ transfer_s3_to_efs_file() {
     local s3_key=$3
     local target_path=$4
     local is_zip=$5
-    
+
     log_info "Transferring file from S3 to EFS on EC2 instance"
-    
+
     # Step 1: Mount EFS
     execute_ssm_command "$instance_id" \
         "cd /home/ubuntu && sudo -u ubuntu ./mountefs.sh" \
         "Mount EFS filesystem"
-    
+
     # Step 2: Create target directory
     local target_dir
     if [[ "$is_zip" == "true" ]]; then
@@ -476,29 +476,32 @@ transfer_s3_to_efs_file() {
         # For regular files, get the parent directory
         target_dir=$(dirname "$target_path")
     fi
-    
+
+    local target_dir_path="/home/ubuntu/efs/$target_dir"
+
     execute_ssm_command "$instance_id" \
-        "sudo -u ubuntu mkdir -p /home/ubuntu/efs/$target_dir" \
+        "sudo -u ubuntu mkdir -p $target_dir_path" \
         "Create target directory"
-    
+
     if [[ "$is_zip" == "true" ]]; then
         # Step 3a: Download zip file to temporary location
-        local temp_zip_name
-        temp_zip_name=$(basename "$s3_key")
+        local temp_zip_name=$(basename "$s3_key")
+        local tmp_file="$target_dir_path/$temp_zip_name"
+
         execute_ssm_command "$instance_id" \
-            "sudo -u ubuntu aws s3 cp s3://$s3_bucket/$s3_key /tmp/$temp_zip_name" \
+            "sudo -u ubuntu aws s3 cp s3://$s3_bucket/$s3_key $tmp_file" \
             "Download zip file from S3"
-        
+
         # Step 3b: Extract zip file to target directory
         execute_ssm_command "$instance_id" \
-            "cd /home/ubuntu/efs/$target_path && sudo -u ubuntu unzip -o /tmp/$temp_zip_name" \
+            "cd /home/ubuntu/efs/$target_path && sudo -u ubuntu unzip -o $tmp_file" \
             "Extract zip file to EFS target directory"
-        
+
         # Step 3c: Clean up temporary zip file
         execute_ssm_command "$instance_id" \
-            "sudo rm -f /tmp/$temp_zip_name" \
+            "sudo rm -f $tmp_file" \
             "Clean up temporary zip file"
-        
+
         # Step 4: Verify extraction
         execute_ssm_command "$instance_id" \
             "sudo -u ubuntu ls -la /home/ubuntu/efs/$target_path" \
@@ -508,12 +511,12 @@ transfer_s3_to_efs_file() {
         execute_ssm_command "$instance_id" \
             "sudo -u ubuntu aws s3 cp s3://$s3_bucket/$s3_key /home/ubuntu/efs/$target_path" \
             "Download file from S3 to EFS"
-        
+
         # Step 4: Verify file transfer
         execute_ssm_command "$instance_id" \
             "sudo -u ubuntu ls -la /home/ubuntu/efs/$target_path" \
             "Verify file transfer"
-        
+
         # Step 5: Get file info
         execute_ssm_command "$instance_id" \
             "sudo -u ubuntu file /home/ubuntu/efs/$target_path && sudo -u ubuntu du -h /home/ubuntu/efs/$target_path" \
@@ -527,29 +530,29 @@ transfer_s3_to_efs_directory() {
     local s3_bucket=$2
     local s3_key_prefix=$3
     local target_path=$4
-    
+
     log_info "Transferring directory from S3 to EFS on EC2 instance"
-    
+
     # Step 1: Mount EFS
     execute_ssm_command "$instance_id" \
         "cd /home/ubuntu && sudo -u ubuntu ./mountefs.sh" \
         "Mount EFS filesystem"
-    
+
     # Step 2: Create target directory
     execute_ssm_command "$instance_id" \
         "sudo -u ubuntu mkdir -p /home/ubuntu/efs/$target_path" \
         "Create target directory"
-    
+
     # Step 3: Download directory from S3 to EFS
     execute_ssm_command "$instance_id" \
         "sudo -u ubuntu aws s3 cp s3://$s3_bucket/$s3_key_prefix /home/ubuntu/efs/$target_path --recursive" \
         "Download directory from S3 to EFS"
-    
+
     # Step 4: Verify directory transfer
     execute_ssm_command "$instance_id" \
         "sudo -u ubuntu find /home/ubuntu/efs/$target_path -type f | head -10" \
         "Verify directory transfer (showing first 10 files)"
-    
+
     # Step 5: Get directory info
     execute_ssm_command "$instance_id" \
         "sudo -u ubuntu du -sh /home/ubuntu/efs/$target_path" \
@@ -564,21 +567,21 @@ main() {
     log_info "S3 bucket: $S3_BUCKET"
     log_info "EC2 instance: $EC2_INSTANCE_ID"
     log_info "Use zip mode: $USE_ZIP"
-    
+
     validate_requirements
-    
+
     # Check if instance is already SSM-managed
     if check_ssm_managed "$EC2_INSTANCE_ID"; then
         log_info "Instance is already SSM-managed and online"
     else
         log_info "Instance is not SSM-managed or not online, will start it"
     fi
-    
+
     # Determine what we're uploading and prepare
     local upload_path="$LOCAL_PATH"
     local is_directory=false
     local is_zip_transfer=false
-    
+
     if [[ -d "$LOCAL_PATH" ]]; then
         is_directory=true
         if [[ "$USE_ZIP" == "true" ]]; then
@@ -589,7 +592,7 @@ main() {
             is_zip_transfer=true
         fi
     fi
-    
+
     # Generate S3 key
     if [[ "$is_zip_transfer" == "true" ]]; then
         TEMP_S3_KEY="temp-transfers/$(basename "$upload_path")"
@@ -598,27 +601,27 @@ main() {
     else
         TEMP_S3_KEY="temp-transfers/$(basename "$LOCAL_PATH")-$(date +%s)-$$"
     fi
-    
+
     # Start EC2 instance and upload to S3 in parallel
     log_info "Starting parallel operations: EC2 startup and S3 upload"
-    
+
     # Start EC2 instance in background
     start_ec2_instance "$EC2_INSTANCE_ID" &
     local ec2_pid=$!
-    
+
     # Upload to S3 in background
     upload_to_s3 "$upload_path" "$S3_BUCKET" "$TEMP_S3_KEY" &
     local s3_pid=$!
-    
+
     # Wait for both operations to complete
     log_info "Waiting for EC2 startup to complete..."
     wait $ec2_pid
     log_info "EC2 startup completed"
-    
+
     log_info "Waiting for S3 upload to complete..."
     wait $s3_pid
     log_info "S3 upload completed"
-    
+
     # Transfer from S3 to EFS
     if [[ "$is_zip_transfer" == "true" ]]; then
         transfer_s3_to_efs_file "$EC2_INSTANCE_ID" "$S3_BUCKET" "$TEMP_S3_KEY" "$REMOTE_TARGET" "true"

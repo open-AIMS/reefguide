@@ -7,4 +7,4 @@ env.json
 !.env.dist
 
 # files created by auto-copy-to-efs.sh --zip
-temp-data-*.zip
+temp-*.zip

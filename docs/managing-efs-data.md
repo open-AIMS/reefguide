@@ -242,6 +242,8 @@ Once finished, don't leave superfluous data on the EFS store, as this is charged
 Currently [cdk networking script](../packages/infra/src/components/networking.ts) installs efs-utils from GitHub.
 This takes a long time to compile.
 
+The deb builds are also copied to the efs volume: _~/efs/amazon-efs-utils-3.1.1-1_amd64.deb_
+
 In the future, could consider these alternatives:
 
 - [using Amazon Linux](https://github.com/aws/efs-utils/tree/master#for-amazon-linux-distributions) and `sudo yum -y install amazon-efs-utils`
