@@ -61,6 +61,7 @@ export const logger = winston.createLogger({
 
   // Define log format with timestamp and metadata
   format: winston.format.combine(
+    winston.format.errors({ stack: true }),
     // Add timestamp to all log entries
     winston.format.timestamp(),
 

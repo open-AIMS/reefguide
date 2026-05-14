@@ -83,9 +83,8 @@ export class CapacityManager {
     });
 
     try {
-      logger.info('Poll started', { timestamp: new Date().toISOString() });
-      logger.debug('Current tracked workers status', {
-        count: this.trackedWorkers.length
+      logger.debug('Poll started', {
+        trackedWorkersCount: this.trackedWorkers.length
       });
 
       // Update worker statuses
@@ -101,7 +100,10 @@ export class CapacityManager {
 
       await this.adjustCapacity({ pollResponse: response.jobs });
     } catch (error) {
-      logger.error('Error polling job queue', { error });
+      logger.error('Error polling job queue');
+      // need to log error by itself for errors format to work
+      // https://betterstack.com/community/guides/logging/how-to-install-setup-and-use-winston-and-morgan-to-log-node-js-applications/#logging-errors-in-winston
+      logger.error(error);
     } finally {
       // Only schedule next poll if still running
       if (this.isRunning) {
