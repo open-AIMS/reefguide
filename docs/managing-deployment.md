@@ -102,3 +102,6 @@ One important note is that currently, the `DATABASE_URL` is defined in secrets m
 `postgresql://reefguide:PASSWORD@test-reefguide-dbinstance<UUID>.ap-southeast-2.rds.amazonaws.com/reefguide?sslmode=require?connect_timeout=15&pool_timeout=15`
 
 This must be updated with the new hostname and password if you re-create the stack.
+
+Another thing to note is that passwords are in 2 places, the database and the userpass secrets.
+Database passwords can be changed using the app [user admin tool](../docs/managing-user-access.md).

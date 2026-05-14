@@ -84,6 +84,9 @@ This creates a `backup.sql` file in the current directory.
 
 ## Restoring from Backups
 
+**IMPORTANT:** remember that the manager, worker, admin passwords are in the database
+as well as userpass secrets and need to be made consistent after a restore.
+
 ### From AWS Snapshots
 
 Since snapshots cannot be applied directly to existing databases, you need to create a temporary instance:

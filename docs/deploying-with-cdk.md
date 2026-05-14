@@ -2,6 +2,8 @@
 
 This guide describes how we use CDK to deploy ReefGuide, and explains common operational procedures.
 
+Also, see [managing deployment](./managing-deployment.md) for more notes on deployment administration.
+
 ## What is CDK
 
 AWS CDK (Cloud Development Kit) is an infrastructure-as-code framework that allows you to define cloud resources using familiar programming languages. CDK synthesizes your code into CloudFormation templates, providing type safety and IDE support while managing AWS resources declaratively.
@@ -222,3 +224,5 @@ pnpm cdk destroy
 ```
 
 **⚠️ Warning**: This will delete all resources including databases, S3 buckets, and other persistent data. Use with extreme caution in production environments.
+
+See more tips and notes on [managing deployment](./managing-deployment.md).
