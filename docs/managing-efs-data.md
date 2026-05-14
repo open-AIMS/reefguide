@@ -160,6 +160,11 @@ Once connected and in `/home/ubuntu` as above, run the following:
 
 You should see files inside `~/efs`, where the elastic file system is mounted, if you previously have set things up, otherwise, it could be empty.
 
+After mounting, `ll`, if owner/group are root, then:
+
+1. `chown ubuntu efs`
+2. `chgrp ubuntu efs`
+
 You can use the ranger file CLI utility for navigating the file system remotely and moving data - see [docs](https://github.com/ranger/ranger/wiki/Official-User-Guide) - launchable with `ranger` in the terminal directly. Or you can use regular shell commands.
 
 Leave this connection active, and we will now move some data over!
@@ -194,6 +199,12 @@ We are going to copy a zip file, so we use:
 ./scripts/auto-copy-to-efs.sh ~/GBR-ReefGuidance_processed_2025-07-01.zip downloads/gbr.zip
 ```
 
+More directly, zipping the source directory for you
+
+```bash
+./scripts/auto-copy-to-efs.sh --zip ~/GBR-ReefGuidance_processed_2025-11-19 data/reefguide
+```
+
 noting the first argument is the file path to the source file, and the latter the file path relative `~/efs` to upload to.
 
 This script will
@@ -225,3 +236,13 @@ See [forcing a complete data spec reload](./prompting-data-spec-reload.md).
 ## Tidying up
 
 Once finished, don't leave superfluous data on the EFS store, as this is charged per GBhour. Additionally, shutdown (but don't terminate) i.e. 'stop' the EC2 management instance. It can just be started up again next time it is needed.
+
+## efs-utils
+
+Currently [cdk networking script](../packages/infra/src/components/networking.ts) installs efs-utils from GitHub.
+This takes a long time to compile.
+
+In the future, could consider these alternatives:
+
+- [using Amazon Linux](https://github.com/aws/efs-utils/tree/master#for-amazon-linux-distributions) and `sudo yum -y install amazon-efs-utils`
+- [instaling efs-utils](https://docs.aws.amazon.com/efs/latest/ug/setting-up-aws-sys-mgr.html) with Systems Manager.

@@ -283,7 +283,15 @@ export class ReefGuideNetworking extends Construct {
       // update etc
       'sudo apt -y update',
       // get deps
-      'sudo apt -y install unzip git binutils rustc cargo pkg-config libssl-dev ranger',
+      // see https://github.com/aws/efs-utils/blob/master/INSTALL.md
+      // this is wrong, need to use rustup now, just for reference
+      // # remove gcc g++ here if you already installed a compatible version following GCC Version Requirements instruction
+      // sudo apt-get -y install git binutils rustc cargo libssl-dev pkg-config gettext make gcc g++ cmake wget perl
+      'sudo apt -y install unzip git binutils pkg-config libssl-dev ranger golang cmake make gettext wget perl',
+      // apt's cargo and rustc are too old now, need to use rustup
+      // TODO test this works, may need arg so it doesn't do interactive prompt
+      "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh",
+      '. "$HOME/.cargo/env"',
       // efs utils install
       'git clone https://github.com/aws/efs-utils',
       'cd efs-utils',
@@ -314,8 +322,12 @@ export class ReefGuideNetworking extends Construct {
       associatePublicIpAddress: true,
       blockDevices: [
         {
-          deviceName: '/dev/xvda',
-          volume: ec2.BlockDeviceVolume.ebs(50)
+          // modify root device
+          deviceName: '/dev/sda1',
+          volume: ec2.BlockDeviceVolume.ebs(12, {
+            volumeType: ec2.EbsDeviceVolumeType.GP3,
+            deleteOnTermination: true
+          })
         }
       ]
     });

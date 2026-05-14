@@ -103,5 +103,7 @@ One important note is that currently, the `DATABASE_URL` is defined in secrets m
 
 This must be updated with the new hostname and password if you re-create the stack.
 
+Copy data files as described in [managing EFS data](./managing-efs-data.md).
+
 Another thing to note is that passwords are in 2 places, the database and the userpass secrets.
 Database passwords can be changed using the app [user admin tool](../docs/managing-user-access.md).
