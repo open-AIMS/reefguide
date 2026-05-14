@@ -143,7 +143,7 @@ export class AuthApiClient {
       this.tokens = response.data;
       logger.debug('Login successful, token received');
     } catch (error) {
-      logger.error('Failed to login', { error });
+      logger.error(`Failed to login to API username="${this.credentials.email}"`);
       throw new Error('Failed to login', { cause: error });
     }
   }
