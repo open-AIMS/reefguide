@@ -111,6 +111,11 @@ export class ReefGuideFrontend extends Construct {
     // Build environment variables from config
     const environment: { [key: string]: string } = {
       NODE_ENV: 'production',
+      // tell Turbo not to track telemetry
+      // https://turborepo.dev/docs/telemetry#how-do-i-opt-out
+      DO_NOT_TRACK: 'true',
+      // https://www.prisma.io/docs/orm/reference/environment-variables-reference#prisma_hide_update_message
+      PRISMA_HIDE_UPDATE_MESSAGE: 'true',
       NG_APP_WEB_API_URL: props.webApiEndpoint,
       NG_APP_ADRIA_API_URL: 'https://fake.com',
       NG_APP_SPLASH_ADMIN_EMAIL: props.adminEmail,
