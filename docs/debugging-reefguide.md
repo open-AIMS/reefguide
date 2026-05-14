@@ -172,3 +172,12 @@ And confirm this change with the update button at the bottom right of the form.
 You should now see that things resolve - you can then redeploy the system with the required fixes, and try again. The desired capacity will usually update itself back to the original value upon this deployment, but if not, you can manually adjust it back using the procedure above.
 
 **If the service has autoscaling enabled, the desired capacity can change on the fly, however this hack will usually remain stable long enough to let CloudFormation see a complete deployment - if not, just keep forcing it back to zero until it succeeds**.
+
+## Debugging App
+
+### Express Rate Limiting (HTTP 429)
+
+If you get HTTP 429 (Too many requests)
+
+This is configured in Express [auth routes](../packages/web-api/src/auth/routes.ts).
+Easiest workaround is to use another browser for development for an hour until this resets.
