@@ -41,16 +41,18 @@ export async function registerUser({
   const hashedPassword = await hashPassword(password);
 
   // Create new user
-  return (
-    await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        // No roles by default
-        roles
-      }
-    })
-  ).id;
+  const newUser = await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword,
+      // No roles by default
+      roles
+    }
+  });
+
+  console.info(`user created id=${newUser.id}`);
+
+  return newUser.id;
 }
 
 /**
@@ -68,6 +70,8 @@ export async function changePassword({ id, password }: { id: number; password: s
       where: { id },
       data: { password: hashedPassword }
     });
+
+    console.info(`user changed password id=${id}`);
   } catch (error) {
     throw new BadRequestException(
       `Failed to change password of user with id ${id}.`,
