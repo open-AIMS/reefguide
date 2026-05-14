@@ -220,19 +220,6 @@ export class ReefGuideNetworking extends Construct {
       subnetType: ec2.SubnetType.PUBLIC
     });
 
-    // ========================
-    // SERVICE INSTANCE FOR EFS
-    // ========================
-
-    // EC2 Instance for EFS management - be sure to shut down when not using
-    const instanceType = ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MEDIUM);
-
-    // Use Ubuntu image as it is a bit easier for users
-    const machineImage = ec2.MachineImage.lookup({
-      // AMI: ami-0892a9c01908fafd1
-      name: 'ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20240801'
-    });
-
     // ===================
     // DATA TRANSFER SETUP
     // ===================
@@ -277,6 +264,19 @@ export class ReefGuideNetworking extends Construct {
     // grant rw for bucket
     this.dataBucket.grantReadWrite(efsManagementRole);
 
+    this.createEfsManagementInstance(efsManagementRole, fileSystem);
+  }
+
+  private createEfsManagementInstance(efsManagementRole: iam.Role, efsFileSystem: efs.FileSystem) {
+    // EC2 Instance for EFS management - be sure to shut down when not using
+    const instanceType = ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MEDIUM);
+
+    // Use Ubuntu image as it is a bit easier for users
+    const machineImage = ec2.MachineImage.lookup({
+      // AMI: ami-0892a9c01908fafd1
+      name: 'ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20240801'
+    });
+
     const userData = ec2.UserData.forLinux();
     const scriptLocation = '/home/ubuntu/mountefs.sh';
     userData.addCommands(
@@ -302,7 +302,7 @@ export class ReefGuideNetworking extends Construct {
       'mkdir /home/ubuntu/efs',
 
       // Leave a script to help mount in the future
-      `touch ${scriptLocation} && chmod +x ${scriptLocation} && echo "sudo mount -t efs -o tls,iam ${fileSystem.fileSystemId} /home/ubuntu/efs/" > ${scriptLocation}`,
+      `touch ${scriptLocation} && chmod +x ${scriptLocation} && echo "sudo mount -t efs -o tls,iam ${efsFileSystem.fileSystemId} /home/ubuntu/efs/" > ${scriptLocation}`,
       `${scriptLocation}`,
 
       // cache directory must exists or ReefGuideWorker will error
@@ -326,7 +326,7 @@ export class ReefGuideNetworking extends Construct {
       blockDevices: [
         {
           // modify root device
-          deviceName: '/dev/sda1',
+          deviceName: '/dev/root',
           volume: ec2.BlockDeviceVolume.ebs(12, {
             volumeType: ec2.EbsDeviceVolumeType.GP3,
             deleteOnTermination: true
@@ -336,7 +336,7 @@ export class ReefGuideNetworking extends Construct {
     });
 
     // Allow EC2 instance to access EFS
-    fileSystem.connections.allowDefaultPortFrom(efsManagementInstance);
+    efsFileSystem.connections.allowDefaultPortFrom(efsManagementInstance);
 
     // CfnOutputs
     new CfnOutput(this, 'efnConnectionInfo', {
