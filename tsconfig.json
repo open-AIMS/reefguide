@@ -7,7 +7,7 @@
     "composite": false,
     "forceConsistentCasingInFileNames": true,
     "lib": ["ES2023"],
-    "module": "commonjs",
+    "module": "nodenext",
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
