@@ -44,6 +44,8 @@ NODE_MANAGER_CMD=""
 
 # Docker/podman
 DOCKER="docker"
+# name to use in messages
+DOCKER_NAME="Docker daemon"
 
 # Script flags
 CLEAR_DB=false
@@ -247,13 +249,14 @@ check_docker() {
         if command_exists podman; then
             log_info "using podman"
             DOCKER="podman"
+            DOCKER_NAME="Podman engine/machine"
         else
             error_exit "docker or podman must be installed."
         fi
     fi
 
     if ! $DOCKER info >/dev/null 2>&1; then
-        error_exit "Docker daemon is not running. Please start Docker."
+        error_exit "$DOCKER_NAME is not running. Please start it."
     fi
 
     # Check Docker Compose (new version or legacy)
@@ -776,7 +779,7 @@ cleanup() {
             $COMPOSE_CMD down >/dev/null 2>&1 || true
         fi
     else
-        log_info "Leaving Docker services running (use --cleanup to stop on exit)"
+        log_info "Leaving $DOCKER containers running (use --cleanup to stop on exit)"
     fi
 }
 
