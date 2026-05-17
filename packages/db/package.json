@@ -2,6 +2,7 @@
   "name": "@reefguide/db",
   "version": "0.1.0",
   "description": "Database client and schema for ReefGuide",
+  "type": "module",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "scripts": {

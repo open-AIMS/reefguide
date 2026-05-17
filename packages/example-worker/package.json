@@ -3,6 +3,7 @@
   "version": "0.1",
   "description": "Example worker implementation for ReefGuide job system.",
   "main": "src/index.ts",
+  "type": "module",
   "scripts": {
     "start": "env-cmd ts-node --files src/index.ts",
     "watch": "tsc -w",

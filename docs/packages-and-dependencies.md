@@ -48,3 +48,7 @@ package should have:\
 `"lib": ["ES2023", "dom"],`
 
 Ideally, tests should have a separate tsconfig, see tsconfig.test.ts, tsconfig.spec.ts
+
+To Review:
+
+- consider using [project references](https://www.typescriptlang.org/docs/handbook/project-references.html)?

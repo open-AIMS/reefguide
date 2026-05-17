@@ -3,6 +3,7 @@
   "version": "0.1.1",
   "description": "Work in progress CLI for ReefGuide",
   "main": "build/src/index.js",
+  "type": "module",
   "bin": {
     "reefguide-cli": "build/src/index.js"
   },
