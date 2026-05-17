@@ -3,8 +3,12 @@
   "version": "0.1.0",
   "description": "Database client and schema for ReefGuide",
   "type": "module",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    }
+  },
   "scripts": {
     "prebuild": "prisma generate",
     "build": "tsc",
