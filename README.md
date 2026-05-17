@@ -65,7 +65,9 @@ graph TD
 
 ## Development quick start
 
-Make sure you have `nvm` and `docker` (rootless) installed, then run
+Make sure you have these programs setup:
+* `nvm` or `fnm`
+* `docker` or `podman` (with docker compose compatibility enabled)
 
 ```
 ./local-dev.sh
