@@ -138,6 +138,13 @@ DATABASE_URL=postgresql://admin:password@127.0.0.1:5432
 DIRECT_URL=postgresql://admin:password@127.0.0.1:5432
 ```
 
+If you need to change the API's port (default `5000`):
+* change `NG_APP_WEB_API_URL` in [packages/app/.env](../app/.env)
+* change `PORT` and `API_DOMAIN` in [packages/web-api/.env](./.env)
+
+**MacOS Tip:** ControlCenter listens on port 5000. So you will need to change the API port
+or disable _Airplay Receiver_ in _System Settings_.
+
 ## Testing Your Setup
 
 ### Health Check
