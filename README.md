@@ -87,8 +87,9 @@ Login credentials can be found inside the `.env` file under the
 
 ### Running services separately
 
-You can also run `dev` on packages, but this won't build internal dependencies like
-`@reefguide/types` or `@reefguide/db`.
+You can also run `dev` on packages, but this won't automatically build internal dependencies
+like `@reefguide/types` or `@reefguide/db`. The advantage of using `turbo` is that it will
+build the dependencies in the correct order.
 
 If you prefer running the web-api in a separate terminal from
 `ng serve`, then you can run the web-api alone using one of these methods:
