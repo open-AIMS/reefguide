@@ -12,6 +12,15 @@
       "webRoot": "${workspaceFolder}/packages/app"
     },
     {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Debug app in Vivaldi",
+      // add to your PATH, Windows: 'Edit environment variables for your account' Path
+      "runtimeExecutable": "vivaldi",
+      "url": "http://localhost:4200",
+      "webRoot": "${workspaceFolder}/packages/app"
+    },
+    {
       "name": "Debug web-api:dev",
       "type": "node",
       "request": "launch",
