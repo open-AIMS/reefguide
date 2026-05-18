@@ -1,18 +1,22 @@
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// get this file's directory path
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function generateKeyPair() {
   return crypto.generateKeyPairSync('rsa', {
     modulusLength: 2048,
     publicKeyEncoding: {
       type: 'spki',
-      format: 'pem',
+      format: 'pem'
     },
     privateKeyEncoding: {
       type: 'pkcs8',
-      format: 'pem',
-    },
+      format: 'pem'
+    }
   });
 }
 
@@ -27,10 +31,7 @@ function updateEnvFile(keyPair) {
   const updateOrAddEnvVariable = (name, value) => {
     const escapedValue = value.replace(/\n/g, '\\n');
     if (envContent.includes(`${name}=`)) {
-      envContent = envContent.replace(
-        new RegExp(`${name}=.*`),
-        `${name}=${escapedValue}`,
-      );
+      envContent = envContent.replace(new RegExp(`${name}=.*`), `${name}=${escapedValue}`);
     } else {
       envContent += `\n${name}=${escapedValue}`;
     }
@@ -45,9 +46,7 @@ function updateEnvFile(keyPair) {
 
   fs.writeFileSync(envPath, envContent.trim());
 
-  console.log(
-    'RSA key pair and Key ID have been generated and added to .env file',
-  );
+  console.log('RSA key pair and Key ID have been generated and added to .env file');
 }
 
 const keyPair = generateKeyPair();
