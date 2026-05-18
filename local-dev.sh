@@ -762,12 +762,9 @@ start_dev_server() {
     # Use turbo if available, otherwise use pnpm
     if command_exists turbo; then
         turbo dev
-    elif npx turbo --version >/dev/null 2>&1; then
-        npx turbo dev
     else
-        log_warning "Turbo not found, falling back to pnpm"
-        cd "$API_DIR"
-        pnpm run dev
+        log_info "global turbo not found, using pnpm turbo"
+        pnpm turbo dev
     fi
 }
 
