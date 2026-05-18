@@ -18,6 +18,29 @@ const cronService = getCronService();
 cronService.start();
 
 const port = config.port || 5000;
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Listening: http://localhost:${port}`);
 });
+
+// Handle graceful shutdown
+const gracefulShutdown = async (signal: string) => {
+  console.log(`\n${signal} received, starting graceful shutdown...`);
+
+  // Stop cron jobs
+  cronService.stop();
+
+  // Close server
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+
+  // Force exit if graceful shutdown takes too long
+  setTimeout(() => {
+    console.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 5000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
