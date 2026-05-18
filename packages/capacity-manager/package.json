@@ -4,7 +4,7 @@
   "description": "Capacity manager for the ReefGuide job system.",
   "type": "module",
   "scripts": {
-    "start": "env-cmd ts-node --files src/index.ts",
+    "start": "env-cmd ts-node --esm --files src/index.ts",
     "watch": "tsc -w",
     "build": "tsc",
     "lint": "gts lint",
