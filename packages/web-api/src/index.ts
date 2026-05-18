@@ -6,6 +6,7 @@ import { config } from './config';
 import { getCronService } from './cron/cronService';
 import { initialiseAdmins } from './initialise';
 import { initializeS3Service } from './services/s3Storage';
+import { prisma } from '@reefguide/db';
 
 console.debug('Initializing admins...');
 initialiseAdmins();
@@ -23,6 +24,8 @@ const server = app.listen(port, () => {
 });
 
 // Handle graceful shutdown
+// maybe this happens automatically, but Claude AI thought this
+//  would help with turbo shutdown issue.
 const gracefulShutdown = async (signal: string) => {
   console.log(`\n${signal} received, starting graceful shutdown...`);
 
@@ -30,8 +33,13 @@ const gracefulShutdown = async (signal: string) => {
   cronService.stop();
 
   // Close server
-  server.close(() => {
+  server.close(async () => {
     console.log('Server closed');
+
+    // Disconnect Prisma
+    await prisma.$disconnect();
+    console.log('Database disconnected');
+
     process.exit(0);
   });
 
