@@ -4,9 +4,9 @@
   "description": "REST API to support ReefGuide AIMS.",
   "type": "module",
   "scripts": {
-    "start": "env-cmd ts-node --files src/index.ts",
+    "start": "env-cmd ts-node --esm --files src/index.ts",
     "watch": "tsc -w",
-    "dev": "env-cmd ts-node-dev --files src/index.ts",
+    "dev": "env-cmd ts-node-dev --esm --files src/index.ts",
     "build": "tsc",
     "lint": "gts lint",
     "test": "jest --detectOpenHandles",
