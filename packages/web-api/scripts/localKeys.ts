@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import type { KeyPairSyncResult } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -6,7 +7,9 @@ import { fileURLToPath } from 'url';
 // get this file's directory path
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-function generateKeyPair() {
+type KeyPair = KeyPairSyncResult<string, string>;
+
+function generateKeyPair(): KeyPair {
   return crypto.generateKeyPairSync('rsa', {
     modulusLength: 2048,
     publicKeyEncoding: {
@@ -20,7 +23,7 @@ function generateKeyPair() {
   });
 }
 
-function updateEnvFile(keyPair) {
+function updateEnvFile(keyPair: KeyPair): void {
   const envPath = path.join(__dirname, '../', '.env');
   let envContent = '';
 
@@ -28,7 +31,7 @@ function updateEnvFile(keyPair) {
     envContent = fs.readFileSync(envPath, 'utf8');
   }
 
-  const updateOrAddEnvVariable = (name, value) => {
+  const updateOrAddEnvVariable = (name: string, value: string): void => {
     const escapedValue = value.replace(/\n/g, '\\n');
     if (envContent.includes(`${name}=`)) {
       envContent = envContent.replace(new RegExp(`${name}=.*`), `${name}=${escapedValue}`);
