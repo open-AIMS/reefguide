@@ -34,8 +34,6 @@
     "read": "^4.1.0"
   },
   "devDependencies": {
-    "ts-node": "catalog:",
-    "ts-node-dev": "catalog:",
     "typescript": "catalog:"
   }
 }

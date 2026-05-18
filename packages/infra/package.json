@@ -32,7 +32,6 @@
     "@types/supertest": "^6.0.3",
     "aws-cdk": "2.1101.0",
     "cdk-dia": "^0.12.1",
-    "ts-node": "catalog:",
     "typescript": "catalog:"
   }
 }

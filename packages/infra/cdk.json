@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --prefer-ts-exts bin/reefguide-cdk.ts",
+  "app": "pnpm tsx bin/reefguide-cdk.ts",
   "watch": {
     "include": ["**"],
     "exclude": [
