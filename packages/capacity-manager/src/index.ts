@@ -3,7 +3,7 @@ import { config } from './config';
 import { CapacityManager } from './manager';
 import { AuthApiClient } from './authClient';
 import { logger } from './logging';
-import Sentry from '@sentry/node';
+import * as Sentry from '@sentry/node';
 
 /**
  * Main entry point for the Capacity Manager service
