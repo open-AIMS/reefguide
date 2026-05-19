@@ -66,8 +66,9 @@ graph TD
 ## Development quick start
 
 Make sure you have these programs setup:
-* `nvm` or `fnm`
-* `docker` or `podman` (with docker compose compatibility enabled)
+
+- `nvm` or `fnm`
+- `docker` or `podman` (with docker compose compatibility enabled)
 
 ```
 ./local-dev.sh
@@ -79,18 +80,40 @@ This will set the project up with reasonable defaults for a local dev.
 functional. See the other ReefGuide repositories (see diagram above) and ensure
 locations for data files and datapackages are suitably defined and correct.
 
-### Running services manually
-
-To launch the web app, run:
-
-```
-pnpm run dev
-```
-
-This will launch the web app, defaulting to http://localhost:4200/.
+---
 
 Login credentials can be found inside the `.env` file under the
 [web-api directory](./packages/web-api). You can use the `worker` credentials to sign into the app.
+
+### Running services separately
+
+You can also run `dev` on packages, but this won't automatically build internal dependencies
+like `@reefguide/types` or `@reefguide/db`. The advantage of using `turbo` is that it will
+build the dependencies in the correct order.
+
+If you prefer running the web-api in a separate terminal from
+`ng serve`, then you can run the web-api alone using one of these methods:
+
+```
+cd packages/web-api; pnpm run dev
+```
+
+OR
+
+```
+turbo dev --filter=@reefguide/<package-name>
+```
+
+---
+
+`dev` will use `tsx --watch`. Another option is to use
+turbo's watch feature; this has been setup for the web-api:
+
+```
+turbo watch api
+```
+
+_This seems to rebuild types, db, web-api more reliably, but needs more testing._
 
 ## Command-line tool
 

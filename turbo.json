@@ -1,87 +1,59 @@
 {
-    "$schema": "https://turbo.build/schema.json",
-    "globalDependencies": [
-        "**/.env.*local",
-        ".eslintrc.json",
-        ".prettierrc.json",
-        "tsconfig.json",
-        "**/tsconfig.json"
-    ],
-    "tasks": {
-        "build": {
-            "dependsOn": [
-                "^build"
-            ],
-            "outputs": [
-                "dist/**",
-                "build/**"
-            ]
-        },
-        "dev": {
-            "dependsOn": [
-                "^build"
-            ],
-            "cache": false,
-            "persistent": true
-        },
-        "format:check": {
-            "inputs": [
-                ".eslintrc.json",
-                ".prettierrc.json",
-                "tsconfig.json"
-            ],
-            "dependsOn": [
-                "^build"
-            ]
-        },
-        "format:write": {
-            "inputs": [
-                ".eslintrc.json",
-                ".prettierrc.json",
-                "tsconfig.json"
-            ],
-            "dependsOn": [
-                "^build"
-            ]
-        },
-        "lint": {
-            "inputs": [
-                ".eslintrc.json",
-                ".prettierrc.json",
-                "tsconfig.json"
-            ],
-            "dependsOn": [
-                "^build"
-            ]
-        },
-        "fix": {
-            "inputs": [
-                ".eslintrc.json",
-                ".prettierrc.json",
-                "tsconfig.json"
-            ],
-            "dependsOn": [
-                "^build"
-            ]
-        },
-        "test": {
-            "dependsOn": [
-                "^build"
-            ]
-        },
-        "type-check": {
-            "dependsOn": [
-                "^build"
-            ]
-        },
-        "clean": {
-            "cache": false
-        },
-        "sourcemaps": {
-            "env": [
-                "SENTRY_URL",
-                "SENTRY_AUTH_TOKEN"
-            ]
-        }
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [
+    "**/.env.*local",
+    ".eslintrc.json",
+    ".prettierrc.json",
+    "tsconfig.json",
+    "**/tsconfig.json",
+    "pnpm-*.yaml"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "build/**"]
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
+    "api": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true,
+      "interruptible": true
+    },
+    "format:check": {
+      "inputs": [".eslintrc.json", ".prettierrc.json", "tsconfig.json"],
+      "dependsOn": ["^build"]
+    },
+    "format:write": {
+      "inputs": [".eslintrc.json", ".prettierrc.json", "tsconfig.json"],
+      "dependsOn": ["^build"]
+    },
+    "lint": {
+      "inputs": [".eslintrc.json", ".prettierrc.json", "tsconfig.json"],
+      "dependsOn": ["^build"]
+    },
+    "fix": {
+      "inputs": [".eslintrc.json", ".prettierrc.json", "tsconfig.json"],
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "type-check": {
+      "dependsOn": ["^build"]
+    },
+    "clean": {
+      "cache": false
+    },
+    "sourcemaps": {
+      "env": ["SENTRY_URL", "SENTRY_AUTH_TOKEN"]
     }
+  },
+  "futureFlags": {
+    "watchUsingTaskInputs": true
+  }
 }

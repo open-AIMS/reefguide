@@ -1,4 +1,4 @@
-import Sentry from '@sentry/node';
+import * as Sentry from '@sentry/node';
 import 'express-async-errors';
 import cors from 'cors';
 import express, { Express } from 'express';

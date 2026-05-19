@@ -1,4 +1,4 @@
-// import Sentry from '@sentry/node';
+// import * as Sentry from '@sentry/node';
 import { config } from './config';
 
 const sentryPromise = import('@sentry/node');
@@ -6,7 +6,7 @@ const sentryPromise = import('@sentry/node');
 // Only import and use sentry if the DSN is provided
 if (config.sentryDsn) {
   console.debug('Setting up Sentry for error tracking...');
-  // Import Sentry
+  // async import Sentry and initialize
   sentryPromise.then(Sentry => {
     Sentry.init({
       dsn: config.sentryDsn,

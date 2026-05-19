@@ -7,33 +7,20 @@ import { PrismaPg } from '@prisma/adapter-pg';
 // but within the db package, the import is:
 import { PrismaClient } from '@prisma/client';
 
-// TODO try TypeScript Project References again, had issues with turbo build vs tsc
-// can't do normal depency because it creates a cycle.
-// see: https://www.typescriptlang.org/docs/handbook/project-references.html
-import type { LayerDef } from '../../types';
 import { infoLayerDefs } from './seed/map_layers';
+import { MapLayerUpsert } from './seed/seed-types';
 
 const connectionString = `${process.env.DATABASE_URL}`;
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-type MapLayerUpsert = Parameters<(typeof prisma)['mapLayer']['upsert']>[0];
+// type MapLayerUpsert = Parameters<(typeof prisma)['mapLayer']['upsert']>[0];
 
-function layerDefToUpsert(l: LayerDef): MapLayerUpsert {
+function layerDefToUpsert(layerCreate: MapLayerUpsert['create']): MapLayerUpsert {
   return {
-    where: { id: l.id },
-    create: {
-      id: l.id,
-      title: l.title,
-      category: l.category,
-      info_url: l.infoUrl,
-      url: typeof l.url === 'string' ? [l.url] : l.url,
-      url_type: l.urlType,
-      // @ts-expect-error FIXME types
-      layer_options: l.layerOptions,
-      attributions: l.attributions
-    },
+    where: { id: layerCreate.id },
+    create: layerCreate,
     update: {}
   };
 }

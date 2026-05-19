@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, test } from 'vitest';
 // import request from 'supertest';
 import app from '../src/apiSetup';
 import { authRequest, userSetup } from './utils/testSetup';

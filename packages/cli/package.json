@@ -1,15 +1,16 @@
 {
   "name": "@reefguide/cli",
   "version": "0.1.1",
-  "description": "Work in progress CLI for ReefGuide",
-  "main": "build/src/index.js",
+  "description": "CLI for ReefGuide admin",
+  "type": "commonjs",
   "bin": {
     "reefguide-cli": "build/src/index.js"
   },
   "scripts": {
     "build": "tsc",
+    "prestart": "tsc",
     "start": "node build/src/index.js",
-    "buildstart": "pnpm run build && node build/src/index.js",
+    "start-tsx": "tsx src/index.ts",
     "watch": "tsc -w",
     "lint": "gts lint",
     "type-check": "tsc --noEmit",
@@ -34,8 +35,6 @@
     "read": "^4.1.0"
   },
   "devDependencies": {
-    "ts-node": "catalog:",
-    "ts-node-dev": "catalog:",
     "typescript": "catalog:"
   }
 }

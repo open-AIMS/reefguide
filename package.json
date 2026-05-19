@@ -24,7 +24,7 @@
     "eslint-plugin-jsdoc": "^62.9.0",
     "gts": "^7.0.0",
     "prettier": "catalog:",
-    "turbo": "^2.9.12",
+    "turbo": "^2.9.14",
     "typescript": "catalog:",
     "typescript-eslint": "^8.59.2"
   },
