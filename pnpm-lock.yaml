@@ -235,6 +235,9 @@ importers:
       '@types/express':
         specifier: 'catalog:'
         version: 4.17.25
+      tsx:
+        specifier: 'catalog:'
+        version: 4.22.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -272,6 +275,9 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0
     devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.22.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -343,6 +349,9 @@ importers:
       '@types/express':
         specifier: 'catalog:'
         version: 4.17.25
+      tsx:
+        specifier: 'catalog:'
+        version: 4.22.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -392,6 +401,9 @@ importers:
       cdk-dia:
         specifier: ^0.12.1
         version: 0.12.3
+      tsx:
+        specifier: 'catalog:'
+        version: 4.22.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
