@@ -35,6 +35,7 @@
   "devDependencies": {
     "@sentry/cli": "^2.53.0",
     "@types/express": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:"
   }
 }
