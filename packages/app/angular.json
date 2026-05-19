@@ -95,24 +95,7 @@
           "options": {}
         },
         "test": {
-          "builder": "@ngx-env/builder:karma",
-          "options": {
-            "polyfills": [],
-            "tsConfig": "tsconfig.spec.json",
-            "inlineStyleLanguage": "scss",
-            "assets": [
-              {
-                "glob": "**/*",
-                "input": "public"
-              }
-            ],
-            "styles": [
-              "@angular/material/prebuilt-themes/azure-blue.css",
-              "src/styles.scss"
-            ],
-            "scripts": [],
-            "builderMode": "browser"
-          }
+          "builder": "@ngx-env/builder:unit-test"
         }
       }
     }
