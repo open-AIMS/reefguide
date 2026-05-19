@@ -1,15 +1,16 @@
 {
   "name": "@reefguide/web-api",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "REST API to support ReefGuide AIMS.",
   "type": "module",
   "scripts": {
     "start": "env-cmd tsx src/index.ts",
+    "start-build": "env-cmd node build/src/index.js",
     "watch": "tsc -w",
     "dev": "env-cmd tsx watch src/index.ts",
     "preapi": "env-cmd tsx scripts/waitForPort.ts",
     "api": "env-cmd tsx src/index.ts",
-    "build": "tsc",
+    "build": "tsup src/index.ts --format esm --out-dir build/src --no-splitting --sourcemap",
     "lint": "gts lint",
     "test": "vitest run",
     "type-check": "tsc --noEmit",
@@ -19,7 +20,7 @@
     "fix": "gts fix",
     "local-keys": "tsx scripts/localKeys.ts",
     "start-web-api-docker": "tsx src/index.ts",
-    "sourcemaps": "tsc && ./node_modules/@sentry/cli/bin/sentry-cli sourcemaps inject build/src && ./node_modules/@sentry/cli/bin/sentry-cli --url ${SENTRY_URL} sourcemaps --org none --project none upload build/src/"
+    "sourcemaps": "tsup src/index.ts --format esm --out-dir build/src --no-splitting --sourcemap && ./node_modules/@sentry/cli/bin/sentry-cli sourcemaps inject build/src && ./node_modules/@sentry/cli/bin/sentry-cli --url ${SENTRY_URL} sourcemaps --org none --project none upload build/src/"
   },
   "keywords": [],
   "author": "AIMS",
@@ -74,6 +75,7 @@
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.3",
     "supertest": "^7.2.2",
+    "tsup": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
