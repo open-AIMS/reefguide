@@ -368,7 +368,7 @@ importers:
   packages/infra:
     dependencies:
       '@aws-sdk/client-s3':
-        specifier: ^3.971.0
+        specifier: ^3.1048.0
         version: 3.1048.0
       '@cloudcomponents/cdk-static-website':
         specifier: ^2.2.0
@@ -383,7 +383,7 @@ importers:
         specifier: ^2.254.0
         version: 2.254.0(constructs@10.6.0)
       constructs:
-        specifier: ^10.4.5
+        specifier: ^10.6.0
         version: 10.6.0
       source-map-support:
         specifier: ^0.5.21
@@ -393,7 +393,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@aws-sdk/client-secrets-manager':
-        specifier: ^3.971.0
+        specifier: ^3.1048.0
         version: 3.1048.0
       '@types/node':
         specifier: 'catalog:'
