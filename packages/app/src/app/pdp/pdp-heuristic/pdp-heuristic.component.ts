@@ -8,5 +8,5 @@ import { DatePipe } from '@angular/common';
   styleUrl: './pdp-heuristic.component.scss'
 })
 export class PdpHeuristicComponent {
-  data = {};
+  data: any = {};
 }
