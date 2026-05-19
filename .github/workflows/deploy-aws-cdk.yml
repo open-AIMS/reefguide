@@ -142,7 +142,7 @@ jobs:
       - name: Install dependencies
         run: |
           echo "📦 Installing project dependencies..."
-          pnpm install
+          pnpm install --frozen-lockfile --strict-peer-dependencies
           echo "✅ Dependencies installed successfully"
 
       - name: Build the infra package

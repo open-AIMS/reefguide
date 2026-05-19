@@ -3,9 +3,10 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "build",
+    "module": "preserve",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "typeRoots": ["./node_modules/@types", "src/types/express/"],
     "sourceMap": true,
     "inlineSources": true
   },

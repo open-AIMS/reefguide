@@ -1,19 +1,20 @@
 {
   "name": "@reefguide/capacity-manager",
-  "version": "0.1",
+  "version": "0.1.1",
   "description": "Capacity manager for the ReefGuide job system.",
   "type": "module",
   "scripts": {
     "start": "env-cmd tsx src/index.ts",
+    "start-build": "env-cmd node build/src/index.js",
     "watch": "tsc -w",
-    "build": "tsc",
+    "build": "tsup src/index.ts --format esm --out-dir build/src --no-splitting --sourcemap",
     "lint": "gts lint",
     "type-check": "tsc --noEmit",
     "format:write": "prettier --write \"{src,test}/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
     "format:check": "prettier --check \"{src,test}/**/*.{ts,js,json,html,scss,md}\" \"!**/node_modules/**\" \"!**/dist/**\"",
     "clean": "gts clean",
     "fix": "gts fix",
-    "sourcemaps": "tsc && ./node_modules/@sentry/cli/bin/sentry-cli sourcemaps inject build/src && ./node_modules/@sentry/cli/bin/sentry-cli --url ${SENTRY_URL} sourcemaps --org none --project none upload build/src/"
+    "sourcemaps": "tsup src/index.ts --format esm --out-dir build/src --no-splitting --sourcemap && ./node_modules/@sentry/cli/bin/sentry-cli sourcemaps inject build/src && ./node_modules/@sentry/cli/bin/sentry-cli --url ${SENTRY_URL} sourcemaps --org none --project none upload build/src/"
   },
   "keywords": [],
   "author": "AIMS",
@@ -22,19 +23,20 @@
     "@aws-sdk/client-ec2": "^3.836.0",
     "@aws-sdk/client-ecs": "^3.835.0",
     "@reefguide/db": "workspace:*",
-    "@reefguide/types": "workspace:*",
-    "@sentry/node": "^10.4.0",
+    "@sentry/node": "catalog:",
     "axios": "catalog:",
     "env-cmd": "^10.1.0",
     "express": "catalog:",
     "jwt-decode": "^4.0.0",
     "winston": "^3.17.0",
-    "winston-transport-sentry-node": "^3.0.0",
+    "winston-sentry-javascript-node": "^0.2.2",
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@reefguide/types": "workspace:*",
     "@sentry/cli": "^2.53.0",
     "@types/express": "catalog:",
+    "tsup": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"
   }

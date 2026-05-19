@@ -8,9 +8,9 @@ import {
 import { EC2Client, DescribeSubnetsCommand } from '@aws-sdk/client-ec2';
 import { Config, ConfigSchema, JobTypeConfig } from './config';
 import { AuthApiClient } from './authClient';
-import { JobType } from '@reefguide/db';
 import { logger } from './logging';
-import { PollJobsResponse } from '@reefguide/types';
+import { JobType } from '@reefguide/db';
+import type { PollJobsResponse } from '@reefguide/types';
 
 /**
  * Interface for tracking worker status
