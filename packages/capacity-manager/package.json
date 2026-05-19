@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@reefguide/types": "workspace:*",
-    "@sentry/cli": "^2.53.0",
+    "@sentry/cli": "catalog:",
     "@types/express": "catalog:",
     "tsup": "catalog:",
     "tsx": "catalog:",
