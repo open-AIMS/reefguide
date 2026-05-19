@@ -74,6 +74,11 @@ The service exposes a health check endpoint at `/health` on port 3000 (or `PORT`
 **Note:** if capacity-manager errors on startup, the ECS configuration will never become
 healthy and the cdk deployment will fail with a circuit breaker error.
 
+In this situation try these steps one at a time, re-trying cdk deploy after each:
+
+1. check **web-api** and **capacity-manager** logs for errors
+2. set service tasks to `0` (see [debugging reefguide](../../docs/debugging-reefguide.md))
+
 ## Logging
 
 Logs are output to console with configurable levels via the `LOG_LEVEL` environment variable:
