@@ -23,7 +23,7 @@
     "@aws-sdk/client-ecs": "^3.835.0",
     "@reefguide/db": "workspace:*",
     "@reefguide/types": "workspace:*",
-    "@sentry/node": "^10.4.0",
+    "@sentry/node": "catalog:",
     "axios": "catalog:",
     "env-cmd": "^10.1.0",
     "express": "catalog:",
