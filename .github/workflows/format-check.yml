@@ -15,21 +15,28 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+
       - name: Install pnpm
         uses: pnpm/action-setup@v6
+
       - name: Setup Node.js 24 with pnpm cache
         uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: 'pnpm'
+
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile --strict-peer-dependencies
+
       - name: Copy db environment file and set test mode
         run: cd packages/db && cp .env.dist .env && echo -en "\nTEST_MODE=true" >> .env
+
       - name: Prisma generate
         run: pnpm run generate
+
       - name: Check formatting and lint
         run: pnpm run format:check
+
       - name: Comment on PR if formatting issues found
         if: failure()
         uses: actions/github-script@v9

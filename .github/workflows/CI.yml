@@ -17,28 +17,38 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+
       - name: Install pnpm
         uses: pnpm/action-setup@v6
+
       - name: Use Node.js 24 with pnpm cache
         uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: 'pnpm'
+
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile --strict-peer-dependencies
+
       - name: Copy web-api environment file and set test mode
         run: cd packages/web-api && cp .env.dist .env && echo -en "\nTEST_MODE=true" >> .env
+
         # TODO ideally, would configure packages/db and Prisma to use above env
       - name: Copy db environment file and set test mode
         run: cd packages/db && cp .env.dist .env && echo -en "\nTEST_MODE=true" >> .env
+
       - name: Prisma generate
         run: pnpm run generate
+
       - name: Run typecheck
         run: pnpm run type-check
+
       - name: Run linter
         run: pnpm run lint -- --verbose --output-logs=full
+
       - name: Start Docker services (PostgreSQL DB)
         run: docker compose up -d
+
       - name: Wait for PostgreSQL to be ready
         run: |
           # Use pg_isready to check if PostgreSQL is accepting connections
@@ -56,12 +66,16 @@ jobs:
           fi
 
           echo "PostgreSQL is ready!"
+
       - name: Generate local keys
         run: cd packages/web-api && pnpm run local-keys
+
       - name: Reset database
         run: cd packages/db && cp .env.dist .env && pnpm run db-reset
+
       - name: Run tests
         # TODO expand to other packages
-        run: npx turbo test --filter=@reefguide/web-api
+        run: pnpm turbo test --filter=@reefguide/web-api
+
       - name: Stop Docker services
         run: docker compose down
