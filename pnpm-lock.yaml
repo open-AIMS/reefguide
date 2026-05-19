@@ -204,9 +204,6 @@ importers:
       '@reefguide/db':
         specifier: workspace:*
         version: link:../db
-      '@reefguide/types':
-        specifier: workspace:*
-        version: link:../types
       '@sentry/node':
         specifier: 'catalog:'
         version: 10.53.1
@@ -232,6 +229,9 @@ importers:
         specifier: 'catalog:'
         version: 3.25.76
     devDependencies:
+      '@reefguide/types':
+        specifier: workspace:*
+        version: link:../types
       '@sentry/cli':
         specifier: ^2.53.0
         version: 2.58.5

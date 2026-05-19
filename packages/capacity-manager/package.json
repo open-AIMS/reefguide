@@ -22,7 +22,6 @@
     "@aws-sdk/client-ec2": "^3.836.0",
     "@aws-sdk/client-ecs": "^3.835.0",
     "@reefguide/db": "workspace:*",
-    "@reefguide/types": "workspace:*",
     "@sentry/node": "catalog:",
     "axios": "catalog:",
     "env-cmd": "^10.1.0",
@@ -33,6 +32,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@reefguide/types": "workspace:*",
     "@sentry/cli": "^2.53.0",
     "@types/express": "catalog:",
     "tsx": "catalog:",

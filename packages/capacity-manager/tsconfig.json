@@ -6,7 +6,9 @@
         "esModuleInterop": true,
         "skipLibCheck": true,
         "sourceMap": true,
-        "inlineSources": true
+        "inlineSources": true,
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext"
     },
     "include": [
         "src/**/*.ts"
