@@ -6,6 +6,7 @@ export default defineConfig({
     include: ['test/**/*.test.ts'],
     exclude: ['build/**'],
     setupFiles: ['dotenv/config'],
+    fileParallelism: false,
     env: {
       TEST_MODE: 'true'
     }
