@@ -1,9 +1,9 @@
 import * as Sentry from '@sentry/node';
 import express from 'express';
-import { config } from './config.js';
-import { CapacityManager } from './manager.js';
-import { AuthApiClient } from './authClient.js';
-import { logger } from './logging.js';
+import { config } from './config';
+import { CapacityManager } from './manager';
+import { AuthApiClient } from './authClient';
+import { logger } from './logging';
 
 /**
  * Main entry point for the Capacity Manager service

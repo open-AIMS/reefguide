@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { jwtDecode } from 'jwt-decode';
-import { logger } from './logging.js';
+import { logger } from './logging';
 
 /**
  * Interface for authentication credentials

@@ -30,6 +30,9 @@ catalogs:
     prettier:
       specifier: ^3.8.3
       version: 3.8.3
+    tsup:
+      specifier: ^8.5.1
+      version: 8.5.1
     tsx:
       specifier: ^4.22.0
       version: 4.22.1
@@ -238,6 +241,9 @@ importers:
       '@types/express':
         specifier: 'catalog:'
         version: 4.17.25
+      tsup:
+        specifier: 'catalog:'
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.12)(tsx@4.22.1)(typescript@5.9.3)
       tsx:
         specifier: 'catalog:'
         version: 4.22.1
@@ -16183,7 +16189,7 @@ snapshots:
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
       postcss: 8.5.12
-      rollup: 4.59.0
+      rollup: 4.60.4
       tinyglobby: 0.2.16
     optionalDependencies:
       '@types/node': 25.8.0

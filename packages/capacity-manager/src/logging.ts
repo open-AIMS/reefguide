@@ -1,7 +1,7 @@
 import winston from 'winston';
 import type { Logger, LoggerOptions } from 'winston';
-import { config } from './config.js';
 import { SentryTransport } from 'winston-sentry-javascript-node';
+import { config } from './config';
 
 /**
  * Winston logger configuration
