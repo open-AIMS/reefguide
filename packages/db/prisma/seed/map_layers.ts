@@ -1,8 +1,5 @@
 import { MapLayerUpsert } from './seed-types';
-
-// FIXME import broken? became issue when changing to type module, typeRoots tsconfig?
-// import type { ColorLike } from 'ol';
-type ColorLike = number[] | string;
+import type { ColorLike } from 'ol/colorlike.js';
 
 /**
  * Colors for *_hybrid_geomorphic band values.
