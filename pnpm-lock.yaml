@@ -12,18 +12,33 @@ catalogs:
     '@types/express':
       specifier: ^4.17.25
       version: 4.17.25
+    '@types/node':
+      specifier: ^24.12.3
+      version: 24.12.4
     axios:
       specifier: ~1.15.2
       version: 1.15.2
+    dotenv:
+      specifier: ^16.6.1
+      version: 16.6.1
     express:
       specifier: ^4.22.1
       version: 4.22.2
+    ol:
+      specifier: ^10.9.0
+      version: 10.9.0
+    prettier:
+      specifier: ^3.8.3
+      version: 3.8.3
     tsx:
       specifier: ^4.22.0
       version: 4.22.0
     typescript:
       specifier: ~5.9.3
       version: 5.9.3
+    vitest:
+      specifier: ^4.1.6
+      version: 4.1.6
     zod:
       specifier: ^3.25.76
       version: 3.25.76
@@ -11912,7 +11927,7 @@ snapshots:
 
   axios@1.15.2:
     dependencies:
-      follow-redirects: 1.16.0
+      follow-redirects: 1.16.0(debug@4.4.3)
       form-data: 4.0.5
       proxy-from-env: 2.1.0
     transitivePeerDependencies:
@@ -13237,8 +13252,6 @@ snapshots:
   flatted@3.4.2: {}
 
   fn.name@1.1.0: {}
-
-  follow-redirects@1.16.0: {}
 
   follow-redirects@1.16.0(debug@4.4.3):
     optionalDependencies:
