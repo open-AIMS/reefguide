@@ -29,7 +29,7 @@
     "express": "catalog:",
     "jwt-decode": "^4.0.0",
     "winston": "^3.17.0",
-    "winston-transport-sentry-node": "^3.0.0",
+    "winston-sentry-javascript-node": "^0.2.2",
     "zod": "catalog:"
   },
   "devDependencies": {
