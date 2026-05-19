@@ -6,6 +6,24 @@ settings:
 
 catalogs:
   default:
+    '@aws-sdk/client-ec2':
+      specifier: ^3.836.0
+      version: 3.1048.0
+    '@aws-sdk/client-ecs':
+      specifier: ^3.835.0
+      version: 3.1048.0
+    '@aws-sdk/client-s3':
+      specifier: ^3.835.0
+      version: 3.1048.0
+    '@aws-sdk/client-secrets-manager':
+      specifier: ^3.1048.0
+      version: 3.1048.0
+    '@aws-sdk/s3-request-presigner':
+      specifier: ^3.835.0
+      version: 3.1048.0
+    '@cloudcomponents/cdk-static-website':
+      specifier: ^2.2.0
+      version: 2.2.0
     '@sentry/node':
       specifier: ^10.53.1
       version: 10.53.1
@@ -15,9 +33,15 @@ catalogs:
     '@types/node':
       specifier: ^24.12.3
       version: 24.12.4
+    aws-cdk-lib:
+      specifier: ^2.254.0
+      version: 2.254.0
     axios:
       specifier: ~1.15.2
       version: 1.15.2
+    constructs:
+      specifier: ^10.6.0
+      version: 10.6.0
     dotenv:
       specifier: ^16.6.1
       version: 16.6.1
@@ -30,6 +54,9 @@ catalogs:
     prettier:
       specifier: ^3.8.3
       version: 3.8.3
+    source-map-support:
+      specifier: ^0.5.21
+      version: 0.5.21
     tsup:
       specifier: ^8.5.1
       version: 8.5.1
@@ -199,10 +226,10 @@ importers:
   packages/capacity-manager:
     dependencies:
       '@aws-sdk/client-ec2':
-        specifier: ^3.836.0
+        specifier: 'catalog:'
         version: 3.1048.0
       '@aws-sdk/client-ecs':
-        specifier: ^3.835.0
+        specifier: 'catalog:'
         version: 3.1048.0
       '@reefguide/db':
         specifier: workspace:*
@@ -368,10 +395,10 @@ importers:
   packages/infra:
     dependencies:
       '@aws-sdk/client-s3':
-        specifier: ^3.1048.0
+        specifier: 'catalog:'
         version: 3.1048.0
       '@cloudcomponents/cdk-static-website':
-        specifier: ^2.2.0
+        specifier: 'catalog:'
         version: 2.2.0(aws-cdk-lib@2.254.0(constructs@10.6.0))(constructs@10.6.0)
       '@reefguide/db':
         specifier: workspace:*
@@ -380,20 +407,20 @@ importers:
         specifier: workspace:*
         version: link:../types
       aws-cdk-lib:
-        specifier: ^2.254.0
+        specifier: 'catalog:'
         version: 2.254.0(constructs@10.6.0)
       constructs:
-        specifier: ^10.6.0
+        specifier: 'catalog:'
         version: 10.6.0
       source-map-support:
-        specifier: ^0.5.21
+        specifier: 'catalog:'
         version: 0.5.21
       zod:
         specifier: 'catalog:'
         version: 3.25.76
     devDependencies:
       '@aws-sdk/client-secrets-manager':
-        specifier: ^3.1048.0
+        specifier: 'catalog:'
         version: 3.1048.0
       '@types/node':
         specifier: 'catalog:'
@@ -442,20 +469,20 @@ importers:
   packages/web-api:
     dependencies:
       '@aws-sdk/client-ec2':
-        specifier: ^3.836.0
+        specifier: 'catalog:'
         version: 3.1048.0
       '@aws-sdk/client-ecs':
-        specifier: ^3.835.0
+        specifier: 'catalog:'
         version: 3.1048.0
       '@aws-sdk/client-s3':
-        specifier: ^3.835.0
+        specifier: 'catalog:'
         version: 3.1048.0
       '@aws-sdk/s3-request-presigner':
-        specifier: ^3.835.0
+        specifier: 'catalog:'
         version: 3.1048.0
       '@cloudcomponents/cdk-static-website':
-        specifier: ^2.2.0
-        version: 2.2.0(aws-cdk-lib@2.202.0(constructs@10.6.0))(constructs@10.6.0)
+        specifier: 'catalog:'
+        version: 2.2.0(aws-cdk-lib@2.254.0(constructs@10.6.0))(constructs@10.6.0)
       '@codegenie/serverless-express':
         specifier: ^4.16.0
         version: 4.17.1
@@ -475,8 +502,8 @@ importers:
         specifier: ^8.10.150
         version: 8.10.161
       aws-cdk-lib:
-        specifier: 2.202.0
-        version: 2.202.0(constructs@10.6.0)
+        specifier: 'catalog:'
+        version: 2.254.0(constructs@10.6.0)
       axios:
         specifier: 'catalog:'
         version: 1.15.2
@@ -484,7 +511,7 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0
       constructs:
-        specifier: ^10.4.2
+        specifier: 'catalog:'
         version: 10.6.0
       cors:
         specifier: ^2.8.6
@@ -532,7 +559,7 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
       source-map-support:
-        specifier: ^0.5.21
+        specifier: 'catalog:'
         version: 0.5.21
       winston:
         specifier: ^3.17.0
@@ -545,7 +572,7 @@ importers:
         version: 1.4.0(@types/express@4.17.25)(express@4.22.2)(zod@3.25.76)
     devDependencies:
       '@aws-sdk/client-secrets-manager':
-        specifier: ^3.835.0
+        specifier: 'catalog:'
         version: 3.1048.0
       '@sentry/cli':
         specifier: ^2.53.0
@@ -879,21 +906,11 @@ packages:
       '@angular/platform-browser': 20.3.21
       rxjs: ^6.5.3 || ^7.4.0
 
-  '@aws-cdk/asset-awscli-v1@2.2.240':
-    resolution: {integrity: sha512-Ry5yvGVf8s7j1Gf1aBFs0mBnWzRkkRtgSVpRGkDWXvZoPbRODAH33S1mAxkETNb+dNnTPGE2Gvws0XbhpJ6RzA==}
-
   '@aws-cdk/asset-awscli-v1@2.2.273':
     resolution: {integrity: sha512-X57HYUtHt9BQrlrzUNcMyRsDUCoakYNnY6qh5lNwRCHPtQoTfXmuISkfLk0AjLkcbS5lw1LLTQFiQhTDXfiTvg==}
 
   '@aws-cdk/asset-node-proxy-agent-v6@2.1.2':
     resolution: {integrity: sha512-pDiuqH+qY3zM9lhhLjbKJ1tnKOHzQ2V4Wr/3qsxyKeKAkuPMI/BVGvZG1PbrikUw949cGVTfVEt4ETKKYnrj0Q==}
-
-  '@aws-cdk/cloud-assembly-schema@44.9.0':
-    resolution: {integrity: sha512-zQ/CwW/CZ3Zcf2vdukBCHbZi8wwYuoVIRU7w6dWS7Y7wPuq7iWTWwQyujvH5YlDVMyH4mrgYa3f1lV2etTZLVQ==}
-    engines: {node: '>= 18.0.0'}
-    bundledDependencies:
-      - jsonschema
-      - semver
 
   '@aws-cdk/cloud-assembly-schema@53.24.0':
     resolution: {integrity: sha512-rCwsd0Y9z4CUmV5FhzjbO2MprXjKG0rxCACuLEY40lD+wInvgcHer0lSDo7Xq9Sxe/IoNe/Wxb2YP3GgxvT3GA==}
@@ -3958,24 +3975,6 @@ packages:
     hasBin: true
     peerDependencies:
       postcss: ^8.1.0
-
-  aws-cdk-lib@2.202.0:
-    resolution: {integrity: sha512-JDycQoE8AxUAeCFXFoCx6FGvR78e6W9zYxPgmfW/uPPbntyNCXXBqwyAYo17RGS/lr0RO3zqD/oCBZSNU2e/Yg==}
-    engines: {node: '>= 14.15.0'}
-    peerDependencies:
-      constructs: ^10.0.0
-    bundledDependencies:
-      - '@balena/dockerignore'
-      - case
-      - fs-extra
-      - ignore
-      - jsonschema
-      - minimatch
-      - punycode
-      - semver
-      - table
-      - yaml
-      - mime-types
 
   aws-cdk-lib@2.254.0:
     resolution: {integrity: sha512-O7fn6fu1FXb0BgoO/+WeiBXZ16H/q6z4fOndjdG62c9bPU7Z/UeW5gz7qBiwLm4ERvTObobLCqv7wjd8bp+v3A==}
@@ -8511,13 +8510,9 @@ snapshots:
       rxjs: 7.8.2
       tslib: 2.8.1
 
-  '@aws-cdk/asset-awscli-v1@2.2.240': {}
-
   '@aws-cdk/asset-awscli-v1@2.2.273': {}
 
   '@aws-cdk/asset-node-proxy-agent-v6@2.1.2': {}
-
-  '@aws-cdk/cloud-assembly-schema@44.9.0': {}
 
   '@aws-cdk/cloud-assembly-schema@53.24.0': {}
 
@@ -9550,11 +9545,6 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
-
-  '@cloudcomponents/cdk-static-website@2.2.0(aws-cdk-lib@2.202.0(constructs@10.6.0))(constructs@10.6.0)':
-    dependencies:
-      aws-cdk-lib: 2.202.0(constructs@10.6.0)
-      constructs: 10.6.0
 
   '@cloudcomponents/cdk-static-website@2.2.0(aws-cdk-lib@2.254.0(constructs@10.6.0))(constructs@10.6.0)':
     dependencies:
@@ -11911,13 +11901,6 @@ snapshots:
       picocolors: 1.1.1
       postcss: 8.5.12
       postcss-value-parser: 4.2.0
-
-  aws-cdk-lib@2.202.0(constructs@10.6.0):
-    dependencies:
-      '@aws-cdk/asset-awscli-v1': 2.2.240
-      '@aws-cdk/asset-node-proxy-agent-v6': 2.1.2
-      '@aws-cdk/cloud-assembly-schema': 44.9.0
-      constructs: 10.6.0
 
   aws-cdk-lib@2.254.0(constructs@10.6.0):
     dependencies:

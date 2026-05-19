@@ -20,8 +20,8 @@
   "author": "AIMS",
   "license": "MIT",
   "dependencies": {
-    "@aws-sdk/client-ec2": "^3.836.0",
-    "@aws-sdk/client-ecs": "^3.835.0",
+    "@aws-sdk/client-ec2": "catalog:",
+    "@aws-sdk/client-ecs": "catalog:",
     "@reefguide/db": "workspace:*",
     "@sentry/node": "catalog:",
     "axios": "catalog:",
