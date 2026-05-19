@@ -11,7 +11,7 @@ ARG APP_NAME
 WORKDIR /app
 COPY . .
 # Generate a partial monorepo with only the files needed for the target app
-RUN turbo prune --scope=${APP_NAME} --docker
+RUN turbo prune --docker ${APP_NAME}
 
 FROM base AS installer
 ARG APP_NAME
@@ -22,7 +22,7 @@ COPY .gitignore .gitignore
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm clean-install
 
 # Grab the root tsconfig too (before building)
 COPY tsconfig.json ./tsconfig.json
@@ -64,7 +64,7 @@ EXPOSE ${PORT}
 ## COPY --from=installer /app/packages/${PACKAGE_NAME}/node_modules ./dist/packages/${PACKAGE_NAME}
 ## COPY --from=installer /app/node_modules ./node_modules
 #
-#COPY 
+#COPY
 #
 #EXPOSE ${PORT}
 #ENV PORT=${PORT}
