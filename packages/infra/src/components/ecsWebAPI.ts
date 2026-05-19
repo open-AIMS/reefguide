@@ -9,6 +9,7 @@ import * as logs from 'aws-cdk-lib/aws-logs';
 import * as r53 from 'aws-cdk-lib/aws-route53';
 import * as r53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as cloudmap from 'aws-cdk-lib/aws-servicediscovery';
 import { Construct } from 'constructs';
 import { EmailConfig, WebAPIConfig } from '../infraConfig';
 import { SharedBalancer } from './networking';
@@ -58,6 +59,13 @@ export class ECSWebAPI extends Construct {
   /** Endpoint for Web API access (format: https://domain:port) */
   public readonly endpoint: string;
 
+  /**
+   * Internal VPC endpoint for service-to-service communication.
+   * Uses CloudMap private DNS — traffic stays within the VPC and never
+   * traverses the public ALB. Format: http://web-api.reefguide.internal:port
+   */
+  public readonly internalEndpoint: string;
+
   /** The underlying ECS service */
   public readonly fargateService: ecs.FargateService;
 
@@ -81,6 +89,16 @@ export class ECSWebAPI extends Construct {
     // Build the public URL and expose
     this.internalPort = props.config.port;
     this.endpoint = `https://${props.domainName}`;
+
+    // Private DNS namespace for VPC-internal service discovery
+    const namespace = new cloudmap.PrivateDnsNamespace(this, 'internal-ns', {
+      vpc: props.vpc,
+      name: 'reefguide.internal',
+      description: 'Private namespace for ReefGuide ECS service-to-service communication'
+    });
+
+    // Internal endpoint uses CloudMap DNS — no public internet round-trip
+    this.internalEndpoint = `http://web-api.reefguide.internal:${this.internalPort}`;
 
     // ==================
     // Web API deployment
@@ -212,7 +230,16 @@ export class ECSWebAPI extends Construct {
       assignPublicIp: true,
       healthCheckGracePeriod: Duration.minutes(3),
       // ok if no tasks running during deployment
-      minHealthyPercent: 0
+      minHealthyPercent: 0,
+      // Register with CloudMap so other ECS tasks can reach web-api via
+      // private DNS (web-api.reefguide.internal) without going through the
+      // public ALB
+      cloudMapOptions: {
+        cloudMapNamespace: namespace,
+        name: 'web-api',
+        dnsRecordType: cloudmap.DnsRecordType.A,
+        dnsTtl: Duration.seconds(10)
+      }
     });
 
     // LOAD BALANCING SETUP
@@ -301,6 +328,14 @@ export class ECSWebAPI extends Construct {
       props.sharedBalancer.alb,
       ec2.Port.tcp(this.internalPort),
       'Allow traffic from ALB to web-api Fargate Service'
+    );
+
+    // Allow direct VPC-internal access (capacity-manager and workers connect
+    // via CloudMap private DNS, bypassing the public ALB)
+    serviceSecurityGroup.addIngressRule(
+      ec2.Peer.ipv4(props.vpc.vpcCidrBlock),
+      ec2.Port.tcp(this.internalPort),
+      'Allow VPC-internal traffic to web-api (CloudMap service discovery)'
     );
 
     // Output the URL of the API

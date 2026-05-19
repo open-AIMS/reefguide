@@ -248,7 +248,10 @@ export class ReefguideStack extends cdk.Stack {
       vpc: networking.vpc,
       cluster: cluster,
       storageBucket,
-      apiEndpoint: webAPI.endpoint,
+      // Use the internal CloudMap endpoint so capacity-manager and workers
+      // reach web-api directly within the VPC, without traversing the public
+      // ALB or depending on public DNS propagation
+      apiEndpoint: webAPI.internalEndpoint,
       capacityManager: {
         cpu: capacityManager.cpu,
         memoryLimitMiB: capacityManager.memoryLimitMiB,
