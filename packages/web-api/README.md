@@ -55,7 +55,7 @@ A REST API to support Reef Guide (AIMS), built with Express, TypeScript, Zod and
 - Prisma ORM for database operations
 - Passport based JWT authentication
 - AWS CDK for infrastructure as code
-- Serverless deployment using AWS Lambda and API Gateway
+- Serverless deployment using AWS ECS and API Gateway
 - Environment-based configuration with Zod validation
 - Basic docker compose
 
@@ -139,8 +139,9 @@ DIRECT_URL=postgresql://admin:password@127.0.0.1:5432
 ```
 
 If you need to change the API's port (default `5000`):
-* change `NG_APP_WEB_API_URL` in [packages/app/.env](../app/.env)
-* change `PORT` and `API_DOMAIN` in [packages/web-api/.env](./.env)
+
+- change `NG_APP_WEB_API_URL` in [packages/app/.env](../app/.env)
+- change `PORT` and `API_DOMAIN` in [packages/web-api/.env](./.env)
 
 **MacOS Tip:** ControlCenter listens on port 5000. So you will need to change the API port
 or disable _Airplay Receiver_ in _System Settings_.
@@ -666,7 +667,7 @@ Your web-api will now target your DB.
 2. **ECS Cluster**: Hosts the ReefGuideAPI Fargate service.
 3. **Application Load Balancer (ALB)**: Handles incoming traffic and distributes it to the ECS services.
 4. **API Gateway**: Manages the REST API for the Web API service.
-5. **Lambda Function**: Runs the Web API service.
+5. **ECS Service**: Runs the Web API service.
 6. **EFS (Elastic File System)**: Provides persistent storage for the ReefGuideAPI service.
 7. **S3 Bucket**: Used for intermediary data transfer between the user and the EC2 service instance which mounts the EFS.
 8. **EC2 Instance**: Manages the EFS filesystem.

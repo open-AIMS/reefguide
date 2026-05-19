@@ -36,7 +36,6 @@
     "@reefguide/db": "workspace:*",
     "@reefguide/types": "workspace:*",
     "@sentry/node": "catalog:",
-    "@types/aws-lambda": "^8.10.150",
     "aws-cdk-lib": "catalog:",
     "axios": "catalog:",
     "bcrypt": "^6.0.0",
