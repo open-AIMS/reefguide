@@ -372,7 +372,7 @@ importers:
         version: 3.1048.0
       '@cloudcomponents/cdk-static-website':
         specifier: ^2.2.0
-        version: 2.2.0(aws-cdk-lib@2.235.0(constructs@10.6.0))(constructs@10.6.0)
+        version: 2.2.0(aws-cdk-lib@2.254.0(constructs@10.6.0))(constructs@10.6.0)
       '@reefguide/db':
         specifier: workspace:*
         version: link:../db
@@ -380,8 +380,8 @@ importers:
         specifier: workspace:*
         version: link:../types
       aws-cdk-lib:
-        specifier: 2.235.0
-        version: 2.235.0(constructs@10.6.0)
+        specifier: ^2.254.0
+        version: 2.254.0(constructs@10.6.0)
       constructs:
         specifier: ^10.4.5
         version: 10.6.0
@@ -402,10 +402,10 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
       aws-cdk:
-        specifier: 2.1101.0
-        version: 2.1101.0
+        specifier: ^2.1122.0
+        version: 2.1122.0
       cdk-dia:
-        specifier: ^0.12.1
+        specifier: ^0.12.3
         version: 0.12.3
       tsx:
         specifier: 'catalog:'
@@ -882,8 +882,8 @@ packages:
   '@aws-cdk/asset-awscli-v1@2.2.240':
     resolution: {integrity: sha512-Ry5yvGVf8s7j1Gf1aBFs0mBnWzRkkRtgSVpRGkDWXvZoPbRODAH33S1mAxkETNb+dNnTPGE2Gvws0XbhpJ6RzA==}
 
-  '@aws-cdk/asset-awscli-v1@2.2.261':
-    resolution: {integrity: sha512-XkKvgG/OxrEYtVTt2Q9gaD58Qn90fnX/dNczL4k6myeii7UgAGPmqh+I+1uKohCWGKIKd+4Gz2xWBL/tPi4YIA==}
+  '@aws-cdk/asset-awscli-v1@2.2.273':
+    resolution: {integrity: sha512-X57HYUtHt9BQrlrzUNcMyRsDUCoakYNnY6qh5lNwRCHPtQoTfXmuISkfLk0AjLkcbS5lw1LLTQFiQhTDXfiTvg==}
 
   '@aws-cdk/asset-node-proxy-agent-v6@2.1.2':
     resolution: {integrity: sha512-pDiuqH+qY3zM9lhhLjbKJ1tnKOHzQ2V4Wr/3qsxyKeKAkuPMI/BVGvZG1PbrikUw949cGVTfVEt4ETKKYnrj0Q==}
@@ -895,8 +895,8 @@ packages:
       - jsonschema
       - semver
 
-  '@aws-cdk/cloud-assembly-schema@48.20.0':
-    resolution: {integrity: sha512-+eeiav9LY4wbF/EFuCt/vfvi/Zoxo8bf94PW5clbMraChEliq83w4TbRVy0jB9jE0v1ooFTtIjSQkowSPkfISg==}
+  '@aws-cdk/cloud-assembly-schema@53.24.0':
+    resolution: {integrity: sha512-rCwsd0Y9z4CUmV5FhzjbO2MprXjKG0rxCACuLEY40lD+wInvgcHer0lSDo7Xq9Sxe/IoNe/Wxb2YP3GgxvT3GA==}
     engines: {node: '>= 18.0.0'}
     bundledDependencies:
       - jsonschema
@@ -3977,13 +3977,14 @@ packages:
       - yaml
       - mime-types
 
-  aws-cdk-lib@2.235.0:
-    resolution: {integrity: sha512-zoTa+fw4J0sjYrn4LJcWAKxQ8i9DMqWdLo7MkP6nNgtqEaypajF9t6Ucasx93/pAQ2bmGV61EM2oVEOtVnpenA==}
-    engines: {node: '>= 18.0.0'}
+  aws-cdk-lib@2.254.0:
+    resolution: {integrity: sha512-O7fn6fu1FXb0BgoO/+WeiBXZ16H/q6z4fOndjdG62c9bPU7Z/UeW5gz7qBiwLm4ERvTObobLCqv7wjd8bp+v3A==}
+    engines: {node: '>= 20.0.0'}
     peerDependencies:
-      constructs: ^10.0.0
+      constructs: ^10.5.0
     bundledDependencies:
       - '@balena/dockerignore'
+      - '@aws-cdk/cloud-assembly-api'
       - case
       - fs-extra
       - ignore
@@ -3995,8 +3996,8 @@ packages:
       - yaml
       - mime-types
 
-  aws-cdk@2.1101.0:
-    resolution: {integrity: sha512-5EP+t13OFzE0SaK+KY/di9ZcXQYwnhDtM8kqEMjEvqhj+K3eqtV0DDI1YjthOoVMBAHgZK9juKPqxfwwRprBPQ==}
+  aws-cdk@2.1122.0:
+    resolution: {integrity: sha512-AI2Ks9qioWLvBPD4IoEtTet3wUG/o/q6U3WR3VCQKH5sNYLLPALo8o9sermNpMnfd1OQkqhL20tp4cEyojrIZg==}
     engines: {node: '>= 18.0.0'}
     hasBin: true
 
@@ -5188,11 +5189,6 @@ packages:
 
   fs.realpath@1.0.0:
     resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}
-
-  fsevents@2.3.2:
-    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
-    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
-    os: [darwin]
 
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
@@ -8517,13 +8513,13 @@ snapshots:
 
   '@aws-cdk/asset-awscli-v1@2.2.240': {}
 
-  '@aws-cdk/asset-awscli-v1@2.2.261': {}
+  '@aws-cdk/asset-awscli-v1@2.2.273': {}
 
   '@aws-cdk/asset-node-proxy-agent-v6@2.1.2': {}
 
   '@aws-cdk/cloud-assembly-schema@44.9.0': {}
 
-  '@aws-cdk/cloud-assembly-schema@48.20.0': {}
+  '@aws-cdk/cloud-assembly-schema@53.24.0': {}
 
   '@aws-crypto/crc32@5.2.0':
     dependencies:
@@ -9560,9 +9556,9 @@ snapshots:
       aws-cdk-lib: 2.202.0(constructs@10.6.0)
       constructs: 10.6.0
 
-  '@cloudcomponents/cdk-static-website@2.2.0(aws-cdk-lib@2.235.0(constructs@10.6.0))(constructs@10.6.0)':
+  '@cloudcomponents/cdk-static-website@2.2.0(aws-cdk-lib@2.254.0(constructs@10.6.0))(constructs@10.6.0)':
     dependencies:
-      aws-cdk-lib: 2.235.0(constructs@10.6.0)
+      aws-cdk-lib: 2.254.0(constructs@10.6.0)
       constructs: 10.6.0
 
   '@codegenie/serverless-express@4.17.1': {}
@@ -11923,16 +11919,14 @@ snapshots:
       '@aws-cdk/cloud-assembly-schema': 44.9.0
       constructs: 10.6.0
 
-  aws-cdk-lib@2.235.0(constructs@10.6.0):
+  aws-cdk-lib@2.254.0(constructs@10.6.0):
     dependencies:
-      '@aws-cdk/asset-awscli-v1': 2.2.261
+      '@aws-cdk/asset-awscli-v1': 2.2.273
       '@aws-cdk/asset-node-proxy-agent-v6': 2.1.2
-      '@aws-cdk/cloud-assembly-schema': 48.20.0
+      '@aws-cdk/cloud-assembly-schema': 53.24.0
       constructs: 10.6.0
 
-  aws-cdk@2.1101.0:
-    optionalDependencies:
-      fsevents: 2.3.2
+  aws-cdk@2.1122.0: {}
 
   axios@1.15.2:
     dependencies:
@@ -12155,7 +12149,7 @@ snapshots:
 
   cdk-dia@0.12.3:
     dependencies:
-      aws-cdk-lib: 2.235.0(constructs@10.6.0)
+      aws-cdk-lib: 2.254.0(constructs@10.6.0)
       chalk: 4.1.2
       colors: 1.4.0
       constructs: 10.6.0
@@ -12820,9 +12814,9 @@ snapshots:
       eslint: 9.39.4(jiti@2.7.0)
       semver: 7.8.0
 
-  eslint-config-prettier@10.1.8(eslint@9.39.4(jiti@2.7.0)):
+  eslint-config-prettier@10.1.8(eslint@10.4.0(jiti@2.7.0)):
     dependencies:
-      eslint: 9.39.4(jiti@2.7.0)
+      eslint: 10.4.0(jiti@2.7.0)
 
   eslint-plugin-es-x@7.8.0(eslint@9.39.4(jiti@2.7.0)):
     dependencies:
@@ -12866,7 +12860,7 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  eslint-plugin-prettier@5.5.5(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8(eslint@10.4.0(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))(prettier@3.8.3):
+  eslint-plugin-prettier@5.5.5(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))(prettier@3.8.3):
     dependencies:
       eslint: 9.39.4(jiti@2.7.0)
       prettier: 3.8.3
@@ -12874,7 +12868,7 @@ snapshots:
       synckit: 0.11.12
     optionalDependencies:
       '@types/eslint': 9.6.1
-      eslint-config-prettier: 10.1.8(eslint@9.39.4(jiti@2.7.0))
+      eslint-config-prettier: 10.1.8(eslint@10.4.0(jiti@2.7.0))
 
   eslint-scope@5.1.1:
     dependencies:
@@ -13319,9 +13313,6 @@ snapshots:
 
   fs.realpath@1.0.0: {}
 
-  fsevents@2.3.2:
-    optional: true
-
   fsevents@2.3.3:
     optional: true
 
@@ -13436,9 +13427,9 @@ snapshots:
       '@typescript-eslint/parser': 8.59.3(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
       chalk: 4.1.2
       eslint: 9.39.4(jiti@2.7.0)
-      eslint-config-prettier: 10.1.8(eslint@9.39.4(jiti@2.7.0))
+      eslint-config-prettier: 10.1.8(eslint@10.4.0(jiti@2.7.0))
       eslint-plugin-n: 17.24.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
-      eslint-plugin-prettier: 5.5.5(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8(eslint@10.4.0(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))(prettier@3.8.3)
+      eslint-plugin-prettier: 5.5.5(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))(prettier@3.8.3)
       execa: 5.1.1
       inquirer: 7.3.3
       json5: 2.2.3
