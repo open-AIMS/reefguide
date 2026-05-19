@@ -7,19 +7,19 @@ settings:
 catalogs:
   default:
     '@aws-sdk/client-ec2':
-      specifier: ^3.836.0
+      specifier: ^3.1048.0
       version: 3.1048.0
     '@aws-sdk/client-ecs':
-      specifier: ^3.835.0
+      specifier: ^3.1048.0
       version: 3.1048.0
     '@aws-sdk/client-s3':
-      specifier: ^3.835.0
+      specifier: ^3.1048.0
       version: 3.1048.0
     '@aws-sdk/client-secrets-manager':
       specifier: ^3.1048.0
       version: 3.1048.0
     '@aws-sdk/s3-request-presigner':
-      specifier: ^3.835.0
+      specifier: ^3.1048.0
       version: 3.1048.0
     '@cloudcomponents/cdk-static-website':
       specifier: ^2.2.0
