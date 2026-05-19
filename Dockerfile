@@ -31,9 +31,6 @@ COPY tsconfig.json ./tsconfig.json
 COPY --from=pruner /app/out/full/ .
 COPY turbo.json turbo.json
 
-# Generate client before build
-RUN pnpm run generate
-
 # Build target
 RUN turbo build --filter=${APP_NAME}
 
