@@ -22,7 +22,7 @@ import {
 } from '@reefguide/types';
 import bcryptjs from 'bcrypt';
 import express, { Request, Response, Router } from 'express';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import z from 'zod';
 import { processRequest } from 'zod-express-middleware';
 import * as Exceptions from '../exceptions';
@@ -56,13 +56,17 @@ const authRateLimit = (windowMinutes: number, perWindowThreshold: number) => {
     // configurable attempts within 15 minutes
     max: perWindowThreshold,
     keyGenerator: async req => {
+      const { user, ip } = req;
       // Rate limit by user ID then IP then unknown as backup
-      if (!req.user?.id && !req.ip) {
+      if (user) {
+        return user.id.toString();
+      } else if (ip) {
+        return ipKeyGenerator(ip);
+      } else {
         throw new Exceptions.InternalServerError(
           'Request is appearing with no IP address nor user ID. Uncertain how to proceed to rate limit reliably.'
         );
       }
-      return (req.user?.id.toString() ?? req.ip)!;
     },
     message: {
       error: 'Too many attempts.'
