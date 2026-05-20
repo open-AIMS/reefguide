@@ -1,0 +1,42 @@
+# Developer Tips
+
+## VSCode Settings
+
+Compare your _.vscode/settings.json_ and _.vscode/settings.default.json_
+
+## Extensions
+
+_.vscode/extensions.json_ should cause VScode to prompt you to install the recommended
+extensions for this project.
+
+## Bash Aliases
+
+You may want to create _~/.bash_aliases_ similar to this for quick reefguide development commands.
+These quickly get you to the most used directories and run common developer commands.
+
+```bash
+export REEFGUIDE_REPO="${HOME}/code/reefguide"
+
+alias rg-cd="cd $REEFGUIDE_REPO"
+alias rg-ng="cd $REEFGUIDE_REPO/packages/app && ng serve"
+alias rg-api="cd $REEFGUIDE_REPO && turbo watch api"
+alias rg-ld="cd $REEFGUIDE_REPO && ./local-dev.sh"
+alias rg-db="cd $REEFGUIDE_REPO/packages/db && npx prisma migrate status"
+
+alias rg-infra-test="cd $REEFGUIDE_REPO/packages/infra && . ./configs/test_env.sh"
+alias rg-infra-prod="cd $REEFGUIDE_REPO/packages/infra && . ./configs/prod_env.sh"
+
+```
+
+You'll need to create the above _\*\_env.sh_ files with the environment variables for [infra](../packages/infra/README.md).
+
+```bash
+export CONFIG_FILE_NAME=test.json
+export AWS_DEFAULT_REGION=ap-southeast-2
+export AWS_PROFILE=rrapopsbuildpoweruser
+export PORT_FWD_HOST="test-reefguide-dbinstanceXXXXX.YYYYY.ap-southeast-2.rds.amazonaws.com"
+export PORT_FWD_PORT=5432
+export PORT_FWD_LOCALPORT=25432
+```
+
+**Note:** you will also need to authenticate with AWS: `aws sso login`

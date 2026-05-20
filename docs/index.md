@@ -14,6 +14,8 @@ Provides a high level description of the pieces that form ReefGuide.
 
 ## Development
 
+See [Developer Tips](./dev_tips.md) for some useful notes and tips for your development environment.
+
 ### [Locally developing the capacity manager](./locally-developing-the-capacity-manager.md)
 
 Guide for developing and debugging the capacity manager locally against AWS infrastructure, including environment setup and configuration generation.
