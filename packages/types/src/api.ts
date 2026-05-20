@@ -941,11 +941,13 @@ export type TransferGroupOwnershipResponse = {
 // Map Layer Types
 // ==================
 
+// REVIEW should this just use Prisma types, or better to keep separation?
 export const MapLayerSchema = z.object({
   id: z.string(),
   layer_id: z.string().nullable(),
   title: z.string(),
   category: z.string().nullable(),
+  z_index: z.number(),
   url: z.array(z.string()),
   url_type: z.string(),
   server_layer_id_ref: z.string().nullable(),

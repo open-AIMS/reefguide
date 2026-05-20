@@ -953,16 +953,18 @@ export class ReefGuideMapService {
   }
 
   private addInfoLayers() {
-    const infoLayerDefs = this.api.getInfoLayers();
-    for (const layerDef of infoLayerDefs) {
-      try {
-        const layer = createLayerFromDef(layerDef);
-        this.afterCreateLayer(layer, { layerDef });
-        this.map.getLayers().push(layer);
-      } catch (err) {
-        console.error(`Error loading info layer ${layerDef.id}`, err);
+    this.api.getInfoLayers().subscribe(infoLayerDefs => {
+      console.info(`Adding ${infoLayerDefs.layers.length} info map layers`);
+      for (const layerDef of infoLayerDefs.layers) {
+        try {
+          const layer = createLayerFromDef(layerDef);
+          this.afterCreateLayer(layer, { layerDef });
+          this.map.getLayers().push(layer);
+        } catch (err) {
+          console.error(`Error loading info layer ${layerDef.id}`, err);
+        }
       }
-    }
+    });
   }
 
   private addPDPLayers() {

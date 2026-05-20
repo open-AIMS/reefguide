@@ -18,7 +18,7 @@ const prisma = new PrismaClient({ adapter });
 /**
  * Create Prisma upsert object for the layer seed data.
  *
- * TODO review and doc how update works
+ * If values are changed, will need to drop and re-seed, or set update.
  *
  * @param layerCreate
  * @returns
@@ -27,6 +27,8 @@ function createUpsert(layerCreate: MapLayerUpsert['create']): MapLayerUpsert {
   return {
     where: { id: layerCreate.id },
     create: layerCreate,
+    // could set update: layerCreate to make it always match the data in code
+    // However, this will erase any edits people made in the app
     update: {}
   };
 }

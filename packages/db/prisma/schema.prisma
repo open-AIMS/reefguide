@@ -468,25 +468,25 @@ model PasswordResetCode {
 }
 
 model MapLayer {
-  id                  String   @unique
-  layer_id            String?  @unique
-  z_index             Int
-  title               String
-  category            String?
-  url                 String[]
-  url_type            String
-  server_layer_id_ref String?
-  info_url            String?
-  attributions        String?
-  reverse_range       Boolean  @default(false)
-  cluster             Boolean  @default(false)
-  label_prop          String?
-  layer_prefix        String?
-  layer_postfix       String?
-  layer_options       Json?
-  layer_group_options Json?
-  created_at          DateTime @default(now())
-  updated_at          DateTime @updatedAt
+  id                String   @unique
+  layerId           String?  @unique @map("layer_id")
+  zIndex            Int      @map("z_index")
+  title             String
+  category          String?
+  url               String[]
+  urlType           String   @map("url_type")
+  serverLayerId     String?  @map("server_layer_id")
+  infoUrl           String?  @map("info_url")
+  attributions      String?
+  reverseRange      Boolean  @default(false) @map("reverse_range")
+  cluster           Boolean  @default(false)
+  labelProp         String?  @map("label_prop")
+  layerPrefix       String?  @map("layer_prefix")
+  layerPostfix      String?  @map("layer_postfix")
+  layerOptions      Json?    @map("layer_options")
+  layerGroupOptions Json?    @map("layer_group_options")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@map("map_layers")
 }

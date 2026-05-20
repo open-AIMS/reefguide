@@ -120,13 +120,13 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
     id: 'esri_world_imagery_firefly',
     title: 'ESRI World Imagery Firefly',
     category: 'basemap',
-    z_index: zIndex++,
-    info_url: 'https://www.esri.com/',
+    zIndex: zIndex++,
+    infoUrl: 'https://www.esri.com/',
     url: [
       'https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer/tile/{z}/{y}/{x}'
     ],
-    url_type: 'XYZ',
-    layer_options: {
+    urlType: 'XYZ',
+    layerOptions: {
       visible: false
     },
     attributions:
@@ -136,38 +136,38 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
     id: 'google_imagery',
     title: 'Google Imagery',
     category: 'basemap',
-    z_index: zIndex++,
+    zIndex: zIndex++,
     url: ['https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}&hl=en'],
-    url_type: 'XYZ'
+    urlType: 'XYZ'
   },
   {
     id: 'ssr_sentinel_2018',
     title: 'SSR Sentinel 2018',
     category: 'basemap',
-    z_index: zIndex++,
-    info_url:
+    zIndex: zIndex++,
+    infoUrl:
       'https://tiles-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/SSR_Sentinel_2018/MapServer',
     url: [
       'https://tiles-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/SSR_Sentinel_2018/MapServer/WMTS/1.0.0/WMTSCapabilities.xml'
     ],
-    url_type: 'WMTSCapabilitiesXml',
-    layer_options: {
+    urlType: 'WMTSCapabilitiesXml',
+    layerOptions: {
       visible: false
     }
   },
   {
     id: 'cities',
     title: 'Cities',
-    z_index: zIndex++,
+    zIndex: zIndex++,
     url: [
       'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/Cities/FeatureServer/'
     ],
-    url_type: 'ArcGisFeatureServer',
-    server_layer_id_ref: '0',
-    label_prop: 'name',
-    info_url:
+    urlType: 'ArcGisFeatureServer',
+    serverLayerId: '0',
+    labelProp: 'name',
+    infoUrl:
       'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/Cities/FeatureServer/',
-    layer_options: {
+    layerOptions: {
       style: {
         'text-value': ['get', 'name'],
         'text-font': '14px Roboto',
@@ -180,17 +180,17 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'GBRMPA_Zoning',
     title: 'GBRMPA Zoning',
-    z_index: zIndex++,
+    zIndex: zIndex++,
     // NAME exists, specific id like P-16-15, but TYPE more friendly text
-    label_prop: 'TYPE',
-    server_layer_id_ref: '53',
-    info_url:
+    labelProp: 'TYPE',
+    serverLayerId: '53',
+    infoUrl:
       'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer/',
     url: [
       'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Zoning_20/FeatureServer/'
     ],
-    url_type: 'ArcGisFeatureServer',
-    layer_options: {
+    urlType: 'ArcGisFeatureServer',
+    layerOptions: {
       visible: false,
       opacity: 0.5
     }
@@ -198,14 +198,14 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'hybrid_benthic',
     title: 'Hybrid Benthic',
-    z_index: zIndex++,
-    info_url:
+    zIndex: zIndex++,
+    infoUrl:
       'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer',
     url: [
       'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer/WMTS/1.0.0/WMTSCapabilities.xml'
     ],
-    url_type: 'WMTSCapabilitiesXml',
-    layer_options: {
+    urlType: 'WMTSCapabilitiesXml',
+    layerOptions: {
       opacity: 0.8,
       visible: false
     }
@@ -213,10 +213,10 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'hybrid_geomorphic',
     title: 'Hybrid Geomorphic',
-    z_index: zIndex++,
+    zIndex: zIndex++,
     // for now, just link here so users can lookup colors
     // should work on legend and better layer info design soon
-    info_url:
+    infoUrl:
       'https://developers.google.com/earth-engine/datasets/catalog/ACA_reef_habitat_v2_0#bands',
     url: [
       'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgFarNorthern_hybrid_geomorphichyb/ImageServer',
@@ -224,24 +224,24 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
       'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgTownsville_Whitsunday_hybrid_geomorphichyb/ImageServer',
       'https://tiledimageservices3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/rgMackay_Capricorn_hybrid_geomorphichyb/ImageServer'
     ],
-    url_type: 'ArcGisImageServer',
-    layer_group_options: {
+    urlType: 'ArcGisImageServer',
+    layerGroupOptions: {
       visible: false
     }
   },
   {
     id: 'canonical_reefs',
     title: 'RRAP Canonical Reefs',
-    z_index: zIndex++,
-    layer_prefix: 'Reef: ',
-    label_prop: 'reef_name',
-    info_url:
+    zIndex: zIndex++,
+    layerPrefix: 'Reef: ',
+    labelProp: 'reef_name',
+    infoUrl:
       'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/RRAP_Canonical_Reefs/FeatureServer',
     url: [
       'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/RRAP_Canonical_Reefs/FeatureServer'
     ],
-    url_type: 'ArcGisFeatureServer',
-    layer_options: {
+    urlType: 'ArcGisFeatureServer',
+    layerOptions: {
       visible: true,
       minZoom: 8,
       opacity: 0.8,
@@ -286,15 +286,15 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'ecorrap_site_locations',
     title: 'EcoRRAP Site Locations',
-    z_index: zIndex++,
-    layer_prefix: 'EcoRRAP Site: ',
-    label_prop: 'Name',
-    info_url:
+    zIndex: zIndex++,
+    layerPrefix: 'EcoRRAP Site: ',
+    labelProp: 'Name',
+    infoUrl:
       'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer',
     url: [
       'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/EcoRRAP_Site_Locations/FeatureServer'
     ],
-    url_type: 'ArcGisFeatureServer',
+    urlType: 'ArcGisFeatureServer',
     cluster: true
   },
   // QPWS Moorings -
@@ -302,20 +302,20 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'parks_marine_moorings',
     title: 'QPWS Moorings',
-    z_index: zIndex++,
-    layer_prefix: 'QPWS Mooring: ',
-    label_prop: 'site_and_mooring_reference_numb',
-    info_url:
+    zIndex: zIndex++,
+    layerPrefix: 'QPWS Mooring: ',
+    labelProp: 'site_and_mooring_reference_numb',
+    infoUrl:
       'https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer',
     url: [
       'https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer'
     ],
-    url_type: 'ArcGisFeatureServer',
-    layer_options: {
+    urlType: 'ArcGisFeatureServer',
+    layerOptions: {
       visible: false
     },
     // This is the layer to target - notice stripped from URL above
-    server_layer_id_ref: '20',
+    serverLayerId: '20',
     // Clustering enabled
     cluster: true
   },
@@ -324,37 +324,37 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'parks_protection_markers',
     title: 'GPWS Reef Protection Markers',
-    z_index: zIndex++,
-    layer_prefix: 'QPWS Protection Markers: ',
-    label_prop: 'site_rpm_label',
-    info_url:
+    zIndex: zIndex++,
+    layerPrefix: 'QPWS Protection Markers: ',
+    labelProp: 'site_rpm_label',
+    infoUrl:
       'https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer',
     url: [
       'https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer'
     ],
-    url_type: 'ArcGisFeatureServer',
-    layer_options: {
+    urlType: 'ArcGisFeatureServer',
+    layerOptions: {
       visible: false
     },
     // This is the layer to target - notice stripped from URL above
-    server_layer_id_ref: '10',
+    serverLayerId: '10',
     // Clustering enabled
     cluster: true
   },
   {
     id: 'gbrmpa_management_regions',
     title: 'GBRMPA Management Regions',
-    z_index: zIndex++,
-    layer_prefix: 'Management Region: ',
-    label_prop: 'AREA_DESCR',
-    server_layer_id_ref: '59',
-    info_url:
+    zIndex: zIndex++,
+    layerPrefix: 'Management Region: ',
+    labelProp: 'AREA_DESCR',
+    serverLayerId: '59',
+    infoUrl:
       'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Management_Areas_20/FeatureServer',
     url: [
       'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Management_Areas_20/FeatureServer'
     ],
-    url_type: 'ArcGisFeatureServer',
-    layer_options: {
+    urlType: 'ArcGisFeatureServer',
+    layerOptions: {
       visible: false,
       opacity: 0.8,
       style: {
@@ -370,17 +370,17 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'cruiseship_transit_lanes',
     title: 'GBRMPA Cruise Ship Transit Lanes',
-    z_index: zIndex++,
-    layer_prefix: 'Cruiseship Lanes: ',
-    label_prop: 'AREA_DESCR',
-    server_layer_id_ref: '61',
-    info_url:
+    zIndex: zIndex++,
+    layerPrefix: 'Cruiseship Lanes: ',
+    labelProp: 'AREA_DESCR',
+    serverLayerId: '61',
+    infoUrl:
       'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Cruise_Ship_Transit_Lanes_20/FeatureServer',
     url: [
       'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Cruise_Ship_Transit_Lanes_20/FeatureServer'
     ],
-    url_type: 'ArcGisFeatureServer',
-    layer_options: {
+    urlType: 'ArcGisFeatureServer',
+    layerOptions: {
       visible: false,
       opacity: 0.8,
       style: {
@@ -395,17 +395,17 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'maritime_safety_port_limits',
     title: 'Maritime Safety Port Limits',
-    z_index: zIndex++,
-    layer_prefix: 'Port Limits: ',
-    label_prop: 'NAME',
-    server_layer_id_ref: '0',
-    info_url:
+    zIndex: zIndex++,
+    layerPrefix: 'Port Limits: ',
+    labelProp: 'NAME',
+    serverLayerId: '0',
+    infoUrl:
       'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Maritime_Safety_Port_Limits/FeatureServer/',
     url: [
       'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Maritime_Safety_Port_Limits/FeatureServer/'
     ],
-    url_type: 'ArcGisFeatureServer',
-    layer_options: {
+    urlType: 'ArcGisFeatureServer',
+    layerOptions: {
       visible: false,
       opacity: 0.8,
       style: {
@@ -420,17 +420,17 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'tumra_agreement',
     title: 'Traditional Use of Marine Resources Agreement',
-    z_index: zIndex++,
-    layer_prefix: 'TUMRA: ',
-    label_prop: 'NAME',
-    server_layer_id_ref: '55',
-    info_url:
+    zIndex: zIndex++,
+    layerPrefix: 'TUMRA: ',
+    labelProp: 'NAME',
+    serverLayerId: '55',
+    infoUrl:
       'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Traditional_Use_of_Marine_Resources_TUMRA_20/FeatureServer',
     url: [
       'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Traditional_Use_of_Marine_Resources_TUMRA_20/FeatureServer'
     ],
-    url_type: 'ArcGisFeatureServer',
-    layer_options: {
+    urlType: 'ArcGisFeatureServer',
+    layerOptions: {
       visible: false,
       opacity: 0.8,
       style: {
@@ -445,17 +445,17 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'designated_shipping_areas',
     title: 'Designated Shipping Areas',
-    z_index: zIndex,
-    layer_prefix: 'Shipping Area: ',
-    label_prop: 'NAME',
-    server_layer_id_ref: '74',
-    info_url:
+    zIndex: zIndex,
+    layerPrefix: 'Shipping Area: ',
+    labelProp: 'NAME',
+    serverLayerId: '74',
+    infoUrl:
       'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Designated_Shipping_Areas_201/FeatureServer',
     url: [
       'https://services-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/Great_Barrier_Reef_Marine_Park_Designated_Shipping_Areas_201/FeatureServer'
     ],
-    url_type: 'ArcGisFeatureServer',
-    layer_options: {
+    urlType: 'ArcGisFeatureServer',
+    layerOptions: {
       visible: false,
       opacity: 0.8,
       style: {

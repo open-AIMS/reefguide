@@ -20,6 +20,11 @@ type BaseLayerDef = {
   title: string;
 
   /**
+   * Z index within the map.
+   */
+  zIndex: number;
+
+  /**
    * Primary category
    * May affect how the UI presents the layer.
    */
