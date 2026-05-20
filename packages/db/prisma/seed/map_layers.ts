@@ -113,11 +113,14 @@ export function getGeomorphicZonationColorPaletteStyle() {
   return ['palette', ['band', 1], colors];
 }
 
+let zIndex = 1;
+
 export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'esri_world_imagery_firefly',
     title: 'ESRI World Imagery Firefly',
     category: 'basemap',
+    z_index: zIndex++,
     info_url: 'https://www.esri.com/',
     url: [
       'https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer/tile/{z}/{y}/{x}'
@@ -133,6 +136,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
     id: 'google_imagery',
     title: 'Google Imagery',
     category: 'basemap',
+    z_index: zIndex++,
     url: ['https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}&hl=en'],
     url_type: 'XYZ'
   },
@@ -140,6 +144,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
     id: 'ssr_sentinel_2018',
     title: 'SSR Sentinel 2018',
     category: 'basemap',
+    z_index: zIndex++,
     info_url:
       'https://tiles-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/SSR_Sentinel_2018/MapServer',
     url: [
@@ -153,6 +158,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'cities',
     title: 'Cities',
+    z_index: zIndex++,
     url: [
       'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/Cities/FeatureServer/'
     ],
@@ -174,6 +180,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'GBRMPA_Zoning',
     title: 'GBRMPA Zoning',
+    z_index: zIndex++,
     // NAME exists, specific id like P-16-15, but TYPE more friendly text
     label_prop: 'TYPE',
     server_layer_id_ref: '53',
@@ -191,6 +198,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'hybrid_benthic',
     title: 'Hybrid Benthic',
+    z_index: zIndex++,
     info_url:
       'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer',
     url: [
@@ -205,6 +213,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'hybrid_geomorphic',
     title: 'Hybrid Geomorphic',
+    z_index: zIndex++,
     // for now, just link here so users can lookup colors
     // should work on legend and better layer info design soon
     info_url:
@@ -223,6 +232,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'canonical_reefs',
     title: 'RRAP Canonical Reefs',
+    z_index: zIndex++,
     layer_prefix: 'Reef: ',
     label_prop: 'reef_name',
     info_url:
@@ -276,6 +286,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'ecorrap_site_locations',
     title: 'EcoRRAP Site Locations',
+    z_index: zIndex++,
     layer_prefix: 'EcoRRAP Site: ',
     label_prop: 'Name',
     info_url:
@@ -291,6 +302,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'parks_marine_moorings',
     title: 'QPWS Moorings',
+    z_index: zIndex++,
     layer_prefix: 'QPWS Mooring: ',
     label_prop: 'site_and_mooring_reference_numb',
     info_url:
@@ -312,6 +324,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'parks_protection_markers',
     title: 'GPWS Reef Protection Markers',
+    z_index: zIndex++,
     layer_prefix: 'QPWS Protection Markers: ',
     label_prop: 'site_rpm_label',
     info_url:
@@ -331,6 +344,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'gbrmpa_management_regions',
     title: 'GBRMPA Management Regions',
+    z_index: zIndex++,
     layer_prefix: 'Management Region: ',
     label_prop: 'AREA_DESCR',
     server_layer_id_ref: '59',
@@ -356,6 +370,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'cruiseship_transit_lanes',
     title: 'GBRMPA Cruise Ship Transit Lanes',
+    z_index: zIndex++,
     layer_prefix: 'Cruiseship Lanes: ',
     label_prop: 'AREA_DESCR',
     server_layer_id_ref: '61',
@@ -380,6 +395,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'maritime_safety_port_limits',
     title: 'Maritime Safety Port Limits',
+    z_index: zIndex++,
     layer_prefix: 'Port Limits: ',
     label_prop: 'NAME',
     server_layer_id_ref: '0',
@@ -404,6 +420,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'tumra_agreement',
     title: 'Traditional Use of Marine Resources Agreement',
+    z_index: zIndex++,
     layer_prefix: 'TUMRA: ',
     label_prop: 'NAME',
     server_layer_id_ref: '55',
@@ -428,6 +445,7 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
     id: 'designated_shipping_areas',
     title: 'Designated Shipping Areas',
+    z_index: zIndex,
     layer_prefix: 'Shipping Area: ',
     label_prop: 'NAME',
     server_layer_id_ref: '74',

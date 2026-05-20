@@ -15,9 +15,15 @@ const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-// type MapLayerUpsert = Parameters<(typeof prisma)['mapLayer']['upsert']>[0];
-
-function layerDefToUpsert(layerCreate: MapLayerUpsert['create']): MapLayerUpsert {
+/**
+ * Create Prisma upsert object for the layer seed data.
+ *
+ * TODO review and doc how update works
+ *
+ * @param layerCreate
+ * @returns
+ */
+function createUpsert(layerCreate: MapLayerUpsert['create']): MapLayerUpsert {
   return {
     where: { id: layerCreate.id },
     create: layerCreate,
@@ -25,10 +31,13 @@ function layerDefToUpsert(layerCreate: MapLayerUpsert['create']): MapLayerUpsert
   };
 }
 
+/**
+ * Upsert all info map layers
+ */
 async function upsertMapLayersInfo() {
   console.info(`Upserting ${infoLayerDefs.length} info map layers`);
   for (const layerDef of infoLayerDefs) {
-    const upsert = layerDefToUpsert(layerDef);
+    const upsert = createUpsert(layerDef);
     console.log('  ', layerDef.id);
     await prisma.mapLayer.upsert(upsert);
   }
@@ -37,6 +46,7 @@ async function upsertMapLayersInfo() {
 async function main() {
   await upsertMapLayersInfo();
 }
+
 main()
   .then(async () => {
     await prisma.$disconnect();

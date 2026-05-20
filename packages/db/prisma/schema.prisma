@@ -470,6 +470,7 @@ model PasswordResetCode {
 model MapLayer {
   id                  String   @unique
   layer_id            String?  @unique
+  z_index             Int
   title               String
   category            String?
   url                 String[]
