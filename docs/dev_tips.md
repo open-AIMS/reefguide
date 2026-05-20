@@ -34,13 +34,13 @@ export REEFGUIDE_REPO="${HOME}/code/reefguide"
 
 alias rg-cd="cd $REEFGUIDE_REPO"
 alias rg-ng="cd $REEFGUIDE_REPO/packages/app && ng serve"
-alias rg-api="cd $REEFGUIDE_REPO && turbo watch api"
+alias rg-api="cd $REEFGUIDE_REPO/packages/web-api && turbo watch api"
 alias rg-ld="cd $REEFGUIDE_REPO && ./local-dev.sh"
-alias rg-db="cd $REEFGUIDE_REPO/packages/db && npx prisma migrate status"
+alias rg-db="cd $REEFGUIDE_REPO/packages/db && pnpm prisma migrate status"
+alias rg-studio="cd $REEFGUIDE_REPO/packages/db && pnpm prisma studio"
 
 alias rg-infra-test="cd $REEFGUIDE_REPO/packages/infra && . ./configs/test_env.sh"
 alias rg-infra-prod="cd $REEFGUIDE_REPO/packages/infra && . ./configs/prod_env.sh"
-
 ```
 
 You'll need to create the above _\*\_env.sh_ files with the environment variables for [infra](../packages/infra/README.md).
@@ -55,3 +55,14 @@ export PORT_FWD_LOCALPORT=25432
 ```
 
 **Note:** you will also need to authenticate with AWS: `aws sso login`
+
+### What's using that port?
+
+Sometimes dev servers don't shutdown and keep listening on the port. For example,
+if you can't start web-api because 5000 is in use.
+
+1. `lsof -i :5000` (may need to use `sudo`)
+2. ps -p PID -f
+3. kill PID
+
+Also useful: `ps -eaf|grep reefguide`
