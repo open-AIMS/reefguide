@@ -1,5 +1,9 @@
 # ReefGuide
 
+<a href="https://doi.org/10.5281/zenodo.20300810">
+  <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.20300810.svg" alt="DOI">
+</a>
+
 ReefGuide is a Reef decision support platform which integrates a collection of capabilities aimed to help Reef managers and researchers make informed decision about Reef intervention.
 
 ## View the [Docs](https://open-aims.github.io/reefguide)
