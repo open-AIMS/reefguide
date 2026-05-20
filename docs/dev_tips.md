@@ -1,15 +1,30 @@
 # Developer Tips
 
-## VSCode Settings
+## VSCode
+
+A few notes about this project and VSCode.
+
+### VSCode Settings
 
 Compare your _.vscode/settings.json_ and _.vscode/settings.default.json_
 
-## Extensions
+### Extensions
 
 _.vscode/extensions.json_ should cause VScode to prompt you to install the recommended
 extensions for this project.
 
-## Bash Aliases
+### Search Tips
+
+VSCode file search is more capable now. Using file search like this is a good way to jump around the repo:
+
+- "map routes" - to goto [web-api map-layers routes](../packages/web-api/src/map-layers/routes.ts)
+- "app package" - to goto [app package.json](../packages/app/package.json)
+
+## Linux
+
+If you're using a Linux environment such as WSL.
+
+### Bash Aliases
 
 You may want to create _~/.bash_aliases_ similar to this for quick reefguide development commands.
 These quickly get you to the most used directories and run common developer commands.
