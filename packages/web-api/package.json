@@ -62,7 +62,7 @@
   },
   "devDependencies": {
     "@aws-sdk/client-secrets-manager": "catalog:",
-    "@sentry/cli": "^2.53.0",
+    "@sentry/cli": "catalog:",
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.19",
     "@types/express": "catalog:",
