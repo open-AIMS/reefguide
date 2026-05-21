@@ -162,11 +162,15 @@ export async function userHasProjectAccess(
 /**
  * Mutates object, deleting any root property that is null
  * @param o
+ * @returns same object with null properties deleted
  */
-export function deleteNullProperties(o: object) {
+export function deleteNullProperties<T extends Record<string, any>>(
+  o: T
+): { [K in keyof T]: Exclude<T[K], null> } {
   for (const prop in o) {
     if (o[prop] === null) {
       delete o[prop];
     }
   }
+  return o; // not needed? as { [K in keyof T]: Exclude<T[K], null> };
 }

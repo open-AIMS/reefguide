@@ -13,15 +13,13 @@ router.get(
   '/',
   passport.authenticate('jwt', { session: false }),
   async (req, res: Response<GetMapLayersResponse>) => {
-    const layers = await prisma.mapLayer.findMany({
+    const mapLayers = await prisma.mapLayer.findMany({
       // remove DB private id, layerId used by app code
       omit: { id: true },
       orderBy: { zIndex: 'asc' }
     });
 
-    for (const layer of layers) {
-      deleteNullProperties(layer);
-    }
+    const layers = mapLayers.map(deleteNullProperties);
 
     return res.status(200).json({ layers });
   }
