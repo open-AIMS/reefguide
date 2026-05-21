@@ -59,7 +59,11 @@ export PORT_FWD_LOCALPORT=25432
 ### What's using that port?
 
 Sometimes dev servers don't shutdown and keep listening on the port. For example,
-if you can't start web-api because 5000 is in use.
+if you can't start web-api because 5000 is in use. Probably related that you have to hit `ctrl+c`
+twice to stop `turbo` when it's running the web-api.
+
+There is now a [killProcessUsingPort.ts](../packages/web-api/scripts/killProcessUsingPort.ts) script that does this for you.\
+`cd packages/web-api; pnpm free-port`
 
 1. `lsof -i :5000` (may need to use `sudo`)
 2. ps -p PID -f

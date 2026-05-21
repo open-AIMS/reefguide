@@ -20,6 +20,7 @@
     "fix": "gts fix",
     "local-keys": "tsx scripts/localKeys.ts",
     "start-web-api-docker": "tsx src/index.ts",
+    "free-port": "env-cmd tsx ./scripts/killProcessUsingPort.ts",
     "sourcemaps": "tsup src/index.ts --format esm --out-dir build/src --no-splitting --sourcemap && ./node_modules/@sentry/cli/bin/sentry-cli sourcemaps inject build/src && ./node_modules/@sentry/cli/bin/sentry-cli --url ${SENTRY_URL} sourcemaps --org none --project none upload build/src/"
   },
   "keywords": [],
