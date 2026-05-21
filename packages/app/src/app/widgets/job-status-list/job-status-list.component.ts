@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { JobsManagerService, TrackedJob } from '../../jobs/jobs-manager.service';
 import { AsyncPipe } from '@angular/common';
-import { JobType } from '@reefguide/db';
+import type { JobType } from '@reefguide/db';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';

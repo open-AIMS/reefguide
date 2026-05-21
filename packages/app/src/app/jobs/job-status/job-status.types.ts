@@ -1,4 +1,4 @@
-import { JobType } from '@reefguide/db';
+import type { JobType } from '@reefguide/db';
 
 /**
  * Configuration for the JobStatusComponent to make it reusable

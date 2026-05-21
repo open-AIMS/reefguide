@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { WebApiService } from '../../api/web-api.service';
-import { JobStatus, JobType } from '@reefguide/db';
+import type { JobStatus, JobType } from '@reefguide/db';
 import { CreateJobResponse, JobDetailsResponse, ListJobsResponse } from '@reefguide/types';
 import {
   BehaviorSubject,

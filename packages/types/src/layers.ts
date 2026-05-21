@@ -1,18 +1,21 @@
-import { Options as VectorLayerOptions } from 'ol/layer/Vector';
-import { Options as WebGLTileLayerOptions } from 'ol/layer/WebGLTile';
+import { Options as OLVectorLayerOptions } from 'ol/layer/Vector';
+import { Options as OLWebGLTileLayerOptions } from 'ol/layer/WebGLTile';
 import { Options as LayerGroupOptions } from 'ol/layer/Group';
+import { MapLayer } from './api';
 
-type VectorOptions = Omit<VectorLayerOptions, 'source' | 'properties'>;
-type TileOptions = Omit<WebGLTileLayerOptions, 'source' | 'properties'>;
+export type VectorLayerOptions = Omit<OLVectorLayerOptions, 'source' | 'properties'>;
+export type TileLayerOptions = Omit<OLWebGLTileLayerOptions, 'source' | 'properties'>;
 
 /**
+ * Original MapLayer base type before it was moved to Prisma and API types.
+ * Keeping for now, but probably can delete
  * Properties common to all layer definitions.
  */
 type BaseLayerDef = {
   /**
    * Criteria ID corresponding to CriteriaRangeOutput.id
    */
-  id: string;
+  layerId: string;
 
   /**
    * Layer title text
@@ -28,7 +31,7 @@ type BaseLayerDef = {
    * Primary category
    * May affect how the UI presents the layer.
    */
-  category?: 'basemap';
+  category: MapLayer['category'];
 
   /**
    * layer URL
@@ -85,7 +88,9 @@ type BaseLayerDef = {
   layerGroupOptions?: LayerGroupOptions;
 };
 
-type VectorLayerDef = BaseLayerDef & {
+// More specific type narrowing of layerOptions based on urlType
+
+type VectorLayerDef = MapLayer & {
   /**
    * the kind of url
    *
@@ -95,11 +100,12 @@ type VectorLayerDef = BaseLayerDef & {
 
   /**
    * Layer Options to mixin during construction.
+   * TODO what guarantees this? Zod in API or App?
    */
-  layerOptions?: VectorOptions;
+  layerOptions?: VectorLayerOptions;
 };
 
-type TileLayerDef = BaseLayerDef & {
+type TileLayerDef = MapLayer & {
   /**
    * the kind of url
    *
@@ -109,9 +115,9 @@ type TileLayerDef = BaseLayerDef & {
 
   /**
    * Layer Options to mixin during construction.
+   * TODO what guarantees this? Zod in API or App?
    */
-  layerOptions?: TileOptions;
+  layerOptions?: TileLayerOptions;
 };
 
-// TODO better to move this to Zod once it's in the database
 export type LayerDef = VectorLayerDef | TileLayerDef;

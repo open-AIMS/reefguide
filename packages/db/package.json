@@ -15,6 +15,7 @@
     "generate": "prisma generate",
     "studio": "prisma studio",
     "db-reset": "prisma db push --force-reset",
+    "db-push": "prisma db push",
     "db-seed": "prisma db seed",
     "lint": "gts lint",
     "type-check": "tsc --noEmit",

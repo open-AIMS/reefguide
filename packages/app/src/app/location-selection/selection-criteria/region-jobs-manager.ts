@@ -1,9 +1,8 @@
 import { inject } from '@angular/core';
-import { JobType } from '@reefguide/db';
+import type { JobType } from '@reefguide/db';
 import { DownloadResponse, JobDetails } from '@reefguide/types';
 import {
   BehaviorSubject,
-  concatMap,
   distinct,
   filter,
   finalize,

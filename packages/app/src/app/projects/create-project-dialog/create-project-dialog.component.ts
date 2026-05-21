@@ -10,7 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { ProjectType } from '@reefguide/db';
+import type { ProjectType } from '@reefguide/db';
 import { CreateProjectInput } from '@reefguide/types';
 import { BehaviorSubject, finalize } from 'rxjs';
 import { WebApiService } from '../../../api/web-api.service';

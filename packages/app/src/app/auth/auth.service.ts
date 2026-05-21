@@ -1,6 +1,6 @@
 import { inject, Injectable, Signal, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { UserRole } from '@reefguide/db';
+import type { UserRole } from '@reefguide/db';
 import { JwtContents, ProfileResponse } from '@reefguide/types';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
 import { map, Observable, of, retry, switchMap } from 'rxjs';

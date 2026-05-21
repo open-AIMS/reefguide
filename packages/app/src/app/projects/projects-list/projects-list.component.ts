@@ -14,7 +14,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
-import { Project } from '@reefguide/db';
+import type { Project } from '@reefguide/db';
 import { GetProjectsResponse } from '@reefguide/types';
 import {
   BehaviorSubject,

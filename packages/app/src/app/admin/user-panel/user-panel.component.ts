@@ -12,7 +12,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
-import { User } from '@reefguide/db';
+import type { User } from '@reefguide/db';
 import { BehaviorSubject, catchError, finalize, of, switchMap } from 'rxjs';
 import { extractErrorMessage } from '../../../api/api-util';
 import { WebApiService } from '../../../api/web-api.service';

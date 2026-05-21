@@ -2,6 +2,8 @@
  * Properties app code may set on the layers.
  *
  * Important: these keys must not conflict with the names used by OpenLayers.
+ *
+ * REVIEW relate to LayerDef, Pick<>?
  */
 export type LayerProperties = {
   id?: string;

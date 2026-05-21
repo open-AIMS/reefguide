@@ -1,6 +1,14 @@
 import { MapLayerUpsert } from './seed-types';
 import type { ColorLike } from 'ol/colorlike.js';
 
+// duplicate of type in @reefguide/types, but that dep creates circular dependency.
+import { Options as OLVectorLayerOptions } from 'ol/layer/Vector';
+import { Options as OLWebGLTileLayerOptions } from 'ol/layer/WebGLTile';
+
+// map: Map is not valid for Prisma type, so omit it.
+type VectorLayerOptions = Omit<OLVectorLayerOptions, 'source' | 'properties' | 'map'>;
+type TileLayerOptions = Omit<OLWebGLTileLayerOptions, 'source' | 'sources' | 'properties' | 'map'>;
+
 /**
  * Colors for *_hybrid_geomorphic band values.
  * https://developers.google.com/earth-engine/datasets/catalog/ACA_reef_habitat_v2_0#bands
@@ -117,9 +125,9 @@ let zIndex = 1;
 
 export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   {
-    id: 'esri_world_imagery_firefly',
+    layerId: 'esri_world_imagery_firefly',
     title: 'ESRI World Imagery Firefly',
-    category: 'basemap',
+    category: 'BASEMAP',
     zIndex: zIndex++,
     infoUrl: 'https://www.esri.com/',
     url: [
@@ -133,17 +141,17 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
       'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
   },
   {
-    id: 'google_imagery',
+    layerId: 'google_imagery',
     title: 'Google Imagery',
-    category: 'basemap',
+    category: 'BASEMAP',
     zIndex: zIndex++,
     url: ['https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}&hl=en'],
     urlType: 'XYZ'
   },
   {
-    id: 'ssr_sentinel_2018',
+    layerId: 'ssr_sentinel_2018',
     title: 'SSR Sentinel 2018',
-    category: 'basemap',
+    category: 'BASEMAP',
     zIndex: zIndex++,
     infoUrl:
       'https://tiles-ap1.arcgis.com/8gXWSCxaJlFIfiTr/arcgis/rest/services/SSR_Sentinel_2018/MapServer',
@@ -156,8 +164,9 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
     }
   },
   {
-    id: 'cities',
+    layerId: 'cities',
     title: 'Cities',
+    category: 'CONTEXT',
     zIndex: zIndex++,
     url: [
       'https://services3.arcgis.com/wfyOCawpdks4prqC/arcgis/rest/services/Cities/FeatureServer/'
@@ -178,8 +187,9 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
     }
   },
   {
-    id: 'GBRMPA_Zoning',
+    layerId: 'GBRMPA_Zoning',
     title: 'GBRMPA Zoning',
+    category: 'CONTEXT',
     zIndex: zIndex++,
     // NAME exists, specific id like P-16-15, but TYPE more friendly text
     labelProp: 'TYPE',
@@ -196,8 +206,9 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
     }
   },
   {
-    id: 'hybrid_benthic',
+    layerId: 'hybrid_benthic',
     title: 'Hybrid Benthic',
+    category: 'CONTEXT',
     zIndex: zIndex++,
     infoUrl:
       'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/hybrid_benthic/MapServer',
@@ -211,8 +222,9 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
     }
   },
   {
-    id: 'hybrid_geomorphic',
+    layerId: 'hybrid_geomorphic',
     title: 'Hybrid Geomorphic',
+    category: 'CONTEXT',
     zIndex: zIndex++,
     // for now, just link here so users can lookup colors
     // should work on legend and better layer info design soon
@@ -230,8 +242,9 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
     }
   },
   {
-    id: 'canonical_reefs',
+    layerId: 'canonical_reefs',
     title: 'RRAP Canonical Reefs',
+    category: 'CONTEXT',
     zIndex: zIndex++,
     layerPrefix: 'Reef: ',
     labelProp: 'reef_name',
@@ -284,8 +297,9 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
     }
   },
   {
-    id: 'ecorrap_site_locations',
+    layerId: 'ecorrap_site_locations',
     title: 'EcoRRAP Site Locations',
+    category: 'CONTEXT',
     zIndex: zIndex++,
     layerPrefix: 'EcoRRAP Site: ',
     labelProp: 'Name',
@@ -300,8 +314,9 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   // QPWS Moorings -
   // https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer/20
   {
-    id: 'parks_marine_moorings',
+    layerId: 'parks_marine_moorings',
     title: 'QPWS Moorings',
+    category: 'CONTEXT',
     zIndex: zIndex++,
     layerPrefix: 'QPWS Mooring: ',
     labelProp: 'site_and_mooring_reference_numb',
@@ -322,8 +337,9 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   // QPWS Protection Markers -
   // https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksMarineMoorings/MapServer/10
   {
-    id: 'parks_protection_markers',
+    layerId: 'parks_protection_markers',
     title: 'GPWS Reef Protection Markers',
+    category: 'CONTEXT',
     zIndex: zIndex++,
     layerPrefix: 'QPWS Protection Markers: ',
     labelProp: 'site_rpm_label',
@@ -342,8 +358,9 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
     cluster: true
   },
   {
-    id: 'gbrmpa_management_regions',
+    layerId: 'gbrmpa_management_regions',
     title: 'GBRMPA Management Regions',
+    category: 'CONTEXT',
     zIndex: zIndex++,
     layerPrefix: 'Management Region: ',
     labelProp: 'AREA_DESCR',
@@ -368,8 +385,9 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
   },
 
   {
-    id: 'cruiseship_transit_lanes',
+    layerId: 'cruiseship_transit_lanes',
     title: 'GBRMPA Cruise Ship Transit Lanes',
+    category: 'CONTEXT',
     zIndex: zIndex++,
     layerPrefix: 'Cruiseship Lanes: ',
     labelProp: 'AREA_DESCR',
@@ -393,8 +411,9 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
     }
   },
   {
-    id: 'maritime_safety_port_limits',
+    layerId: 'maritime_safety_port_limits',
     title: 'Maritime Safety Port Limits',
+    category: 'CONTEXT',
     zIndex: zIndex++,
     layerPrefix: 'Port Limits: ',
     labelProp: 'NAME',
@@ -418,8 +437,9 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
     }
   },
   {
-    id: 'tumra_agreement',
+    layerId: 'tumra_agreement',
     title: 'Traditional Use of Marine Resources Agreement',
+    category: 'CONTEXT',
     zIndex: zIndex++,
     layerPrefix: 'TUMRA: ',
     labelProp: 'NAME',
@@ -443,8 +463,9 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
     }
   },
   {
-    id: 'designated_shipping_areas',
+    layerId: 'designated_shipping_areas',
     title: 'Designated Shipping Areas',
+    category: 'CONTEXT',
     zIndex: zIndex,
     layerPrefix: 'Shipping Area: ',
     labelProp: 'NAME',
@@ -477,5 +498,66 @@ export const infoLayerDefs: Array<MapLayerUpsert['create']> = [
         'stroke-width': 2
       }
     }
+  }
+];
+
+const criteriaOptions: TileLayerOptions = {
+  visible: false,
+  opacity: 0.8
+};
+
+export const criteriaLayerDefs: Array<MapLayerUpsert['create']> = [
+  {
+    layerId: 'Depth',
+    title: 'Depth',
+    category: 'CRITERIA',
+    zIndex: zIndex++,
+    infoUrl:
+      'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_bathymetry/MapServer',
+    url: [
+      'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_bathymetry/MapServer/WMTS/1.0.0/WMTSCapabilities.xml'
+    ],
+    urlType: 'WMTSCapabilitiesXml',
+    reverseRange: true,
+    layerOptions: criteriaOptions
+  },
+  {
+    layerId: 'Slope',
+    title: 'Slope',
+    category: 'CRITERIA',
+    zIndex: zIndex++,
+    infoUrl:
+      'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_slope_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+    url: [
+      'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_slope_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml'
+    ],
+    urlType: 'WMTSCapabilitiesXml',
+    layerOptions: criteriaOptions
+  },
+  {
+    layerId: 'WavesHs',
+    title: 'WavesHs',
+    category: 'CRITERIA',
+    zIndex: zIndex++,
+    infoUrl:
+      'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_wave_Hs_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+    url: [
+      'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_wave_Hs_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml'
+    ],
+    urlType: 'WMTSCapabilitiesXml',
+    layerOptions: criteriaOptions
+  },
+  {
+    layerId: 'WavesTp',
+    title: 'WavesTp',
+    category: 'CRITERIA',
+    zIndex: zIndex,
+    infoUrl:
+      'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
+    url: [
+      'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml'
+    ],
+    urlType: 'WMTSCapabilitiesXml',
+    layerOptions: criteriaOptions
   }
 ];

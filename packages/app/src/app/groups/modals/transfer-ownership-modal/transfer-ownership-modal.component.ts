@@ -7,7 +7,6 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { User } from '@reefguide/db';
 import { WebApiService } from '../../../../api/web-api.service';
 import { GetGroupsResponse } from '@reefguide/types';
 

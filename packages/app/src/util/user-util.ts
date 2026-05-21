@@ -1,4 +1,4 @@
-import { UserRole } from '@reefguide/db';
+import type { UserRole } from '@reefguide/db';
 
 // Note: ideally would put in @reefguide db or types, but caused import issue with
 //  prisma being pulled into the app build

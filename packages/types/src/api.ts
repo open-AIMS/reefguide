@@ -7,7 +7,9 @@ import {
   UserAction,
   UserRole,
   ProjectType,
-  Project
+  Project,
+  MapLayerCategory,
+  MapLayerUrlType
 } from '@reefguide/db';
 
 export const PASSWORD_MIN_LENGTH = 8;
@@ -941,27 +943,28 @@ export type TransferGroupOwnershipResponse = {
 // Map Layer Types
 // ==================
 
-// REVIEW should this just use Prisma types, or better to keep separation?
+// corresponds to MapLayer Prisma model
+// this API route strips null properties.
 export const MapLayerSchema = z.object({
-  id: z.string(),
-  layer_id: z.string().nullable(),
+  // database generated id deliberately omitted
+  layerId: z.string(),
   title: z.string(),
-  category: z.string().nullable(),
-  z_index: z.number(),
-  url: z.array(z.string()),
-  url_type: z.string(),
-  server_layer_id_ref: z.string().nullable(),
-  info_url: z.string().nullable(),
-  attributions: z.string().nullable(),
-  reverse_range: z.boolean(),
+  category: z.nativeEnum(MapLayerCategory),
+  zIndex: z.number(),
+  url: z.union([z.string(), z.array(z.string())]), // string | string[]
+  urlType: z.nativeEnum(MapLayerUrlType),
+  serverLayerId: z.string().optional(),
+  infoUrl: z.string().optional(),
+  attributions: z.string().optional(),
+  reverseRange: z.boolean(),
   cluster: z.boolean(),
-  label_prop: z.string().nullable(),
-  layer_prefix: z.string().nullable(),
-  layer_postfix: z.string().nullable(),
-  layer_options: z.any().nullable(),
-  layer_group_options: z.any().nullable(),
-  created_at: z.date(),
-  updated_at: z.date()
+  labelProp: z.string().optional(),
+  layerPrefix: z.string().optional(),
+  layerPostfix: z.string().optional(),
+  layerOptions: z.any().optional(),
+  layerGroupOptions: z.any().optional(),
+  createdAt: z.date(),
+  updatedAt: z.date()
 });
 export type MapLayer = z.infer<typeof MapLayerSchema>;
 

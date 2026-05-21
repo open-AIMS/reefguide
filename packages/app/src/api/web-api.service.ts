@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { JobType, User, UserRole } from '@reefguide/db';
+import type { JobType, User, UserRole } from '@reefguide/db';
 import {
   AddGroupManagersInput,
   AddGroupManagersResponse,
@@ -302,56 +302,16 @@ export class WebApiService {
   }
 
   /**
-   * Get criteria visualization layer definitions.
-   * TODO return from API instead of hardcoding in app code.
+   * Get all map layers the user is allowed to display.
+   * Sorted by zIndex ascending.
    */
-  getCriteriaLayers(): LayerDef[] {
-    return [
-      {
-        id: 'Depth',
-        title: 'Depth',
-        infoUrl:
-          'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_bathymetry/MapServer',
-        url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_bathymetry/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
-        urlType: 'WMTSCapabilitiesXml',
-        reverseRange: true
-      },
-      {
-        id: 'Slope',
-        title: 'Slope',
-        infoUrl:
-          'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_slope_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
-        url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_slope_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
-        urlType: 'WMTSCapabilitiesXml'
-      },
-      {
-        id: 'WavesHs',
-        title: 'WavesHs',
-        infoUrl:
-          'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_wave_Hs_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
-        url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_wave_Hs_data/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
-        urlType: 'WMTSCapabilitiesXml'
-      },
-      {
-        id: 'WavesTp',
-        title: 'WavesTp',
-        infoUrl:
-          'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
-        url: 'https://tiles.arcgis.com/tiles/wfyOCawpdks4prqC/arcgis/rest/services/GBR_waves_Tp/MapServer/WMTS/1.0.0/WMTSCapabilities.xml',
-        urlType: 'WMTSCapabilitiesXml'
-      }
-    ];
-  }
-
-  /**
-   * Get informational layers
-   */
-  getInfoLayers(): Observable<GetMapLayersResponse> {
+  getMapLayers(): Observable<GetMapLayersResponse> {
     return this.http.get<GetMapLayersResponse>(`${this.base}/map-layers`);
   }
 
+  // TODO migrate to database
   getPDPLayers(): Array<LayerDef> {
-    const layers: Array<LayerDef> = [
+    const layers: Array<any> = [
       {
         id: 'pdp_reefscan_surveys',
         title: 'PDP ReefScan Surveys',

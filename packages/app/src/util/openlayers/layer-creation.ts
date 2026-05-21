@@ -97,7 +97,6 @@ const LAYER_BUILDERS: Record<
       properties,
       ...layerDef.layerOptions,
       ...mixin,
-      // @ts-expect-error this source works with WebGLTileLayer, ignore the type error
       // https://github.com/openlayers/openlayers/issues/16794
       source: new XYZ({
         url: layerDef.url,
@@ -188,7 +187,7 @@ const LAYER_BUILDERS: Record<
  */
 export function createLayerFromDef(layerDef: LayerDef, mixin?: Partial<Options>): BaseLayer {
   const properties: LayerProperties = {
-    id: layerDef.id,
+    id: layerDef.layerId,
     title: layerDef.title,
     infoUrl: layerDef.infoUrl,
     labelProp: layerDef.labelProp,
@@ -198,12 +197,12 @@ export function createLayerFromDef(layerDef: LayerDef, mixin?: Partial<Options>)
 
   const builder = LAYER_BUILDERS[layerDef.urlType];
   if (builder) {
-    if (Array.isArray(layerDef.url)) {
+    if (Array.isArray(layerDef.url) && layerDef.url.length > 1) {
       return new LayerGroup({
         // only include informational properties in the group
         properties: {
           // TODO should sub layers have incremented ids?
-          id: layerDef.id,
+          id: layerDef.layerId,
           title: layerDef.title,
           // TODO update LayerDef and UI to link to multiple
           infoUrl: layerDef.infoUrl
@@ -218,7 +217,11 @@ export function createLayerFromDef(layerDef: LayerDef, mixin?: Partial<Options>)
         ...layerDef.layerGroupOptions
       });
     } else {
-      return builder(layerDef as SingularLayerDef, properties, mixin);
+      const singleLayerDef: SingularLayerDef = {
+        ...layerDef,
+        url: layerDef.url[0]
+      };
+      return builder(singleLayerDef, properties, mixin);
     }
   } else {
     throw new Error(`Unsupported urlType: ${layerDef.urlType}`);

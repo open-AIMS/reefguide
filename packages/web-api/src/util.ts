@@ -158,3 +158,15 @@ export async function userHasProjectAccess(
 
   return false;
 }
+
+/**
+ * Mutates object, deleting any root property that is null
+ * @param o
+ */
+export function deleteNullProperties(o: object) {
+  for (const prop in o) {
+    if (o[prop] === null) {
+      delete o[prop];
+    }
+  }
+}

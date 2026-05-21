@@ -9,7 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { User } from '@reefguide/db';
+import type { User } from '@reefguide/db';
 import { catchError, finalize, of, tap } from 'rxjs';
 import { WebApiService } from '../../../../api/web-api.service';
 

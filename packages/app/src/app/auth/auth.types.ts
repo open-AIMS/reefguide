@@ -2,7 +2,7 @@
  * Authentication and authorization types
  */
 
-import { UserRole } from '@reefguide/db';
+import type { UserRole } from '@reefguide/db';
 import { JwtContents } from '@reefguide/types';
 
 /**

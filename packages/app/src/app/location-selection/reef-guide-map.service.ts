@@ -23,6 +23,7 @@ import {
   forkJoin,
   from,
   fromEvent,
+  lastValueFrom,
   map,
   Observable,
   of,
@@ -75,6 +76,16 @@ import { LayerProperties } from '../../types/layer.type';
 import { singleBandColorGradientLayerStyle } from '../../util/openlayers/openlayers-styles';
 import { fromString as colorFromString } from 'ol/color';
 
+import { PolygonMapService } from './polygon-map.service';
+import { LAYER_ADJUSTMENT } from '../map/openlayers-hardcoded';
+import { createLayerFromDef } from '../../util/openlayers/layer-creation';
+import BaseLayer from 'ol/layer/Base';
+import { Group } from 'ol/layer';
+import { fromOpenLayersProperty } from '../../util/openlayers/openlayers-rxjs';
+import { WorkspacePersistenceService } from './persistence/workspace-persistence.service';
+import { Coordinate } from 'ol/coordinate';
+import type { MapLayerCategory } from '@reefguide/db';
+
 /**
  * Map UI actions implemented by the overall app design.
  *
@@ -102,15 +113,6 @@ export interface PolygonDrawHandlers {
   onSuccess: (geojson: string) => void;
   onCancelled?: () => void;
 }
-
-import { PolygonMapService } from './polygon-map.service';
-import { LAYER_ADJUSTMENT } from '../map/openlayers-hardcoded';
-import { createLayerFromDef } from '../../util/openlayers/layer-creation';
-import BaseLayer from 'ol/layer/Base';
-import { Group } from 'ol/layer';
-import { fromOpenLayersProperty } from '../../util/openlayers/openlayers-rxjs';
-import { WorkspacePersistenceService } from './persistence/workspace-persistence.service';
-import { Coordinate } from 'ol/coordinate';
 
 /**
  * Reef Guide map context and layer management.
@@ -316,9 +318,7 @@ export class ReefGuideMapService {
   setMap(map: OLMap, projectId: number) {
     this.map = map;
 
-    this.addInfoLayers();
-    void this.addCriteriaLayers();
-    this.addPDPLayers();
+    void this.addMapLayers();
 
     // Initialize polygon map service with the map
     this.polygonMapService.configureMapService(map, projectId);
@@ -366,7 +366,7 @@ export class ReefGuideMapService {
     const basemapLayers = this.map
       .getAllLayers()
       .map(l => this.getLayerController(l))
-      .filter(lc => lc.def?.category === 'basemap');
+      .filter(lc => lc.def?.category === 'BASEMAP');
 
     if (basemapLayers.length === 0) {
       console.warn('no basemap layers found');
@@ -808,7 +808,7 @@ export class ReefGuideMapService {
     const criteriaLayerGroup = this.criteriaLayerGroup();
     if (criteriaLayerGroup) {
       criteriaLayerGroup.setVisible(true);
-      for (let id in this.criteriaLayers) {
+      for (const id in this.criteriaLayers) {
         const criteriaLayer = this.criteriaLayers[id];
         criteriaLayer?.visible.set(id === criteriaId && show);
       }
@@ -923,60 +923,59 @@ export class ReefGuideMapService {
     layerGroup.set('downloadUrl', url);
   }
 
-  private async addCriteriaLayers() {
-    const layers = this.api.getCriteriaLayers();
+  // TODO apply workspace layer customizations
+  private async addMapLayers() {
+    // map layers this user is allowed to view
+    const mapLayers = await lastValueFrom(this.api.getMapLayers());
 
-    const layerGroup = new LayerGroup({
+    const criteriaLayerGroup = new LayerGroup({
       properties: {
         title: 'Criteria',
         expandChildrenInList: true
       } as LayerProperties
     });
-    this.criteriaLayerGroup.set(layerGroup);
-    this.map.getLayers().push(layerGroup);
+    this.criteriaLayerGroup.set(criteriaLayerGroup);
 
-    for (let layerDef of layers) {
-      const { id } = layerDef;
-      try {
-        const layer = createLayerFromDef(layerDef, {
-          visible: false,
-          opacity: 0.8
-        });
+    const categoryCounts: Record<MapLayerCategory, number> = {
+      BASEMAP: 0,
+      CRITERIA: 0,
+      CONTEXT: 0
+    };
 
-        this.criteriaLayers[id] = this.afterCreateLayer(layer, { layerDef });
+    let errorCount = 0;
 
-        layerGroup.getLayers().push(layer);
-      } catch (err) {
-        console.error(`Error loading criteria layer ${id}`, err);
-      }
-    }
-  }
-
-  private addInfoLayers() {
-    this.api.getInfoLayers().subscribe(infoLayerDefs => {
-      console.info(`Adding ${infoLayerDefs.layers.length} info map layers`);
-      for (const layerDef of infoLayerDefs.layers) {
-        try {
-          const layer = createLayerFromDef(layerDef);
-          this.afterCreateLayer(layer, { layerDef });
-          this.map.getLayers().push(layer);
-        } catch (err) {
-          console.error(`Error loading info layer ${layerDef.id}`, err);
-        }
-      }
-    });
-  }
-
-  private addPDPLayers() {
-    const layerDefs = this.api.getPDPLayers();
-    for (const layerDef of layerDefs) {
+    for (const layerDef of mapLayers.layers) {
+      const { layerId } = layerDef;
+      // TODO developer verbose log levels would be nice
+      // console.log(id, layerDef);
       try {
         const layer = createLayerFromDef(layerDef);
-        this.afterCreateLayer(layer, { layerDef });
-        this.map.getLayers().push(layer);
+        const afterResult = this.afterCreateLayer(layer, { layerDef });
+
+        if (layerDef.category == 'CRITERIA') {
+          // Criteria layer lookup
+          // TODO maybe remove this and just lookup using ids instead
+          //  I think this code was written prior to better layerFromId code
+          this.criteriaLayers[layerId] = afterResult;
+          criteriaLayerGroup.getLayers().push(layer);
+        } else {
+          this.map.getLayers().push(layer);
+        }
+
+        categoryCounts[layerDef.category]++;
       } catch (err) {
-        console.error(`Error loading PDP layer ${layerDef.id}`, err);
+        console.error(`Error loading map layer ${layerId}`, err);
+        errorCount++;
       }
+    }
+
+    // Criteria layer group on top for now
+    // TODO criteria zIndex? make everything flat for simplicity? why use LayerGroup at all?
+    this.map.getLayers().push(criteriaLayerGroup);
+
+    console.info('Added map layers', categoryCounts);
+    if (errorCount) {
+      console.error(`${errorCount} map layer errors`);
     }
   }
 
@@ -992,7 +991,7 @@ export class ReefGuideMapService {
    * @param layer any OpenLayers layer that LayerController supports.
    */
   public getLayerController(layer: BaseLayer): LayerController {
-    let controller = this.layerControllers.get(layer);
+    const controller = this.layerControllers.get(layer);
     if (controller) {
       return controller;
     } else {

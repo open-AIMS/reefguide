@@ -12,7 +12,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { catchError, finalize, of, tap } from 'rxjs';
 import { MatIconModule } from '@angular/material/icon';
 import { WebApiService } from '../../../../api/web-api.service';
-import { UserRole } from '@reefguide/db';
+import type { UserRole } from '@reefguide/db';
 import { ALL_USER_ROLES } from '../../../../util/user-util';
 
 interface CreateUserForm {
